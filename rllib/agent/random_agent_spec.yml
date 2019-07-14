@@ -1,0 +1,3 @@
+agent: random
+batch_size: 32
+sequence_length: 4
