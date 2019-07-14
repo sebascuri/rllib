@@ -1,31 +1,24 @@
 from .abstract_agent import AbstractAgent
-# from rllib.policy.nn_policy import NNPolicy
-from rllib.dataset import Observation, Dataset
+from rllib.policy import RandomPolicy
+from rllib.dataset import Dataset
 import torch
 
 
 class RandomAgent(AbstractAgent):
-    def __init__(self, config, seed=None):
-        super(RandomAgent, self).__init__(config, seed=seed)
-        state_dim = config.get('state_dim')
-        action_dim = config.get('action_dim')
-        action_space = config.get('action_space')
-        discrete_action = config.get('discrete_action')
-        batch_size = config.get('batch_size')
-        sequence_length = config.get('sequence_length')
-
-        self._policy = NNPolicy(state_dim, action_space, discrete_action)
+    def __init__(self, state_dim, action_dim, action_space,
+                 batch_size=1, sequence_length=1, seed=0):
+        super(RandomAgent, self).__init__()
+        self._policy = RandomPolicy(action_space, state_dim)
         self._trajectory = []
         self._dataset = Dataset(state_dim, action_dim, batch_size,
-                                sequence_length, seed=seed)
+                                sequence_length)
 
     def act(self, state):
         state = torch.from_numpy(state).float()
-        action = self._policy.action(state)
+        action = self._policy.action(state).sample()
         return action.detach().numpy()
 
-    def observe(self, state, action, reward, next_state):
-        observation = Observation(state, action, reward, next_state)
+    def observe(self, observation):
         self._trajectory.append(observation)
 
     def start_episode(self):

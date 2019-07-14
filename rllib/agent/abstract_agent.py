@@ -37,15 +37,12 @@ class AbstractAgent(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def observe(self, state, action, reward, next_state):
+    def observe(self, observation):
         """Observe transition from the environment.
 
         Parameters
         ----------
-        state: ndarray
-        action: ndarray
-        reward: float
-        next_state: ndarray
+        observation: Observation
 
         Returns
         -------

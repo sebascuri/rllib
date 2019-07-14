@@ -24,5 +24,3 @@ class CategoricalNN(nn.Module):
     def forward(self, input_):
         output = self._layer(input_)
         return Categorical(functional.softmax(output, dim=-1))
-
-

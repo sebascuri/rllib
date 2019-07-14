@@ -22,7 +22,11 @@ def rollout_agent(environment, agent):
     while not episode_done:
         action = agent.act(state)
         next_state, reward, episode_done, _ = environment.step(action)
-        agent.observe(state, action, reward, next_state)
+        observation = Observation(state=state,
+                                  action=action,
+                                  reward=reward,
+                                  next_state=next_state)
+        agent.observe(observation)
         state = next_state
         agent.end_episode()
 
@@ -47,7 +51,7 @@ def rollout_policy(environment, policy):
     with torch.no_grad():
         while not episode_done:
             state_torch = torch.from_numpy(state).float()
-            action_torch = policy(state_torch)
+            action_torch = policy.action(state_torch).sample()
             action = action_torch.numpy()
             next_state, reward, episode_done, _ = environment.step(action)
             observation = Observation(state=state,

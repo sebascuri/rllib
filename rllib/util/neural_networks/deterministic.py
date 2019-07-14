@@ -9,4 +9,3 @@ class DeterministicNN(nn.Module):
     def forward(self, input_):
         output = self._layer(input_)
         return output
-

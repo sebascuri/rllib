@@ -28,8 +28,10 @@ def test_gaussian_forward(gaussian_nn):
     batch_size = 32
     tensor = torch.rand((batch_size, in_dim))
     distribution = nn.forward(tensor)
+    sample = distribution.sample()
 
     assert distribution.mean.shape == (batch_size, out_dim)
+    assert sample.shape == (batch_size, out_dim)
     assert distribution.has_rsample
     assert not distribution.has_enumerate_support
 
@@ -39,7 +41,9 @@ def test_categorical_forward(categorical_nn):
     batch_size = 32
     tensor = torch.rand((batch_size, in_dim))
     distribution = nn.forward(tensor)
+    sample = distribution.sample()
 
     assert distribution.logits.shape == (batch_size, out_dim)
+    assert sample.shape == (batch_size,)
     assert not distribution.has_rsample
     assert distribution.has_enumerate_support
