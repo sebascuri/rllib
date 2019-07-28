@@ -16,9 +16,9 @@ class LinearSystem(AbstractSystem):
         dim_observation = self.c.shape[0]
 
         super().__init__(dim_state=dim_state,
-                                           dim_action=dim_action,
-                                           dim_observation=dim_observation,
-                                           )
+                         dim_action=dim_action,
+                         dim_observation=dim_observation,
+                         )
         self._state = None
 
     @property

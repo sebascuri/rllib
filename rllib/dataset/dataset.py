@@ -1,6 +1,6 @@
 import numpy as np
 from torch.utils import data
-from rllib.dataset import Observation
+from . import Observation
 from rllib.util.utilities import stack_list_of_tuples
 
 

@@ -26,7 +26,7 @@ class SystemEnvironment(AbstractEnvironment):
 
     def step(self, action):
         self._time += 1
-        state = self.system.state  # this might be noisy. 
+        state = self.system.state  # this might be noisy.
         reward = None
         if self.reward is not None:
             reward = self.reward(state, action)
@@ -56,5 +56,3 @@ class SystemEnvironment(AbstractEnvironment):
     @property
     def time(self):
         return self._time
-
-

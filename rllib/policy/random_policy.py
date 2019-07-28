@@ -7,4 +7,3 @@ class RandomPolicy(AbstractPolicy):
 
     def action(self, state):
         return self.random()
-

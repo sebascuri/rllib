@@ -89,4 +89,3 @@ class InvertedPendulum(ODESystem):
                   - friction / inertia * angular_velocity)
 
         return np.array((angular_velocity, x_ddot))
-

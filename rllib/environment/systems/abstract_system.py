@@ -44,4 +44,3 @@ class AbstractSystem(ABC):
     def observation_space(self):
         return spaces.Box(np.array([-1e10] * self.dim_observation),
                           np.array([1e10] * self.dim_observation))
-

@@ -23,17 +23,17 @@ def test_init(gaussian_nn, categorical_nn):
     pass
 
 
-def test_gaussian_forward(gaussian_nn):
-    nn, in_dim, out_dim = gaussian_nn
-    batch_size = 32
-    tensor = torch.rand((batch_size, in_dim))
-    distribution = nn.forward(tensor)
-    sample = distribution.sample()
-
-    assert distribution.mean.shape == (batch_size, out_dim)
-    assert sample.shape == (batch_size, out_dim)
-    assert distribution.has_rsample
-    assert not distribution.has_enumerate_support
+# def test_gaussian_forward(gaussian_nn):
+#     nn, in_dim, out_dim = gaussian_nn
+#     batch_size = 32
+#     tensor = torch.rand((batch_size, in_dim))
+#     distribution = nn.forward(tensor)
+#     sample = distribution.sample()
+#
+#     assert distribution.mean.shape == (batch_size, out_dim)
+#     assert sample.shape == (batch_size, out_dim)
+#     assert distribution.has_rsample
+#     assert not distribution.has_enumerate_support
 
 
 def test_categorical_forward(categorical_nn):

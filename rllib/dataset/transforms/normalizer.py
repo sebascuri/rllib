@@ -1,5 +1,5 @@
 from .abstract_transform import AbstractTransform
-from ..observation import Observation
+from .. import Observation
 import numpy as np
 
 

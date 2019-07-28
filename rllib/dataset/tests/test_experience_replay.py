@@ -14,7 +14,8 @@ def memory(request):
         memory_.append(Observation(state=np.random.randn(state_dim),
                                    action=np.random.randn(action_dim),
                                    reward=np.random.randn(),
-                                   next_state=np.random.randn(state_dim))
+                                   next_state=np.random.randn(state_dim),
+                                   done=False)
                        )
     return memory_, max_len, number_of_samples
 

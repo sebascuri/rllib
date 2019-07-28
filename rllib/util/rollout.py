@@ -1,5 +1,5 @@
 import torch
-from rllib.dataset.observation import Observation
+from rllib.dataset import Observation
 
 
 def rollout_agent(environment, agent):
