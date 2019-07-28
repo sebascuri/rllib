@@ -1,36 +1,35 @@
 from abc import ABC, abstractmethod
+import torch
+from torch.distributions import MultivariateNormal, Categorical
 
 
 class AbstractPolicy(ABC):
     """Interface for policies to control an environment.
 
     The public methods are:
-        random_action
+        random
         action
 
     The public attributes are:
-        action_dim
+        dim_state
+        dim_action
     """
-    def __init__(self, action_space):
+
+    def __init__(self, dim_state, dim_action, num_action=None, scale=1.):
         """Initialize Policy
 
         Parameters
         ----------
-        action_space: torch.distributions.Distribution
-
+        dim_state: int
+        dim_action: int
+        num_action: int, optional
+        scale: float, optional
         """
-        super(AbstractPolicy, self).__init__()
-        self._action_space = action_space  # this could also be though of as the prior.
-
-    def random_action(self):
-        """Get a random action from the action space.
-
-        Returns
-        -------
-        action: torch.distributions.Distribution
-
-        """
-        return self._action_space
+        super().__init__()
+        self.dim_state = dim_state
+        self.dim_action = dim_action
+        self._num_action = num_action
+        self._scale = scale
 
     @abstractmethod
     def action(self, state):
@@ -47,27 +46,17 @@ class AbstractPolicy(ABC):
         """
         raise NotImplementedError
 
+    def random(self):
+        if self.discrete_action:  # Categorical
+            return Categorical(torch.ones(self._num_action))
+        else:  # Categorical
+            return MultivariateNormal(
+                loc=torch.zeros(self.dim_action),
+                covariance_matrix=self._scale * torch.eye(self.dim_action))
+
     @property
-    def _action_dim(self):
-        """Action dimensions.
-
-        Returns
-        -------
-        action_dim: int
-
-        """
-        if self.is_discrete:
-            return self._action_space.logits.shape[0]
+    def discrete_action(self):
+        if self._num_action is None:
+            return False
         else:
-            return self._action_space.mean.shape[0]
-
-    @property
-    def is_discrete(self):
-        """Check if policy output is discrete.
-
-        Returns
-        -------
-        flag: bool
-
-        """
-        return self._action_space.has_enumerate_support
+            return True

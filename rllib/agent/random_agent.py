@@ -1,17 +1,16 @@
 from .abstract_agent import AbstractAgent
+from rllib.dataset import TrajectoryDataset
 from rllib.policy import RandomPolicy
-from rllib.dataset import Dataset
 import torch
 
 
 class RandomAgent(AbstractAgent):
-    def __init__(self, state_dim, action_dim, action_space,
-                 batch_size=1, sequence_length=1, seed=0):
-        super(RandomAgent, self).__init__()
-        self._policy = RandomPolicy(action_space, state_dim)
+    def __init__(self, dim_state, dim_action, num_action=None, scale=1.0):
+        super().__init__()
+        self._policy = RandomPolicy(dim_state, dim_action, num_action=num_action,
+                                    scale=scale)
         self._trajectory = []
-        self._dataset = Dataset(state_dim, action_dim, batch_size,
-                                sequence_length)
+        self._dataset = TrajectoryDataset(sequence_length=1)
 
     def act(self, state):
         state = torch.from_numpy(state).float()

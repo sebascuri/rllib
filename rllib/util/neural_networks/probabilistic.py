@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
-from torch.distributions import Normal, Categorical
+from torch.distributions import MultivariateNormal, Categorical
 
 
 class GaussianNN(nn.Module):
@@ -12,8 +12,8 @@ class GaussianNN(nn.Module):
 
     def forward(self, input_):
         mean = self._mean(input_)
-        covariance = torch.exp(0.5 * self._covariance(input_))
-        return Normal(mean, covariance)
+        covariance = nn.functional.softplus(self._covariance(input_))
+        return MultivariateNormal(mean, covariance)
 
 
 class CategoricalNN(nn.Module):

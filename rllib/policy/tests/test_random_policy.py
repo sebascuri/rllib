@@ -28,7 +28,7 @@ def test_random_action(random_policy):
     if distribution.has_enumerate_support:  # Discrete
         assert distribution.logits.shape == (action_dim,)
         assert sample.shape == ()
-    else:  # Continuous
+    else:  # Continuousgit st
         assert distribution.mean.shape == (action_dim,)
         assert sample.shape == (action_dim,)
 
