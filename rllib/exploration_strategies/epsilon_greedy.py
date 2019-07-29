@@ -10,15 +10,15 @@ def _mode(action_distribution):
         return action_distribution.loc.numpy()
 
 
-def _uniform(action_distribution):
+def _random_sample(action_distribution, scale=1.0):
     if type(action_distribution) is Categorical:  # Categorical
         return np.random.choice(len(action_distribution.logits))
     else:
-        return action_distribution.sample().numpy()
+        return action_distribution.sample().numpy() * scale
 
 
 class EpsGreedy(AbstractExplorationStrategy):
-    def __init__(self, eps_start, eps_end=None, eps_decay=None):
+    def __init__(self, eps_start, eps_end=None, eps_decay=None, scale=1):
         self._eps_start = eps_start
 
         if eps_end is None:
@@ -29,11 +29,16 @@ class EpsGreedy(AbstractExplorationStrategy):
             eps_decay = 1
         self._eps_decay = eps_decay
 
+        self._scale = scale
+
+    def __str__(self):
+        return "Epsilon-Greedy"
+
     def __call__(self, action_distribution, steps=None):
         if np.random.random() > self.epsilon(steps):
             return _mode(action_distribution)
         else:
-            return _uniform(action_distribution)
+            return _random_sample(action_distribution, self._scale)
 
     def epsilon(self, steps=None):
         if steps is None:

@@ -1,15 +1,14 @@
 import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent, GradientQLearningAgent, \
-    DeepQLearningAgent, DoubleDQNAgent
+from rllib.agent import DoubleDQNAgent
 from rllib.util import rollout_agent
 from rllib.util.neural_networks import DeterministicNN
 from rllib.dataset import ExperienceReplay
-from rllib.exploration_strategies import EpsGreedy
-# from rllib.environment.systems import InvertedPendulum, CartPole
+from rllib.exploration_strategies import EpsGreedy, BoltzmannExploration
 from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
+
 
 ENVIRONMENT = 'CartPole-v0'
 NUM_EPISODES = 200
@@ -25,13 +24,15 @@ EPS_DECAY = 500
 LAYERS = [64, 64]
 SEED = 0
 
-for Agent in [QLearningAgent, GradientQLearningAgent, DeepQLearningAgent,
-              DoubleDQNAgent]:
+eps_greedy = EpsGreedy(eps_start=1., eps_end=0.01, eps_decay=500)
+boltzmann = BoltzmannExploration(t_start=1., t_end=0.01, t_decay=500)
+
+for exploration in [eps_greedy, boltzmann]:
+
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
     environment = GymEnvironment(ENVIRONMENT, SEED)
-    exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = DeterministicNN(environment.dim_state, environment.num_action,
                                  layers=LAYERS)
     q_target = DeterministicNN(environment.dim_state, environment.num_action,
@@ -48,11 +49,11 @@ for Agent in [QLearningAgent, GradientQLearningAgent, DeepQLearningAgent,
         'gamma': GAMMA,
         'learning_rate': LEARNING_RATE
     }
-    agent = Agent(q_function, q_target, exploration, criterion, optimizer, memory,
-                  hyper_params)
+    agent = DoubleDQNAgent(q_function, q_target, exploration, criterion, optimizer,
+                           memory, hyper_params)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
-    plt.plot(agent.episodes_steps, label=str(agent))
+    plt.plot(agent.episodes_steps, label=str(exploration))
 plt.xlabel('Episode')
 plt.ylabel('Duration')
 plt.legend(loc='best')

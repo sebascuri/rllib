@@ -27,7 +27,7 @@ class AbstractQLearningAgent(AbstractAgent):
 
     def act(self, state):
         logits = self._q_function(torch.from_numpy(state).float())
-        action_distribution = Categorical(logits)
+        action_distribution = Categorical(logits=logits)
         return self._exploration(action_distribution, self._steps['total'])
 
     def observe(self, observation):
