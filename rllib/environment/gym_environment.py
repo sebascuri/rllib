@@ -3,8 +3,9 @@ import gym
 
 
 class GymEnvironment(AbstractEnvironment):
-    def __init__(self, env_name):
+    def __init__(self, env_name, seed=None):
         self._env = gym.make(env_name)
+        self._env.seed(seed)
         try:
             dim_action = self._env.action_space.shape[0]
             num_action = None

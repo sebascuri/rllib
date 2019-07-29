@@ -5,6 +5,7 @@ from torch.utils import data
 
 class ExperienceReplay(data.Dataset):
     def __init__(self, max_len, transforms=None):
+        super().__init__()
         self._max_len = max_len
         self._memory = np.empty((self._max_len,), dtype=Observation)
         self._sampling_idx = []
