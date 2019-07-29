@@ -4,6 +4,17 @@ from torch.distributions import Categorical
 
 
 def _mode(action_distribution):
+    """Return the mode of a distribtuion
+
+    Parameters
+    ----------
+    action_distribution: Categorical or MultivariateNormal
+
+    Returns
+    -------
+    ndarray
+
+    """
     if type(action_distribution) is Categorical:  # Categorical
         return action_distribution.logits.argmax().item()
     else:  # MultivariateNormal
@@ -11,6 +22,17 @@ def _mode(action_distribution):
 
 
 def _random_sample(action_distribution, scale=1.0):
+    """Get a uniform random sample from action_distribution
+
+    Parameters
+    ----------
+    action_distribution
+    scale
+
+    Returns
+    -------
+
+    """
     if type(action_distribution) is Categorical:  # Categorical
         return np.random.choice(len(action_distribution.logits))
     else:

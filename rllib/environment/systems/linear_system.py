@@ -3,9 +3,18 @@ from .abstract_system import AbstractSystem
 
 
 class LinearSystem(AbstractSystem):
-    """An environment for linear systems."""
+    """An environment Discrete Time for Linear Dynamical Systems."""
 
     def __init__(self, a, b, c=None):
+        """Initialize LinearSystem
+
+        Parameters
+        ----------
+        a: ndarray
+        b: ndarray
+        c: ndarray, optional
+
+        """
         self.a = np.atleast_2d(a)
         self.b = np.atleast_2d(b)
         if c is None:

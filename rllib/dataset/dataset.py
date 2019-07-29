@@ -41,6 +41,16 @@ class TrajectoryDataset(data.Dataset):
         return np.stack([trajectory.state[0] for trajectory in self._trajectories])
 
     def append(self, trajectory):
+        """Append a trajectory to the dataset
+
+        Parameters
+        ----------
+        trajectory: list
+
+        Returns
+        -------
+        None
+        """
         num_observations = len(trajectory)
         trajectory_idx = len(self._trajectories)
 
@@ -59,4 +69,5 @@ class TrajectoryDataset(data.Dataset):
             self._sub_trajectories.append(new_idx)
 
     def shuffle(self):
+        """Shuffle the dataset"""
         np.random.shuffle(self._sub_trajectories)

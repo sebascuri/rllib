@@ -4,7 +4,17 @@ import numpy as np
 
 
 class AbstractSystem(ABC):
+    """Abstract System
+    """
     def __init__(self, dim_state, dim_action, dim_observation=None):
+        """Initialize an abstract system
+
+        Parameters
+        ----------
+        dim_state: int
+        dim_action: int
+        dim_observation: int, optional
+        """
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
@@ -29,6 +39,17 @@ class AbstractSystem(ABC):
 
     @abstractmethod
     def step(self, action):
+        """Do a one step ahead simulation of the system.
+        x' = f(x, action)
+
+        Parameters
+        ----------
+        action: ndarray
+
+        Returns
+        -------
+        next_state: ndarray
+        """
         raise NotImplementedError
 
     @abstractmethod

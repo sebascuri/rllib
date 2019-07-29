@@ -43,7 +43,17 @@ class AbstractQLearningAgent(AbstractAgent):
                               self._hyper_params['target_update_tau'])
             # self._q_target.load_state_dict(self._q_function.state_dict())
 
-    def _train(self, steps=1):
+    def _train(self, batches=1):
+        """Train the DQN for `step' steps
+
+        Parameters
+        ----------
+        batches
+
+        Returns
+        -------
+        None
+        """
         self._memory.shuffle()
         for i, observation in enumerate(self._data_loader):
             state, action, reward, next_state, done = observation
@@ -54,7 +64,7 @@ class AbstractQLearningAgent(AbstractAgent):
             self._optimizer.zero_grad()
             loss.backward()
             self._optimizer.step()
-            if i + 1 == steps:
+            if i + 1 == batches:
                 break
 
     @abstractmethod
@@ -63,6 +73,11 @@ class AbstractQLearningAgent(AbstractAgent):
 
 
 class QLearningAgent(AbstractQLearningAgent):
+    """Implementation of Q-Learning algorithm.
+
+    loss = l[Q(x, a), r + Q(x', arg max Q(x', a))]
+
+    """
     def __str__(self):
         return "Q-Learning"
 
@@ -78,6 +93,11 @@ class QLearningAgent(AbstractQLearningAgent):
 
 
 class GradientQLearningAgent(AbstractQLearningAgent):
+    """Implementation of Gradient Q-Learning algorithm.
+
+    loss = l[Q(x, a), r + Q(x', arg max Q(x', a)).stop_gradient]
+
+    """
     def __str__(self):
         return "Gradient Q-Learning"
 
@@ -93,6 +113,11 @@ class GradientQLearningAgent(AbstractQLearningAgent):
 
 
 class DeepQLearningAgent(AbstractQLearningAgent):
+    """Implementation of DQN algorithm.
+
+    loss = l[Q(x, a), r + max_a Q'(x', a)]
+
+    """
     def __str__(self):
         return "DQN-Agent"
 
@@ -108,6 +133,11 @@ class DeepQLearningAgent(AbstractQLearningAgent):
 
 
 class DoubleDQNAgent(AbstractQLearningAgent):
+    """Implementation of Double DQN algorithm.
+
+    loss = l[Q(x, a), r + Q'(x', argmax Q(x,a))]
+
+    """
     def __str__(self):
         return "DDQN-Agent"
 

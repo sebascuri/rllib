@@ -3,7 +3,15 @@ import gym
 
 
 class GymEnvironment(AbstractEnvironment):
+    """Wrapper for gym environments"""
     def __init__(self, env_name, seed=None):
+        """Initialize an environment using gym as a backend.
+
+        Parameters
+        ----------
+        env_name: str
+        seed: int, optional
+        """
         self._env = gym.make(env_name)
         self._env.seed(seed)
         try:

@@ -4,7 +4,17 @@ from torch.utils import data
 
 
 class ExperienceReplay(data.Dataset):
+    """Experience Replay buffer
+
+    """
     def __init__(self, max_len, transforms=None):
+        """Initialize ExperienceReplay
+
+        Parameters
+        ----------
+        max_len: int
+        transforms: list, optional
+        """
         super().__init__()
         self._max_len = max_len
         self._memory = np.empty((self._max_len,), dtype=Observation)
@@ -32,6 +42,7 @@ class ExperienceReplay(data.Dataset):
             return self._ptr
 
     def append(self, observation):
+        """Append an observation to the dataset"""
         if not type(observation) == Observation:
             raise TypeError("""
             input has to be of type Observation, and it was found of type {}
@@ -51,4 +62,5 @@ class ExperienceReplay(data.Dataset):
         return self._memory[-1] is not None  # check if the last element is not empty.
 
     def shuffle(self):
+        """Shuffle the dataset"""
         np.random.shuffle(self._sampling_idx)

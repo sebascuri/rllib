@@ -5,6 +5,7 @@ import torch
 
 
 class RandomAgent(AbstractAgent):
+    """Agent that interacts randomly in an environment. """
     def __init__(self, dim_state, dim_action, num_action=None, scale=1.0):
         super().__init__()
         self._policy = RandomPolicy(dim_state, dim_action, num_action=num_action,

@@ -2,8 +2,20 @@ from .abstract_environment import AbstractEnvironment
 
 
 class SystemEnvironment(AbstractEnvironment):
+    """Wrapper for System environments
+    """
     def __init__(self, system, initial_state=None, reward=None, termination=None,
                  max_steps=None):
+        """Initialize
+
+        Parameters
+        ----------
+        system: rllib.environment.systems.abstract_system.AbstractSystem
+        initial_state: callable, optional
+        reward: callable, optional
+        termination: callable, optional
+        max_steps: int, optional
+        """
         super().__init__(
             dim_state=system.dim_state,
             dim_action=system.dim_action,

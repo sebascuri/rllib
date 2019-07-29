@@ -11,6 +11,18 @@ class AbstractEnvironment(ABC):
     """
     def __init__(self, dim_state, dim_action, observation_space, action_space,
                  dim_observation=None, num_action=None, num_observation=None):
+        """Initialize the environment
+
+        Parameters
+        ----------
+        dim_state: int
+        dim_action: int
+        observation_space: gym.env.Spaces
+        action_space: gym.env.Spaces
+        dim_observation: int
+        num_action: int
+        num_observation: int
+        """
         super().__init__()
         self.dim_action = dim_action
         self.dim_state = dim_state
