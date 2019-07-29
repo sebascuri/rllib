@@ -3,6 +3,7 @@ from abc import abstractmethod
 import torch
 from torch.distributions import Categorical
 from torch.utils.data import DataLoader
+from rllib.util import update_parameters
 
 __all__ = ['QLearningAgent', 'GradientQLearningAgent', 'DeepQLearningAgent',
            'DoubleDQNAgent']
@@ -11,6 +12,7 @@ __all__ = ['QLearningAgent', 'GradientQLearningAgent', 'DeepQLearningAgent',
 class AbstractQLearningAgent(AbstractAgent):
     def __init__(self, q_function, q_target, exploration, criterion, optimizer, memory,
                  hyper_params):
+        super().__init__()
         self._q_function = q_function
         self._q_target = q_target
         self._exploration = exploration
@@ -22,42 +24,24 @@ class AbstractQLearningAgent(AbstractAgent):
 
         self._data_loader = DataLoader(self._memory,
                                        batch_size=self._hyper_params['batch_size'])
-        self._steps = {'total': 0, 'episode': 0, 'num_episodes': 0}
-        self._statistics = {'episode_steps': [],
-                            'rewards': [],
-                            'episode_rewards': []}
 
     def act(self, state):
-        self._steps['total'] += 1
-        self._steps['episode'] += 1
         logits = self._q_function(torch.from_numpy(state).float())
         action_distribution = Categorical(logits)
         return self._exploration(action_distribution, self._steps['total'])
 
     def observe(self, observation):
+        super().observe(observation)
         self._memory.append(observation)
-        i_episode = self._steps['num_episodes']
-        self._statistics['episode_steps'][i_episode] += 1
-        self._statistics['episode_rewards'][i_episode] += observation.reward
-        self._statistics['rewards'][i_episode].append(observation.reward)
-
         if len(self._memory) >= self._hyper_params['batch_size']:
             self._train()
 
-    def start_episode(self):
-        self._steps['episode'] = 0
-
-        self._statistics['episode_steps'].append(0)
-        self._statistics['episode_rewards'].append(0)
-        self._statistics['rewards'].append([])
-
     def end_episode(self):
-        self._steps['num_episodes'] += 1
-        if self._steps['num_episodes'] % self._hyper_params['target_update'] == 0:
-            self._q_target.load_state_dict(self._q_function.state_dict())
-
-    def end_interaction(self):
-        print(self._statistics['episode_steps'])
+        if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
+            # with torch.no_grad():
+            update_parameters(self._q_function, self._q_target,
+                              self._hyper_params['target_update_tau'])
+            # self._q_target.load_state_dict(self._q_function.state_dict())
 
     def _train(self, steps=1):
         self._memory.shuffle()
@@ -79,6 +63,9 @@ class AbstractQLearningAgent(AbstractAgent):
 
 
 class QLearningAgent(AbstractQLearningAgent):
+    def __str__(self):
+        return "Q-Learning"
+
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state)
         pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
@@ -91,6 +78,9 @@ class QLearningAgent(AbstractQLearningAgent):
 
 
 class GradientQLearningAgent(AbstractQLearningAgent):
+    def __str__(self):
+        return "Gradient Q-Learning"
+
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state)
         pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
@@ -103,6 +93,9 @@ class GradientQLearningAgent(AbstractQLearningAgent):
 
 
 class DeepQLearningAgent(AbstractQLearningAgent):
+    def __str__(self):
+        return "DQN-Agent"
+
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state)
         pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
@@ -115,6 +108,9 @@ class DeepQLearningAgent(AbstractQLearningAgent):
 
 
 class DoubleDQNAgent(AbstractQLearningAgent):
+    def __str__(self):
+        return "DDQN-Agent"
+
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state)
         pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)

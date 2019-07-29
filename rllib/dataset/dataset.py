@@ -1,7 +1,7 @@
 import numpy as np
 from torch.utils import data
 from . import Observation
-from rllib.util.utilities import stack_list_of_tuples
+from rllib.util import stack_list_of_tuples
 
 
 class TrajectoryDataset(data.Dataset):

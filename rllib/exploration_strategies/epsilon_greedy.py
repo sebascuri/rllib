@@ -6,7 +6,6 @@ from torch.distributions import Categorical
 def _mode(action_distribution):
     if type(action_distribution) is Categorical:  # Categorical
         return action_distribution.logits.argmax().item()
-        # Categorical(torch.ones(self._num_action))
     else:  # MultivariateNormal
         return action_distribution.loc.numpy()
 
@@ -42,4 +41,3 @@ class EpsGreedy(AbstractExplorationStrategy):
         else:
             decay = (self._eps_start - self._eps_end) * np.exp(-steps / self._eps_decay)
             return self._eps_end + decay
-

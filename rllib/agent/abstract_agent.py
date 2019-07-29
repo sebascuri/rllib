@@ -21,6 +21,17 @@ class AbstractAgent(ABC):
         end_episode
 
     """
+    def __init__(self):
+        self._steps = {'total': 0, 'episode': 0}
+        self._num_episodes = 0
+        self._statistics = {'episode_steps': [],
+                            'rewards': [],
+                            'episode_rewards': []}
+
+    @abstractmethod
+    def __str__(self):
+        raise NotImplementedError
+
     @abstractmethod
     def act(self, state):
         """Ask the agent for an action to interact with the environment.
@@ -36,7 +47,6 @@ class AbstractAgent(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     def observe(self, observation):
         """Observe transition from the environment.
 
@@ -49,9 +59,13 @@ class AbstractAgent(ABC):
         None
 
         """
-        raise NotImplementedError
+        self._steps['total'] += 1
+        self._steps['episode'] += 1
 
-    @abstractmethod
+        self._statistics['episode_steps'][-1] += 1
+        self._statistics['episode_rewards'][-1] += observation.reward
+        self._statistics['rewards'][-1].append(observation.reward)
+
     def start_episode(self):
         """Start a new episode.
 
@@ -60,9 +74,13 @@ class AbstractAgent(ABC):
         None
 
         """
-        raise NotImplementedError
+        self._steps['episode'] = 0
+        self._num_episodes += 1
 
-    @abstractmethod
+        self._statistics['episode_steps'].append(0)
+        self._statistics['episode_rewards'].append(0)
+        self._statistics['rewards'].append([])
+
     def end_episode(self):
         """End an episode.
 
@@ -71,9 +89,8 @@ class AbstractAgent(ABC):
         None
 
         """
-        raise NotImplementedError
+        pass
 
-    @abstractmethod
     def end_interaction(self):
         """End the interaction with the environment.
 
@@ -81,4 +98,28 @@ class AbstractAgent(ABC):
         -------
         None
         """
-        raise NotImplementedError
+        pass
+
+    @property
+    def episodes_steps(self):
+        return self._statistics['episode_steps']
+
+    @property
+    def episodes_rewards(self):
+        return self._statistics['rewards']
+
+    @property
+    def episodes_cumulative_rewards(self):
+        return self._statistics['episode_rewards']
+
+    @property
+    def total_steps(self):
+        return self._steps['total']
+
+    @property
+    def episode_steps(self):
+        return self._steps['episode']
+
+    @property
+    def num_episodes(self):
+        return self._num_episodes
