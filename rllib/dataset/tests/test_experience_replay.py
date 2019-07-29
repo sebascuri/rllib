@@ -34,7 +34,8 @@ def test_is_full(memory):
     assert memory.is_full == (max_len <= number_of_samples)
 
 
-def test_sample(memory):
+def test_get_item(memory):
     memory, max_len, number_of_samples = memory
-    for batch_size in [1, 32]:
-        assert memory.sample(batch_size=batch_size).shape == (batch_size,)
+    for idx in range(len(memory)):
+        observation = memory.__getitem__(idx)
+        assert observation == memory._memory[idx]
