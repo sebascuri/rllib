@@ -3,7 +3,7 @@ from abc import abstractmethod
 import torch
 from torch.distributions import Categorical
 from torch.utils.data import DataLoader
-from rllib.util import update_parameters
+
 
 __all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 

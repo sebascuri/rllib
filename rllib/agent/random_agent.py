@@ -6,10 +6,9 @@ import torch
 
 class RandomAgent(AbstractAgent):
     """Agent that interacts randomly in an environment. """
-    def __init__(self, dim_state, dim_action, num_action=None, scale=1.0):
+    def __init__(self, dim_state, dim_action, num_actions=None, scale=1.0):
         super().__init__()
-        self._policy = RandomPolicy(dim_state, dim_action, num_action=num_action,
-                                    scale=scale)
+        self._policy = RandomPolicy(dim_state, dim_action, num_actions=num_actions)
         self._trajectory = []
         self._dataset = TrajectoryDataset(sequence_length=1)
 
@@ -18,7 +17,7 @@ class RandomAgent(AbstractAgent):
 
     def act(self, state):
         state = torch.from_numpy(state).float()
-        action = self._policy.action(state).sample()
+        action = self._policy(state).sample()
         return action.detach().numpy()
 
     def observe(self, observation):
