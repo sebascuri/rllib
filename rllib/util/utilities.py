@@ -31,26 +31,26 @@ def stack_list_of_tuples(iter_, dtype=None, backend=np):
         return entry_class(*stacked_generator)
 
 
-def update_parameters(source_nn, sink_nn, tau=1.0):
-    """Update the parameters of source_nn by those of sink_nn (possibly softly).
+def update_parameters(target_params, new_params, tau=1.0):
+    """Update the parameters of target_params by those of new_params (softly).
 
     The parameters of target_nn are replaced by:
-        sink_nn <- tau * (source_nn) + (1-tau) * (sink_nn)
+        target_params <- (1-tau) * (target_params) + tau * (new_params)
 
     Parameters
     ----------
-    source_nn: torch.nn.Module
-    sink_nn: torch.nn.Module
+    target_params: iter
+    new_params: iter
     tau: float, optional
 
     Returns
     -------
     None.
     """
-    for source_param, sink_param in zip(source_nn.parameters(), sink_nn.parameters()):
-        if source_param is sink_param:
+    for target_param, new_param in zip(target_params, new_params):
+        if target_param is new_param:
             continue
         else:
-            new_param = (tau * source_param.data.detach()
-                         + (1. - tau) * sink_param.data.detach())
-            sink_param.data.copy_(new_param)
+            new_param_ = ((1.0 - tau) * target_param.data.detach()
+                          + tau * new_param.data.detach())
+            target_param.data.copy_(new_param_)

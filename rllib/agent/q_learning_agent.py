@@ -5,8 +5,7 @@ from torch.distributions import Categorical
 from torch.utils.data import DataLoader
 from rllib.util import update_parameters
 
-__all__ = ['QLearningAgent', 'GradientQLearningAgent', 'DeepQLearningAgent',
-           'DoubleDQNAgent']
+__all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 
 
 class AbstractQLearningAgent(AbstractAgent):
@@ -19,7 +18,7 @@ class AbstractQLearningAgent(AbstractAgent):
         self._criterion = criterion
         self._memory = memory
         self._hyper_params = hyper_params
-        self._optimizer = optimizer(self._q_function.parameters(),
+        self._optimizer = optimizer(self._q_function.parameters,
                                     lr=self._hyper_params['learning_rate'])
 
         self._data_loader = DataLoader(self._memory,
@@ -38,10 +37,7 @@ class AbstractQLearningAgent(AbstractAgent):
 
     def end_episode(self):
         if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
-            # with torch.no_grad():
-            update_parameters(self._q_function, self._q_target,
-                              self._hyper_params['target_update_tau'])
-            # self._q_target.load_state_dict(self._q_function.state_dict())
+            self._q_target.parameters = self._q_function.parameters
 
     def _train(self, batches=1):
         """Train the DQN for `step' steps
@@ -82,17 +78,16 @@ class QLearningAgent(AbstractQLearningAgent):
         return "Q-Learning"
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state)
-        pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
+        pred_q = self._q_function(state, action)
 
-        # target = max Q(x', a) and stop gradient.
-        target_q = self._q_function(next_state).max(dim=-1)[0]
+        # target = r + gamma * max Q(x', a) and don't stop gradient.
+        target_q = self._q_function.max(next_state)
         target_q = reward + self._hyper_params['gamma'] * target_q * (1 - done)
 
         return pred_q, target_q
 
 
-class GradientQLearningAgent(AbstractQLearningAgent):
+class GQLearningAgent(AbstractQLearningAgent):
     """Implementation of Gradient Q-Learning algorithm.
 
     loss = l[Q(x, a), r + Q(x', arg max Q(x', a)).stop_gradient]
@@ -102,17 +97,16 @@ class GradientQLearningAgent(AbstractQLearningAgent):
         return "Gradient Q-Learning"
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state)
-        pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
+        pred_q = self._q_function(state, action)
 
-        # target = max Q(x', a) and stop gradient.
-        target_q = self._q_function(next_state).max(dim=-1)[0]
-        target_q = reward + self._hyper_params['gamma'] * target_q * (1 - done)
+        # target = r + gamma * max Q(x', a) and stop gradient.
+        next_q = self._q_function.max(next_state)
+        target_q = reward + self._hyper_params['gamma'] * next_q * (1 - done)
 
         return pred_q, target_q.detach()
 
 
-class DeepQLearningAgent(AbstractQLearningAgent):
+class DQNAgent(AbstractQLearningAgent):
     """Implementation of DQN algorithm.
 
     loss = l[Q(x, a), r + max_a Q'(x', a)]
@@ -122,17 +116,16 @@ class DeepQLearningAgent(AbstractQLearningAgent):
         return "DQN-Agent"
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state)
-        pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
+        pred_q = self._q_function(state, action)
 
-        # target = max Q_target(x', a)
-        target_q = self._q_target(next_state).max(dim=-1)[0]
-        target_q = reward + self._hyper_params['gamma'] * target_q * (1 - done)
+        # target = r + gamma * max Q_target(x', a)
+        next_q = self._q_target.max(next_state)
+        target_q = reward + self._hyper_params['gamma'] * next_q * (1 - done)
 
         return pred_q, target_q.detach()
 
 
-class DoubleDQNAgent(AbstractQLearningAgent):
+class DDQNAgent(AbstractQLearningAgent):
     """Implementation of Double DQN algorithm.
 
     loss = l[Q(x, a), r + Q'(x', argmax Q(x,a))]
@@ -142,14 +135,12 @@ class DoubleDQNAgent(AbstractQLearningAgent):
         return "DDQN-Agent"
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state)
-        pred_q = pred_q.gather(1, action.unsqueeze(-1)).squeeze(-1)
+        pred_q = self._q_function(state, action)
 
-        # target = Q_target(x', argmax Q(x', a))
+        # target = r + gamma * Q_target(x', argmax Q(x', a))
 
-        next_action = self._q_function(next_state).argmax(dim=-1)
-        target_q = self._q_target(next_state)
-        target_q = target_q.gather(1, next_action.unsqueeze(-1)).squeeze(-1)
-        target_q = reward + self._hyper_params['gamma'] * target_q * (1 - done)
+        next_action = self._q_function.argmax(next_state)
+        next_q = self._q_target(next_state, next_action)
+        target_q = reward + self._hyper_params['gamma'] * next_q * (1 - done)
 
         return pred_q, target_q.detach()

@@ -56,7 +56,4 @@ class AbstractPolicy(ABC):
 
     @property
     def discrete_action(self):
-        if self._num_action is None:
-            return False
-        else:
-            return True
+        return self._num_action is not None

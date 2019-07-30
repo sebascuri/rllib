@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent, GradientQLearningAgent, \
-    DeepQLearningAgent, DoubleDQNAgent
+from rllib.agent import QLearningAgent, GQLearningAgent, DQNAgent, DDQNAgent
 from rllib.util import rollout_agent
-from rllib.util.neural_networks import DeterministicNN
+from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import EpsGreedy
 # from rllib.environment.systems import InvertedPendulum, CartPole
@@ -25,17 +24,24 @@ EPS_DECAY = 500
 LAYERS = [64, 64]
 SEED = 0
 
-for Agent in [QLearningAgent, GradientQLearningAgent, DeepQLearningAgent,
-              DoubleDQNAgent]:
+for Agent in [DDQNAgent, QLearningAgent, GQLearningAgent, DQNAgent]:
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
     environment = GymEnvironment(ENVIRONMENT, SEED)
     exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
-    q_function = DeterministicNN(environment.dim_state, environment.num_action,
-                                 layers=LAYERS)
-    q_target = DeterministicNN(environment.dim_state, environment.num_action,
-                               layers=LAYERS)
+    q_function = NNQFunction(environment.dim_observation, environment.dim_action,
+                             num_states=environment.num_observation,
+                             num_actions=environment.num_action,
+                             layers=LAYERS
+                             )
+
+    q_target = NNQFunction(environment.dim_observation, environment.dim_action,
+                           num_states=environment.num_observation,
+                           num_actions=environment.num_action,
+                           layers=LAYERS,
+                           tau=TARGET_UPDATE_TAU
+                           )
 
     optimizer = torch.optim.Adam
     criterion = func.mse_loss
@@ -43,7 +49,6 @@ for Agent in [QLearningAgent, GradientQLearningAgent, DeepQLearningAgent,
 
     hyper_params = {
         'target_update_frequency': TARGET_UPDATE_FREQUENCY,
-        'target_update_tau': TARGET_UPDATE_TAU,
         'batch_size': BATCH_SIZE,
         'gamma': GAMMA,
         'learning_rate': LEARNING_RATE
