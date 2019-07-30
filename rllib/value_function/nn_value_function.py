@@ -1,7 +1,8 @@
+import torch
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.neural_networks import DeterministicNN
-import torch
-from rllib.util import update_parameters
+from rllib.util.neural_networks import update_parameters
+from rllib.policy import NNPolicy
 
 
 class NNValueFunction(AbstractValueFunction):
@@ -95,3 +96,15 @@ class NNQFunction(AbstractQFunction):
             raise NotImplementedError
         else:
             return self._q_function(state).argmax(dim=-1)
+
+    def extract_policy(self, temperature=1.0):
+        if not self.discrete_action:
+            raise NotImplementedError
+        else:
+            policy = NNPolicy(self.dim_state, self.dim_action,
+                              num_states=self.num_states,
+                              num_actions=self.num_actions,
+                              layers=self._q_function.layers,
+                              temperature=temperature)
+            policy.parameters = self._q_function.parameters()
+            return policy

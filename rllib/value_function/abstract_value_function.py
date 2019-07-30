@@ -48,3 +48,6 @@ class AbstractQFunction(AbstractValueFunction):
 
     def argmax(self, state):
         pass
+
+    def extract_policy(self, temperature=1.):
+        pass

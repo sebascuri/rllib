@@ -7,8 +7,9 @@ def rollout_agent(environment, agent, num_episodes=1):
 
     Parameters
     ----------
-    environment : rllib.environment.AbstractEnvironment
-    agent : AbstractAgent
+    environment: rllib.environment.AbstractEnvironment
+    agent: AbstractAgent
+    num_episodes: int, optional
 
     Returns
     -------
@@ -33,35 +34,36 @@ def rollout_agent(environment, agent, num_episodes=1):
     agent.end_interaction()
 
 
-def rollout_policy(environment, policy):
+def rollout_policy(environment, policy, num_episodes=1):
     """Conduct a single rollout of a policy in an environment.
 
     Parameters
     ----------
-    environment : gym.Env
+    environment : rllib.environment.AbstractEnvironment
     policy : AbstractPolicy
+    num_episodes: int, optional
 
     Returns
     -------
     trajectory: list
 
     """
-
-    state = environment.reset()
-    done = False
-    trajectory = []
-    with torch.no_grad():
-        while not done:
-            state_torch = torch.from_numpy(state).float()
-            action_torch = policy.action(state_torch).sample()
-            action = action_torch.numpy()
-            next_state, reward, done, _ = environment.step(action)
-            observation = Observation(state=state,
-                                      action=action,
-                                      reward=reward,
-                                      next_state=next_state,
-                                      done=done)
-            trajectory.append(observation)
-            state = next_state
-
-    return trajectory
+    trajectories = []
+    for _ in range(num_episodes):
+        state = environment.reset()
+        done = False
+        trajectory = []
+        with torch.no_grad():
+            while not done:
+                state_torch = torch.from_numpy(state).float()
+                action = policy(state_torch).sample().numpy()
+                next_state, reward, done, _ = environment.step(action)
+                observation = Observation(state=state,
+                                          action=action,
+                                          reward=reward,
+                                          next_state=next_state,
+                                          done=done)
+                trajectory.append(observation)
+                state = next_state
+        trajectories.append(trajectory)
+    return trajectories
