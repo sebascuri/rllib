@@ -4,7 +4,6 @@ import torch
 from torch.distributions import Categorical
 from torch.utils.data import DataLoader
 
-
 __all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 
 
@@ -38,6 +37,10 @@ class AbstractQLearningAgent(AbstractAgent):
     def end_episode(self):
         if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
             self._q_target.parameters = self._q_function.parameters
+
+    @property
+    def policy(self):
+        return self._q_function.extract_policy(temperature=0.001)
 
     def _train(self, batches=1):
         """Train the DQN for `step' steps

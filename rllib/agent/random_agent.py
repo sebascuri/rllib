@@ -30,3 +30,7 @@ class RandomAgent(AbstractAgent):
 
     def end_episode(self):
         self._dataset.append(self._trajectory)
+
+    @property
+    def policy(self):
+        return self._policy

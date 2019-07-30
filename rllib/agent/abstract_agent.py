@@ -123,3 +123,8 @@ class AbstractAgent(ABC):
     @property
     def num_episodes(self):
         return self._num_episodes
+
+    @property
+    @abstractmethod
+    def policy(self):
+        raise NotImplementedError

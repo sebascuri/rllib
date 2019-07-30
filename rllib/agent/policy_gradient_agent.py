@@ -61,6 +61,10 @@ class AbstractPolicyGradient(AbstractAgent):
         loss.backward()
         self._optimizer.step()
 
+    @property
+    def policy(self):
+        return self._policy
+
     @abstractmethod
     def _q_estimate(self, trajectory):
         raise NotImplementedError
