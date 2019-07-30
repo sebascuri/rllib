@@ -11,7 +11,7 @@ import torch.nn.functional as func
 import torch.optim
 
 ENVIRONMENT = 'CartPole-v0'
-NUM_EPISODES = 200
+NUM_EPISODES = 50
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
 MEMORY_MAX_SIZE = 5000

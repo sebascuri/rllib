@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-from rllib.agent import DoubleDQNAgent
+from rllib.agent import DDQNAgent
 from rllib.util import rollout_agent
-from rllib.util.neural_networks import DeterministicNN
+from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import EpsGreedy, BoltzmannExploration
 from rllib.environment import GymEnvironment
@@ -33,10 +33,18 @@ for exploration in [eps_greedy, boltzmann]:
     np.random.seed(SEED)
 
     environment = GymEnvironment(ENVIRONMENT, SEED)
-    q_function = DeterministicNN(environment.dim_state, environment.num_action,
-                                 layers=LAYERS)
-    q_target = DeterministicNN(environment.dim_state, environment.num_action,
-                               layers=LAYERS)
+    q_function = NNQFunction(environment.dim_observation, environment.dim_action,
+                             num_states=environment.num_observation,
+                             num_actions=environment.num_action,
+                             layers=LAYERS
+                             )
+
+    q_target = NNQFunction(environment.dim_observation, environment.dim_action,
+                           num_states=environment.num_observation,
+                           num_actions=environment.num_action,
+                           layers=LAYERS,
+                           tau=TARGET_UPDATE_TAU
+                           )
 
     optimizer = torch.optim.Adam
     criterion = func.mse_loss
@@ -49,12 +57,12 @@ for exploration in [eps_greedy, boltzmann]:
         'gamma': GAMMA,
         'learning_rate': LEARNING_RATE
     }
-    agent = DoubleDQNAgent(q_function, q_target, exploration, criterion, optimizer,
-                           memory, hyper_params)
+    agent = DDQNAgent(q_function, q_target, exploration, criterion, optimizer, memory,
+                      hyper_params)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
-    plt.plot(agent.episodes_steps, label=str(exploration))
+    plt.plot(agent.episodes_cumulative_rewards, label=str(exploration))
 plt.xlabel('Episode')
-plt.ylabel('Duration')
+plt.ylabel('Cumulative Rewards')
 plt.legend(loc='best')
 plt.show()
