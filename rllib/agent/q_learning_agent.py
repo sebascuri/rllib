@@ -56,8 +56,10 @@ class AbstractQLearningAgent(AbstractAgent):
         self._memory.shuffle()
         for i, observation in enumerate(self._data_loader):
             state, action, reward, next_state, done = observation
-            pred_q, target_q = self._td(state.float(), action, reward.float(),
-                                        next_state.float(), done.float())
+            pred_q, target_q = self._td(state.float(), action.float(),
+                                        reward.unsqueeze(-1).float(),
+                                        next_state.float(),
+                                        done.float())
 
             loss = self._criterion(pred_q, target_q)
             self._optimizer.zero_grad()
@@ -77,6 +79,7 @@ class QLearningAgent(AbstractQLearningAgent):
     loss = l[Q(x, a), r + Q(x', arg max Q(x', a))]
 
     """
+
     def __str__(self):
         return "Q-Learning"
 
@@ -96,6 +99,7 @@ class GQLearningAgent(AbstractQLearningAgent):
     loss = l[Q(x, a), r + Q(x', arg max Q(x', a)).stop_gradient]
 
     """
+
     def __str__(self):
         return "Gradient Q-Learning"
 
@@ -115,6 +119,7 @@ class DQNAgent(AbstractQLearningAgent):
     loss = l[Q(x, a), r + max_a Q'(x', a)]
 
     """
+
     def __str__(self):
         return "DQN-Agent"
 
@@ -134,6 +139,7 @@ class DDQNAgent(AbstractQLearningAgent):
     loss = l[Q(x, a), r + Q'(x', argmax Q(x,a))]
 
     """
+
     def __str__(self):
         return "DDQN-Agent"
 
