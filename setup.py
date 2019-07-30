@@ -9,6 +9,7 @@ setup(
     packages=find_packages(exclude=['docs']),
     install_requires=['numpy>=1.0,<2',
                       'scipy>=1.3.0,<1.4.0',
+                      'matplotlib',
                       'gym>=0.13.0'],
     extras_require={
         'test': [

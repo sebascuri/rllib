@@ -9,9 +9,11 @@ from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
+import pickle
+
 
 ENVIRONMENT = 'CartPole-v0'
-NUM_EPISODES = 50
+NUM_EPISODES = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
 MEMORY_MAX_SIZE = 5000
@@ -58,6 +60,8 @@ for Agent in [DDQNAgent, QLearningAgent, GQLearningAgent, DQNAgent]:
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
     plt.plot(agent.episodes_steps, label=str(agent))
+    with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, str(agent)), 'wb') as file:
+        pickle.dump(agent, file)
 plt.xlabel('Episode')
 plt.ylabel('Duration')
 plt.legend(loc='best')
