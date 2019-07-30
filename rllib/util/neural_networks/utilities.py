@@ -43,16 +43,15 @@ def zero_bias(named_params):
             nn.init.zeros_(param)
 
 
-def inverse_softplus(input_):
+def inverse_softplus(x):
     """Inverse function to torch.functional.softplus.
 
     Parameters
     ----------
-    input_ : torch.Tensor
+    x : torch.Tensor
 
     Returns
     -------
     output : torch.Tensor
     """
-    return torch.log(torch.exp(input_) - 1.)
-
+    return torch.log(torch.exp(x) - 1.)

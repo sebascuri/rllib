@@ -28,4 +28,3 @@ def stack_list_of_tuples(iter_, dtype=None, backend=np):
         return entry_class(stacked_generator)
     else:
         return entry_class(*stacked_generator)
-
