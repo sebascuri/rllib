@@ -33,7 +33,7 @@ def test_random_action(random_policy):
 def test_forward(random_policy):
     policy, dim_state, dim_action, num_action = random_policy
     state = torch.randn(dim_state, )
-    distribution = policy.action(state)
+    distribution = policy(state)
     sample = distribution.sample()
 
     if distribution.has_enumerate_support:  # Discrete

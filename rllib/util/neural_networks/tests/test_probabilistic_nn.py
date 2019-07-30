@@ -1,4 +1,4 @@
-from rllib.util.neural_networks import GaussianNN, CategoricalNN
+from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN
 import torch
 import pytest
 
@@ -8,7 +8,7 @@ def gaussian_nn(request):
     in_dim = request.param[0]
     out_dim = request.param[1]
 
-    return GaussianNN(in_dim=in_dim, out_dim=out_dim), in_dim, out_dim
+    return HeteroGaussianNN(in_dim=in_dim, out_dim=out_dim), in_dim, out_dim
 
 
 @pytest.fixture(params=[(32, 2), (64, 4)])
