@@ -56,10 +56,8 @@ class AbstractQLearningAgent(AbstractAgent):
         self._memory.shuffle()
         for i, observation in enumerate(self._data_loader):
             state, action, reward, next_state, done = observation
-            pred_q, target_q = self._td(state.float(), action.float(),
-                                        reward.unsqueeze(-1).float(),
-                                        next_state.float(),
-                                        done.float())
+            pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
+                                        next_state.float(), done.float())
 
             loss = self._criterion(pred_q, target_q)
             self._optimizer.zero_grad()

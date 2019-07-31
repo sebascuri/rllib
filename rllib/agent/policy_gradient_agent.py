@@ -4,12 +4,6 @@ import numpy as np
 import torch
 
 
-def discounted_rewards(rewards, gamma=1.0):
-    r = np.array([gamma ** i * rewards[i] for i in range(len(rewards))])
-    r = r[::-1].cumsum()[::-1]
-    return r
-
-
 class AbstractPolicyGradient(AbstractAgent):
     def __init__(self, policy, optimizer, hyper_params):
         super().__init__()
