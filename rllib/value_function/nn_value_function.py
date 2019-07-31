@@ -62,18 +62,19 @@ class NNQFunction(AbstractQFunction):
                 raise NotImplementedError
             elif not self.discrete_state:
                 return self._q_function(state)
-            else:
-                in_ = torch.scatter(torch.zeros(self.num_states), 0, state, 1)
-                return self._q_function(in_).gather(1, action.long().unsqueeze(-1)).squeeze(-1)
+        if self.discrete_action:
+            action = action.long().unsqueeze(-1)
+        if self.discrete_state:
+            state = state.long().unsqueeze(-1)
 
         if not self.discrete_state and not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
             return self._q_function(state_action)
         elif self.discrete_state and self.discrete_action:
             in_ = torch.scatter(torch.zeros(self.num_states), 0, state, 1)
-            return self._q_function(in_).gather(1, action.long().unsqueeze(-1)).squeeze(-1)
+            return self._q_function(in_).gather(1, action).squeeze(-1)
         elif not self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(1, action.long().unsqueeze(-1)).squeeze(-1)
+            return self._q_function(state).gather(1, action).squeeze(-1)
         else:
             raise ValueError("If states are discrete, so should be actions.")
 

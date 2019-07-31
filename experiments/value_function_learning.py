@@ -8,7 +8,6 @@ from rllib.environment import GymEnvironment
 from rllib.agent import TDAgent, MCAgent
 from rllib.value_function import NNValueFunction
 from rllib.util import rollout_agent
-from rllib.dataset import ExperienceReplay
 import pickle
 
 ENVIRONMENT = 'CartPole-v0'

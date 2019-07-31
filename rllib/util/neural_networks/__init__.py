@@ -1,3 +1,3 @@
 from .neural_networks import DeterministicNN, HeteroGaussianNN, HomoGaussianNN, \
-    CategoricalNN
+    CategoricalNN, FelixNet
 from .utilities import update_parameters

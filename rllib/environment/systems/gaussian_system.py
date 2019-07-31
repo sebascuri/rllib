@@ -39,4 +39,4 @@ class GaussianSystem(AbstractSystem):
         return next_state
 
     def reset(self, state):
-        self._system.reset(state)
+        return self._system.reset(state)

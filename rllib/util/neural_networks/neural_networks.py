@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
-from torch.distributions import MultivariateNormal, Categorical
+from torch.distributions import MultivariateNormal, Categorical, Normal
 from .utilities import inverse_softplus
 
 
@@ -42,7 +42,7 @@ class HeteroGaussianNN(ProbabilisticNN):
 
     def forward(self, x):
         x = self._layers(x)
-        mean = self._mean(x)
+        mean = self._head(x)
         covariance = nn.functional.softplus(self._covariance(x))
         return MultivariateNormal(mean, covariance * self.temperature)
 
@@ -55,7 +55,7 @@ class HomoGaussianNN(ProbabilisticNN):
 
     def forward(self, x):
         x = self._layers(x)
-        mean = self._mean(x)
+        mean = self._head(x)
         covariance = functional.softplus(self._covariance(x))
         return MultivariateNormal(mean, covariance * self.temperature)
 
@@ -67,3 +67,31 @@ class CategoricalNN(ProbabilisticNN):
     def forward(self, x):
         output = self._head(self._layers(x))
         return Categorical(logits=output / self.temperature)
+
+
+class FelixNet(nn.Module):
+    def __init__(self, in_dim, out_dim, temperature=1.0):
+        super().__init__()
+        self.temperature = temperature
+
+        self.linear1 = nn.Linear(in_dim, 64, bias=True)
+        torch.nn.init.zeros_(self.linear1.bias)
+
+        self.linear2 = nn.Linear(64, 64, bias=True)
+        torch.nn.init.zeros_(self.linear2.bias)
+
+        self._mean = nn.Linear(64, out_dim, bias=False)
+        torch.nn.init.uniform_(self._mean.weight, -0.01, 0.01)
+
+        self._covariance = nn.Linear(64, out_dim, bias=False)
+        # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
+
+    def forward(self, x):
+        x = torch.relu(self.linear1(x))
+        x = torch.relu(self.linear2(x))
+
+        mean = self._mean(x)
+        covariance = functional.softplus(self._covariance(x))
+
+        return Normal(torch.tanh(mean),
+                      nn.functional.softplus(covariance))

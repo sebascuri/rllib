@@ -1,5 +1,5 @@
 from .abstract_policy import AbstractPolicy
-from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN
+from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN, FelixNet
 from rllib.util.neural_networks import update_parameters
 
 
@@ -18,6 +18,28 @@ class NNPolicy(AbstractPolicy):
         else:
             self._policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
                                             self.temperature)
+
+    def __call__(self, state):
+        return self._policy(state)
+
+    @property
+    def parameters(self):
+        return self._policy.parameters()
+
+    @parameters.setter
+    def parameters(self, new_params):
+        update_parameters(self._policy.parameters(), new_params, tau=1.0)
+
+
+class FelixPolicy(AbstractPolicy):
+    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
+                 temperature=0.0):
+        super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
+
+        if self.discrete_states or self.discrete_action:
+            raise ValueError("Felix Policy is for Continuous Problems")
+
+        self._policy = FelixNet(dim_state, dim_action)
 
     def __call__(self, state):
         return self._policy(state)
