@@ -27,7 +27,7 @@ with open('runs/{}_{}.pkl'.format(ENVIRONMENT, AGENT), 'rb') as file:
     training_agent = pickle.load(file)
 policy = training_agent.policy
 value_function = NNValueFunction(environment.dim_observation,
-                                 num_states=environment.num_observation,
+                                 num_states=environment.num_observations,
                                  layers=LAYERS)
 
 criterion = torch.nn.functional.mse_loss

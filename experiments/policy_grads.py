@@ -18,8 +18,8 @@ np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
 policy = NNPolicy(environment.dim_state, environment.dim_action,
-                  num_states=environment.num_observation,
-                  num_actions=environment.num_action,
+                  num_states=environment.num_observations,
+                  num_actions=environment.num_actions,
                   layers=LAYERS)
 
 optimizer = torch.optim.Adam

@@ -12,7 +12,7 @@ def environment(request):
 
 def test_rollout_policy(environment):
     policy = RandomPolicy(environment.dim_state, environment.dim_action,
-                          num_actions=environment.num_action)
+                          num_actions=environment.num_actions)
     trajectory = rollout_policy(environment, policy)
 
     assert len(trajectory) > 0
@@ -20,5 +20,5 @@ def test_rollout_policy(environment):
 
 def test_rollout_agent(environment):
     agent = RandomAgent(environment.dim_state, environment.dim_action,
-                        num_actions=environment.num_action)
+                        num_actions=environment.num_actions)
     rollout_agent(environment, agent)

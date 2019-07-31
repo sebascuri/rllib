@@ -43,12 +43,12 @@ class SystemEnvironment(AbstractEnvironment):
         if self.reward is not None:
             reward = self.reward(state, action)
 
-        next_state = self.system.step(action)
-
         done = self.time >= self._max_steps
 
         if self.termination is not None:
             done |= self.termination(state)
+
+        next_state = self.system.step(action)
 
         return next_state, reward, done, {}
 
