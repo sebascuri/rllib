@@ -1,24 +1,21 @@
 from .abstract_agent import AbstractAgent
 from abc import abstractmethod
 import torch
-from torch.utils.data import DataLoader
+from rllib.util import sum_discounted_rewards
 
 
-class OnlinePolicyEvaluation(AbstractAgent):
-    def __init__(self, policy, value_function, target_function, criterion, optimizer,
-                 hyper_params):
+class EpisodicPolicyEvaluation(AbstractAgent):
+    def __init__(self, policy, value_function, criterion, optimizer, hyper_params):
         super().__init__()
         self._policy = policy
         self._value_function = value_function
-        self._target_function = target_function
-        self._target_function.eval()
+        # self._target_function = target_function
+        # self._target_function.eval()
 
         self._criterion = criterion
         self._hyper_params = hyper_params
         self._optimizer = optimizer(self._value_function.parameters,
                                     lr=self._hyper_params['learning_rate'])
-        self._data_loader = DataLoader(self._memory,
-                                       batch_size=self._hyper_params['batch_size'])
 
         self._trajectory = []
 
@@ -35,8 +32,7 @@ class OnlinePolicyEvaluation(AbstractAgent):
         self._trajectory = []
 
     def end_episode(self):
-        for observation in self._trajectory:
-            pass
+        self._train()
 
     @property
     def policy(self):
@@ -45,38 +41,36 @@ class OnlinePolicyEvaluation(AbstractAgent):
     def end_interaction(self):
         pass
 
-    # def _train(self):
-    #     self._memory.shuffle()
-    #     for epoch in range(self._hyper_params['epochs']):
-    #         epoch_loss = 0
-    #         for i, observation in enumerate(self._data_loader):
-    #             state, action, reward, next_state, done = observation
-    #             loss = self._td(state.float(), action.float(),
-    #                             reward.unsqueeze(-1).float(),
-    #                             next_state.float(), done.unsqueeze(-1).float())
-    #             self._optimizer.zero_grad()
-    #             loss.backward()
-    #             self._optimizer.step()
-    #             epoch_loss += loss.detach().item()
-    #
-    #         print(epoch_loss)
+    def _train(self):
+        for t, observation in enumerate(self._trajectory):
+            expected_value = self._value_function(
+                torch.tensor(observation.state).float())
+            target_value = self._value_estimate(self._trajectory[t:])
+
+            self._optimizer.zero_grad()
+            loss = self._criterion(expected_value, target_value)
+            loss.backward()
+            self._optimizer.step()
 
     @abstractmethod
-    def _td(self, state, action, reward, next_state, done):
+    def _value_estimate(self, trajectory):
         raise NotImplementedError
 
 
-class TDAgent(OnlinePolicyEvaluation):
-    def __init__(self, policy, value_function, criterion, optimizer, memory,
-                 hyper_params):
-        super().__init__(policy, value_function, criterion, optimizer, memory,
-                         hyper_params)
-
+class TDAgent(EpisodicPolicyEvaluation):
     def __str__(self):
-        return 'TD-{}'.format(self._hyper_params['lambda'])
+        return 'TD-{}'.format(self._hyper_params.get('lambda', 0))
 
-    def _td(self, state, action, reward, next_state, done):
-        pred_v = self._value_function(state)
-        next_v = self._value_function(next_state)
-        target_v = reward + self._hyper_params['gamma'] * next_v * (1 - done)
-        return self._criterion(pred_v, target_v.detach())
+    def _value_estimate(self, trajectory):
+        state, action, reward, next_state, done = trajectory[0]
+        return reward + self._hyper_params['gamma'] * self._value_function(
+            torch.tensor(next_state).float()).detach() * (1.-float(done))
+
+
+class MCAgent(EpisodicPolicyEvaluation):
+    def __str__(self):
+        return 'Monte Carlo Agent'
+
+    def _value_estimate(self, trajectory):
+        estimate = sum_discounted_rewards(trajectory, self._hyper_params['gamma'])
+        return torch.tensor([estimate])
