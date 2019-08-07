@@ -92,6 +92,9 @@ class ExperienceReplay(data.Dataset):
         self._memory[self._ptr] = observation
         self._ptr = (self._ptr + 1) % self._max_len
 
+        for transformation in self._transformations:
+            transformation.update(observation)
+
     def shuffle(self):
         """Shuffle the dataset."""
         np.random.shuffle(self._sampling_idx)
