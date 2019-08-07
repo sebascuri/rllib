@@ -1,11 +1,17 @@
+"""Implementation of InvertedPendulum System."""
+
+
 from rllib.environment.systems.ode_system import ODESystem
 import numpy as np
 from scipy import signal
 from rllib.environment.systems.linear_system import LinearSystem
 
 
+__all__ = ['InvertedPendulum']
+
+
 class InvertedPendulum(ODESystem):
-    """Inverted Pendulum.
+    """Inverted Pendulum system.
 
     Parameters
     ----------

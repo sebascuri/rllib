@@ -1,7 +1,12 @@
+"""Implementation of CarPole System."""
+
 from rllib.environment.systems.ode_system import ODESystem
 from rllib.environment.systems.linear_system import LinearSystem
 from scipy import signal
 import numpy as np
+
+
+__all__ = ['CartPole']
 
 
 class CartPole(ODESystem):

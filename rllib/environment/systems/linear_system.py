@@ -1,20 +1,27 @@
+"""Implementation of a Linear Dynamical System."""
+
+
 import numpy as np
 from .abstract_system import AbstractSystem
 
 
+__all__ = ['LinearSystem']
+
+
 class LinearSystem(AbstractSystem):
-    """An environment Discrete Time for Linear Dynamical Systems."""
+    """An environment Discrete Time for Linear Dynamical Systems.
+
+    Parameters
+    ----------
+    a: ndarray
+        state transition matrix.
+    b: ndarray
+        input matrix.
+    c: ndarray, optional
+        observation matrix.
+    """
 
     def __init__(self, a, b, c=None):
-        """Initialize LinearSystem
-
-        Parameters
-        ----------
-        a: ndarray
-        b: ndarray
-        c: ndarray, optional
-
-        """
         self.a = np.atleast_2d(a)
         self.b = np.atleast_2d(b)
         if c is None:

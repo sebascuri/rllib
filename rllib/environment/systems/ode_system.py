@@ -1,3 +1,6 @@
+"""Implementation of a Class that constructs an dynamic system from an ode."""
+
+
 from .abstract_system import AbstractSystem
 from scipy import integrate
 

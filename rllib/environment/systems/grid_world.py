@@ -1,8 +1,16 @@
+"""Implementation of a GridWorld system."""
+
+
 from .abstract_system import AbstractSystem
 from gym import spaces
 
 
+__all__ = ['GridWorld']
+
+
 class GridWorld(AbstractSystem):
+    """Grid World implementation."""
+
     def __init__(self, grid_size, obstacles=None):
         num_dim = len(grid_size)
         super().__init__(num_dim, num_dim, num_dim)

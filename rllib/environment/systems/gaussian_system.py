@@ -1,19 +1,24 @@
+"""Implementation of a System with Gaussian transition and measurement noise."""
+
 from .abstract_system import AbstractSystem
 import numpy as np
 
 
+__all__ = ['GaussianSystem']
+
+
 class GaussianSystem(AbstractSystem):
     """Modify a system with gaussian transition and measurement noise.
-    """
-    def __init__(self, system, transition_noise_scale, measurement_noise_scale=0):
-        """
 
-        Parameters
-        ----------
-        system: AbstractSystem
-        transition_noise_scale: float
-        measurement_noise_scale: float, optional
-        """
+    Parameters
+    ----------
+    system: AbstractSystem
+    transition_noise_scale: float
+    measurement_noise_scale: float, optional
+
+    """
+
+    def __init__(self, system, transition_noise_scale, measurement_noise_scale=0):
         super().__init__(
             dim_state=system.dim_state,
             dim_action=system.dim_action,
