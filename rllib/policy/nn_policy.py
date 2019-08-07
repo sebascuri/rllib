@@ -30,8 +30,6 @@ class NNPolicy(AbstractPolicy):
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  temperature=1.0, layers=None):
-        """
-        """
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
         if self.discrete_states:
             in_dim = self.num_states
@@ -50,7 +48,7 @@ class NNPolicy(AbstractPolicy):
 
     @property
     def parameters(self):
-        """Return parameters of nn.Module that parametrize the policy
+        """Return parameters of nn.Module that parametrize the policy.
 
         Returns
         -------

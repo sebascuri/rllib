@@ -27,7 +27,10 @@ SEED = 0
 eps_greedy = EpsGreedy(eps_start=1., eps_end=0.01, eps_decay=500)
 boltzmann = BoltzmannExploration(t_start=1., t_end=0.01, t_decay=500)
 
-for exploration in [eps_greedy, boltzmann]:
+for name, exploration in {
+    'eps_greedy': eps_greedy,
+    'boltzmann': boltzmann
+}.items():
 
     torch.manual_seed(SEED)
     np.random.seed(SEED)
@@ -61,7 +64,7 @@ for exploration in [eps_greedy, boltzmann]:
                       hyper_params)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
-    plt.plot(agent.episodes_cumulative_rewards, label=str(exploration))
+    plt.plot(agent.episodes_cumulative_rewards, label=name)
 plt.xlabel('Episode')
 plt.ylabel('Cumulative Rewards')
 plt.legend(loc='best')
