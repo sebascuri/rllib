@@ -49,8 +49,8 @@ class AbstractValueFunction(ABC):
 
         Parameters
         ----------
-        state: int or float
-        action: int or float, optional
+        state: tensor
+        action: tensor, optional
 
         Returns
         -------
@@ -141,8 +141,8 @@ class AbstractQFunction(AbstractValueFunction):
 
         Parameters
         ----------
-        state: array_like
-        action: array_like, optional
+        state: tensor
+        action: tensor, optional
 
         Returns
         -------

@@ -24,8 +24,7 @@ class NNValueFunction(AbstractValueFunction):
 
     """
 
-    def __init__(self, dim_state, num_states=None,
-                 layers=None, tau=1.0):
+    def __init__(self, dim_state, num_states=None, layers: list = None, tau=1.0):
         super().__init__(dim_state, num_states)
 
         if self.discrete_state:
@@ -37,7 +36,17 @@ class NNValueFunction(AbstractValueFunction):
         self._tau = tau
 
     def __call__(self, state, action=None):
-        return self._value_function(state)
+        if state.dim() == 1:
+            batch_size = 1
+            state = state.unsqueeze(0)
+        else:
+            batch_size = state.shape[0]
+
+        if self.discrete_state:
+            in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state, 1)
+        else:
+            in_ = state
+        return self._value_function(in_).squeeze(-1)
 
     @property
     def parameters(self):
@@ -66,7 +75,7 @@ class NNQFunction(AbstractQFunction):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, tau=1.0):
+                 layers: list = None, tau=1.0):
         super().__init__(dim_state, dim_action, num_states, num_actions)
 
         if not self.discrete_state and not self.discrete_action:
@@ -79,32 +88,50 @@ class NNQFunction(AbstractQFunction):
             num_inputs = self.dim_state
             num_outputs = self.num_actions
         else:
-            raise ValueError("If states are discrete, so should be actions.")
+            raise NotImplementedError("If states are discrete, so should be actions.")
 
         self._q_function = DeterministicNN(num_inputs, num_outputs, layers)
         self._tau = tau
 
     def __call__(self, state, action=None):
+        if state.dim() == 1:
+            batch_size = 1
+            state = state.unsqueeze(0)
+        else:
+            batch_size = state.shape[0]
+
         if action is None:
             if not self.discrete_action:
                 raise NotImplementedError
             elif not self.discrete_state:
-                return self._q_function(state)
-        if self.discrete_action:
-            action = action.long().unsqueeze(-1)
-        if self.discrete_state:
-            state = state.long().unsqueeze(-1)
+                in_ = state
+            else:
+                in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state,
+                                    1)
+            action_value = self._q_function(in_)
+            if batch_size == 1:
+                action_value = action_value.squeeze(0)
+
+            return action_value
+
+        if action.dim() == 0:
+            action = action.unsqueeze(0).unsqueeze(1)
+        elif action.dim() == 1:
+            if action.shape[0] == batch_size:
+                action = action.unsqueeze(1)
+            else:
+                action = action.unsqueeze(0)
+
+        assert action.shape[0] == state.shape[0]
 
         if not self.discrete_state and not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
-            return self._q_function(state_action)
+            return self._q_function(state_action).squeeze(-1)
         elif self.discrete_state and self.discrete_action:
-            in_ = torch.scatter(torch.zeros(self.num_states), 0, state, 1)
-            return self._q_function(in_).gather(1, action).squeeze(-1)
+            in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state, 1)
+            return self._q_function(in_).gather(1, action.long()).squeeze(-1)
         elif not self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(1, action).squeeze(-1)
-        else:
-            raise ValueError("If states are discrete, so should be actions.")
+            return self._q_function(state).gather(1, action.long()).squeeze(-1)
 
     @property
     def parameters(self):
@@ -118,13 +145,13 @@ class NNQFunction(AbstractQFunction):
         if not self.discrete_action:
             raise NotImplementedError
         else:
-            return self._q_function(state).max(dim=-1)[0]
+            return self(state).max(dim=-1)[0]
 
     def argmax(self, state):
         if not self.discrete_action:
             raise NotImplementedError
         else:
-            return self._q_function(state).argmax(dim=-1)
+            return self(state).argmax(dim=-1)
 
     def extract_policy(self, temperature=1.0):
         if not self.discrete_action:

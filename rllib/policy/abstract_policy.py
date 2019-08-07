@@ -62,7 +62,7 @@ class AbstractPolicy(ABC):
 
         Parameters
         ----------
-        state: array_like
+        state: tensor
 
         Returns
         -------
