@@ -1,3 +1,5 @@
+"""Value and Q-Functions parametrized with Neural Networks."""
+
 import torch
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.neural_networks import DeterministicNN
@@ -5,7 +7,23 @@ from rllib.util.neural_networks import update_parameters
 from rllib.policy import NNPolicy
 
 
+__all__ = ['NNValueFunction', 'NNQFunction']
+
+
 class NNValueFunction(AbstractValueFunction):
+    """Implementation of a Value Function implemented with a Neural Network.
+
+    Parameters
+    ----------
+    dim_state: int
+        dimension of state.
+    num_states: int, optional
+        number of discrete states (None if state is continuous).
+    layers: list, optional
+        width of layers, each layer is connected with ReLUs non-linearities.
+
+    """
+
     def __init__(self, dim_state, num_states=None,
                  layers=None, tau=1.0):
         super().__init__(dim_state, num_states)
@@ -17,9 +35,6 @@ class NNValueFunction(AbstractValueFunction):
 
         self._value_function = DeterministicNN(num_inputs, 1, layers)
         self._tau = tau
-
-    def __str__(self):
-        return "Neural Network Value function approximation"
 
     def __call__(self, state, action=None):
         return self._value_function(state)
@@ -34,6 +49,22 @@ class NNValueFunction(AbstractValueFunction):
 
 
 class NNQFunction(AbstractQFunction):
+    """Implementation of a Q-Function implemented with a Neural Network.
+
+    Parameters
+    ----------
+    dim_state: int
+        dimension of state.
+    dim_action: int
+        dimension of action.
+    num_states: int, optional
+        number of discrete states (None if state is continuous).
+    num_actions: int, optional
+        number of discrete actions (None if action is continuous).
+    layers: list, optional
+        width of layers, each layer is connected with ReLUs non-linearities.
+    """
+
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  layers=None, tau=1.0):
         super().__init__(dim_state, dim_action, num_states, num_actions)
@@ -52,9 +83,6 @@ class NNQFunction(AbstractQFunction):
 
         self._q_function = DeterministicNN(num_inputs, num_outputs, layers)
         self._tau = tau
-
-    def __str__(self):
-        return "Neural Network Q function approximation"
 
     def __call__(self, state, action=None):
         if action is None:
