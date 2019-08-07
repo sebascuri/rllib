@@ -1,10 +1,34 @@
+"""Implementation of Model-Free Policy Gradient Algorithms."""
+
 from .abstract_agent import AbstractAgent
 from abc import abstractmethod
 import numpy as np
 import torch
 
 
+__all__ = ['REINFORCE', 'ActorCritic']
+
+
 class AbstractPolicyGradient(AbstractAgent):
+    """Abstract Implementation of the Policy-Gradient Algorithm.
+
+    The AbstractPolicyGradient algorithm implements the Policy-Gradient algorithm except
+    for the computation of the rewards, which leads to different algorithms.
+
+    Parameters
+    ----------
+    policy: AbstractPolicy
+        learnable policy.
+    optimizer: nn.optim
+    hyper_params:
+        algorithm hyperparameters.
+
+    References
+    ----------
+    Williams, Ronald J. "Simple statistical gradient-following algorithms for
+    connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
+    """
+
     def __init__(self, policy, optimizer, hyper_params):
         super().__init__()
         self._trajectory = []
@@ -14,17 +38,6 @@ class AbstractPolicyGradient(AbstractAgent):
                                     lr=self.hyper_params['learning_rate'])
 
     def act(self, state):
-        """Ask the agent for an action to interact with the environment.
-
-        Parameters
-        ----------
-        state: ndarray
-
-        Returns
-        -------
-        action: ndarray
-
-        """
         action_distribution = self._policy(torch.from_numpy(state).float())
         return action_distribution.sample().item()
 
@@ -65,8 +78,14 @@ class AbstractPolicyGradient(AbstractAgent):
 
 
 class REINFORCE(AbstractPolicyGradient):
-    def __str__(self):
-        return "REINFORCE"
+    """Implementation of REINFORCE algorithm.
+
+    References
+    ----------
+    Williams, Ronald J. "Simple statistical gradient-following algorithms for
+    connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
+
+    """
 
     def _q_estimate(self, trajectory):
         q_estimate = []
@@ -82,15 +101,21 @@ class REINFORCE(AbstractPolicyGradient):
 
 
 class ActorCritic(AbstractPolicyGradient):
+    """Implementation of ACTOR-CRITIC algorithm.
+
+    References
+    ----------
+    Sutton, Richard S., et al. "Policy gradient methods for reinforcement learning with
+    function approximation." Advances in neural information processing systems. 2000.
+
+    """
+
     def __init__(self, actor, critic, optimizer, hyper_params):
         super().__init__(policy=actor, optimizer=optimizer, hyper_params=hyper_params)
         self._critic = critic
         self._critic_optimizer = optimizer(
             self._critic.parameters, lr=self.hyper_params['critic_learning_rate']
         )
-
-    def __str__(self):
-        return "Vanilla Actor Critic"
 
     def _q_estimate(self, trajectory):
         q_estimate = []

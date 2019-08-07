@@ -1,3 +1,5 @@
+"""Implementation of a random agent."""
+
 from .abstract_agent import AbstractAgent
 from rllib.dataset import TrajectoryDataset
 from rllib.policy import RandomPolicy
@@ -5,15 +7,13 @@ import torch
 
 
 class RandomAgent(AbstractAgent):
-    """Agent that interacts randomly in an environment. """
-    def __init__(self, dim_state, dim_action, num_actions=None, scale=1.0):
+    """Agent that interacts randomly in an environment."""
+
+    def __init__(self, dim_state, dim_action, num_actions=None):
         super().__init__()
         self._policy = RandomPolicy(dim_state, dim_action, num_actions=num_actions)
         self._trajectory = []
         self._dataset = TrajectoryDataset(sequence_length=1)
-
-    def __str__(self):
-        return "Random Agent"
 
     def act(self, state):
         state = torch.from_numpy(state).float()

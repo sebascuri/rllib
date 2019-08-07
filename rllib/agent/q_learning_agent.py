@@ -1,3 +1,4 @@
+"""Implementation of QLearning Algorithms."""
 from .abstract_agent import AbstractAgent
 from abc import abstractmethod
 import torch
@@ -8,6 +9,32 @@ __all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 
 
 class AbstractQLearningAgent(AbstractAgent):
+    """Abstract Implementation of the Q-Learning Algorithm.
+
+    The AbstractQLearning algorithm implements the Q-Learning algorithm except for the
+    computation of the TD-Error, which leads to different algorithms.
+
+    Parameters
+    ----------
+    q_function: AbstractQFunction
+        q_function that is learned.
+    q_target: AbstractQFunction
+        q_function used for TD-Error target.
+    exploration: AbstractExplorationStrategy.
+        exploration strategy that returns the actions.
+    criterion: nn.Module
+    optimizer: nn.optim
+    memory: ExperienceReplay
+        memory where to store the observations.
+    hyper_params: dict
+        algorithm hyperparameters.
+
+    References
+    ----------
+    Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
+
+    """
+
     def __init__(self, q_function, q_target, exploration, criterion, optimizer, memory,
                  hyper_params):
         super().__init__()
@@ -43,15 +70,12 @@ class AbstractQLearningAgent(AbstractAgent):
         return self._q_function.extract_policy(temperature=0.001)
 
     def _train(self, batches=1):
-        """Train the DQN for `step' steps
+        """Train the DQN for `batches' batches.
 
         Parameters
         ----------
-        batches
+        batches: int
 
-        Returns
-        -------
-        None
         """
         self._memory.shuffle()
         for i, observation in enumerate(self._data_loader):
@@ -76,10 +100,10 @@ class QLearningAgent(AbstractQLearningAgent):
 
     loss = l[Q(x, a), r + Q(x', arg max Q(x', a))]
 
+    References
+    ----------
+    Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
-
-    def __str__(self):
-        return "Q-Learning"
 
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state, action)
@@ -96,10 +120,13 @@ class GQLearningAgent(AbstractQLearningAgent):
 
     loss = l[Q(x, a), r + Q(x', arg max Q(x', a)).stop_gradient]
 
-    """
+    References
+    ----------
+    Sutton, Richard S., et al. "Fast gradient-descent methods for temporal-difference
+    learning with linear function approximation." Proceedings of the 26th Annual
+    International Conference on Machine Learning. ACM, 2009.
 
-    def __str__(self):
-        return "Gradient Q-Learning"
+    """
 
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state, action)
@@ -116,10 +143,11 @@ class DQNAgent(AbstractQLearningAgent):
 
     loss = l[Q(x, a), r + max_a Q'(x', a)]
 
+    References
+    ----------
+    Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning."
+    Nature 518.7540 (2015): 529.
     """
-
-    def __str__(self):
-        return "DQN-Agent"
 
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state, action)
@@ -136,10 +164,11 @@ class DDQNAgent(AbstractQLearningAgent):
 
     loss = l[Q(x, a), r + Q'(x', argmax Q(x,a))]
 
+    References
+    ----------
+    Van Hasselt, Hado, Arthur Guez, and David Silver. "Deep reinforcement learning
+    with double q-learning." Thirtieth AAAI conference on artificial intelligence. 2016.
     """
-
-    def __str__(self):
-        return "DDQN-Agent"
 
     def _td(self, state, action, reward, next_state, done):
         pred_q = self._q_function(state, action)

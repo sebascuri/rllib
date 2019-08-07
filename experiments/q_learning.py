@@ -26,7 +26,10 @@ EPS_DECAY = 500
 LAYERS = [64, 64]
 SEED = 0
 
-for Agent in [DDQNAgent, QLearningAgent, GQLearningAgent, DQNAgent]:
+for name, Agent in {'DDQN': DDQNAgent,
+                    'Q-Learning': QLearningAgent,
+                    'GQ-Learning': GQLearningAgent,
+                    'DQN': DQNAgent}.items():
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
@@ -59,8 +62,8 @@ for Agent in [DDQNAgent, QLearningAgent, GQLearningAgent, DQNAgent]:
                   hyper_params)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
-    plt.plot(agent.episodes_steps, label=str(agent))
-    with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, str(agent)), 'wb') as file:
+    plt.plot(agent.episodes_steps, label=name)
+    with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, name), 'wb') as file:
         pickle.dump(agent, file)
 plt.xlabel('Episode')
 plt.ylabel('Duration')

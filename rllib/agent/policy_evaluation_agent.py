@@ -1,10 +1,34 @@
+"""Implementation of Policy Evaluation Algorithms."""
+
+
 from .abstract_agent import AbstractAgent
 from abc import abstractmethod
 import torch
 from rllib.util import sum_discounted_rewards
 
 
+__all__ = ['TDAgent', 'MCAgent']
+
+
 class EpisodicPolicyEvaluation(AbstractAgent):
+    """Abstract Implementation of Policy-Evaluation Algorithms.
+
+    The EpisodicPolicyEvaluation algorithm implements the Policy-Evaluation algorithm
+    except for the computation of the estimate of the Value Function, which leads to
+    Temporal Difference or Monte Carlo algorithms.
+
+    Parameters
+    ----------
+    policy: AbstractPolicy
+        Policy used to interact with the environment (fixed).
+    value_function: AbstractValueFunction
+        Value function to be learned.
+    criterion: nn.Module
+    optimizer: nn.optim
+    hyper_params: dict
+        algorithm hyperparameters
+    """
+
     def __init__(self, policy, value_function, criterion, optimizer, hyper_params):
         super().__init__()
         self._policy = policy
@@ -58,8 +82,7 @@ class EpisodicPolicyEvaluation(AbstractAgent):
 
 
 class TDAgent(EpisodicPolicyEvaluation):
-    def __str__(self):
-        return 'TD-{}'.format(self._hyper_params.get('lambda', 0))
+    """Implementation of TD algorithm."""
 
     def _value_estimate(self, trajectory):
         state, action, reward, next_state, done = trajectory[0]
@@ -68,8 +91,7 @@ class TDAgent(EpisodicPolicyEvaluation):
 
 
 class MCAgent(EpisodicPolicyEvaluation):
-    def __str__(self):
-        return 'Monte Carlo Agent'
+    """Implementation of Monte-Carlo algorithm."""
 
     def _value_estimate(self, trajectory):
         estimate = sum_discounted_rewards(trajectory, self._hyper_params['gamma'])
