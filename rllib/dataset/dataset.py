@@ -178,7 +178,7 @@ class TrajectoryDataset(data.Dataset):
         sub_indexes : list
             A list of integers that indicate the starting position of each subsequence.
 
-        >>> from mbrl.dataset import TrajectoryDataset
+        >>> from rllib.dataset import TrajectoryDataset
         >>> TrajectoryDataset._get_subindexes(10, 3)
         [0, 3, 6, 7]
         >>> TrajectoryDataset._get_subindexes(10, 3, drop_last=True)
