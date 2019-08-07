@@ -9,18 +9,19 @@ setup(
     packages=find_packages(exclude=['docs']),
     install_requires=['numpy>=1.0,<2',
                       'scipy>=1.3.0,<1.4.0',
-                      'matplotlib',
-                      'gym>=0.13.0'],
+                      'torch>=1.1,<1.2',
+                      'gym>=0.13,<0.15',
+                      'tqdm>=4.0,<5.0',
+                      ],
     extras_require={
         'test': [
-            'pytest>=4.6,<4.7',
-            'flake8==3.7.7',
-            'pydocstyle==3.0.0',
+            'pytest>=5.0,<5.1',
+            'flake8>=3.7.8,<3.8',
+            'pydocstyle==4.0.0',
             'pytest_cov>=2.7,<3'
         ],
         'pytorch': [
-            'gpytorch==0.3.3',
-            'torch>=1.1,<1.2'
+            'gpytorch==0.3.4',
         ]},
     classifiers=[
         # How mature is this project? Common values are

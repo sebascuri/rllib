@@ -1,3 +1,6 @@
+"""Interface for policies."""
+
+
 from abc import ABC, abstractmethod
 import torch
 from torch.distributions import MultivariateNormal, Categorical
@@ -6,27 +9,46 @@ from torch.distributions import MultivariateNormal, Categorical
 class AbstractPolicy(ABC):
     """Interface for policies to control an environment.
 
-    The public methods are:
-        random
-        action
+    Parameters
+    ----------
+    dim_state: int
+        dimension of state.
+    dim_action: int
+        dimension of action.
+    num_states: int, optional
+        number of discrete states (None if state is continuous).
+    num_actions: int, optional
+        number of discrete actions (None if action is continuous).
+    temperature: float, optional
+        temperature scaling of output distribution.
 
-    The public attributes are:
-        dim_state
-        dim_action
+    Attributes
+    ----------
+    dim_state: int
+        dimension of state.
+    dim_action: int
+        dimension of action.
+    num_states: int
+        number of discrete states (None if state is continuous).
+    num_actions: int
+        number of discrete actions (None if action is continuous).
+
+    Methods
+    -------
+    __call__(state): torch.distribution.Distribution
+        return the action distribution that the policy suggests.
+    parameters: generator
+        return the policy parametrization.
+    random: torch.distribution.Distribution
+        return a uniform action distribution (same family as policy).
+    discrete_state: bool
+        Flag that indicates if state space is discrete.
+    discrete_action: bool
+        Flag that indicates if action space is discrete.
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  temperature=1.):
-        """Initialize Policy
-
-        Parameters
-        ----------
-        dim_state: int
-        dim_action: int
-        num_states: int, optional
-        num_actions: int, optional
-        temperature: float, optional
-        """
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
@@ -52,6 +74,12 @@ class AbstractPolicy(ABC):
     @property
     @abstractmethod
     def parameters(self):
+        """Parameters that describe the policy.
+
+        Returns
+        -------
+        generator
+        """
         raise NotImplementedError
 
     @parameters.setter
@@ -60,6 +88,12 @@ class AbstractPolicy(ABC):
         raise NotImplementedError
 
     def random(self):
+        """Return a uniform random distribution of the output space.
+
+        Returns
+        -------
+        distribution: torch.distribution.Distribution
+        """
         if self.discrete_action:  # Categorical
             return Categorical(torch.ones(self.num_actions))
         else:  # Categorical
@@ -69,9 +103,21 @@ class AbstractPolicy(ABC):
             )
 
     @property
-    def discrete_action(self):
-        return self.num_actions is not None
+    def discrete_states(self):
+        """Flag that indicates if states are discrete.
+
+        Returns
+        -------
+        bool
+        """
+        return self.num_states is not None
 
     @property
-    def discrete_states(self):
-        return self.num_states is not None
+    def discrete_action(self):
+        """Flag that indicates if actions are discrete.
+
+        Returns
+        -------
+        bool
+        """
+        return self.num_actions is not None
