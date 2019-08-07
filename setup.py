@@ -11,7 +11,8 @@ setup(
                       'scipy>=1.3.0,<1.4.0',
                       'torch>=1.1,<1.2',
                       'gym>=0.13,<0.15',
-                      'tqdm>=4.0,<5.0',
+                      'tqdm>=4.0.0,<5.0',
+                      'matplotlib>=3.1.0'
                       ],
     extras_require={
         'test': [
