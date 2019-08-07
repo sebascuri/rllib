@@ -1,3 +1,5 @@
+"""Helper functions to conduct a rollout with policies or agents."""
+
 import torch
 from rllib.dataset import Observation
 
@@ -7,13 +9,9 @@ def rollout_agent(environment, agent, num_episodes=1):
 
     Parameters
     ----------
-    environment: rllib.environment.AbstractEnvironment
+    environment: AbstractEnvironment
     agent: AbstractAgent
-    num_episodes: int, optional
-
-    Returns
-    -------
-    None
+    num_episodes: int, optional (default=1)
 
     """
     for _ in range(num_episodes):
@@ -39,13 +37,13 @@ def rollout_policy(environment, policy, num_episodes=1):
 
     Parameters
     ----------
-    environment : rllib.environment.AbstractEnvironment
+    environment : AbstractEnvironment
     policy : AbstractPolicy
-    num_episodes: int, optional
+    num_episodes: int, optional (default=1)
 
     Returns
     -------
-    trajectory: list
+    trajectory: list of Observation
 
     """
     trajectories = []

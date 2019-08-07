@@ -1,19 +1,37 @@
+"""Implementation of different Neural Networks with pytorch."""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
 from torch.distributions import MultivariateNormal, Categorical, Normal
 from .utilities import inverse_softplus
 
+__all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',
+           'CategoricalNN', 'FelixNet']
+
 
 class DeterministicNN(nn.Module):
-    def __init__(self, in_dim, out_dim, layers=None):
+    """Deterministic Neural Network Implementation.
+
+    Parameters
+    ----------
+    in_dim: int
+        input dimension of neural network.
+    out_dim: int
+        output dimension of neural network.
+    layers: list of int
+        list of width of neural network layers, each separated with a ReLU
+        non-linearity.
+
+    """
+
+    def __init__(self, in_dim, out_dim, layers: list = None):
         super().__init__()
-        self.layers = layers
+        self.layers = layers or list()
 
         layers_ = []
-        if layers is None:
-            layers = []
-        for layer in layers:
+
+        for layer in self.layers:
             layers_.append(nn.Linear(in_dim, layer))
             layers_.append(nn.ReLU())
             in_dim = layer
@@ -26,7 +44,23 @@ class DeterministicNN(nn.Module):
 
 
 class ProbabilisticNN(DeterministicNN):
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0):
+    """A Module that parametrizes a torch.distributions.Distribution distribution.
+
+    Parameters
+    ----------
+    in_dim: int
+        input dimension of neural network.
+    out_dim: int
+        output dimension of neural network.
+    layers: list of int
+        list of width of neural network layers, each separated with a ReLU
+        non-linearity.
+    temperature: float, optional
+        temperature scaling of output distribution.
+
+    """
+
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
         super().__init__(in_dim, out_dim, layers=layers)
         self.temperature = temperature
 
@@ -35,7 +69,9 @@ class ProbabilisticNN(DeterministicNN):
 
 
 class HeteroGaussianNN(ProbabilisticNN):
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0):
+    """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
+
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
         super().__init__(in_dim, out_dim, layers=layers, temperature=temperature)
         in_dim = self._head.in_features
         self._covariance = nn.Linear(in_dim, out_dim)
@@ -48,7 +84,9 @@ class HeteroGaussianNN(ProbabilisticNN):
 
 
 class HomoGaussianNN(ProbabilisticNN):
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0):
+    """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
+
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
         super().__init__(in_dim, out_dim, layers=layers, temperature=temperature)
         initial_scale = inverse_softplus(torch.ones(out_dim))
         self._covariance = nn.Parameter(initial_scale, requires_grad=True)
@@ -61,7 +99,9 @@ class HomoGaussianNN(ProbabilisticNN):
 
 
 class CategoricalNN(ProbabilisticNN):
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0):
+    """A Module that parametrizes a Categorical distribution."""
+
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
         super().__init__(in_dim, out_dim, layers=layers, temperature=temperature)
 
     def forward(self, x):
@@ -70,6 +110,8 @@ class CategoricalNN(ProbabilisticNN):
 
 
 class FelixNet(nn.Module):
+    """A Module that implements FelixNet."""
+
     def __init__(self, in_dim, out_dim, temperature=1.0):
         super().__init__()
         self.temperature = temperature

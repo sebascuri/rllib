@@ -1,3 +1,5 @@
+"""Utilities for neural networks."""
+
 import torch
 import torch.nn as nn
 
@@ -31,7 +33,7 @@ def update_parameters(target_params, new_params, tau=1.0):
 
 
 def zero_bias(named_params):
-    """Zero all bias terms in the parameters
+    """Zero all bias terms in the parameters.
 
     Parameters
     ----------

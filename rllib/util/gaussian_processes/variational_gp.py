@@ -1,10 +1,18 @@
+"""Implementation of a Variational GP with gpytorch."""
+
+
 import gpytorch
 from gpytorch.models import AbstractVariationalGP
 from gpytorch.variational import CholeskyVariationalDistribution, \
     WhitenedVariationalStrategy
 
 
+__all__ = ['VariationalGP']
+
+
 class VariationalGP(AbstractVariationalGP):
+    """Implementation of a Variational GP with gpytorch."""
+
     def __init__(self, inducing_points):
         variational_distribution = CholeskyVariationalDistribution(
             inducing_points.size(0))
