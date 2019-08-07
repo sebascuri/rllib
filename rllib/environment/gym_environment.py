@@ -1,17 +1,25 @@
+"""Wrapper for OpenAI-Gym Environments."""
+
 from .abstract_environment import AbstractEnvironment
 import gym
 
 
-class GymEnvironment(AbstractEnvironment):
-    """Wrapper for gym environments"""
-    def __init__(self, env_name, seed=None):
-        """Initialize an environment using gym as a backend.
+__all__ = ['GymEnvironment']
 
-        Parameters
-        ----------
-        env_name: str
-        seed: int, optional
-        """
+
+class GymEnvironment(AbstractEnvironment):
+    """Wrapper for OpenAI-Gym Environments.
+
+    Parameters
+    ----------
+    env_name: str
+        environment name
+    seed: int, optional
+        random seed to initialize environment.
+
+    """
+
+    def __init__(self, env_name, seed=None):
         self._env = gym.make(env_name)
         self._env.seed(seed)
         try:

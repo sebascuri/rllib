@@ -1,28 +1,37 @@
-"""Base class for environments."""
+"""Interface for Environments."""
+
+
 from abc import ABC, abstractmethod
 
 
 class AbstractEnvironment(ABC):
-    """The abstract Environment class encapsulates a Model of the environment.
+    """Interface for Environments.
 
-    The public attributes are:
-        action_space
-        observation_space
+    Parameters
+    ----------
+    dim_state: int
+        dimension of state.
+    dim_action: int
+        dimension of action.
+    observation_space: gym.env.Spaces
+    action_space: gym.env.Spaces
+    dim_observation: int, optional
+        dimension of observation.
+    num_observations: int, optional
+        number of discrete observations (None if observation is continuous).
+    num_actions: int, optional
+        number of discrete actions (None if action is continuous).
+
+    Methods
+    -------
+    step(action): next_state, reward, done, info
+        execute a step in the environment.
+    reset(): reset the environment.
+
     """
+
     def __init__(self, dim_state, dim_action, observation_space, action_space,
                  dim_observation=None, num_actions=None, num_observations=None):
-        """Initialize the environment
-
-        Parameters
-        ----------
-        dim_state: int
-        dim_action: int
-        observation_space: gym.env.Spaces
-        action_space: gym.env.Spaces
-        dim_observation: int
-        num_actions: int
-        num_observations: int
-        """
         super().__init__()
         self.dim_action = dim_action
         self.dim_state = dim_state
@@ -68,6 +77,7 @@ class AbstractEnvironment(ABC):
     @property
     @abstractmethod
     def state(self):
+        """Return current state of environment."""
         raise NotImplementedError
 
     @state.setter
@@ -78,4 +88,5 @@ class AbstractEnvironment(ABC):
     @property
     @abstractmethod
     def time(self):
+        """Return current time of environment."""
         raise NotImplementedError

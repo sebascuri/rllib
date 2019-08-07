@@ -1,21 +1,32 @@
+"""Wrapper for Custom System Environments."""
+
+
 from .abstract_environment import AbstractEnvironment
 
 
+__all__ = ['SystemEnvironment']
+
+
 class SystemEnvironment(AbstractEnvironment):
-    """Wrapper for System environments
+    """Wrapper for System Environments.
+
+    Parameters
+    ----------
+    system: AbstractSystem
+        underlying system
+    initial_state: callable, optional
+        callable that returns an initial state
+    reward: callable, optional
+        callable that, given state and action returns a rewards
+    termination: callable, optional
+        callable that checks if interaction should terminate.
+    max_steps: int, optional
+        maximum number of steps the system allows.
+
     """
+
     def __init__(self, system, initial_state=None, reward=None, termination=None,
                  max_steps=None):
-        """Initialize
-
-        Parameters
-        ----------
-        system: rllib.environment.systems.abstract_system.AbstractSystem
-        initial_state: callable, optional
-        reward: callable, optional
-        termination: callable, optional
-        max_steps: int, optional
-        """
         super().__init__(
             dim_state=system.dim_state,
             dim_action=system.dim_action,
