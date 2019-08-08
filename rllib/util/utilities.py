@@ -50,8 +50,8 @@ def mc_value(trajectory, gamma=1.0):
     value_estimate = [0] * len(trajectory)
     value_estimate[-1] = trajectory[-1].reward
 
-    for t in reversed(range(1, len(trajectory))):
-        value_estimate[t-1] = trajectory[t].reward + gamma * value_estimate[t]
+    for t in reversed(range(len(trajectory)-1)):
+        value_estimate[t] = trajectory[t].reward + gamma * value_estimate[t + 1]
 
     return np.array(value_estimate)
 
@@ -76,17 +76,3 @@ def sum_discounted_rewards(trajectory, gamma):
     rewards = np.array(rewards)
     i = np.arange(len(rewards))
     return np.sum(rewards * np.power(gamma, i))
-
-
-# if __name__ == "__main__":
-#     from rllib.dataset import Observation
-#     trajectory = []
-#     for i in range(10):
-#         observation = Observation(state=0, action=1, next_state=2, reward=1, done=0)
-#         trajectory.append(observation)
-#
-#     gamma = 0.9
-#     print(mc_value(trajectory, gamma),
-#           mc_value_slow(trajectory, gamma),
-#           sum_discounted_rewards(trajectory, gamma)
-#           )
