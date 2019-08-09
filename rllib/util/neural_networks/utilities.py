@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 
-__all__ = ['update_parameters', 'zero_bias', 'inverse_softplus']
+__all__ = ['update_parameters', 'zero_bias', 'inverse_softplus', 'one_hot_encode']
 
 
 def update_parameters(target_params, new_params, tau=1.0):
@@ -57,3 +57,36 @@ def inverse_softplus(x):
     output : torch.Tensor
     """
     return torch.log(torch.exp(x) - 1.)
+
+
+def one_hot_encode(tensor, num_classes):
+    """Encode a tensor using one hot encoding.
+
+    Parameters
+    ----------
+    tensor: torch.Tensor of dtype torch.long
+    num_classes: int
+        number of classes to encode.
+
+    Returns
+    -------
+    tensor: torch.Tensor of dtype torch.float
+        one-hot-encoded tensor.
+
+    Raises
+    ------
+    TypeError:
+        if tensor not of dtype long.
+
+    """
+    if tensor.dtype is not torch.long:
+        raise TypeError("tensor should be of type torch.long. Please call .long().")
+
+    if tensor.dim() == 0:
+        return torch.scatter(torch.zeros(num_classes), -1, tensor, 1)
+    else:
+        batch_size = tensor.shape[0]
+        if tensor.dim() == 1:
+            tensor = tensor.unsqueeze(-1)
+
+        return torch.scatter(torch.zeros(batch_size, num_classes), -1, tensor, 1)

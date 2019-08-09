@@ -3,7 +3,7 @@ import torch.testing
 import torch.functional
 import torch.nn as nn
 import pytest
-from rllib.util.neural_networks.utilities import inverse_softplus, zero_bias, update_parameters
+from rllib.util.neural_networks.utilities import *
 from rllib.util.neural_networks import DeterministicNN
 
 
@@ -77,5 +77,50 @@ class TestUpdateParams(object):
         torch.testing.assert_allclose(t2, nn.Parameter(torch.tensor(t2_data)))
 
 
+class TestOneHoteEncode(object):
+    @pytest.fixture(params=[None, 1, 16], scope="class")
+    def batch_size(self, request):
+        return request.param
 
+    def test_output_dimension(self, batch_size):
+        num_classes = 4
+        tensor = torch.randint(4, torch.Size([batch_size] if batch_size else []))
+        out_tensor = one_hot_encode(tensor, num_classes)
+        assert out_tensor.dim() == 2 if batch_size else 1
 
+        tensor = torch.randint(4, torch.Size([batch_size, 1] if batch_size else [1]))
+        out_tensor = one_hot_encode(tensor, num_classes)
+        assert out_tensor.dim() == 2 if batch_size else 1
+
+    def test_error(self, batch_size):
+        with pytest.raises(TypeError):
+            one_hot_encode(torch.randn(4), 4)
+
+    def test_correctness(self):
+        tensor = torch.tensor([2])
+        out_tensor = one_hot_encode(tensor, 4)
+        torch.testing.assert_allclose(out_tensor, torch.tensor([0., 0., 1., 0.]))
+
+        tensor = torch.tensor([2, 1])
+        out_tensor = one_hot_encode(tensor, 4)
+        torch.testing.assert_allclose(out_tensor, torch.tensor([[0., 0., 1., 0.],
+                                                                [0., 1., 0., 0.]]))
+
+    def test_output_sum_one(self, batch_size):
+            num_classes = 4
+            tensor = torch.randint(4, torch.Size([batch_size] if batch_size else []))
+            out_tensor = one_hot_encode(tensor, num_classes)
+            torch.testing.assert_allclose(
+                out_tensor.sum(dim=-1),
+                torch.ones(batch_size if batch_size else 1).squeeze(-1)
+            )
+
+    def test_indexing(self, batch_size):
+        num_classes = 4
+        tensor = torch.randint(4, torch.Size([batch_size, 1] if batch_size else [1]))
+        out_tensor = one_hot_encode(tensor, num_classes)
+        if batch_size:
+            indexes = out_tensor.gather(-1, tensor).long()
+        else:
+            indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long()
+        torch.testing.assert_allclose(indexes, torch.ones_like(tensor))

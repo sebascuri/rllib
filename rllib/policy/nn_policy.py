@@ -3,8 +3,7 @@
 
 from .abstract_policy import AbstractPolicy
 from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN, FelixNet
-from rllib.util.neural_networks import update_parameters
-import torch
+from rllib.util.neural_networks import update_parameters, one_hot_encode
 
 
 __all__ = ['NNPolicy', 'FelixPolicy']
@@ -45,21 +44,9 @@ class NNPolicy(AbstractPolicy):
                                             self.temperature)
 
     def __call__(self, state):
-        if state.dim() == 1:
-            batch_size = 1
-            state = state.unsqueeze(0)
-        else:
-            batch_size = state.shape[0]
-
         if self.discrete_states:
-            in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state, 1)
-        else:
-            in_ = state
-
-        if batch_size == 1:
-            in_ = in_.squeeze(0)
-
-        return self._policy(in_)
+            state = one_hot_encode(state, self.num_states)
+        return self._policy(state)
 
     @property
     def parameters(self):

@@ -3,7 +3,7 @@
 import torch
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.neural_networks import DeterministicNN
-from rllib.util.neural_networks import update_parameters
+from rllib.util.neural_networks import update_parameters, one_hot_encode
 from rllib.policy import NNPolicy
 
 
@@ -36,17 +36,9 @@ class NNValueFunction(AbstractValueFunction):
         self._tau = tau
 
     def __call__(self, state, action=None):
-        if state.dim() == 1:
-            batch_size = 1
-            state = state.unsqueeze(0)
-        else:
-            batch_size = state.shape[0]
-
         if self.discrete_state:
-            in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state, 1)
-        else:
-            in_ = state
-        return self._value_function(in_).squeeze(-1)
+            state = one_hot_encode(state, self.num_states)
+        return self._value_function(state).squeeze(-1)
 
     @property
     def parameters(self):
@@ -94,44 +86,24 @@ class NNQFunction(AbstractQFunction):
         self._tau = tau
 
     def __call__(self, state, action=None):
-        if state.dim() == 1:
-            batch_size = 1
-            state = state.unsqueeze(0)
-        else:
-            batch_size = state.shape[0]
+        if self.discrete_state:
+            state = one_hot_encode(state, self.num_states)
 
         if action is None:
             if not self.discrete_action:
                 raise NotImplementedError
-            elif not self.discrete_state:
-                in_ = state
-            else:
-                in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state,
-                                    1)
-            action_value = self._q_function(in_)
-            if batch_size == 1:
-                action_value = action_value.squeeze(0)
-
+            action_value = self._q_function(state)
             return action_value
-
-        if action.dim() == 0:
-            action = action.unsqueeze(0).unsqueeze(1)
-        elif action.dim() == 1:
-            if action.shape[0] == batch_size:
-                action = action.unsqueeze(1)
-            else:
-                action = action.unsqueeze(0)
-
-        assert action.shape[0] == state.shape[0]
+        elif action.dim() == 0:
+            action.unsqueeze(0)
 
         if not self.discrete_state and not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
             return self._q_function(state_action).squeeze(-1)
         elif self.discrete_state and self.discrete_action:
-            in_ = torch.scatter(torch.zeros(batch_size, self.num_states), -1, state, 1)
-            return self._q_function(in_).gather(1, action.long()).squeeze(-1)
+            return self._q_function(state).gather(-1, action.long()).squeeze(-1)
         elif not self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(1, action.long()).squeeze(-1)
+            return self._q_function(state).gather(-1, action.long()).squeeze(-1)
 
     @property
     def parameters(self):
