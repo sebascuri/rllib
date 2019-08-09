@@ -64,9 +64,6 @@ class ProbabilisticNN(DeterministicNN):
         super().__init__(in_dim, out_dim, layers=layers)
         self.temperature = temperature
 
-    def forward(self, x):
-        raise NotImplementedError
-
 
 class HeteroGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
@@ -80,6 +77,8 @@ class HeteroGaussianNN(ProbabilisticNN):
         x = self._layers(x)
         mean = self._head(x)
         covariance = nn.functional.softplus(self._covariance(x))
+        covariance = torch.diag_embed(covariance)
+
         return MultivariateNormal(mean, covariance * self.temperature)
 
 
@@ -94,7 +93,9 @@ class HomoGaussianNN(ProbabilisticNN):
     def forward(self, x):
         x = self._layers(x)
         mean = self._head(x)
-        covariance = functional.softplus(self._covariance(x))
+        covariance = functional.softplus(self._covariance)
+        covariance = torch.diag_embed(covariance)
+
         return MultivariateNormal(mean, covariance * self.temperature)
 
 
@@ -115,6 +116,7 @@ class FelixNet(nn.Module):
     def __init__(self, in_dim, out_dim, temperature=1.0):
         super().__init__()
         self.temperature = temperature
+        self.layers = [64, 64]
 
         self.linear1 = nn.Linear(in_dim, 64, bias=True)
         torch.nn.init.zeros_(self.linear1.bias)
@@ -134,6 +136,6 @@ class FelixNet(nn.Module):
 
         mean = self._mean(x)
         covariance = functional.softplus(self._covariance(x))
+        covariance = torch.diag_embed(covariance)
 
-        return Normal(torch.tanh(mean),
-                      nn.functional.softplus(covariance))
+        return MultivariateNormal(torch.tanh(mean), covariance * self.temperature)
