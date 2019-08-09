@@ -30,6 +30,11 @@ def temperature(request):
     return request.param
 
 
+@pytest.fixture(params=[2, 5, 32])
+def num_heads(request):
+    return request.param
+
+
 class TestDeterministicNN(object):
     @pytest.fixture(scope="class")
     def net(self):
@@ -212,6 +217,62 @@ class TestCategoricalNN(object):
         # Check shapes
         layers.append(out_dim)
         for i, param in enumerate(net.parameters()):
+            assert param.shape[0] == layers[i // 2]
+
+
+class TestEnsembleNN(object):
+    @pytest.fixture(scope="class")
+    def net(self):
+        return EnsembleNN
+
+    def test_temperature(self, net, temperature):
+        net = net(4, 2, temperature=temperature)
+        assert net.temperature == temperature
+
+    def test_num_heads(self, net, num_heads):
+        net = net(4, 2, num_heads=num_heads)
+        assert net.num_heads == num_heads
+
+    def test_output_shape(self, net, out_dim, layers, num_heads, batch_size):
+        in_dim = 4
+        net = net(in_dim, out_dim, layers, num_heads=num_heads)
+        if batch_size is None:
+            t = torch.randn(in_dim)
+            o = net(t).sample()
+            assert o.shape == torch.Size([out_dim])
+        else:
+            t = torch.randn(batch_size, in_dim)
+            o = net(t).sample()
+            assert o.shape == torch.Size([batch_size, out_dim])
+
+    def test_output_properties(self, net, out_dim, num_heads, batch_size):
+        in_dim = 4
+        net = net(in_dim, out_dim, num_heads=num_heads)
+        if batch_size is None:
+            t = torch.randn(in_dim)
+        else:
+            t = torch.randn(batch_size, in_dim)
+
+        o = net(t)
+        assert type(o) is torch.distributions.MultivariateNormal
+        assert o.has_rsample
+        assert not o.has_enumerate_support
+        assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
+
+    def test_layers(self, net, out_dim, num_heads, layers):
+        in_dim = 4
+        net = net(in_dim, out_dim, layers, num_heads=num_heads)
+        layers = layers or list()
+
+        # Check property assignment
+        assert net.layers == layers
+
+        # Check nn.parameters (+1: head)
+        assert 2 * (len(layers) + 1) == len([*net.parameters()])
+
+        # Check shapes
+        layers.append(out_dim * num_heads)
+        for i, (name, param) in enumerate(net.named_parameters()):
             assert param.shape[0] == layers[i // 2]
 
 

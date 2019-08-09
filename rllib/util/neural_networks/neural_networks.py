@@ -3,11 +3,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
-from torch.distributions import MultivariateNormal, Categorical, Normal
+from torch.distributions import MultivariateNormal, Categorical
 from .utilities import inverse_softplus
 
 __all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',
-           'CategoricalNN', 'FelixNet']
+           'CategoricalNN', 'EnsembleNN', 'FelixNet']
 
 
 class DeterministicNN(nn.Module):
@@ -108,6 +108,45 @@ class CategoricalNN(ProbabilisticNN):
     def forward(self, x):
         output = self._head(self._layers(x))
         return Categorical(logits=output / self.temperature)
+
+
+class EnsembleNN(ProbabilisticNN):
+    """Implementation of an Ensemble of Neural Networks.
+
+    The Ensemble shares the inner layers and then has `num_heads' different heads.
+    Using these heads, it returns a Multivariate distribution parametrized by the
+    mean and variance of the heads' outputs.
+
+    Parameters
+    ----------
+    in_dim: int
+        input dimension of neural network.
+    out_dim: int
+        output dimension of neural network.
+    layers: list of int
+        list of width of neural network layers, each separated with a ReLU
+        non-linearity.
+    temperature: float, optional
+        temperature scaling of output distribution.
+    num_heads: int
+        number of heads of ensemble
+
+    """
+
+    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0, num_heads=5):
+        self.num_heads = num_heads
+        super().__init__(in_dim, out_dim * num_heads, layers, temperature)
+
+    def forward(self, x):
+        x = self._layers(x)
+        out = self._head(x)
+
+        out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))
+
+        mean = torch.mean(out, dim=-1)
+        covariance = torch.diag_embed(torch.var(out, dim=-1))
+
+        return MultivariateNormal(mean, covariance * self.temperature)
 
 
 class FelixNet(nn.Module):
