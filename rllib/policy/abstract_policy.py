@@ -87,23 +87,30 @@ class AbstractPolicy(ABC):
     def parameters(self, new_params):
         raise NotImplementedError
 
-    def random(self):
+    def random(self, batch_size=None):
         """Return a uniform random distribution of the output space.
 
+        Parameters
+        ----------
+        batch_size: int, optional
         Returns
         -------
         distribution: torch.distribution.Distribution
         """
         if self.discrete_action:  # Categorical
-            return Categorical(torch.ones(self.num_actions))
-        else:  # Categorical
-            return MultivariateNormal(
+            distribution = Categorical(torch.ones(self.num_actions))
+        else:
+            distribution = MultivariateNormal(
                 loc=torch.zeros(self.dim_action),
-                covariance_matrix=self.temperature * torch.eye(self.dim_action)
-            )
+                covariance_matrix=self.temperature * torch.eye(self.dim_action))
+
+        if batch_size is not None:
+            return distribution.expand(batch_shape=(batch_size,))
+        else:
+            return distribution
 
     @property
-    def discrete_states(self):
+    def discrete_state(self):
         """Flag that indicates if states are discrete.
 
         Returns

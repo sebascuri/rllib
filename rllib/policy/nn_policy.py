@@ -31,7 +31,7 @@ class NNPolicy(AbstractPolicy):
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  temperature=1.0, layers=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
-        if self.discrete_states:
+        if self.discrete_state:
             in_dim = self.num_states
         else:
             in_dim = self.dim_state
@@ -44,7 +44,7 @@ class NNPolicy(AbstractPolicy):
                                             self.temperature)
 
     def __call__(self, state):
-        if self.discrete_states:
+        if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
         return self._policy(state)
 
@@ -89,7 +89,7 @@ class FelixPolicy(NNPolicy):
                  temperature=1.0):
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
 
-        if self.discrete_states or self.discrete_action:
+        if self.discrete_state or self.discrete_action:
             raise ValueError("Felix Policy is for Continuous Problems")
 
         self._policy = FelixNet(dim_state, dim_action)

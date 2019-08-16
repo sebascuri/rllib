@@ -2,6 +2,7 @@
 
 
 from .abstract_policy import AbstractPolicy
+from rllib.util.neural_networks import get_batch_size
 
 
 __all__ = ['RandomPolicy']
@@ -19,8 +20,12 @@ class RandomPolicy(AbstractPolicy):
                  temperature=1.0):
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
 
-    def __call__(self, _):
-        return self.random()
+    def __call__(self, states):
+        batch_size = get_batch_size(states)
+        if batch_size:
+            return self.random(batch_size)
+        else:
+            return self.random()
 
     @property
     def parameters(self):

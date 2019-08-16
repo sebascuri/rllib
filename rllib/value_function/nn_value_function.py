@@ -97,13 +97,16 @@ class NNQFunction(AbstractQFunction):
         elif action.dim() == 0:
             action.unsqueeze(0)
 
+        if self.discrete_action:
+            action = action.unsqueeze(-1).long()
+
         if not self.discrete_state and not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
             return self._q_function(state_action).squeeze(-1)
         elif self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(-1, action.long()).squeeze(-1)
+            return self._q_function(state).gather(-1, action).squeeze(-1)
         elif not self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(-1, action.long()).squeeze(-1)
+            return self._q_function(state).gather(-1, action).squeeze(-1)
 
     @property
     def parameters(self):

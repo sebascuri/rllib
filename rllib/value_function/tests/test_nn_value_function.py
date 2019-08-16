@@ -2,6 +2,7 @@ import pytest
 import torch
 import torch.testing
 from rllib.value_function import NNValueFunction, NNQFunction
+from rllib.util.neural_networks import random_tensor
 
 
 @pytest.fixture(params=[False, True])
@@ -182,16 +183,3 @@ class TestNNQFunction(object):
                 sample_action = policy(state).sample()
                 assert sample_action.shape == torch.Size([batch_size] if batch_size else [])
                 assert sample_action.dtype is torch.long
-
-
-def random_tensor(discrete, dim, batch_size):
-    if discrete:
-        if batch_size:
-            return torch.randint(dim, (batch_size, 1))
-        else:
-            return torch.randint(dim, ())
-    else:
-        if batch_size:
-            return torch.randn(batch_size, dim)
-        else:
-            return torch.randn(dim)

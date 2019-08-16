@@ -124,3 +124,55 @@ class TestOneHoteEncode(object):
         else:
             indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long()
         torch.testing.assert_allclose(indexes, torch.ones_like(tensor))
+
+
+class TestGetBatchSize(object):
+    @pytest.fixture(params=[None, 1, 4, 16], scope="class")
+    def batch_size(self, request):
+        return request.param
+
+    def test_discrete(self, batch_size):
+        size = (batch_size,) if batch_size else ()
+        tensor = torch.randint(4, size)
+
+        assert batch_size == get_batch_size(tensor, is_discrete=True)
+        assert batch_size == get_batch_size(tensor)
+
+    def test_continuous(self, batch_size):
+        if batch_size:
+            tensor = torch.randn(batch_size, 4)
+        else:
+            tensor = torch.randn(4)
+
+        assert batch_size == get_batch_size(tensor, is_discrete=False)
+        assert batch_size == get_batch_size(tensor)
+
+
+class TestRandomTensor(object):
+    @pytest.fixture(params=[None, 1, 4, 16], scope="class")
+    def batch_size(self, request):
+        return request.param
+
+    @pytest.fixture(params=[2, 4], scope="class")
+    def dim(self, request):
+        return request.param
+
+    def test_discrete(self, batch_size, dim):
+        tensor = random_tensor(True, dim, batch_size)
+        assert tensor.dtype is torch.long
+        if batch_size:
+            assert tensor.dim() == 1
+            assert tensor.shape == (batch_size, )
+        else:
+            assert tensor.dim() == 0
+            assert tensor.shape == ()
+
+    def test_continuous(self, batch_size, dim):
+        tensor = random_tensor(False, dim, batch_size)
+        assert tensor.dtype is torch.float
+        if batch_size:
+            assert tensor.dim() == 2
+            assert tensor.shape == (batch_size, dim,)
+        else:
+            assert tensor.dim() == 1
+            assert tensor.shape == (dim,)
