@@ -44,11 +44,11 @@ class BoltzmannExploration(AbstractExplorationStrategy):
     def __call__(self, action_distribution, steps=None):
         t = self.temperature(steps)
         if type(action_distribution) is Categorical:
-            d = Categorical(logits=action_distribution.logits / t)
+            d = Categorical(logits=action_distribution.logits / (t + 1e-12))
         else:
             d = MultivariateNormal(
                 loc=action_distribution.loc,
-                covariance_matrix=action_distribution.covariance_matrix * t)
+                covariance_matrix=action_distribution.covariance_matrix * (t + 1e-12))
 
         return d.sample().numpy()
 
