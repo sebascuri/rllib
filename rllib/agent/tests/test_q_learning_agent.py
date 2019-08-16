@@ -1,22 +1,15 @@
-import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent, GQLearningAgent, DQNAgent, DDQNAgent
+import pytest
+from rllib.agent import DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import EpsGreedy
-# from rllib.environment.systems import InvertedPendulum, CartPole
 from rllib.environment import GymEnvironment
-import numpy as np
 import torch.nn.functional as func
 import torch.optim
-import pickle
 
-
-ENVIRONMENT = 'NChain-v0'
-# ENVIRONMENT = 'CartPole-v0'
-
-NUM_EPISODES = 100
-MAX_STEPS = 30
+NUM_EPISODES = 25
+MAX_STEPS = 25
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
 MEMORY_MAX_SIZE = 5000
@@ -29,14 +22,19 @@ EPS_DECAY = 500
 LAYERS = [64, 64]
 SEED = 0
 
-for name, Agent in {'DDQN': DDQNAgent,
-                    'Q-Learning': QLearningAgent,
-                    'GQ-Learning': GQLearningAgent,
-                    'DQN': DQNAgent}.items():
-    torch.manual_seed(SEED)
-    np.random.seed(SEED)
 
-    environment = GymEnvironment(ENVIRONMENT, SEED, MAX_STEPS)
+@pytest.fixture(params=['CartPole-v0', 'NChain-v0'])
+def environment(request):
+    return request.param
+
+
+@pytest.fixture(params=[DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent])
+def agent(request):
+    return request.param
+
+
+def test_interaction(environment, agent):
+    environment = GymEnvironment(environment, SEED, MAX_STEPS)
     exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
                              num_states=environment.num_observations,
@@ -61,14 +59,6 @@ for name, Agent in {'DDQN': DDQNAgent,
         'gamma': GAMMA,
         'learning_rate': LEARNING_RATE
     }
-    agent = Agent(q_function, q_target, exploration, criterion, optimizer, memory,
-                  hyper_params)
-    rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
-
-    plt.plot(agent.episodes_cumulative_rewards, label=name)
-    with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, name), 'wb') as file:
-        pickle.dump(agent, file)
-plt.xlabel('Episode')
-plt.ylabel('Rewards')
-plt.legend(loc='best')
-plt.show()
+    q_agent = agent(q_function, q_target, exploration, criterion, optimizer, memory,
+                    hyper_params)
+    rollout_agent(environment, q_agent, num_episodes=NUM_EPISODES)

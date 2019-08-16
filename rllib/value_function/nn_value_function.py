@@ -87,7 +87,7 @@ class NNQFunction(AbstractQFunction):
 
     def __call__(self, state, action=None):
         if self.discrete_state:
-            state = one_hot_encode(state, self.num_states)
+            state = one_hot_encode(state.long(), self.num_states)
 
         if action is None:
             if not self.discrete_action:

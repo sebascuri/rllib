@@ -19,24 +19,33 @@ class GymEnvironment(AbstractEnvironment):
 
     """
 
-    def __init__(self, env_name, seed=None):
+    def __init__(self, env_name, seed=None, max_steps=None):
         self._env = gym.make(env_name)
         self._env.seed(seed)
         try:
             dim_action = self._env.action_space.shape[0]
-            num_action = None
+            num_actions = None
         except IndexError:
             dim_action = 1
-            num_action = self._env.action_space.n
+            num_actions = self._env.action_space.n
+
+        try:
+            dim_state = self._env.observation_space.shape[0]
+            num_states = None
+        except IndexError:
+            dim_state = 1
+            num_states = self._env.observation_space.n
 
         super().__init__(
             dim_action=dim_action,
-            dim_state=self._env.observation_space.shape[0],
+            dim_state=dim_state,
             action_space=self._env.action_space,
             observation_space=self._env.observation_space,
-            num_actions=num_action
+            num_actions=num_actions,
+            num_observations=num_states
         )
         self._time = 0
+        self.max_steps = max_steps if max_steps else float('Inf')
 
     @property
     def state(self):
@@ -52,7 +61,9 @@ class GymEnvironment(AbstractEnvironment):
 
     def step(self, action):
         self._time += 1
-        return self._env.step(action)
+        state, reward, done, info = self._env.step(action)
+        done |= self.time >= self.max_steps
+        return state, reward, done, info
 
     def reset(self):
         self._time = 0

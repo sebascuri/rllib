@@ -51,7 +51,7 @@ class AbstractQLearningAgent(AbstractAgent):
                                        batch_size=self._hyper_params['batch_size'])
 
     def act(self, state):
-        logits = self._q_function(torch.from_numpy(state).float())
+        logits = self._q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
         return self._exploration(action_distribution, self._steps['total'])
 
