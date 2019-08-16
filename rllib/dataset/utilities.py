@@ -1,4 +1,4 @@
-"""utilities for dataset submodule."""
+"""Utilities for dataset submodule."""
 
 
 import numpy as np

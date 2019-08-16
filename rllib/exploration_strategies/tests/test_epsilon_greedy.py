@@ -1,7 +1,7 @@
 from rllib.exploration_strategies import EpsGreedy
 import torch
 import torch.testing
-from torch.distributions import MultivariateNormal, Categorical
+from torch.distributions import MultivariateNormal, Categorical, HalfCauchy
 import pytest
 import numpy as np
 
@@ -68,3 +68,10 @@ def test_call_continuous():
             total += 1
 
     assert total
+
+
+def test_wrong_distribution():
+    strategy = EpsGreedy(eps_start=0)
+    action_distribution = HalfCauchy(scale=1)
+    with pytest.raises(NotImplementedError):
+        strategy(action_distribution)

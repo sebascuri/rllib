@@ -41,8 +41,5 @@ class RewardClipper(AbstractTransform):
                                           self._max_reward)
                            )
 
-    def update(self, trajectory):
-        pass
-
     def inverse(self, observation):
         return observation

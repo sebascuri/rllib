@@ -10,9 +10,9 @@ class AbstractTransform(ABC):
     Methods
     -------
     __call__(observation): Observation
-        normalize a raw observation.
+        transform a raw observation.
     inverse(observation): Observation
-        revert the normalization of the observation.
+        revert the transformation of the observation.
     update(observation):
         update the parameters of the transformer.
 
@@ -30,7 +30,7 @@ class AbstractTransform(ABC):
         Returns
         -------
         observation: Observation
-            normalized observation.
+            transformed observation.
 
         """
         raise NotImplementedError
@@ -42,17 +42,16 @@ class AbstractTransform(ABC):
         Parameters
         ----------
         observation: Observation
-            normalized observation.
+            transformed observation.
 
         Returns
         -------
         observation: Observation
-            un-normalized observation.
+            un-transformed observation.
 
         """
         raise NotImplementedError
 
-    @abstractmethod
     def update(self, observation):
         """Update parameters of transformer.
 
@@ -61,4 +60,4 @@ class AbstractTransform(ABC):
         observation: Observation
 
         """
-        raise NotImplementedError
+        pass
