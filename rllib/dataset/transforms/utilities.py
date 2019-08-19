@@ -11,7 +11,28 @@ def get_backend(array):
         return np
 
 
-def running_statistics(old_mean, old_var, old_count, new_mean, new_var, new_count):
+def update_mean(old_mean, old_count, new_mean, new_count):
+    """Update mean based on a new batch of data.
+
+    Parameters
+    ----------
+    old_mean : array_like
+    old_count : int
+    new_mean : array_like
+    new_count : int
+
+    References
+    ----------
+    Uses a modified version of Welford's algorithm, see
+    https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+
+    """
+    total = old_count + new_count
+    mean = (old_count * old_mean + new_count * new_mean) / total
+    return mean
+
+
+def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count, biased=True):
     """Update mean and variance statistics based on a new batch of data.
 
     Parameters
@@ -31,12 +52,23 @@ def running_statistics(old_mean, old_var, old_count, new_mean, new_var, new_coun
     """
     delta = new_mean - old_mean
     total = old_count + new_count
-    m_a = old_var * old_count
-    m_b = new_var * new_count
-    m_2 = m_a + m_b + delta ** 2 * new_count * (old_count / total)
-    var = m_2 / total
-    mean = old_mean + delta * (new_count / total)
-    return mean, var
+
+    if not biased:
+        old_c = old_count - 1 if old_count > 0 else 0
+        new_c = new_count - 1 if new_count > 0 else 0
+    else:
+        old_c = old_count
+        new_c = new_count
+
+    old_m = old_var * old_c
+    new_m = new_var * new_c
+
+    m2 = old_m + new_m + delta ** 2 * (old_count * new_count / total)
+
+    if not biased:
+        return m2 / (total - 1)
+    else:
+        return m2 / total
 
 
 def normalize(array, mean, variance, preserve_origin=False):
@@ -50,11 +82,12 @@ def normalize(array, mean, variance, preserve_origin=False):
     preserve_origin : bool, optional
         Whether to retain the origin (sign) of the data.
     """
+    backend = get_backend(array)
     if preserve_origin:
-        scale = np.sqrt(variance + mean ** 2)
+        scale = backend.sqrt(variance + mean ** 2)
         return array / scale
     else:
-        return (array - mean) / np.sqrt(variance)
+        return (array - mean) / backend.sqrt(variance)
 
 
 def denormalize(array, mean, variance, preserve_origin=False):
@@ -68,11 +101,12 @@ def denormalize(array, mean, variance, preserve_origin=False):
     preserve_origin : bool, optional
         Whether to retain the origin (sign) of the data.
     """
+    backend = get_backend(array)
     if preserve_origin:
-        scale = np.sqrt(variance + mean ** 2)
+        scale = backend.sqrt(variance + mean ** 2)
         return array * scale
     else:
-        return mean + array * np.sqrt(variance)
+        return mean + array * backend.sqrt(variance)
 
 
 class Normalizer(object):
@@ -80,8 +114,8 @@ class Normalizer(object):
 
     def __init__(self, preserve_origin=False):
         super().__init__()
-        self._mean = np.array(0.)
-        self._variance = np.array(1.)
+        self._mean = None
+        self._variance = None
         self._count = 0
         self._preserve_origin = preserve_origin
 
@@ -92,10 +126,19 @@ class Normalizer(object):
         return denormalize(array, self._mean, self._variance, self._preserve_origin)
 
     def update(self, array):
-        new_mean = np.mean(array, axis=0)
-        new_var = np.var(array, axis=0)
+        backend = get_backend(array)
+        if self._mean is None:
+            self._mean = backend.zeros(1)
+        if self._variance is None:
+            self._variance = backend.ones(1)
 
-        self._mean, self._variance = running_statistics(
-            self._mean, self._variance, self._count, new_mean, new_var, len(array))
+        new_mean = backend.mean(array, 0)
+        new_var = backend.var(array, 0)
+        new_count = len(array)
 
-        self._count += len(array)
+        self._variance = update_var(self._mean, self._variance, self._count,
+                                    new_mean, new_var, new_count,
+                                    backend is np)
+        self._mean = update_mean(self._mean, self._count, new_mean, new_count)
+
+        self._count += new_count
