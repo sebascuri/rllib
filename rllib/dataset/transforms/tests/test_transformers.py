@@ -56,17 +56,8 @@ class TestMeanFunction(object):
         transformer = MeanFunction(lambda state, action: 2 * state + action)
         for observation in trajectory:
             inverse_observation = transformer.inverse(transformer(observation))
-            backend = get_backend(observation.state)
-            backend.testing.assert_allclose(inverse_observation.state,
-                                            observation.state)
-            backend.testing.assert_allclose(inverse_observation.action,
-                                            observation.action)
-            backend.testing.assert_allclose(inverse_observation.reward,
-                                            observation.reward)
-            backend.testing.assert_allclose(inverse_observation.done, observation.done)
-
-            backend.testing.assert_allclose(inverse_observation.next_state,
-                                            observation.next_state)
+            assert observation == inverse_observation
+            assert observation is not inverse_observation
 
 
 class TestRewardClipper(object):
@@ -191,13 +182,9 @@ class TestActionNormalize(object):
         transformer.update(trajectory)
 
         observation = get_observation(backend)
-
-        inverse = transformer.inverse(transformer(observation))
-        backend.testing.assert_allclose(inverse.state, observation.state)
-        backend.testing.assert_allclose(inverse.action, observation.action)
-        backend.testing.assert_allclose(inverse.reward, observation.reward)
-        backend.testing.assert_allclose(inverse.next_state, observation.next_state)
-        backend.testing.assert_allclose(inverse.done, observation.done)
+        inverse_observation = transformer.inverse(transformer(observation))
+        assert observation == inverse_observation
+        assert observation is not inverse_observation
 
 
 class TestStateNormalize(object):
@@ -256,10 +243,6 @@ class TestStateNormalize(object):
         transformer.update(trajectory)
 
         observation = get_observation(backend)
-
-        inverse = transformer.inverse(transformer(observation))
-        backend.testing.assert_allclose(inverse.state, observation.state)
-        backend.testing.assert_allclose(inverse.action, observation.action)
-        backend.testing.assert_allclose(inverse.reward, observation.reward)
-        backend.testing.assert_allclose(inverse.next_state, observation.next_state)
-        backend.testing.assert_allclose(inverse.done, observation.done)
+        inverse_observation = transformer.inverse(transformer(observation))
+        assert observation == inverse_observation
+        assert observation is not inverse_observation
