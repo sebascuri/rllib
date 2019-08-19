@@ -66,13 +66,15 @@ class EpisodicPolicyEvaluation(AbstractAgent):
         pass
 
     def _train(self):
+
         for t, observation in enumerate(self._trajectory):
             expected_value = self._value_function(
                 torch.tensor(observation.state).float())
             target_value = self._value_estimate(self._trajectory[t:])
 
-            self._optimizer.zero_grad()
             loss = self._criterion(expected_value, target_value)
+
+            self._optimizer.zero_grad()
             loss.backward()
             self._optimizer.step()
 
@@ -94,5 +96,9 @@ class MCAgent(EpisodicPolicyEvaluation):
     """Implementation of Monte-Carlo algorithm."""
 
     def _value_estimate(self, trajectory):
+        last_state = torch.tensor(trajectory[-1].next_state).float()
         estimate = sum_discounted_rewards(trajectory, self._hyper_params['gamma'])
-        return torch.tensor([estimate])
+        estimate += (self._hyper_params['gamma'] ** len(trajectory)
+                     * self._value_function(last_state))
+
+        return estimate.detach()
