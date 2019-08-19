@@ -1,8 +1,7 @@
 """Utilities for dataset submodule."""
 
-
 import numpy as np
-
+import torch
 
 __all__ = ['stack_list_of_tuples']
 
@@ -23,7 +22,10 @@ def stack_list_of_tuples(iter_, dtype=None, backend=np):
     *arrays
         One stacked array for each entry in the tuple.
     """
-    stacked_generator = (backend.stack(x) for x in zip(*iter_))
+    stacked_generator = (
+        backend.stack(tuple(map(lambda x: torch.tensor(np.array(x)), x)))
+        for x in zip(*iter_)
+    )
     if dtype is not None:
         stacked_generator = (x.astype(dtype) for x in stacked_generator)
 

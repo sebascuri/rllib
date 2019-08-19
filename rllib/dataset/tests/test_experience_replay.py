@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from rllib.dataset import Observation, ExperienceReplay
 from rllib.dataset.transforms import *
 import pytest
@@ -64,11 +65,22 @@ def test_get_item(memory):
     memory, max_len, number_of_samples = memory
     for idx in range(len(memory)):
         observation = memory.__getitem__(idx)
-        print(observation)
-        print(memory._memory[idx])
-        print(observation == memory._memory[idx])
         assert observation is memory._memory[idx]
         assert observation == memory._memory[idx]
+        assert type(observation) is Observation
+        assert observation.state.shape == torch.Size([3, ])
+        assert observation.action.shape == torch.Size([2, ])
+        assert observation.next_state.shape == torch.Size([3, ])
+
+
+def test_iter(memory):
+    memory, max_len, number_of_samples = memory
+    for idx, observation in enumerate(memory):
+        assert observation is memory._memory[idx]
+        assert observation == memory._memory[idx]
+        assert observation.state.shape == torch.Size([3, ])
+        assert observation.action.shape == torch.Size([2, ])
+        assert observation.next_state.shape == torch.Size([3, ])
 
 
 def test_transforms(experience_replay):
@@ -80,6 +92,7 @@ def test_transforms(experience_replay):
         print(observation == memory._memory[idx])
         assert observation is not memory._memory[idx]
         assert observation != memory._memory[idx]
+        assert type(observation) is Observation
 
 
 def test_shuffle(memory):
@@ -91,3 +104,5 @@ def test_shuffle(memory):
 def test_append_error(experience_replay):
     with pytest.raises(TypeError):
         experience_replay.append((1, 2, 3, 4, 5))
+
+

@@ -53,7 +53,7 @@ class ExperienceReplay(data.Dataset):
         observation: Observation
 
         """
-        assert idx < len(self)
+        # assert idx < len(self)
         idx = self._sampling_idx[idx]
         """This is done for shuffling. If memory was directly shuffled, then ordering
         would be lost.

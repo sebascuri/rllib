@@ -1,5 +1,7 @@
 import numpy as np
+import torch
 from rllib.dataset import Observation, TrajectoryDataset
+from rllib.dataset.transforms import *
 import pytest
 
 
@@ -12,7 +14,11 @@ def dataset(request):
     batch_size = request.param[4]
     sequence_length = request.param[5]
 
-    dataset = TrajectoryDataset(sequence_length=sequence_length)
+    transforms = [MeanFunction(lambda state, action: state),
+                  StateNormalizer(), ActionNormalizer()]
+
+    dataset = TrajectoryDataset(sequence_length=sequence_length,
+                                transformations=transforms)
 
     for _ in range(num_episodes):
         trajectory = []
@@ -41,3 +47,15 @@ def test_length(dataset):
 def test_shuffle(dataset):
     dataset = dataset[0]
     dataset.shuffle()
+
+
+def test_get_item(dataset):
+    (dataset, num_episodes, episode_length, state_dim, action_dim, batch_size,
+     sequence_length) = dataset
+    for sub_trajectory in dataset:
+        assert type(sub_trajectory) is Observation
+        assert sub_trajectory.state.shape == torch.Size([sequence_length, state_dim])
+        assert sub_trajectory.action.shape == torch.Size([sequence_length, action_dim])
+        assert sub_trajectory.next_state.shape == torch.Size([sequence_length, state_dim])
+        assert sub_trajectory.reward.shape == torch.Size([sequence_length, ])
+        assert sub_trajectory.done.shape == torch.Size([sequence_length, ])

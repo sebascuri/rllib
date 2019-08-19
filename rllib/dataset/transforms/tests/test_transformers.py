@@ -8,7 +8,7 @@ import torch
 
 def _trajectory(backend):
     t = []
-    for reward in [3, -2, 0.5]:
+    for reward in [3., -2., 0.5]:
         t.append(get_observation(backend, reward))
     return t
 
@@ -133,13 +133,11 @@ class TestActionNormalize(object):
     def test_update(self, trajectory, preserve_origin):
         transformer = ActionNormalizer(preserve_origin)
         backend = get_backend(trajectory[0].state)
-        if backend == torch:
-            return
 
         trajectory = stack_list_of_tuples(trajectory, backend=backend)
 
-        mean = backend.mean(trajectory.action, axis=0)
-        var = backend.var(trajectory.action, axis=0)
+        mean = backend.mean(trajectory.action, 0)
+        var = backend.var(trajectory.action, 0)
 
         transformer.update(trajectory)
         backend.testing.assert_allclose(transformer._normalizer._mean, mean)
@@ -147,12 +145,10 @@ class TestActionNormalize(object):
 
     def test_call(self, trajectory, preserve_origin):
         backend = get_backend(trajectory[0].state)
-        if backend == torch:
-            return
 
         transformer = ActionNormalizer(preserve_origin)
 
-        trajectory = stack_list_of_tuples(trajectory)
+        trajectory = stack_list_of_tuples(trajectory, backend=backend)
         transformer.update(trajectory)
         observation = get_observation(backend)
         transformed = transformer(observation)
@@ -174,11 +170,9 @@ class TestActionNormalize(object):
 
     def test_inverse(self, trajectory, preserve_origin):
         backend = get_backend(trajectory[0].state)
-        if backend == torch:
-            return
 
         transformer = ActionNormalizer(preserve_origin)
-        trajectory = stack_list_of_tuples(trajectory)
+        trajectory = stack_list_of_tuples(trajectory, backend=backend)
         transformer.update(trajectory)
 
         observation = get_observation(backend)
@@ -192,27 +186,24 @@ class TestStateNormalize(object):
     def preserve_origin(self, request):
         return request.param
 
-    def test_batch_update(self, trajectory, preserve_origin):
+    def test_update(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
         backend = get_backend(trajectory[0].state)
-        if backend == torch:
-            return
 
-        trajectory = stack_list_of_tuples(trajectory)
-        mean = np.mean(trajectory.state, axis=0)
-        var = np.var(trajectory.state, axis=0)
+        trajectory = stack_list_of_tuples(trajectory, backend=backend)
+
+        mean = backend.mean(trajectory.state, 0)
+        var = backend.var(trajectory.state, 0)
 
         transformer.update(trajectory)
-        np.testing.assert_allclose(transformer._normalizer._mean, mean)
-        np.testing.assert_allclose(transformer._normalizer._variance, var)
+        backend.testing.assert_allclose(transformer._normalizer._mean, mean)
+        backend.testing.assert_allclose(transformer._normalizer._variance, var)
 
     def test_call(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
         backend = get_backend(trajectory[0].state)
-        if backend == torch:
-            return
 
-        trajectory = stack_list_of_tuples(trajectory)
+        trajectory = stack_list_of_tuples(trajectory, backend=backend)
         transformer.update(trajectory)
         observation = get_observation(backend)
         transformed = transformer(observation)
@@ -236,10 +227,8 @@ class TestStateNormalize(object):
     def test_inverse(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
         backend = get_backend(trajectory[0].state)
-        if backend == torch:
-            return
 
-        trajectory = stack_list_of_tuples(trajectory)
+        trajectory = stack_list_of_tuples(trajectory, backend=backend)
         transformer.update(trajectory)
 
         observation = get_observation(backend)
