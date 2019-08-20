@@ -39,13 +39,13 @@ for name, Agent in {'DDQN': DDQNAgent,
     environment = GymEnvironment(ENVIRONMENT, SEED, MAX_STEPS)
     exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
-                             num_states=environment.num_observations,
+                             num_states=environment.num_states,
                              num_actions=environment.num_actions,
                              layers=LAYERS
                              )
 
     q_target = NNQFunction(environment.dim_observation, environment.dim_action,
-                           num_states=environment.num_observations,
+                           num_states=environment.num_states,
                            num_actions=environment.num_actions,
                            layers=LAYERS,
                            tau=TARGET_UPDATE_TAU

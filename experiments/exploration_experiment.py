@@ -37,13 +37,13 @@ for name, exploration in {
 
     environment = GymEnvironment(ENVIRONMENT, SEED)
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
-                             num_states=environment.num_observations,
+                             num_states=environment.num_states,
                              num_actions=environment.num_actions,
                              layers=LAYERS
                              )
 
     q_target = NNQFunction(environment.dim_observation, environment.dim_action,
-                           num_states=environment.num_observations,
+                           num_states=environment.num_states,
                            num_actions=environment.num_actions,
                            layers=LAYERS,
                            tau=TARGET_UPDATE_TAU

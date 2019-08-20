@@ -39,7 +39,8 @@ class MDP(AbstractEnvironment):
         action_space = spaces.Discrete(self.num_actions)
         super().__init__(dim_state=1, dim_action=1, dim_observation=1,
                          observation_space=observation_space, action_space=action_space,
-                         num_observations=self.num_states, num_actions=self.num_actions)
+                         num_states=self.num_states, num_actions=self.num_actions,
+                         num_observations=self.num_states)
 
         if initial_state is None:
             self.initial_state = lambda: self.observation_space.sample()

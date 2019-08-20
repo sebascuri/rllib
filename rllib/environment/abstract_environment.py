@@ -31,13 +31,14 @@ class AbstractEnvironment(ABC):
     """
 
     def __init__(self, dim_state, dim_action, observation_space, action_space,
-                 dim_observation=None, num_actions=None, num_observations=None):
+                 dim_observation=None, num_states=None, num_actions=None,
+                 num_observations=None):
         super().__init__()
         self.dim_action = dim_action
         self.dim_state = dim_state
         self.num_actions = num_actions
         self.num_observations = num_observations
-        self.num_states = num_observations
+        self.num_states = num_states
 
         if dim_observation is None:
             dim_observation = dim_state
@@ -91,3 +92,18 @@ class AbstractEnvironment(ABC):
     def time(self):
         """Return current time of environment."""
         raise NotImplementedError
+
+    @property
+    def discrete_state(self):
+        """Check if state space is discrete."""
+        return self.num_states is not None
+
+    @property
+    def discrete_action(self):
+        """Check if action space is discrete."""
+        return self.num_actions is not None
+
+    @property
+    def discrete_observation(self):
+        """Check if observation space is discrete."""
+        return self.num_observations is not None

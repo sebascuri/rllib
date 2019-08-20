@@ -42,6 +42,7 @@ class GymEnvironment(AbstractEnvironment):
             action_space=self._env.action_space,
             observation_space=self._env.observation_space,
             num_actions=num_actions,
+            num_states=num_states,
             num_observations=num_states
         )
         self._time = 0
