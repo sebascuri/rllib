@@ -37,6 +37,7 @@ class AbstractEnvironment(ABC):
         self.dim_state = dim_state
         self.num_actions = num_actions
         self.num_observations = num_observations
+        self.num_states = num_observations
 
         if dim_observation is None:
             dim_observation = dim_state

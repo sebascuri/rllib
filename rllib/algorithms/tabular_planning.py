@@ -13,6 +13,7 @@ Chapter 4.
 from rllib.value_function import TabularValueFunction
 from rllib.policy import TabularPolicy
 import torch
+import numpy as np
 
 
 __all__ = ['policy_evaluation', 'policy_iteration', 'value_iteration']
@@ -26,7 +27,8 @@ def _init_value_function(num_states, terminal_states: list = None):
     return value_function
 
 
-def policy_evaluation(policy, model, gamma, eps=1e-6, value_function=None):
+def policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
+                      value_function=None):
     """Implement of Policy Evaluation algorithm.
 
     Parameters
@@ -39,6 +41,8 @@ def policy_evaluation(policy, model, gamma, eps=1e-6, value_function=None):
         discount factor.
     eps: float, optional
         desired precision, by default is 1e-6.
+    max_iter: int, optional
+        maximum number of iterations.
     value_function: TabularValueFunction, optional
         initial estimate of value function.
 
@@ -55,14 +59,13 @@ def policy_evaluation(policy, model, gamma, eps=1e-6, value_function=None):
     Chapter 4.1
 
     """
-    if not (0 <= model.num_actions < float('Inf')
-            and 0 <= model.num_states < float('Inf')):
+    if model.num_actions is None or model.num_states is None:
         raise NotImplementedError("Actions and States must be discrete and countable.")
 
     if value_function is None:
         value_function = _init_value_function(model.num_states, model.terminal_states)
 
-    while True:
+    for _ in range(max_iter):
         error = 0
         for state in range(model.num_states):
             state = torch.tensor(state).long()
@@ -70,9 +73,10 @@ def policy_evaluation(policy, model, gamma, eps=1e-6, value_function=None):
             value = value_function(state)
             value_ = 0
             policy_ = policy(state)
-            for action in range(model.num_actions):
+            for action in np.where(policy_.probs.detach().numpy())[0]:
                 value_estimate = 0
-                for next_state in range(model.num_states):
+                for next_state in np.where(model.kernel[state, action])[0]:
+                    next_state = torch.tensor(next_state).long()
                     value_estimate += model.kernel[state, action, next_state] * (
                             model.reward[state, action]
                             + gamma * value_function(next_state)
@@ -88,7 +92,7 @@ def policy_evaluation(policy, model, gamma, eps=1e-6, value_function=None):
     return value_function
 
 
-def policy_iteration(model, gamma, eps=1e-6, value_function=None):
+def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):
     """Implement Policy Iteration algorithm.
 
     Parameters
@@ -99,6 +103,8 @@ def policy_iteration(model, gamma, eps=1e-6, value_function=None):
         discount factor.
     eps: float, optional
         desired precision of policy evaluation step, by default is 1e-6.
+    max_iter: int, optional
+        maximum number of iterations.
     value_function: TabularValueFunction, optional
         initial estimate of value function.
 
@@ -117,25 +123,27 @@ def policy_iteration(model, gamma, eps=1e-6, value_function=None):
     Chapter 4.3
 
     """
-    if not (0 <= model.num_actions < float('Inf')
-            and 0 <= model.num_states < float('Inf')):
+    if model.num_actions is None or model.num_states is None:
         raise NotImplementedError("Actions and States must be discrete and countable.")
 
     if value_function is None:
         value_function = _init_value_function(model.num_states, model.terminal_states)
     policy = TabularPolicy(num_states=model.num_states, num_actions=model.num_actions)
 
-    while True:
-        value_function = policy_evaluation(policy, model, gamma, eps, value_function)
+    for _ in range(max_iter):
+        value_function = policy_evaluation(policy, model, gamma, eps,
+                                           value_function=value_function)
 
         policy_stable = True
         for state in range(model.num_states):
+            state = torch.tensor(state).long()
             old_action = policy(state).probs
 
             value_ = torch.zeros(model.num_actions)
             for action in range(model.num_actions):
                 value_estimate = 0
-                for next_state in range(model.num_states):
+                for next_state in np.where(model.kernel[state, action])[0]:
+                    next_state = torch.tensor(next_state).long()
                     value_estimate += model.kernel[state, action, next_state] * (
                             model.reward[state, action]
                             + gamma * value_function(next_state)
@@ -154,7 +162,7 @@ def policy_iteration(model, gamma, eps=1e-6, value_function=None):
     return policy, value_function
 
 
-def value_iteration(model, gamma, eps=1e-6, value_function=None):
+def value_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):
     """Implement of Value Iteration algorithm.
 
     Parameters
@@ -165,6 +173,8 @@ def value_iteration(model, gamma, eps=1e-6, value_function=None):
         discount factor.
     eps: float, optional
         desired precision, by default is 1e-6.
+    max_iter: int, optional
+        maximum number of iterations.
     value_function: TabularValueFunction, optional
         initial estimate of value function.
 
@@ -183,15 +193,14 @@ def value_iteration(model, gamma, eps=1e-6, value_function=None):
     Chapter 4.4
 
     """
-    if not (0 <= model.num_actions < float('Inf')
-            and 0 <= model.num_states < float('Inf')):
+    if model.num_actions is None or model.num_states is None:
         raise NotImplementedError("Actions and States must be discrete and countable.")
 
     if value_function is None:
         value_function = _init_value_function(model.num_states, model.terminal_states)
     policy = TabularPolicy(num_states=model.num_states, num_actions=model.num_actions)
 
-    while True:
+    for _ in range(max_iter):
         error = 0
         for state in range(model.num_states):
             state = torch.tensor(state).long()
@@ -201,7 +210,8 @@ def value_iteration(model, gamma, eps=1e-6, value_function=None):
             value_ = torch.zeros(model.num_actions)
             for action in range(model.num_actions):
                 value_estimate = 0
-                for next_state in range(model.num_states):
+                for next_state in np.where(model.kernel[state, action])[0]:
+                    next_state = torch.tensor(next_state).long()
                     value_estimate += model.kernel[state, action, next_state] * (
                             model.reward[state, action]
                             + gamma * value_function(next_state)

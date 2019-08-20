@@ -2,6 +2,7 @@ import pytest
 import torch
 import torch.testing
 from rllib.value_function import NNValueFunction, NNQFunction
+from rllib.value_function import TabularValueFunction, TabularQFunction
 from rllib.util.neural_networks import random_tensor
 
 
@@ -183,3 +184,27 @@ class TestNNQFunction(object):
                 sample_action = policy(state).sample()
                 assert sample_action.shape == torch.Size([batch_size] if batch_size else [])
                 assert sample_action.dtype is torch.long
+
+
+class TestTabularValueFunction(object):
+    def test_init(self):
+        value_function = TabularValueFunction(num_states=4)
+        torch.testing.assert_allclose(value_function.table, 0)
+
+    def test_set_value(self):
+        value_function = TabularValueFunction(num_states=4)
+        value_function.set_value(2, 1.)
+        torch.testing.assert_allclose(value_function.table, torch.tensor([0, 0, 1., 0]))
+
+
+class TestTabularQFunction(object):
+    def test_init(self):
+        value_function = TabularQFunction(num_states=4, num_actions=2)
+        torch.testing.assert_allclose(value_function.table, 0)
+
+    def test_set_value(self):
+        value_function = TabularQFunction(num_states=4, num_actions=2)
+        value_function.set_value(2, 1, 1.)
+        torch.testing.assert_allclose(value_function.table, torch.tensor([[0, 0, 0., 0],
+                                                                         [0, 0, 1., 0]])
+                                      )

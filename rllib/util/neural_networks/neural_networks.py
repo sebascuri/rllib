@@ -19,13 +19,15 @@ class DeterministicNN(nn.Module):
         input dimension of neural network.
     out_dim: int
         output dimension of neural network.
-    layers: list of int
+    layers: list of int, optional
         list of width of neural network layers, each separated with a ReLU
         non-linearity.
+    biased_head: bool, optional
+        flag that indicates if head of NN has a bias term or not.
 
     """
 
-    def __init__(self, in_dim, out_dim, layers: list = None):
+    def __init__(self, in_dim, out_dim, layers: list = None, biased_head=True):
         super().__init__()
         self.layers = layers or list()
 
@@ -37,10 +39,10 @@ class DeterministicNN(nn.Module):
             in_dim = layer
 
         self._layers = nn.Sequential(*layers_)
-        self._head = nn.Linear(in_dim, out_dim)
+        self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
 
     def forward(self, x):
-        return self._head(self._layers(x))
+        return self.head(self._layers(x))
 
 
 class ProbabilisticNN(DeterministicNN):
@@ -57,25 +59,30 @@ class ProbabilisticNN(DeterministicNN):
         non-linearity.
     temperature: float, optional
         temperature scaling of output distribution.
+    biased_head: bool, optional
+        flag that indicates if head of NN has a bias term or not.
 
     """
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
-        super().__init__(in_dim, out_dim, layers=layers)
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+                 biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
         self.temperature = temperature
 
 
 class HeteroGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
-        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature)
-        in_dim = self._head.in_features
-        self._covariance = nn.Linear(in_dim, out_dim)
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+                 biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
+                         biased_head=biased_head)
+        in_dim = self.head.in_features
+        self._covariance = nn.Linear(in_dim, out_dim, bias=biased_head)
 
     def forward(self, x):
         x = self._layers(x)
-        mean = self._head(x)
+        mean = self.head(x)
         covariance = nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
@@ -85,14 +92,16 @@ class HeteroGaussianNN(ProbabilisticNN):
 class HomoGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
-        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature)
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+                 biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
+                         biased_head=biased_head)
         initial_scale = inverse_softplus(torch.ones(out_dim))
         self._covariance = nn.Parameter(initial_scale, requires_grad=True)
 
     def forward(self, x):
         x = self._layers(x)
-        mean = self._head(x)
+        mean = self.head(x)
         covariance = functional.softplus(self._covariance)
         covariance = torch.diag_embed(covariance)
 
@@ -102,12 +111,14 @@ class HomoGaussianNN(ProbabilisticNN):
 class CategoricalNN(ProbabilisticNN):
     """A Module that parametrizes a Categorical distribution."""
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0):
-        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature)
+    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+                 biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
+                         biased_head=biased_head)
 
     def forward(self, x):
-        output = self._head(self._layers(x))
-        return Categorical(logits=output / self.temperature)
+        output = self.head(self._layers(x))
+        return Categorical(logits=output / (self.temperature + 1e-12))
 
 
 class EnsembleNN(ProbabilisticNN):
@@ -139,7 +150,7 @@ class EnsembleNN(ProbabilisticNN):
 
     def forward(self, x):
         x = self._layers(x)
-        out = self._head(x)
+        out = self.head(x)
 
         out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))
 

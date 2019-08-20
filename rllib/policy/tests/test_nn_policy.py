@@ -1,4 +1,4 @@
-from rllib.policy import NNPolicy, FelixPolicy
+from rllib.policy import NNPolicy, FelixPolicy, TabularPolicy
 from rllib.util.neural_networks import random_tensor
 import torch
 from torch.distributions import MultivariateNormal, Categorical
@@ -191,3 +191,23 @@ class TestFelixNet(object):
         self.init(dim_state, dim_action)
         old_parameter = self.policy.parameters
         self.policy.parameters = old_parameter
+
+
+class TestTabularValueFunction(object):
+    def test_init(self):
+        policy = TabularPolicy(num_states=4, num_actions=2)
+        torch.testing.assert_allclose(policy.table, 1)
+
+    def test_set_value(self):
+        policy = TabularPolicy(num_states=4, num_actions=2)
+        policy.set_value(2, torch.tensor(1))
+        torch.testing.assert_allclose(policy.table,
+                                      torch.tensor([[1., 1., 0., 1],
+                                                    [1., 1., 1., 1]]))
+
+        policy.set_value(0, torch.tensor([0.3, 0.7]))
+        torch.testing.assert_allclose(policy.table,
+                                      torch.tensor([[.3, 1., 0., 1],
+                                                    [.7, 1., 1., 1]]))
+
+

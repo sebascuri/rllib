@@ -21,10 +21,15 @@ class NNValueFunction(AbstractValueFunction):
         number of discrete states (None if state is continuous).
     layers: list, optional
         width of layers, each layer is connected with ReLUs non-linearities.
+    tau: float, optional
+        when a new parameter is set, tau low-passes the new parameter with the old one.
+    biased_head: bool, optional
+        flag that indicates if head of NN has a bias term or not.
 
     """
 
-    def __init__(self, dim_state, num_states=None, layers: list = None, tau=1.0):
+    def __init__(self, dim_state, num_states=None, layers: list = None, tau=1.0,
+                 biased_head=True):
         super().__init__(dim_state, num_states)
 
         if self.discrete_state:
@@ -32,7 +37,8 @@ class NNValueFunction(AbstractValueFunction):
         else:
             num_inputs = self.dim_state
 
-        self._value_function = DeterministicNN(num_inputs, 1, layers)
+        self._value_function = DeterministicNN(num_inputs, 1, layers,
+                                               biased_head=biased_head)
         self._tau = tau
 
     def __call__(self, state, action=None):
@@ -64,10 +70,14 @@ class NNQFunction(AbstractQFunction):
         number of discrete actions (None if action is continuous).
     layers: list, optional
         width of layers, each layer is connected with ReLUs non-linearities.
+    tau: float, optional
+        when a new parameter is set, tau low-passes the new parameter with the old one.
+    biased_head: bool, optional
+        flag that indicates if head of NN has a bias term or not.
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers: list = None, tau=1.0):
+                 layers: list = None, tau=1.0, biased_head=True):
         super().__init__(dim_state, dim_action, num_states, num_actions)
 
         if not self.discrete_state and not self.discrete_action:
@@ -82,7 +92,8 @@ class NNQFunction(AbstractQFunction):
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
-        self._q_function = DeterministicNN(num_inputs, num_outputs, layers)
+        self._q_function = DeterministicNN(num_inputs, num_outputs, layers,
+                                           biased_head=biased_head)
         self._tau = tau
 
     def __call__(self, state, action=None):

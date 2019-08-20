@@ -26,10 +26,13 @@ class NNPolicy(AbstractPolicy):
         temperature scaling of output distribution.
     layers: list, optional
         width of layers, each layer is connected with ReLUs non-linearities.
+    biased_head: bool, optional
+        flag that indicates if head of NN has a bias term or not.
+
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 temperature=1.0, layers=None):
+                 temperature=1.0, layers=None, biased_head=True):
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
         if self.discrete_state:
             in_dim = self.num_states
@@ -38,10 +41,10 @@ class NNPolicy(AbstractPolicy):
 
         if self.discrete_action:
             self._policy = CategoricalNN(in_dim, self.num_actions, layers,
-                                         self.temperature)
+                                         self.temperature, biased_head=biased_head)
         else:
             self._policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
-                                            self.temperature)
+                                            self.temperature, biased_head=biased_head)
 
     def __call__(self, state):
         if self.discrete_state:
