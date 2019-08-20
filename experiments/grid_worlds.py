@@ -1,35 +1,30 @@
-from rllib.environment.systems import GridWorld
-from rllib.environment import SystemEnvironment
-import numpy as np
+from rllib.environment.mdp import EasyGridWorld
+from rllib.policy import RandomPolicy
+from rllib.algorithms import policy_evaluation, policy_iteration, value_iteration
 
-goal = np.array([3, 3])
+environment = EasyGridWorld()
+GAMMA = 0.9
+
+policy = RandomPolicy(dim_state=1, dim_action=1, num_states=environment.num_states,
+                      num_actions=environment.num_actions)
+
+print("Policy Evaluation:")
+value_function = policy_evaluation(policy, environment, GAMMA)
+print(value_function.parameters)
+
+print("Policy Iteration:")
+policy, value_function = policy_iteration(environment, GAMMA)
+print(policy.parameters.argmax(dim=1))
+print(value_function.parameters)
+
+print("Value Iteration")
+policy, value_function = value_iteration(environment, GAMMA)
+print(policy.parameters.argmax(dim=1))
+print(value_function.parameters)
+
+print("Policy Evaluation:")
+value_function = policy_evaluation(policy, environment, GAMMA,
+                                   value_function=value_function)
+print(value_function.parameters)
 
 
-def initial_state():
-    return np.array([0, 0])
-
-
-def reward(state, _):
-    global goal
-    return float(np.all(goal == state))
-
-
-def termination(state):
-    global goal
-    return np.all(state == goal)
-
-
-system = GridWorld(grid_size=np.array([4, 4]))
-environment = SystemEnvironment(
-    system, initial_state=initial_state, reward=reward, termination=termination,
-    max_steps=100
-)
-
-state = environment.reset()
-for _ in range(100):
-    state = system.state
-    action = environment.action_space.sample()
-    next_state, reward, done, _ = environment.step(action)
-    print(state, action, next_state, reward, done)
-    if done:
-        break
