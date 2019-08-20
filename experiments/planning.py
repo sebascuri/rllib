@@ -1,4 +1,4 @@
-from rllib.environment.mdp import EasyGridWorld
+from rllib.environment import EasyGridWorld
 from rllib.policy import RandomPolicy
 from rllib.algorithms import policy_evaluation, policy_iteration, value_iteration
 

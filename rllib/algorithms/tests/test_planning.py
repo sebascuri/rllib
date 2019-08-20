@@ -1,4 +1,4 @@
-from rllib.environment.mdp import EasyGridWorld
+from rllib.environment import EasyGridWorld
 from rllib.environment.gym_environment import GymEnvironment
 
 from rllib.policy import RandomPolicy
