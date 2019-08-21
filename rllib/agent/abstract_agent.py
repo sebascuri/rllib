@@ -24,12 +24,13 @@ class AbstractAgent(ABC):
 
     """
 
-    def __init__(self):
+    def __init__(self, episode_length=None):
         self._steps = {'total': 0, 'episode': 0}
         self._num_episodes = 0
         self._statistics = {'episode_steps': [],
                             'rewards': [],
                             'episode_rewards': []}
+        self.episode_length = episode_length if episode_length else float('+Inf')
 
     @abstractmethod
     def act(self, state):

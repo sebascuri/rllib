@@ -30,11 +30,9 @@ class EpisodicPolicyEvaluation(AbstractAgent):
     """
 
     def __init__(self, policy, value_function, criterion, optimizer, hyper_params):
-        super().__init__()
+        super().__init__(episode_length=hyper_params.get('episode_length', None))
         self._policy = policy
         self._value_function = value_function
-        # self._target_function = target_function
-        # self._target_function.eval()
 
         self._criterion = criterion
         self._hyper_params = hyper_params
@@ -44,7 +42,7 @@ class EpisodicPolicyEvaluation(AbstractAgent):
         self._trajectory = []
 
     def act(self, state):
-        action_distribution = self._policy(torch.from_numpy(state).float())
+        action_distribution = self._policy(torch.tensor(state))
         return action_distribution.sample().item()
 
     def observe(self, observation):
@@ -66,10 +64,9 @@ class EpisodicPolicyEvaluation(AbstractAgent):
         pass
 
     def _train(self):
-
         for t, observation in enumerate(self._trajectory):
             expected_value = self._value_function(
-                torch.tensor(observation.state).float())
+                torch.tensor(observation.state))
             target_value = self._value_estimate(self._trajectory[t:])
 
             loss = self._criterion(expected_value, target_value)
@@ -89,16 +86,16 @@ class TDAgent(EpisodicPolicyEvaluation):
     def _value_estimate(self, trajectory):
         state, action, reward, next_state, done = trajectory[0]
         return reward + self._hyper_params['gamma'] * self._value_function(
-            torch.tensor(next_state).float()).detach() * (1.-float(done))
+            torch.tensor(next_state)).detach()
 
 
 class MCAgent(EpisodicPolicyEvaluation):
     """Implementation of Monte-Carlo algorithm."""
 
     def _value_estimate(self, trajectory):
-        last_state = torch.tensor(trajectory[-1].next_state).float()
+        last_state = torch.tensor(trajectory[-1].next_state)
         estimate = sum_discounted_rewards(trajectory, self._hyper_params['gamma'])
         estimate += (self._hyper_params['gamma'] ** len(trajectory)
-                     * self._value_function(last_state))
+                     * self._value_function(last_state).detach())
 
-        return estimate.detach()
+        return estimate

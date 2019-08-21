@@ -28,6 +28,9 @@ def rollout_agent(environment, agent, num_episodes=1):
                                       done=done)
             agent.observe(observation)
             state = next_state
+
+            if agent.episode_length <= environment.time:
+                done = True
         agent.end_episode()
     agent.end_interaction()
 
