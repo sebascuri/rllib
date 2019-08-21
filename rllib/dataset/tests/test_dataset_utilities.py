@@ -30,7 +30,7 @@ def trajectory(request):
     return _trajectory(request.param)
 
 
-def test_sack_list_of_tuples(trajectory):
+def test_sack_list_of_observations(trajectory):
     for backend in [np, torch]:
         stacked_trajectory = stack_list_of_tuples(trajectory, backend=backend)
         assert type(stacked_trajectory) is Observation
@@ -39,3 +39,14 @@ def test_sack_list_of_tuples(trajectory):
         assert stacked_trajectory.next_state.shape == (3, 4)
         assert stacked_trajectory.reward.shape == (3, )
         assert stacked_trajectory.done.shape == (3, )
+
+
+def test_sack_list_of_lists():
+    trajectory = [[1, 2, 3, 4], [20, 30, 40, 50], [3, 4, 5, 6], [40, 50, 60, 70]]
+    for backend in [np, torch]:
+        stacked_trajectory = stack_list_of_tuples(trajectory, backend=backend)
+
+        np.testing.assert_allclose(stacked_trajectory[0], np.array([1, 20, 3, 40]))
+        np.testing.assert_allclose(stacked_trajectory[1], np.array([2, 30, 4, 50]))
+        np.testing.assert_allclose(stacked_trajectory[2], np.array([3, 40, 5, 60]))
+        np.testing.assert_allclose(stacked_trajectory[3], np.array([4, 50, 6, 70]))

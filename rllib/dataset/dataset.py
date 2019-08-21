@@ -37,14 +37,12 @@ class TrajectoryDataset(data.Dataset):
 
     """
 
-    def __init__(self, sequence_length=1, transformations: list = None):
+    def __init__(self, sequence_length=None, transformations: list = None):
         super().__init__()
         self._sequence_length = sequence_length
         self._trajectories = []
         self._sub_trajectory_indexes = []
-        if transformations is None:
-            transformations = []
-        self.transformations = transformations or list()
+        self.transformations = transformations if transformations else []
 
     def __getitem__(self, idx):
         """Return any desired sub-trajectory.
@@ -57,22 +55,29 @@ class TrajectoryDataset(data.Dataset):
         -------
         sub-trajectory: Observation
         """
-        trajectory_idx, start = self._sub_trajectory_indexes[idx]
-        end = start + self._sequence_length
+        if self.sequence_length is None:
+            observation = self._trajectories[idx]
+            for transform in self.transformations:
+                observation = transform(observation)
 
-        trajectory = self._trajectories[trajectory_idx]
+            return observation
+        else:
+            trajectory_idx, start = self._sub_trajectory_indexes[idx]
+            end = start + self._sequence_length
 
-        observation = Observation(
-            state=trajectory.state[start:end],
-            action=trajectory.action[start:end],
-            reward=trajectory.reward[start:end],
-            next_state=trajectory.next_state[start:end],
-            done=trajectory.done[start:end]
-        )
-        for transform in self.transformations:
-            observation = transform(observation)
+            trajectory = self._trajectories[trajectory_idx]
 
-        return observation
+            observation = Observation(
+                state=trajectory.state[start:end],
+                action=trajectory.action[start:end],
+                reward=trajectory.reward[start:end],
+                next_state=trajectory.next_state[start:end],
+                done=trajectory.done[start:end]
+            )
+            for transform in self.transformations:
+                observation = transform(observation)
+
+            return observation
 
     def __len__(self):
         """Return the size in the dataset.
@@ -105,8 +110,8 @@ class TrajectoryDataset(data.Dataset):
         num_observations = len(trajectory)
         trajectory_index = len(self._trajectories)
 
-        if (num_observations < self._sequence_length
-                and self._sequence_length is not None):
+        if (self._sequence_length is not None
+                and num_observations < self._sequence_length):
             raise ValueError('The sequence is shorter than the sequence length')
 
         # Add trajectory to dataset
@@ -116,10 +121,7 @@ class TrajectoryDataset(data.Dataset):
         self._trajectories.append(trajectory)
 
         for transformation in self.transformations:
-            try:
-                transformation.update(trajectory)
-            except AttributeError:
-                pass
+            transformation.update(trajectory)
 
         # Add sub-trajectory indexes
         if self._sequence_length is not None:
