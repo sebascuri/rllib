@@ -1,4 +1,5 @@
 from rllib.dataset.transforms.utilities import *
+from rllib.dataset.transforms.normalizer import Normalizer
 import torch
 import torch.testing
 import numpy as np
