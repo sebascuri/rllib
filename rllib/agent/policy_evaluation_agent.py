@@ -110,8 +110,9 @@ class MCAgent(EpisodicPolicyEvaluation):
 
 class OnLineTDLearning(AbstractAgent):
     """Implementation of online-TD(lambda)-Learning."""
-    def __init__(self, policy, value_function, criterion, optimizer, hyper_params,
-                 lamda_=0.0, gamma=1.0, episode_length=None):
+
+    def __init__(self, policy, value_function, criterion, optimizer,
+                 hyper_params, lamda_=0.0, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self._policy = policy
         self._value_function = value_function
