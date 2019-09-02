@@ -3,7 +3,6 @@
 from .abstract_system import AbstractSystem
 import numpy as np
 
-
 __all__ = ['GaussianSystem']
 
 
@@ -28,8 +27,19 @@ class GaussianSystem(AbstractSystem):
         self._transition_noise_scale = transition_noise_scale
         self._measurement_noise_scale = measurement_noise_scale
 
+    def step(self, action):
+        """See `AbstractSystem.step'."""
+        next_state = self._system.step(action)
+        next_state += self._transition_noise_scale * np.random.randn(self.dim_state)
+        return next_state
+
+    def reset(self, state):
+        """See `AbstractSystem.reset'."""
+        return self._system.reset(state)
+
     @property
     def state(self):
+        """See `AbstractSystem.state'."""
         state = self._system.state
         state += self._measurement_noise_scale * np.random.randn(self.dim_state)
         return state
@@ -37,11 +47,3 @@ class GaussianSystem(AbstractSystem):
     @state.setter
     def state(self, value):
         self._system.state = value
-
-    def step(self, action):
-        next_state = self._system.step(action)
-        next_state += self._transition_noise_scale * np.random.randn(self.dim_state)
-        return next_state
-
-    def reset(self, state):
-        return self._system.reset(state)

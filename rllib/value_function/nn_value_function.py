@@ -42,16 +42,19 @@ class NNValueFunction(AbstractValueFunction):
         self._tau = tau
 
     def __call__(self, state, action=None):
+        """Get value of the value-function at a given state."""
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
         return self._value_function(state).squeeze(-1)
 
     @property
     def parameters(self):
+        """Get iterator of value function parameters."""
         return self._value_function.parameters()
 
     @parameters.setter
     def parameters(self, new_params):
+        """Set value function parameters."""
         update_parameters(self._value_function.parameters(), new_params, self._tau)
 
 
@@ -97,6 +100,18 @@ class NNQFunction(AbstractQFunction):
         self._tau = tau
 
     def __call__(self, state, action=None):
+        """Get value of the value-function at a given state.
+
+        Parameters
+        ----------
+        state: torch.Tensor
+        action: torch.Tensor
+
+        Returns
+        -------
+        value: torch.Tensor
+
+        """
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
 
@@ -121,25 +136,30 @@ class NNQFunction(AbstractQFunction):
 
     @property
     def parameters(self):
+        """Get iterator of q-function parameters."""
         return self._q_function.parameters()
 
     @parameters.setter
     def parameters(self, new_params):
+        """Set q-function parameters."""
         update_parameters(self._q_function.parameters(), new_params, self._tau)
 
     def max(self, state):
+        """Get the maximum over actions of the q-function at a given state."""
         if not self.discrete_action:
             raise NotImplementedError
         else:
             return self(state).max(dim=-1)[0]
 
     def argmax(self, state):
+        """Get the action that maximizes the q-function at a given state."""
         if not self.discrete_action:
             raise NotImplementedError
         else:
             return self(state).argmax(dim=-1)
 
     def extract_policy(self, temperature=1.0):
+        """Extract the policy induced by the Q-Value function."""
         if not self.discrete_action:
             raise NotImplementedError
         else:

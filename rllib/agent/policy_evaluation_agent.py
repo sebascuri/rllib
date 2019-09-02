@@ -45,29 +45,35 @@ class EpisodicPolicyEvaluation(AbstractAgent):
         self.logs['td_error'] = []
 
     def act(self, state):
+        """See `AbstractAgent.act'."""
         action_distribution = self._policy(torch.tensor(state))
         return action_distribution.sample().item()
 
     def observe(self, observation):
+        """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._trajectory.append(observation)
 
     def start_episode(self):
+        """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self._trajectory = []
         self.logs['td_error'].append(0)
 
     def end_episode(self):
+        """See `AbstractAgent.end_episode'."""
         self._train()
         self.logs['value_function'].append(
             [param.detach().clone() for param in self._value_function.parameters])
 
+    def end_interaction(self):
+        """See `AbstractAgent.end_interaction'."""
+        pass
+
     @property
     def policy(self):
+        """See `AbstractAgent.policy'."""
         return self._policy
-
-    def end_interaction(self):
-        pass
 
     def _train(self):
         for t, observation in enumerate(self._trajectory):
@@ -131,27 +137,33 @@ class OnLineTDLearning(AbstractAgent):
             self._eligibility_trace.append(torch.zeros_like(param))
 
     def act(self, state):
+        """See `AbstractAgent.act'."""
         action_distribution = self._policy(torch.tensor(state))
         return action_distribution.sample().item()
 
     def observe(self, observation):
+        """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._train(observation)
 
     def start_episode(self):
+        """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self.logs['td_error'].append(0)
 
     def end_episode(self):
+        """See `AbstractAgent.end_episode'."""
         self.logs['value_function'].append(
             [param.detach().clone() for param in self._value_function.parameters])
 
+    def end_interaction(self):
+        """See `AbstractAgent.end_interaction'."""
+        pass
+
     @property
     def policy(self):
+        """See `AbstractAgent.policy'."""
         return self._policy
-
-    def end_interaction(self):
-        pass
 
     def _train(self, observation):
         value_ = self._value_function(torch.tensor(observation.state))

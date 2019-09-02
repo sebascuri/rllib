@@ -55,14 +55,39 @@ class AbstractModel(ABC):
 
     @abstractmethod
     def __call__(self, state, action):
+        """Get next-state distribution.
+
+        Parameters
+        ----------
+        state: array_like
+        action: array_like
+
+        Returns
+        -------
+        next-state: torch.distributions.Distribution
+
+        """
         raise NotImplementedError
 
     @abstractmethod
     def reward(self, state, action):
+        """Get reward at a given state-action pair.
+
+        Parameters
+        ----------
+        state: array_like
+        action: array_like
+
+        Returns
+        -------
+        reward: array_like
+
+        """
         raise NotImplementedError
 
     @abstractmethod
     def initial_state(self):
+        """Get initial state distribution."""
         raise NotImplementedError
 
     @property

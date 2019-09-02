@@ -1,6 +1,5 @@
 """Implementation of a Class that constructs an dynamic system from an ode."""
 
-
 from .abstract_system import AbstractSystem
 from scipy import integrate
 
@@ -32,8 +31,20 @@ class ODESystem(AbstractSystem):
         self.ode = integrate.ode(ode, jac=jac)
         self.ode.set_integrator(integrator)
 
+    def step(self, action):
+        """See `AbstractSystem.step'."""
+        self.ode.set_f_params(action)
+        self.ode.integrate(self.ode.t + self._step_size)
+        return self.state
+
+    def reset(self, state=None):
+        """See `AbstractSystem.reset'."""
+        self.ode.set_initial_value(state, t=0.)
+        return self.state
+
     @property
     def state(self):
+        """See `AbstractSystem.state'."""
         return self.ode.y
 
     @state.setter
@@ -42,13 +53,5 @@ class ODESystem(AbstractSystem):
 
     @property
     def time(self):
+        """See `AbstractSystem.time'."""
         return self.ode.t
-
-    def reset(self, state=None):
-        self.ode.set_initial_value(state, t=0.)
-        return self.state
-
-    def step(self, action):
-        self.ode.set_f_params(action)
-        self.ode.integrate(self.ode.t + self._step_size)
-        return self.state

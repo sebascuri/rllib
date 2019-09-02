@@ -25,6 +25,20 @@ class VariationalGP(AbstractVariationalGP):
             gpytorch.kernels.LinearKernel())
 
     def forward(self, x):
+        """Execute forward computation of the Gaussian Process.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the GP is evaluated.
+
+        Returns
+        -------
+        out: gpytorch.distributions.MultivariateNormal
+            Multivariate distribution with mean of size [batch_size x out_dim] and
+            covariance of size [batch_size x batch_size x out_dim].
+
+        """
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)

@@ -2,6 +2,8 @@
 import numpy as np
 import torch
 
+__all__ = ['get_backend', 'update_mean', 'update_var', 'normalize', 'denormalize']
+
 
 def get_backend(array):
     """Get the backend of a given array."""
@@ -107,38 +109,3 @@ def denormalize(array, mean, variance, preserve_origin=False):
         return array * scale
     else:
         return mean + array * backend.sqrt(variance)
-
-
-class Normalizer(object):
-    """Normalizer Class."""
-
-    def __init__(self, preserve_origin=False):
-        super().__init__()
-        self._mean = None
-        self._variance = None
-        self._count = 0
-        self._preserve_origin = preserve_origin
-
-    def __call__(self, array):
-        return normalize(array, self._mean, self._variance, self._preserve_origin)
-
-    def inverse(self, array):
-        return denormalize(array, self._mean, self._variance, self._preserve_origin)
-
-    def update(self, array):
-        backend = get_backend(array)
-        if self._mean is None:
-            self._mean = backend.zeros(1)
-        if self._variance is None:
-            self._variance = backend.ones(1)
-
-        new_mean = backend.mean(array, 0)
-        new_var = backend.var(array, 0)
-        new_count = len(array)
-
-        self._variance = update_var(self._mean, self._variance, self._count,
-                                    new_mean, new_var, new_count,
-                                    backend is np)
-        self._mean = update_mean(self._mean, self._count, new_mean, new_count)
-
-        self._count += new_count

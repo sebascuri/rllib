@@ -42,6 +42,18 @@ class DeterministicNN(nn.Module):
         self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
 
     def forward(self, x):
+        """Execute forward computation of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.Tensor
+            Tensor of size [batch_size x out_dim].
+        """
         return self.head(self._layers(x))
 
 
@@ -81,6 +93,19 @@ class HeteroGaussianNN(ProbabilisticNN):
         self._covariance = nn.Linear(in_dim, out_dim, bias=biased_head)
 
     def forward(self, x):
+        """Execute forward computation of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.distributions.MultivariateNormal
+            Multivariate distribution with mean of size [batch_size x out_dim] and
+            covariance of size [batch_size x out_dim x out_dim].
+        """
         x = self._layers(x)
         mean = self.head(x)
         covariance = nn.functional.softplus(self._covariance(x))
@@ -100,6 +125,19 @@ class HomoGaussianNN(ProbabilisticNN):
         self._covariance = nn.Parameter(initial_scale, requires_grad=True)
 
     def forward(self, x):
+        """Execute forward computation of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.distributions.MultivariateNormal
+            Multivariate distribution with mean of size [batch_size x out_dim] and
+            covariance of size [batch_size x out_dim x out_dim].
+        """
         x = self._layers(x)
         mean = self.head(x)
         covariance = functional.softplus(self._covariance)
@@ -117,6 +155,19 @@ class CategoricalNN(ProbabilisticNN):
                          biased_head=biased_head)
 
     def forward(self, x):
+        """Execute forward computation of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.distributions.MultivariateNormal
+            Multivariate distribution with mean of size [batch_size x out_dim] and
+            covariance of size [batch_size x out_dim x out_dim].
+        """
         output = self.head(self._layers(x))
         return Categorical(logits=output / (self.temperature + 1e-12))
 
@@ -149,6 +200,19 @@ class EnsembleNN(ProbabilisticNN):
         super().__init__(in_dim, out_dim * num_heads, layers, temperature)
 
     def forward(self, x):
+        """Execute forward computation of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.distributions.MultivariateNormal
+            Multivariate distribution with mean of size [batch_size x out_dim] and
+            covariance of size [batch_size x out_dim x out_dim].
+        """
         x = self._layers(x)
         out = self.head(x)
 
@@ -181,6 +245,7 @@ class FelixNet(nn.Module):
         # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
 
     def forward(self, x):
+        """Execute felix network."""
         x = torch.relu(self.linear1(x))
         x = torch.relu(self.linear2(x))
 

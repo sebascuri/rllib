@@ -48,8 +48,21 @@ class GymEnvironment(AbstractEnvironment):
         self._time = 0
         self.max_steps = max_steps if max_steps else float('Inf')
 
+    def step(self, action):
+        """See `AbstractEnvironment.step'."""
+        self._time += 1
+        state, reward, done, info = self._env.step(action)
+        done |= self.time >= self.max_steps
+        return state, reward, done, info
+
+    def reset(self):
+        """See `AbstractEnvironment.reset'."""
+        self._time = 0
+        return self._env.reset()
+
     @property
     def state(self):
+        """See `AbstractEnvironment.state'."""
         return self._env.state
 
     @state.setter
@@ -58,14 +71,5 @@ class GymEnvironment(AbstractEnvironment):
 
     @property
     def time(self):
+        """See `AbstractEnvironment.time'."""
         return self._time
-
-    def step(self, action):
-        self._time += 1
-        state, reward, done, info = self._env.step(action)
-        done |= self.time >= self.max_steps
-        return state, reward, done, info
-
-    def reset(self):
-        self._time = 0
-        return self._env.reset()

@@ -17,21 +17,26 @@ class RandomAgent(AbstractAgent):
         self._dataset = TrajectoryDataset(sequence_length=1)
 
     def act(self, state):
+        """See `AbstractAgent.act'."""
         state = torch.tensor(state)
         action = self._policy(state).sample()
         return action.detach().numpy()
 
     def observe(self, observation):
+        """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._trajectory.append(observation)
 
     def start_episode(self):
+        """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self._trajectory = []
 
     def end_episode(self):
+        """See `AbstractAgent.end_episode'."""
         self._dataset.append(self._trajectory)
 
     @property
     def policy(self):
+        """See `AbstractAgent.policy'."""
         return self._policy

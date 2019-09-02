@@ -38,21 +38,26 @@ class AbstractPolicyGradient(AbstractAgent):
                                     lr=self.hyper_params['learning_rate'])
 
     def act(self, state):
+        """See `AbstractAgent.act'."""
         action_distribution = self._policy(torch.from_numpy(state).float())
         return action_distribution.sample().item()
 
     def observe(self, observation):
+        """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._trajectory.append(observation)
 
     def start_episode(self):
+        """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self._trajectory = []
 
     def end_episode(self):
+        """See `AbstractAgent.end_episode'."""
         self._train()
 
     def end_interaction(self):
+        """See `AbstractAgent.end_interaction'."""
         pass
 
     def _train(self):

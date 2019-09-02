@@ -47,6 +47,7 @@ class NNPolicy(AbstractPolicy):
                                             self.temperature, biased_head=biased_head)
 
     def __call__(self, state):
+        """Get distribution over actions."""
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
         return self._policy(state)
@@ -63,6 +64,7 @@ class NNPolicy(AbstractPolicy):
 
     @parameters.setter
     def parameters(self, new_params):
+        """See `AbstractPolicy.parameters'."""
         update_parameters(self._policy.parameters(), new_params, tau=1.0)
 
 

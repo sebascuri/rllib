@@ -37,20 +37,23 @@ class LinearSystem(AbstractSystem):
                          )
         self._state = None
 
+    def step(self, action):
+        """See `AbstractSystem.step'."""
+        action = np.atleast_1d(action)
+        self.state = self.a @ self.state + self.b @ action
+        return self.c @ self.state
+
+    def reset(self, state=None):
+        """See `AbstractSystem.reset'."""
+        self._time = 0
+        self.state = np.atleast_1d(state)
+        return self.c @ self.state
+
     @property
     def state(self):
+        """See `AbstractSystem.state'."""
         return self._state
 
     @state.setter
     def state(self, value):
         self._state = value
-
-    def reset(self, state=None):
-        self._time = 0
-        self.state = np.atleast_1d(state)
-        return self.c @ self.state
-
-    def step(self, action):
-        action = np.atleast_1d(action)
-        self.state = self.a @ self.state + self.b @ action
-        return self.c @ self.state

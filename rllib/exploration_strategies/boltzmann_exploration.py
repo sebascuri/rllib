@@ -42,6 +42,7 @@ class BoltzmannExploration(AbstractExplorationStrategy):
         self._t_decay = t_decay
 
     def __call__(self, action_distribution, steps=None):
+        """See `AbstractExplorationStrategy.__call__'."""
         t = self.temperature(steps)
         if type(action_distribution) is Categorical:
             d = Categorical(logits=action_distribution.logits / (t + 1e-12))

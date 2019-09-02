@@ -3,7 +3,7 @@
 from .abstract_transform import AbstractTransform
 from .. import Observation
 
-__all__ = []
+__all__ = ['MeanFunction']
 
 
 class MeanFunction(AbstractTransform):
@@ -22,6 +22,7 @@ class MeanFunction(AbstractTransform):
         self.mean_function = mean_function
 
     def __call__(self, observation):
+        """See `AbstractTransform.__call__'."""
         predicted_next_state = self.mean_function(observation.state, observation.action)
         return Observation(
             state=observation.state,
@@ -32,6 +33,7 @@ class MeanFunction(AbstractTransform):
         )
 
     def inverse(self, observation):
+        """See `AbstractTransform.inverse'."""
         predicted_next_state = self.mean_function(observation.state, observation.action)
         return Observation(
             state=observation.state,

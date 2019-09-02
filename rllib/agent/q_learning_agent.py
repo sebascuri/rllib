@@ -54,21 +54,25 @@ class AbstractQLearningAgent(AbstractAgent):
         self.logs['td_errors'] = []
 
     def act(self, state):
+        """See `AbstractAgent.act'."""
         logits = self._q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
         return self._exploration(action_distribution, self.total_steps)
 
     def observe(self, observation):
+        """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._memory.append(observation)
         if len(self._memory) >= self._hyper_params['batch_size']:
             self._train()
 
     def start_episode(self):
+        """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self.logs['td_errors'].append([])
 
     def end_episode(self):
+        """See `AbstractAgent.end_episode'."""
         if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
             self._q_target.parameters = self._q_function.parameters
 
@@ -76,6 +80,7 @@ class AbstractQLearningAgent(AbstractAgent):
 
     @property
     def policy(self):
+        """See `AbstractAgent.policy'."""
         return self._q_function.extract_policy(temperature=0.001)
 
     def _train(self, batches=1):

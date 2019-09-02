@@ -79,6 +79,7 @@ class AbstractPolicy(ABC):
         Returns
         -------
         generator
+
         """
         raise NotImplementedError
 
@@ -93,9 +94,11 @@ class AbstractPolicy(ABC):
         Parameters
         ----------
         batch_size: int, optional
+
         Returns
         -------
         distribution: torch.distribution.Distribution
+
         """
         if self.discrete_action:  # Categorical
             distribution = Categorical(torch.ones(self.num_actions))
@@ -115,7 +118,9 @@ class AbstractPolicy(ABC):
 
         Returns
         -------
-        bool
+        flag: bool
+            whether the state space is discrete.
+
         """
         return self.num_states is not None
 
@@ -125,6 +130,8 @@ class AbstractPolicy(ABC):
 
         Returns
         -------
-        bool
+        flag: bool
+            whether the actions space is discrete.
+
         """
         return self.num_actions is not None

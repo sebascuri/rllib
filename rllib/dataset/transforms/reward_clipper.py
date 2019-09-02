@@ -32,6 +32,7 @@ class RewardClipper(AbstractTransform):
         self._max_reward = max_reward
 
     def __call__(self, observation):
+        """See `AbstractTransform.__call__'."""
         return Observation(state=observation.state,
                            action=observation.action,
                            next_state=observation.next_state,
@@ -42,4 +43,5 @@ class RewardClipper(AbstractTransform):
                            )
 
     def inverse(self, observation):
+        """See `AbstractTransform.inverse'."""
         return observation

@@ -17,9 +17,11 @@ class TabularPolicy(NNPolicy):
 
     @property
     def table(self):
+        """Get table representation of policy."""
         return self._policy.head.weight
 
     def set_value(self, state, new_value):
+        """Set value to value function at a given state."""
         try:
             new_value = one_hot_encode(new_value, num_classes=self.num_actions)
         except TypeError:

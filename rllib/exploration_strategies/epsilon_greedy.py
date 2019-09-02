@@ -65,6 +65,7 @@ class EpsGreedy(AbstractExplorationStrategy):
         self._eps_decay = eps_decay
 
     def __call__(self, action_distribution, steps=None):
+        """See `AbstractExplorationStrategy.__call__'."""
         if np.random.random() > self.epsilon(steps):
             return _mode(action_distribution)
         else:

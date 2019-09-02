@@ -62,25 +62,6 @@ class MDP(AbstractEnvironment):
         self.terminal_states = terminal_states if terminal_states is not None else []
         self._max_steps = max_steps if max_steps else float('Inf')
 
-    @property
-    def state(self):
-        """Return the state of the system."""
-        return self._state
-
-    def reset(self):
-        self._state = self.initial_state()
-        self._time = 0
-        return self._state
-
-    @state.setter
-    def state(self, value):
-        self._state = value
-
-    @property
-    def time(self):
-        """Return the current time of the system."""
-        return self._time
-
     def step(self, action):
         """Do a one step ahead simulation of the system.
 
@@ -97,6 +78,7 @@ class MDP(AbstractEnvironment):
         reward: float
         done: bool
         info: dict
+
         """
         self._time += 1
         next_state = Categorical(torch.tensor(self.kernel[self.state, action]))
@@ -109,6 +91,26 @@ class MDP(AbstractEnvironment):
             done = False
 
         return self.state, reward, done, {}
+
+    @property
+    def state(self):
+        """See `AbstractEnvironment.state'."""
+        return self._state
+
+    def reset(self):
+        """See `AbstractEnvironment.reset'."""
+        self._state = self.initial_state()
+        self._time = 0
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        self._state = value
+
+    @property
+    def time(self):
+        """See `AbstractEnvironment.time'."""
+        return self._time
 
 
 class EasyGridWorld(MDP):

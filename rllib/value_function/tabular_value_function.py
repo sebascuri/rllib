@@ -14,9 +14,20 @@ class TabularValueFunction(NNValueFunction):
 
     @property
     def table(self):
+        """Get table representation of value function."""
         return self._value_function.head.weight
 
     def set_value(self, state, new_value):
+        """Set value to value function at a given state.
+
+        Parameters
+        ----------
+        state: int
+            State number.
+        new_value: float
+            value of state.
+
+        """
         self._value_function.head.weight[0, state] = new_value
 
 
@@ -32,7 +43,20 @@ class TabularQFunction(NNQFunction):
 
     @property
     def table(self):
+        """Get table representation of Q-function."""
         return self._q_function.head.weight
 
     def set_value(self, state, action, new_value):
+        """Set value to q-function at a given state-action pair.
+
+        Parameters
+        ----------
+        state: int
+            State number.
+        action: int
+            Action number.
+        new_value: float
+            value of state.
+
+        """
         self._q_function.head.weight[action, state] = new_value

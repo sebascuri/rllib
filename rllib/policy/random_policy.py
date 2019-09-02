@@ -21,6 +21,7 @@ class RandomPolicy(AbstractPolicy):
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
 
     def __call__(self, states):
+        """Get distribution over actions."""
         batch_size = get_batch_size(states)
         if batch_size:
             return self.random(batch_size)
@@ -29,8 +30,10 @@ class RandomPolicy(AbstractPolicy):
 
     @property
     def parameters(self):
+        """See `AbstractPolicy.parameters'."""
         return None
 
     @parameters.setter
     def parameters(self, new_params):
+        """See `AbstractPolicy.parameters.setter'."""
         pass
