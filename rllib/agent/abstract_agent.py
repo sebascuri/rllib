@@ -7,6 +7,13 @@ from abc import ABC, abstractmethod
 class AbstractAgent(ABC):
     """Interface for agents that interact with an environment.
 
+    Parameters
+    ----------
+    gamma: float, optional (default=1.0)
+        MDP discount factor.
+    episode_length: int, optional (default=None)
+        maximum number of interaction steps in a single episode.
+
     Methods
     -------
     act(state): int or ndarray
@@ -24,12 +31,14 @@ class AbstractAgent(ABC):
 
     """
 
-    def __init__(self, episode_length=None):
+    def __init__(self, gamma=1.0, episode_length=None):
         self._steps = {'total': 0, 'episode': 0}
         self._num_episodes = 0
-        self._statistics = {'episode_steps': [],
-                            'rewards': [],
-                            'episode_rewards': []}
+        self.logs = {'total_steps': 0,
+                     'episode_steps': [],
+                     'rewards': [],
+                     'episode_rewards': []}
+        self.gamma = gamma
         self.episode_length = episode_length if episode_length else float('+Inf')
 
     @abstractmethod
@@ -55,21 +64,18 @@ class AbstractAgent(ABC):
         observation: Observation
 
         """
-        self._steps['total'] += 1
-        self._steps['episode'] += 1
-
-        self._statistics['episode_steps'][-1] += 1
-        self._statistics['episode_rewards'][-1] += observation.reward
-        self._statistics['rewards'][-1].append(observation.reward)
+        self.logs['total_steps'] += 1
+        self.logs['episode_steps'][-1] += 1
+        self.logs['episode_rewards'][-1] += observation.reward
+        self.logs['rewards'][-1].append(observation.reward)
 
     def start_episode(self):
         """Start a new episode."""
-        self._steps['episode'] = 0
         self._num_episodes += 1
 
-        self._statistics['episode_steps'].append(0)
-        self._statistics['episode_rewards'].append(0)
-        self._statistics['rewards'].append([])
+        self.logs['episode_steps'].append(0)
+        self.logs['episode_rewards'].append(0)
+        self.logs['rewards'].append([])
 
     def end_episode(self):
         """End an episode."""
@@ -82,27 +88,27 @@ class AbstractAgent(ABC):
     @property
     def episodes_steps(self):
         """Return number of steps in current episode."""
-        return self._statistics['episode_steps']
+        return self.logs['episode_steps']
 
     @property
     def episodes_rewards(self):
         """Return rewards in all the episodes seen."""
-        return self._statistics['rewards']
+        return self.logs['rewards']
 
     @property
     def episodes_cumulative_rewards(self):
         """Return cumulative rewards in each episodes."""
-        return self._statistics['episode_rewards']
+        return self.logs['episode_rewards']
 
     @property
     def total_steps(self):
         """Return number of steps of interaction with environment."""
-        return self._steps['total']
+        return self.logs['total_steps']
 
     @property
     def episode_steps(self):
         """Return total steps of interaction with environment in current episode."""
-        return self._steps['episode']
+        return self.logs['episode'][-1]
 
     @property
     def num_episodes(self):

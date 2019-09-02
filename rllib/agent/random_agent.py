@@ -9,14 +9,15 @@ import torch
 class RandomAgent(AbstractAgent):
     """Agent that interacts randomly in an environment."""
 
-    def __init__(self, dim_state, dim_action, num_actions=None):
-        super().__init__()
+    def __init__(self, dim_state, dim_action, num_actions=None, gamma=None,
+                 episode_length=None):
+        super().__init__(gamma=gamma, episode_length=episode_length)
         self._policy = RandomPolicy(dim_state, dim_action, num_actions=num_actions)
         self._trajectory = []
         self._dataset = TrajectoryDataset(sequence_length=1)
 
     def act(self, state):
-        state = torch.from_numpy(state).float()
+        state = torch.tensor(state)
         action = self._policy(state).sample()
         return action.detach().numpy()
 

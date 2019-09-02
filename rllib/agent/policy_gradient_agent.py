@@ -29,8 +29,8 @@ class AbstractPolicyGradient(AbstractAgent):
     connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
     """
 
-    def __init__(self, policy, optimizer, hyper_params):
-        super().__init__()
+    def __init__(self, policy, optimizer, hyper_params, gamma=1.0, episode_length=None):
+        super().__init__(gamma=gamma, episode_length=episode_length)
         self._trajectory = []
         self._policy = policy
         self.hyper_params = hyper_params
@@ -92,7 +92,7 @@ class REINFORCE(AbstractPolicyGradient):
         for t in range(len(trajectory)):
             q_t = 0
             for i, observation in enumerate(trajectory[t:]):
-                q_t = q_t + self.hyper_params['gamma'] ** i * observation.reward
+                q_t = q_t + self.gamma ** i * observation.reward
             q_estimate.append(q_t)
 
         q_estimate = np.array(q_estimate)

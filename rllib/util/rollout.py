@@ -56,7 +56,7 @@ def rollout_policy(environment, policy, num_episodes=1):
         trajectory = []
         with torch.no_grad():
             while not done:
-                state_torch = torch.from_numpy(state).float()
+                state_torch = torch.tensor(state).float()
                 action = policy(state_torch).sample().numpy()
                 next_state, reward, done, _ = environment.step(action)
                 observation = Observation(state=state,

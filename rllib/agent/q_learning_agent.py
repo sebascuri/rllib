@@ -35,9 +35,9 @@ class AbstractQLearningAgent(AbstractAgent):
 
     """
 
-    def __init__(self, q_function, q_target, exploration, criterion, optimizer, memory,
-                 hyper_params):
-        super().__init__()
+    def __init__(self, q_function, exploration, criterion, optimizer, memory,
+                 hyper_params, q_target=None, gamma=1.0, episode_length=None):
+        super().__init__(gamma=gamma, episode_length=episode_length)
         self._q_function = q_function
         self._q_target = q_target
         self._exploration = exploration
@@ -50,10 +50,13 @@ class AbstractQLearningAgent(AbstractAgent):
         self._data_loader = DataLoader(self._memory,
                                        batch_size=self._hyper_params['batch_size'])
 
+        self.logs['q_function'] = []
+        self.logs['td_errors'] = []
+
     def act(self, state):
         logits = self._q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
-        return self._exploration(action_distribution, self._steps['total'])
+        return self._exploration(action_distribution, self.total_steps)
 
     def observe(self, observation):
         super().observe(observation)
@@ -61,9 +64,15 @@ class AbstractQLearningAgent(AbstractAgent):
         if len(self._memory) >= self._hyper_params['batch_size']:
             self._train()
 
+    def start_episode(self):
+        super().start_episode()
+        self.logs['td_errors'].append([])
+
     def end_episode(self):
         if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
             self._q_target.parameters = self._q_function.parameters
+
+        self.logs['q_function'].append(self._q_function.parameters)
 
     @property
     def policy(self):
@@ -82,7 +91,8 @@ class AbstractQLearningAgent(AbstractAgent):
             state, action, reward, next_state, done = observation
             pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
                                         next_state.float(), done.float())
-
+            self.logs['td_errors'].append(
+                (pred_q.detach() - target_q.detach()).mean().item())
             loss = self._criterion(pred_q, target_q)
             self._optimizer.zero_grad()
             loss.backward()
@@ -110,7 +120,7 @@ class QLearningAgent(AbstractQLearningAgent):
 
         # target = r + gamma * max Q(x', a) and don't stop gradient.
         target_q = self._q_function.max(next_state)
-        target_q = reward + self._hyper_params['gamma'] * target_q * (1 - done)
+        target_q = reward + self.gamma * target_q * (1 - done)
 
         return pred_q, target_q
 
@@ -133,7 +143,7 @@ class GQLearningAgent(AbstractQLearningAgent):
 
         # target = r + gamma * max Q(x', a) and stop gradient.
         next_q = self._q_function.max(next_state)
-        target_q = reward + self._hyper_params['gamma'] * next_q * (1 - done)
+        target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()
 
@@ -154,7 +164,7 @@ class DQNAgent(AbstractQLearningAgent):
 
         # target = r + gamma * max Q_target(x', a)
         next_q = self._q_target.max(next_state)
-        target_q = reward + self._hyper_params['gamma'] * next_q * (1 - done)
+        target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()
 
@@ -177,6 +187,6 @@ class DDQNAgent(AbstractQLearningAgent):
 
         next_action = self._q_function.argmax(next_state)
         next_q = self._q_target(next_state, next_action)
-        target_q = reward + self._hyper_params['gamma'] * next_q * (1 - done)
+        target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()
