@@ -4,6 +4,7 @@
 import numpy as np
 from . import Observation
 from torch.utils import data
+from typing import List
 
 
 class ExperienceReplay(data.Dataset):
@@ -37,7 +38,7 @@ class ExperienceReplay(data.Dataset):
         super().__init__()
         self._max_len = max_len
         self._memory = np.empty((self._max_len,), dtype=Observation)
-        self._sampling_idx = []
+        self._sampling_idx = []  # type: List[int]
         self._ptr = 0
         self._transformations = transformations or list()
 

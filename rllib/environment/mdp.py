@@ -6,6 +6,7 @@ from gym import spaces
 import numpy as np
 import torch
 from torch.distributions import Categorical
+from typing import List
 
 
 __all__ = ['MDP', 'EasyGridWorld']
@@ -64,13 +65,13 @@ class MDP(AbstractEnvironment):
         """Return the state of the system."""
         return self._state
 
-    def reset(self):
-        self._state = self.initial_state()
-        self._time = 0
-
     @state.setter
     def state(self, value):
         self._state = value
+
+    def reset(self):
+        self._state = self.initial_state()
+        self._time = 0
 
     @property
     def time(self):
@@ -110,15 +111,15 @@ class MDP(AbstractEnvironment):
 class EasyGridWorld(MDP):
     """Easy implementation of a GridWorld from Sutton & Barto Example 3.5."""
 
-    def __init__(self, width=5, height=5, num_actions=4, terminal_states: list = None):
+    def __init__(self, width=5, height=5, num_actions=4, terminal_states: List = None):
         self.width = width
         self.height = height
         self.num_states = width * height
         self.num_actions = num_actions
-        super().__init__(*self._build_mdp(terminal_states),
+        super().__init__(*self._build_mdp(terminal_states),  # type: ignore
                          terminal_states=terminal_states)
 
-    def _build_mdp(self, terminal_states: list = None):
+    def _build_mdp(self, terminal_states: List = None):
         kernel = np.zeros((self.num_states, self.num_actions, self.num_states))
         reward = np.zeros((self.num_states, self.num_actions))
         for state in range(self.num_states):

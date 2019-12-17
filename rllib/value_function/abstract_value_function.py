@@ -59,7 +59,7 @@ class AbstractValueFunction(ABC):
         """
         raise NotImplementedError
 
-    @property
+    @property  # type: ignore
     @abstractmethod
     def parameters(self):
         """Parameters that describe the policy.
@@ -70,7 +70,7 @@ class AbstractValueFunction(ABC):
         """
         raise NotImplementedError
 
-    @parameters.setter
+    @parameters.setter  # type: ignore
     @abstractmethod
     def parameters(self, new_params):
         raise NotImplementedError

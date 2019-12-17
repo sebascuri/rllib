@@ -32,6 +32,10 @@ echo -e "${GREEN}Testing docstring conventions.${NC}"
 # Test docstring conventions
 pydocstyle $module || { exit 1; }
 
+# Run mypy tests
+echo -e "${GREEN}Running mypy tests.${NC}"
+mypy $module || { exit 1; }
+
 # Run unit tests
 echo -e "${GREEN}Running unit tests.${NC}"
 pytest $module || { exit 1; }

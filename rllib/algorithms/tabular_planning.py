@@ -21,6 +21,7 @@ __all__ = ['policy_evaluation', 'policy_iteration', 'value_iteration']
 
 def _init_value_function(num_states, terminal_states: list = None):
     value_function = TabularValueFunction(num_states)
+    terminal_states = [] if terminal_states is None else terminal_states
     for terminal_state in terminal_states:
         value_function.set_value(terminal_state, 0)
 

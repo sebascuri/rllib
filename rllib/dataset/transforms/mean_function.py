@@ -3,7 +3,7 @@
 from .abstract_transform import AbstractTransform
 from .. import Observation
 
-__all__ = []
+__all__ = ['MeanFunction']
 
 
 class MeanFunction(AbstractTransform):
