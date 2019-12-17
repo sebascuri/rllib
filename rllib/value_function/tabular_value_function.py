@@ -10,12 +10,12 @@ class TabularValueFunction(NNValueFunction):
 
     def __init__(self, num_states, tau=1.0):
         super().__init__(dim_state=1, num_states=num_states, tau=tau, biased_head=False)
-        nn.init.zeros_(self._value_function.head.weight)
+        nn.init.zeros_(self.value_function.head.weight)
 
     @property
     def table(self):
         """Get table representation of value function."""
-        return self._value_function.head.weight
+        return self.value_function.head.weight
 
     def set_value(self, state, new_value):
         """Set value to value function at a given state.
@@ -28,7 +28,7 @@ class TabularValueFunction(NNValueFunction):
             value of state.
 
         """
-        self._value_function.head.weight[0, state] = new_value
+        self.value_function.head.weight[0, state] = new_value
 
 
 class TabularQFunction(NNQFunction):
@@ -39,12 +39,12 @@ class TabularQFunction(NNQFunction):
                          num_states=num_states, num_actions=num_actions,
                          tau=tau, biased_head=False)
 
-        nn.init.zeros_(self._q_function.head.weight)
+        nn.init.zeros_(self.q_function.head.weight)
 
     @property
     def table(self):
         """Get table representation of Q-function."""
-        return self._q_function.head.weight
+        return self.q_function.head.weight
 
     def set_value(self, state, action, new_value):
         """Set value to q-function at a given state-action pair.
@@ -59,4 +59,4 @@ class TabularQFunction(NNQFunction):
             value of state.
 
         """
-        self._q_function.head.weight[action, state] = new_value
+        self.q_function.head.weight[action, state] = new_value

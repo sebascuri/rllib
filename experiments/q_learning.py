@@ -12,11 +12,11 @@ import torch.optim
 import pickle
 
 
-ENVIRONMENT = 'NChain-v0'
-# ENVIRONMENT = 'CartPole-v0'
+# ENVIRONMENT = 'NChain-v0'
+ENVIRONMENT = 'CartPole-v0'
 
 NUM_EPISODES = 100
-MAX_STEPS = 30
+MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
 MEMORY_MAX_SIZE = 5000
@@ -41,15 +41,9 @@ for name, Agent in {'DDQN': DDQNAgent,
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
                              num_states=environment.num_states,
                              num_actions=environment.num_actions,
-                             layers=LAYERS
+                             layers=LAYERS,
+                             tau=TARGET_UPDATE_TAU
                              )
-
-    q_target = NNQFunction(environment.dim_observation, environment.dim_action,
-                           num_states=environment.num_states,
-                           num_actions=environment.num_actions,
-                           layers=LAYERS,
-                           tau=TARGET_UPDATE_TAU
-                           )
 
     optimizer = torch.optim.Adam
     criterion = func.mse_loss
@@ -61,13 +55,13 @@ for name, Agent in {'DDQN': DDQNAgent,
         'gamma': GAMMA,
         'learning_rate': LEARNING_RATE
     }
-    agent = Agent(q_function, q_target, exploration, criterion, optimizer, memory,
-                  hyper_params)
+    agent = Agent(q_function, exploration, criterion, optimizer, memory, hyper_params,
+                  episode_length=MAX_STEPS)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
     plt.plot(agent.episodes_cumulative_rewards, label=name)
-    with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, name), 'wb') as file:
-        pickle.dump(agent, file)
+    # with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, name), 'wb') as file:
+    #     pickle.dump(agent, file)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.legend(loc='best')

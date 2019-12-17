@@ -37,25 +37,37 @@ class NNValueFunction(AbstractValueFunction):
         else:
             num_inputs = self.dim_state
 
-        self._value_function = DeterministicNN(num_inputs, 1, layers,
-                                               biased_head=biased_head)
+        self._layers = layers
+        self._biased_head = biased_head
+        self.value_function = DeterministicNN(num_inputs, 1, layers,
+                                              biased_head=biased_head)
         self._tau = tau
 
     def __call__(self, state, action=None):
         """Get value of the value-function at a given state."""
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
-        return self._value_function(state).squeeze(-1)
+        return self.value_function(state).squeeze(-1)
+
+    def copy(self):
+        """Copy value function."""
+        other = NNValueFunction(self.dim_state, self.num_states, self._layers,
+                                tau=self._tau, biased_head=self._biased_head)
+        other.parameters = self.parameters
+        update_parameters(other.value_function.parameters(),
+                          self.value_function.parameters(), 1.0)
+
+        return other
 
     @property
     def parameters(self):
         """Get iterator of value function parameters."""
-        return self._value_function.parameters()
+        return self.value_function.parameters()
 
     @parameters.setter
     def parameters(self, new_params):
         """Set value function parameters."""
-        update_parameters(self._value_function.parameters(), new_params, self._tau)
+        update_parameters(self.value_function.parameters(), new_params, self._tau)
 
 
 class NNQFunction(AbstractQFunction):
@@ -95,8 +107,10 @@ class NNQFunction(AbstractQFunction):
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
-        self._q_function = DeterministicNN(num_inputs, num_outputs, layers,
-                                           biased_head=biased_head)
+        self._layers = layers
+        self._biased_head = biased_head
+        self.q_function = DeterministicNN(num_inputs, num_outputs, layers,
+                                          biased_head=biased_head)
         self._tau = tau
 
     def __call__(self, state, action=None):
@@ -118,7 +132,7 @@ class NNQFunction(AbstractQFunction):
         if action is None:
             if not self.discrete_action:
                 raise NotImplementedError
-            action_value = self._q_function(state)
+            action_value = self.q_function(state)
             return action_value
         elif action.dim() == 0:
             action.unsqueeze(0)
@@ -128,21 +142,31 @@ class NNQFunction(AbstractQFunction):
 
         if not self.discrete_state and not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
-            return self._q_function(state_action).squeeze(-1)
+            return self.q_function(state_action).squeeze(-1)
         elif self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(-1, action).squeeze(-1)
+            return self.q_function(state).gather(-1, action).squeeze(-1)
         elif not self.discrete_state and self.discrete_action:
-            return self._q_function(state).gather(-1, action).squeeze(-1)
+            return self.q_function(state).gather(-1, action).squeeze(-1)
+
+    def copy(self):
+        """Copy Q-function."""
+        other = NNQFunction(self.dim_state, self.dim_action,
+                            self.num_states, self.num_actions,
+                            self._layers, tau=self._tau, biased_head=self._biased_head)
+        other.parameters = self.parameters
+        update_parameters(other.q_function.parameters(),
+                          self.q_function.parameters(), 1.0)
+        return other
 
     @property
     def parameters(self):
         """Get iterator of q-function parameters."""
-        return self._q_function.parameters()
+        return self.q_function.parameters()
 
     @parameters.setter
     def parameters(self, new_params):
         """Set q-function parameters."""
-        update_parameters(self._q_function.parameters(), new_params, self._tau)
+        update_parameters(self.q_function.parameters(), new_params, self._tau)
 
     def max(self, state):
         """Get the maximum over actions of the q-function at a given state."""
@@ -166,7 +190,7 @@ class NNQFunction(AbstractQFunction):
             policy = NNPolicy(self.dim_state, self.dim_action,
                               num_states=self.num_states,
                               num_actions=self.num_actions,
-                              layers=self._q_function.layers,
+                              layers=self.q_function.layers,
                               temperature=temperature)
-            policy.parameters = self._q_function.parameters()
+            policy.parameters = self.q_function.parameters()
             return policy
