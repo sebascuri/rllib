@@ -108,7 +108,7 @@ class AbstractAgent(ABC):
     @property
     def episode_steps(self):
         """Return total steps of interaction with environment in current episode."""
-        return self.logs['episode'][-1]
+        return self.logs['episode_steps'][-1]
 
     @property
     def num_episodes(self):
