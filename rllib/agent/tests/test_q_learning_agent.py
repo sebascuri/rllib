@@ -43,17 +43,14 @@ def test_nnq_interaction(environment, agent):
                              tau=TARGET_UPDATE_TAU
                              )
 
-    optimizer = torch.optim.Adam
+    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    hyper_params = {
-        'target_update_frequency': TARGET_UPDATE_FREQUENCY,
-        'learning_rate': LEARNING_RATE
-    }
     q_agent = agent(q_function=q_function, exploration=exploration,
                     criterion=criterion, optimizer=optimizer, memory=memory,
-                    hyper_params=hyper_params, gamma=GAMMA)
+                    target_update_frequency=TARGET_UPDATE_FREQUENCY,
+                    episode_length=MAX_STEPS, gamma=GAMMA)
     rollout_agent(environment, q_agent, num_episodes=NUM_EPISODES)
 
 
@@ -64,18 +61,14 @@ def test_tabular_interaction(agent):
     q_function = TabularQFunction(num_states=environment.num_states,
                                   num_actions=environment.num_actions)
 
-    optimizer = torch.optim.Adam
+    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    hyper_params = {
-        'target_update_frequency': TARGET_UPDATE_FREQUENCY,
-        'batch_size': BATCH_SIZE,
-        'learning_rate': LEARNING_RATE
-    }
     q_agent = agent(q_function=q_function, exploration=exploration,
                     criterion=criterion, optimizer=optimizer, memory=memory,
-                    hyper_params=hyper_params, gamma=GAMMA, episode_length=10)
+                    target_update_frequency=TARGET_UPDATE_FREQUENCY,
+                    episode_length=10, gamma=GAMMA)
 
     rollout_agent(environment, q_agent, num_episodes=NUM_EPISODES)
     print(q_function.table)

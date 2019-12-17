@@ -20,7 +20,8 @@ TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
-LEARNING_RATE = 0.001
+LEARNING_RATE = 1e-3
+WEIGHT_DECAY = 0
 GAMMA = 0.99
 EPS_START = 1.0
 EPS_END = 0.01
@@ -28,13 +29,14 @@ EPS_DECAY = 500
 LAYERS = [64, 64]
 SEED = 0
 
-fig, axes = plt.subplots(2, 1, sharex=True)
+fig, axes = plt.subplots(2, 1, sharex=False)
 
-for name, Agent in {'DDQN': DDQNAgent,
-                    'Q-Learning': QLearningAgent,
-                    # 'GQ-Learning': GQLearningAgent,
-                    'DQN': DQNAgent
-                    }.items():
+for name, Agent in {
+    'DDQN': DDQNAgent,
+    'Q-Learning': QLearningAgent,
+    'GQ-Learning': GQLearningAgent,
+    'DQN': DQNAgent
+}.items():
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
@@ -45,32 +47,25 @@ for name, Agent in {'DDQN': DDQNAgent,
                              num_actions=environment.num_actions,
                              layers=LAYERS,
                              tau=TARGET_UPDATE_TAU)
-    # q_function = TabularQFunction(environment.num_states, environment.num_actions,
-    #                               tau=TARGET_UPDATE_TAU
-    #                               )
-    # q_function.q_function.head.bias.data = torch.ones_like(
-    #     q_function.q_function.head.bias.data)
 
-    optimizer = torch.optim.Adam
+    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE,
+                                 weight_decay=WEIGHT_DECAY)
     criterion = func.mse_loss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    hyper_params = {
-        'target_update_frequency': TARGET_UPDATE_FREQUENCY,
-        'gamma': GAMMA,
-        'learning_rate': LEARNING_RATE
-    }
-    agent = Agent(q_function, exploration, criterion, optimizer, memory, hyper_params,
+    agent = Agent(q_function, exploration, criterion, optimizer, memory,
+                  target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
                   episode_length=MAX_STEPS)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
 
     axes[0].plot(agent.episodes_cumulative_rewards, label=name)
-    tds = agent.logs['td_errors']
-    axes[1].plot(np.arange(NUM_EPISODES-len(tds), NUM_EPISODES), tds, label=name)
+    tds = agent.logs['episode_td_errors']
+    axes[1].plot(tds, label=name)
 
     with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, name), 'wb') as file:
         pickle.dump(agent, file)
 
+axes[1].set_xlabel('Episode')
 axes[0].set_ylabel('Rewards')
 axes[0].legend(loc='best')
 axes[1].set_xlabel('Episode')

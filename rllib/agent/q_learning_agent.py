@@ -24,8 +24,6 @@ class AbstractQLearningAgent(AbstractAgent):
     optimizer: nn.optim
     memory: ExperienceReplay
         memory where to store the observations.
-    hyper_params: dict
-        algorithm hyperparameters.
 
     References
     ----------
@@ -34,19 +32,19 @@ class AbstractQLearningAgent(AbstractAgent):
     """
 
     def __init__(self, q_function, exploration, criterion, optimizer, memory,
-                 hyper_params, gamma=1.0, episode_length=None):
+                 target_update_frequency=4, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self._q_function = q_function
         self._q_target = q_function.copy()
         self._exploration = exploration
         self._criterion = criterion
         self._memory = memory
-        self._hyper_params = hyper_params
-        self._optimizer = optimizer(self._q_function.parameters,
-                                    lr=self._hyper_params['learning_rate'])
+        self._target_update_frequency = target_update_frequency
+        self._optimizer = optimizer
 
         # self.logs['q_function'] = []
         self.logs['td_errors'] = []
+        self.logs['episode_td_errors'] = []
 
     def act(self, state):
         """See `AbstractAgent.act'."""
@@ -60,20 +58,19 @@ class AbstractQLearningAgent(AbstractAgent):
         self._memory.append(observation)
         if self._memory.has_batch:
             self._train()
+            if self.total_steps % self._target_update_frequency == 0:
+                self._q_target.parameters = self._q_function.parameters
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
-        self.logs['td_errors'].append([])
+        self.logs['episode_td_errors'].append([])
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
-            self._q_target.parameters = self._q_function.parameters
-
-        aux = self.logs['td_errors'].pop(-1)
+        aux = self.logs['episode_td_errors'].pop(-1)
         if len(aux) > 0:
-            self.logs['td_errors'].append(np.abs(np.array(aux)).mean())
+            self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
     @property
     def policy(self):
@@ -90,12 +87,15 @@ class AbstractQLearningAgent(AbstractAgent):
         """
         for batch in range(batches):
             state, action, reward, next_state, done = self._memory.get_batch()
+            self._optimizer.zero_grad()
             pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
                                         next_state.float(), done.float())
-            self.logs['td_errors'][-1].append(
-                (pred_q.detach() - target_q.detach()).mean().item())
+
+            td_error = (pred_q.detach() - target_q.detach()).mean().item()
+            self.logs['td_errors'].append(td_error)
+            self.logs['episode_td_errors'][-1].append(td_error)
             loss = self._criterion(pred_q, target_q)
-            self._optimizer.zero_grad()
+
             loss.backward()
             self._optimizer.step()
 
