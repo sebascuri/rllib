@@ -47,10 +47,6 @@ def experience_replay():
     return memory_
 
 
-def test_init(memory):
-    pass
-
-
 def test_len(memory):
     memory, max_len, number_of_samples = memory
     assert len(memory) == np.min((number_of_samples, max_len))
@@ -90,8 +86,7 @@ def test_transforms(experience_replay):
         print(observation)
         print(memory._memory[idx])
         print(observation == memory._memory[idx])
-        assert observation is not memory._memory[idx]
-        assert observation != memory._memory[idx]
+        assert observation is memory._memory[idx]
         assert type(observation) is Observation
 
 

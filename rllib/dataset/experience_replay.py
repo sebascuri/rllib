@@ -4,6 +4,7 @@
 import numpy as np
 from . import Observation
 from torch.utils import data
+from torch.utils.data._utils.collate import default_collate
 from typing import List
 
 
@@ -15,9 +16,11 @@ class ExperienceReplay(data.Dataset):
 
     Parameters
     ----------
-    max_len: int
+    max_len: int.
         buffer size of experience replay algorithm.
-    transformations: list of transforms.AbstractTransform, optional
+    batch_size: int.
+        batch size to sample.
+    transformations: list of transforms.AbstractTransform, optional.
         A sequence of transformations to apply to the dataset, each of which is a
         callable that takes an observation as input and returns a modified observation.
         If they have an `update` method it will be called whenever a new trajectory
@@ -31,16 +34,19 @@ class ExperienceReplay(data.Dataset):
         shuffle the dataset.
     is_full: bool
         check if buffer is full.
+    has_batch: bool
+        check if buffer has at least a batch.
 
     """
 
-    def __init__(self, max_len, transformations: list = None):
+    def __init__(self, max_len, batch_size=1, transformations: list = None):
         super().__init__()
         self._max_len = max_len
         self._memory = np.empty((self._max_len,), dtype=Observation)
         self._sampling_idx = []  # type: List[int]
         self._ptr = 0
         self._transformations = transformations or list()
+        self.batch_size = batch_size
 
     def __getitem__(self, idx):
         """Return any desired observation.
@@ -100,6 +106,11 @@ class ExperienceReplay(data.Dataset):
         """Shuffle the dataset."""
         np.random.shuffle(self._sampling_idx)
 
+    def get_batch(self):
+        """Get a batch of data."""
+        indices = np.random.choice(len(self), self.batch_size)
+        return default_collate([self[i] for i in indices])
+
     @property
     def is_full(self):
         """Flag that checks if memory in buffer is full.
@@ -109,3 +120,8 @@ class ExperienceReplay(data.Dataset):
         bool
         """
         return self._memory[-1] is not None  # check if the last element is not empty.
+
+    @property
+    def has_batch(self):
+        """Return true if there are more examples than the batch size."""
+        return len(self) >= self.batch_size

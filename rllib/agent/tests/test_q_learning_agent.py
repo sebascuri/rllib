@@ -39,26 +39,19 @@ def test_nnq_interaction(environment, agent):
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
                              num_states=environment.num_states,
                              num_actions=environment.num_actions,
-                             layers=LAYERS
+                             layers=LAYERS,
+                             tau=TARGET_UPDATE_TAU
                              )
-
-    q_target = NNQFunction(environment.dim_observation, environment.dim_action,
-                           num_states=environment.num_states,
-                           num_actions=environment.num_actions,
-                           layers=LAYERS,
-                           tau=TARGET_UPDATE_TAU
-                           )
 
     optimizer = torch.optim.Adam
     criterion = func.mse_loss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
     hyper_params = {
         'target_update_frequency': TARGET_UPDATE_FREQUENCY,
-        'batch_size': BATCH_SIZE,
         'learning_rate': LEARNING_RATE
     }
-    q_agent = agent(q_function=q_function, q_target=q_target, exploration=exploration,
+    q_agent = agent(q_function=q_function, exploration=exploration,
                     criterion=criterion, optimizer=optimizer, memory=memory,
                     hyper_params=hyper_params, gamma=GAMMA)
     rollout_agent(environment, q_agent, num_episodes=NUM_EPISODES)
@@ -70,8 +63,6 @@ def test_tabular_interaction(agent):
     exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = TabularQFunction(num_states=environment.num_states,
                                   num_actions=environment.num_actions)
-    q_target = TabularQFunction(num_states=environment.num_states,
-                                num_actions=environment.num_actions)
 
     optimizer = torch.optim.Adam
     criterion = func.mse_loss
@@ -82,7 +73,7 @@ def test_tabular_interaction(agent):
         'batch_size': BATCH_SIZE,
         'learning_rate': LEARNING_RATE
     }
-    q_agent = agent(q_function=q_function, q_target=q_target, exploration=exploration,
+    q_agent = agent(q_function=q_function, exploration=exploration,
                     criterion=criterion, optimizer=optimizer, memory=memory,
                     hyper_params=hyper_params, gamma=GAMMA, episode_length=10)
 

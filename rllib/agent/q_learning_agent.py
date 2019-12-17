@@ -3,7 +3,7 @@ from .abstract_agent import AbstractAgent
 from abc import abstractmethod
 import torch
 from torch.distributions import Categorical
-from torch.utils.data import DataLoader
+import numpy as np
 
 __all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 
@@ -18,8 +18,6 @@ class AbstractQLearningAgent(AbstractAgent):
     ----------
     q_function: AbstractQFunction
         q_function that is learned.
-    q_target: AbstractQFunction
-        q_function used for TD-Error target.
     exploration: AbstractExplorationStrategy.
         exploration strategy that returns the actions.
     criterion: nn.Module
@@ -47,10 +45,7 @@ class AbstractQLearningAgent(AbstractAgent):
         self._optimizer = optimizer(self._q_function.parameters,
                                     lr=self._hyper_params['learning_rate'])
 
-        self._data_loader = DataLoader(self._memory,
-                                       batch_size=self._hyper_params['batch_size'])
-
-        self.logs['q_function'] = []
+        # self.logs['q_function'] = []
         self.logs['td_errors'] = []
 
     def act(self, state):
@@ -63,7 +58,7 @@ class AbstractQLearningAgent(AbstractAgent):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._memory.append(observation)
-        if len(self._memory) >= self._hyper_params['batch_size']:
+        if self._memory.has_batch:
             self._train()
 
     def start_episode(self):
@@ -76,7 +71,9 @@ class AbstractQLearningAgent(AbstractAgent):
         if self.num_episodes % self._hyper_params['target_update_frequency'] == 0:
             self._q_target.parameters = self._q_function.parameters
 
-        self.logs['q_function'].append(self._q_function.parameters)
+        aux = self.logs['td_errors'].pop(-1)
+        if len(aux) > 0:
+            self.logs['td_errors'].append(np.abs(np.array(aux)).mean())
 
     @property
     def policy(self):
@@ -91,19 +88,16 @@ class AbstractQLearningAgent(AbstractAgent):
         batches: int
 
         """
-        self._memory.shuffle()
-        for i, observation in enumerate(self._data_loader):
-            state, action, reward, next_state, done = observation
+        for batch in range(batches):
+            state, action, reward, next_state, done = self._memory.get_batch()
             pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
                                         next_state.float(), done.float())
-            self.logs['td_errors'].append(
+            self.logs['td_errors'][-1].append(
                 (pred_q.detach() - target_q.detach()).mean().item())
             loss = self._criterion(pred_q, target_q)
             self._optimizer.zero_grad()
             loss.backward()
             self._optimizer.step()
-            if i + 1 == batches:
-                break
 
     @abstractmethod
     def _td(self, state, action, reward, next_state, done):
