@@ -35,13 +35,13 @@ class AbstractSystem(ABC):
         self.dim_observation = dim_observation
         self._time = 0
 
-    @property
+    @property  # type: ignore
     @abstractmethod
     def state(self):
         """Return the state of the system."""
         raise NotImplementedError
 
-    @state.setter
+    @state.setter  # type: ignore
     @abstractmethod
     def state(self, value):
         raise NotImplementedError

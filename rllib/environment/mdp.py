@@ -6,6 +6,7 @@ from gym import spaces
 import numpy as np
 import torch
 from torch.distributions import Categorical
+from typing import List
 
 
 __all__ = ['MDP', 'EasyGridWorld']
@@ -62,6 +63,26 @@ class MDP(AbstractEnvironment):
         self.terminal_states = terminal_states if terminal_states is not None else []
         self._max_steps = max_steps if max_steps else float('Inf')
 
+    @property
+    def state(self):
+        """Return the state of the system."""
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        self._state = value
+
+    def reset(self):
+        """Reset MDP environment."""
+        self._state = self.initial_state()
+        self._time = 0
+        return self._state
+
+    @property
+    def time(self):
+        """Return the current time of the system."""
+        return self._time
+
     def step(self, action):
         """Do a one step ahead simulation of the system.
 
@@ -92,26 +113,6 @@ class MDP(AbstractEnvironment):
 
         return self.state, reward, done, {}
 
-    @property
-    def state(self):
-        """See `AbstractEnvironment.state'."""
-        return self._state
-
-    def reset(self):
-        """See `AbstractEnvironment.reset'."""
-        self._state = self.initial_state()
-        self._time = 0
-        return self._state
-
-    @state.setter
-    def state(self, value):
-        self._state = value
-
-    @property
-    def time(self):
-        """See `AbstractEnvironment.time'."""
-        return self._time
-
 
 class EasyGridWorld(MDP):
     """Easy implementation of a GridWorld from Sutton & Barto Example 3.5."""
@@ -122,10 +123,10 @@ class EasyGridWorld(MDP):
         self.height = height
         self.num_states = width * height
         self.num_actions = num_actions
-        super().__init__(*self._build_mdp(terminal_states),
+        super().__init__(*self._build_mdp(terminal_states),  # type: ignore
                          terminal_states=terminal_states, max_steps=max_steps)
 
-    def _build_mdp(self, terminal_states: list = None):
+    def _build_mdp(self, terminal_states: List = None):
         kernel = np.zeros((self.num_states, self.num_actions, self.num_states))
         reward = np.zeros((self.num_states, self.num_actions))
         for state in range(self.num_states):

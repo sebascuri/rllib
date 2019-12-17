@@ -76,13 +76,13 @@ class AbstractEnvironment(ABC):
         """
         raise NotImplementedError
 
-    @property
+    @property  # type: ignore
     @abstractmethod
     def state(self):
         """Return current state of environment."""
         raise NotImplementedError
 
-    @state.setter
+    @state.setter  # type: ignore
     @abstractmethod
     def state(self, value):
         raise NotImplementedError
