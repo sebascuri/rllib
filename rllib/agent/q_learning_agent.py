@@ -36,10 +36,10 @@ class AbstractQLearningAgent(AbstractAgent):
     """
 
     def __init__(self, q_function, exploration, criterion, optimizer, memory,
-                 hyper_params, q_target=None, gamma=1.0, episode_length=None):
+                 hyper_params, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self._q_function = q_function
-        self._q_target = q_target
+        self._q_target = q_function.copy()
         self._exploration = exploration
         self._criterion = criterion
         self._memory = memory

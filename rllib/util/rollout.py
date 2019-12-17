@@ -21,15 +21,16 @@ def rollout_agent(environment, agent, num_episodes=1):
         while not done:
             action = agent.act(state)
             next_state, reward, done, _ = environment.step(action)
+            max_time = agent.episode_length <= environment.time
             observation = Observation(state=state,
                                       action=action,
                                       reward=reward,
                                       next_state=next_state,
-                                      done=done)
+                                      done=done and not max_time)
             agent.observe(observation)
             state = next_state
 
-            if agent.episode_length <= environment.time:
+            if max_time:
                 done = True
         agent.end_episode()
     agent.end_interaction()
