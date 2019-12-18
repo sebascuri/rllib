@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as functional
 from torch.distributions import MultivariateNormal, Categorical
+from rllib.util.utilities import Delta
 from .utilities import inverse_softplus
 from typing import List
 
@@ -108,11 +109,14 @@ class HeteroGaussianNN(ProbabilisticNN):
             covariance of size [batch_size x out_dim x out_dim].
         """
         x = self._layers(x)
-        mean = self.head(x)
+        mean = torch.tanh(self.head(x))
         covariance = nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(mean, covariance * self.temperature)
+        if self.temperature > 0:
+            return MultivariateNormal(mean, covariance * self.temperature)
+        else:
+            return Delta(mean)
 
 
 class HomoGaussianNN(ProbabilisticNN):
@@ -140,11 +144,14 @@ class HomoGaussianNN(ProbabilisticNN):
             covariance of size [batch_size x out_dim x out_dim].
         """
         x = self._layers(x)
-        mean = self.head(x)
+        mean = torch.tanh(self.head(x))
         covariance = functional.softplus(self._covariance)
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(mean, covariance * self.temperature)
+        if self.temperature > 0:
+            return MultivariateNormal(mean, covariance * self.temperature)
+        else:
+            return Delta(mean)
 
 
 class CategoricalNN(ProbabilisticNN):
@@ -222,7 +229,10 @@ class EnsembleNN(ProbabilisticNN):
         mean = torch.mean(out, dim=-1)
         covariance = torch.diag_embed(torch.var(out, dim=-1))
 
-        return MultivariateNormal(mean, covariance * self.temperature)
+        if self.temperature > 0:
+            return MultivariateNormal(mean, covariance * self.temperature)
+        else:
+            return Delta(mean)
 
 
 class FelixNet(nn.Module):
@@ -240,7 +250,7 @@ class FelixNet(nn.Module):
         torch.nn.init.zeros_(self.linear2.bias)
 
         self._mean = nn.Linear(64, out_dim, bias=False)
-        torch.nn.init.uniform_(self._mean.weight, -0.01, 0.01)
+        # torch.nn.init.uniform_(self._mean.weight, -0.1, 0.1)
 
         self._covariance = nn.Linear(64, out_dim, bias=False)
         # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
@@ -250,8 +260,11 @@ class FelixNet(nn.Module):
         x = torch.relu(self.linear1(x))
         x = torch.relu(self.linear2(x))
 
-        mean = self._mean(x)
+        mean = torch.tanh(self._mean(x))
         covariance = functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(torch.tanh(mean), covariance * self.temperature)
+        if self.temperature > 0:
+            return MultivariateNormal(mean, covariance * self.temperature)
+        else:
+            return Delta(mean)

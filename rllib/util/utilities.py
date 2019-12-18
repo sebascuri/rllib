@@ -1,10 +1,10 @@
 """Utilities for the rllib library."""
 
-
 import numpy as np
-
-
-__all__ = ['mc_value', 'sum_discounted_rewards']
+import torch
+from torch.distributions import constraints
+from torch.distributions import Distribution
+__all__ = ['mc_value', 'sum_discounted_rewards', 'Delta']
 
 
 def _mc_value_slow(trajectory, gamma=1.0):
@@ -76,3 +76,42 @@ def sum_discounted_rewards(trajectory, gamma):
     rewards = np.array(rewards)
     i = np.arange(len(rewards))
     return np.sum(rewards * np.power(gamma, i))
+
+
+class Delta(Distribution):
+    """Implementation of a Dirac Delta distribution."""
+
+    arg_constraints = {'loc': constraints.real_vector}
+    support = constraints.real  # type: ignore
+    has_rsample = True
+
+    def __init__(self, loc, validate_args=False):
+        self.loc = loc
+        batch_shape, event_shape = self.loc.shape[:-1], self.loc.shape[-1:]
+        super().__init__(batch_shape=batch_shape, event_shape=event_shape,
+                         validate_args=validate_args)
+
+    @property
+    def mean(self):
+        """Return mean of distribution."""
+        return self.loc
+
+    @property
+    def variance(self):
+        """Return variance of distribution."""
+        return torch.zeros_like(self.loc)
+
+    def rsample(self, sample_shape=torch.Size()):
+        """Return differentiable sample of distribution."""
+        return self.loc.expand(sample_shape + self.loc.shape)
+
+    def log_prob(self, value):
+        """Return log probability of distribution."""
+        if value == self.loc:
+            return 0.
+        else:
+            return float('-Inf')
+
+    def entropy(self):
+        """Return entropy of distribution."""
+        return float('-inf')
