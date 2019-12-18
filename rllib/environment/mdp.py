@@ -21,7 +21,6 @@ class MDP(AbstractEnvironment):
     reward: nd-array [num_states x num_actions]
     terminal_states: list of int, optional
     initial_state: callable or int, optional
-    max_steps: max_number_of_steps, optional
 
     Methods
     -------
@@ -37,7 +36,7 @@ class MDP(AbstractEnvironment):
     """
 
     def __init__(self, transition_kernel, reward, initial_state=None,
-                 terminal_states: list = None, max_steps=None):
+                 terminal_states: list = None):
 
         self.num_states = transition_kernel.shape[0]
         self.num_actions = transition_kernel.shape[1]
@@ -61,7 +60,6 @@ class MDP(AbstractEnvironment):
         self.kernel = transition_kernel
         self.reward = reward
         self.terminal_states = terminal_states if terminal_states is not None else []
-        self._max_steps = max_steps if max_steps else float('Inf')
 
     @property
     def state(self):
@@ -106,7 +104,7 @@ class MDP(AbstractEnvironment):
         reward = self.reward[self.state, action]
         self.state = next_state.sample().item()
 
-        if self.state in self.terminal_states or self._time >= self._max_steps:
+        if self.state in self.terminal_states:
             done = True
         else:
             done = False
@@ -117,14 +115,13 @@ class MDP(AbstractEnvironment):
 class EasyGridWorld(MDP):
     """Easy implementation of a GridWorld from Sutton & Barto Example 3.5."""
 
-    def __init__(self, width=5, height=5, num_actions=4, terminal_states: list = None,
-                 max_steps=None):
+    def __init__(self, width=5, height=5, num_actions=4, terminal_states: list = None):
         self.width = width
         self.height = height
         self.num_states = width * height
         self.num_actions = num_actions
         super().__init__(*self._build_mdp(terminal_states),  # type: ignore
-                         terminal_states=terminal_states, max_steps=max_steps)
+                         terminal_states=terminal_states)
 
     def _build_mdp(self, terminal_states: List = None):
         kernel = np.zeros((self.num_states, self.num_actions, self.num_states))

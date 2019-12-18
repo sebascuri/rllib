@@ -19,8 +19,8 @@ class GymEnvironment(AbstractEnvironment):
 
     """
 
-    def __init__(self, env_name, seed=None, max_steps=None):
-        self._env = gym.make(env_name)
+    def __init__(self, env_name, seed=None):
+        self._env = gym.make(env_name).unwrapped
         self._env.seed(seed)
         try:
             dim_action = self._env.action_space.shape[0]
@@ -46,14 +46,20 @@ class GymEnvironment(AbstractEnvironment):
             num_observations=num_states
         )
         self._time = 0
-        self.max_steps = max_steps if max_steps else float('Inf')
 
     def step(self, action):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         state, reward, done, info = self._env.step(action)
-        done |= self.time >= self.max_steps
         return state, reward, done, info
+
+    def render(self, mode='human'):
+        """See `AbstractEnvironment.render'."""
+        self._env.render(mode)
+
+    def close(self):
+        """See `AbstractEnvironment.close'."""
+        self._env.close()
 
     def reset(self):
         """See `AbstractEnvironment.reset'."""

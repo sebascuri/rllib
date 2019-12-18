@@ -20,13 +20,10 @@ class SystemEnvironment(AbstractEnvironment):
         callable that, given state and action returns a rewards
     termination: callable, optional
         callable that checks if interaction should terminate.
-    max_steps: int, optional
-        maximum number of steps the system allows.
 
     """
 
-    def __init__(self, system, initial_state=None, reward=None, termination=None,
-                 max_steps=None):
+    def __init__(self, system, initial_state=None, reward=None, termination=None):
         super().__init__(
             dim_state=system.dim_state,
             dim_action=system.dim_action,
@@ -37,7 +34,6 @@ class SystemEnvironment(AbstractEnvironment):
         self.reward = reward
         self.system = system
         self.termination = termination
-        self._max_steps = max_steps
         self._time = 0
 
         if initial_state is None:
@@ -47,20 +43,23 @@ class SystemEnvironment(AbstractEnvironment):
         else:
             self.initial_state = initial_state
 
+    def render(self, mode='human'):
+        """See `AbstractEnvironment.render'."""
+        self.system.render(mode=mode)
+
     def step(self, action):
-        """See `AbstractEnvironment.step."""
+        """See `AbstractEnvironment.step'."""
         self._time += 1
         state = self.system.state  # this might be noisy.
         reward = None
         if self.reward is not None:
             reward = self.reward(state, action)
 
-        done = self.time >= self._max_steps
-
-        if self.termination is not None:
-            done |= self.termination(state)
-
         next_state = self.system.step(action)
+        if self.termination is not None:
+            done = self.termination(next_state)
+        else:
+            done = False
 
         return next_state, reward, done, {}
 

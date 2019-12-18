@@ -36,6 +36,8 @@ class InvertedPendulum(ODESystem):
             dim_action=1,
             dim_state=2,
         )
+        self.viewer = None
+        self.last_action = None
 
     @property
     def inertia(self):
@@ -68,6 +70,33 @@ class InvertedPendulum(ODESystem):
         sysd = sys.to_discrete(self.step_size)
         return LinearSystem(sysd.A, sysd.B)
 
+    def render(self, mode='human'):
+        """Render pendulum."""
+        if self.viewer is None:
+            import os
+            from gym.envs.classic_control import rendering
+            self.viewer = rendering.Viewer(500, 500)
+            self.viewer.set_bounds(-2.2, 2.2, -2.2, 2.2)
+            rod = rendering.make_capsule(1, .2)
+            rod.set_color(.8, .3, .3)
+            self.pole_transform = rendering.Transform()
+            rod.add_attr(self.pole_transform)
+            self.viewer.add_geom(rod)
+            axle = rendering.make_circle(.05)
+            axle.set_color(0, 0, 0)
+            self.viewer.add_geom(axle)
+            fname = os.path.dirname(rendering.__file__) + '/assets/clockwise.png'
+            self.img = rendering.Image(fname, 1., 1.)
+            self.imgtrans = rendering.Transform()
+            self.img.add_attr(self.imgtrans)
+
+        self.viewer.add_onetime(self.img)
+        self.pole_transform.set_rotation(self.state[0] + np.pi / 2)
+        if self.last_action:
+            self.imgtrans.scale = (-self.last_action / 2, np.abs(self.last_action) / 2)
+
+        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+
     def _ode(self, _, state, action):
         """Compute the state time-derivative.
 
@@ -87,6 +116,7 @@ class InvertedPendulum(ODESystem):
         length = self.length
         friction = self.friction
         inertia = self.inertia
+        self.last_action = action[0]
 
         angle, angular_velocity = state
 
