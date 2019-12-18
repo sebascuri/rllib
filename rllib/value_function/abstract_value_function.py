@@ -59,17 +59,6 @@ class AbstractValueFunction(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def copy(self):
-        """Copy object.
-
-        Returns
-        -------
-        other: AbstractValueFunction
-            copy of self.
-        """
-        return NotImplementedError
-
     @property  # type: ignore
     @abstractmethod
     def parameters(self):

@@ -37,8 +37,6 @@ class NNValueFunction(AbstractValueFunction):
         else:
             num_inputs = self.dim_state
 
-        self._layers = layers
-        self._biased_head = biased_head
         self.value_function = DeterministicNN(num_inputs, 1, layers,
                                               biased_head=biased_head)
         self._tau = tau
@@ -48,16 +46,6 @@ class NNValueFunction(AbstractValueFunction):
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
         return self.value_function(state).squeeze(-1)
-
-    def copy(self):
-        """Copy value function."""
-        other = NNValueFunction(self.dim_state, self.num_states, self._layers,
-                                tau=self._tau, biased_head=self._biased_head)
-        other.parameters = self.parameters
-        update_parameters(other.value_function.parameters(),
-                          self.value_function.parameters(), 1.0)
-
-        return other
 
     @property
     def parameters(self):
@@ -107,8 +95,6 @@ class NNQFunction(AbstractQFunction):
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
-        self._layers = layers
-        self._biased_head = biased_head
         self.q_function = DeterministicNN(num_inputs, num_outputs, layers,
                                           biased_head=biased_head)
         self._tau = tau
@@ -147,16 +133,6 @@ class NNQFunction(AbstractQFunction):
             return self.q_function(state).gather(-1, action).squeeze(-1)
         elif not self.discrete_state and self.discrete_action:
             return self.q_function(state).gather(-1, action).squeeze(-1)
-
-    def copy(self):
-        """Copy Q-function."""
-        other = NNQFunction(self.dim_state, self.dim_action,
-                            self.num_states, self.num_actions,
-                            self._layers, tau=self._tau, biased_head=self._biased_head)
-        other.parameters = self.parameters
-        update_parameters(other.q_function.parameters(),
-                          self.q_function.parameters(), 1.0)
-        return other
 
     @property
     def parameters(self):
