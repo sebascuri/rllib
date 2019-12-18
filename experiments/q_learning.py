@@ -14,14 +14,14 @@ import pickle
 # ENVIRONMENT = 'NChain-v0'
 ENVIRONMENT = 'CartPole-v0'
 
-NUM_EPISODES = 100
+NUM_EPISODES = 50
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
-TARGET_UPDATE_TAU = 0.9
+TARGET_UPDATE_TAU = 0.99
 MEMORY_MAX_SIZE = 5000
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 LEARNING_RATE = 1e-3
-WEIGHT_DECAY = 0
+WEIGHT_DECAY = 1e-4
 GAMMA = 0.99
 EPS_START = 1.0
 EPS_END = 0.01
@@ -40,7 +40,7 @@ for name, Agent in {
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    environment = GymEnvironment(ENVIRONMENT, SEED, MAX_STEPS)
+    environment = GymEnvironment(ENVIRONMENT, SEED)
     exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = NNQFunction(environment.dim_state, environment.dim_action,
                              num_states=environment.num_states,
@@ -56,8 +56,7 @@ for name, Agent in {
     agent = Agent(q_function, exploration, criterion, optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
                   episode_length=MAX_STEPS)
-    rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
-
+    rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
     axes[0].plot(agent.episodes_cumulative_rewards, label=name)
     tds = agent.logs['episode_td_errors']
     axes[1].plot(tds, label=name)
