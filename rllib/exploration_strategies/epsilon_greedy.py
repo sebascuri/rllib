@@ -6,7 +6,7 @@ import numpy as np
 from torch.distributions import Categorical, MultivariateNormal
 
 
-__all__ = ['EpsGreedy']
+__all__ = ['EpsGreedy', 'GaussianExploration']
 
 
 def _mode(action_distribution):
@@ -24,7 +24,7 @@ def _mode(action_distribution):
     if type(action_distribution) is Categorical:
         return action_distribution.logits.argmax().numpy()
     elif type(action_distribution) is MultivariateNormal:
-        return action_distribution.loc.numpy()
+        return action_distribution.loc.detach().numpy()
     else:
         raise NotImplementedError("""
         Action Distribution should be of type Categorical or MultivariateNormal but {}
@@ -88,3 +88,13 @@ class EpsGreedy(AbstractExplorationStrategy):
         else:
             decay = (self._eps_start - self._eps_end) * np.exp(-steps / self._eps_decay)
             return self._eps_end + decay
+
+
+class GaussianExploration(EpsGreedy):
+    """Implementation of Additive Gaussian Noise Exploration strategy."""
+
+    def __call__(self, action_distribution, steps=None):
+        """See `AbstractExplorationStrategy.__call__'."""
+        mean = action_distribution.mean.detach().numpy()
+        noise = np.random.randn() * self.epsilon(steps)
+        return mean + noise
