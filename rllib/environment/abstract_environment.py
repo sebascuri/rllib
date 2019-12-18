@@ -76,6 +76,42 @@ class AbstractEnvironment(ABC):
         """
         raise NotImplementedError
 
+    def render(self, mode='human'):
+        """Render the environment.
+
+        The set of supported modes varies per environment. (And some
+        environments do not support rendering at all.) By convention,
+        if mode is:
+        - human: render to the current display or terminal and
+          return nothing. Usually for human consumption.
+        - rgb_array: Return an numpy.ndarray with shape (x, y, 3),
+          representing RGB values for an x-by-y pixel image, suitable
+          for turning into a video.
+        - ansi: Return a string (str) or StringIO.StringIO containing a
+          terminal-style text representation. The text can include newlines
+          and ANSI escape sequences (e.g. for colors).
+
+        Parameters
+        ----------
+            mode: str.
+                The mode to render with
+
+        Note
+        ----
+            Make sure that your class's metadata 'render.modes' key includes
+              the list of supported modes. It's recommended to call super()
+              in implementations to use the functionality of this method.
+        """
+        pass
+
+    def close(self):
+        """Override close in your subclass to perform any necessary cleanup.
+
+        Environments will automatically close() themselves when
+        garbage collected or when the program exits.
+        """
+        pass
+
     @property  # type: ignore
     @abstractmethod
     def state(self):

@@ -25,10 +25,10 @@ def test_rollout_agent(environment):
 
 
 def test_rollout_easy_grid_world():
-    environment = EasyGridWorld(max_steps=20)
+    environment = EasyGridWorld()
     agent = RandomAgent(environment.dim_state, environment.dim_action,
                         num_actions=environment.num_actions, episode_length=10)
-    rollout_agent(environment, agent)
+    rollout_agent(environment, agent, max_steps=20)
 
     policy = agent.policy
     rollout_policy(environment, policy)
