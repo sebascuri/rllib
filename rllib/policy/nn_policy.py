@@ -32,7 +32,7 @@ class NNPolicy(AbstractPolicy):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 temperature=1.0, layers=None, biased_head=True):
+                 temperature=1.0, layers=None, tau=1.0, biased_head=True):
         super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
         if self.discrete_state:
             in_dim = self.num_states
@@ -45,6 +45,7 @@ class NNPolicy(AbstractPolicy):
         else:
             self._policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
                                             self.temperature, biased_head=biased_head)
+        self._tau = tau
 
     def __call__(self, state):
         """Get distribution over actions."""
@@ -65,7 +66,7 @@ class NNPolicy(AbstractPolicy):
     @parameters.setter
     def parameters(self, new_params):
         """See `AbstractPolicy.parameters'."""
-        update_parameters(self._policy.parameters(), new_params, tau=1.0)
+        update_parameters(self._policy.parameters(), new_params, tau=self._tau)
 
 
 class FelixPolicy(NNPolicy):
@@ -97,4 +98,4 @@ class FelixPolicy(NNPolicy):
         if self.discrete_state or self.discrete_action:
             raise ValueError("Felix Policy is for Continuous Problems")
 
-        self._policy = FelixNet(dim_state, dim_action)
+        self._policy = FelixNet(dim_state, dim_action, temperature=temperature)
