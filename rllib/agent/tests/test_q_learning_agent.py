@@ -34,13 +34,13 @@ def agent(request):
 
 
 def test_nnq_interaction(environment, agent):
-    environment = GymEnvironment(environment, SEED, MAX_STEPS)
+    environment = GymEnvironment(environment, SEED)
     exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
                              num_states=environment.num_states,
                              num_actions=environment.num_actions,
                              layers=LAYERS,
-                             tau=TARGET_UPDATE_TAU
+                             tau=TARGET_UPDATE_TAU,
                              )
 
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
@@ -51,7 +51,7 @@ def test_nnq_interaction(environment, agent):
                     criterion=criterion, optimizer=optimizer, memory=memory,
                     target_update_frequency=TARGET_UPDATE_FREQUENCY,
                     episode_length=MAX_STEPS, gamma=GAMMA)
-    rollout_agent(environment, q_agent, num_episodes=NUM_EPISODES)
+    rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
 def test_tabular_interaction(agent):
@@ -70,5 +70,5 @@ def test_tabular_interaction(agent):
                     target_update_frequency=TARGET_UPDATE_FREQUENCY,
                     episode_length=10, gamma=GAMMA)
 
-    rollout_agent(environment, q_agent, num_episodes=NUM_EPISODES)
+    rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
     print(q_function.table)

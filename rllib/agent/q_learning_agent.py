@@ -4,6 +4,7 @@ from abc import abstractmethod
 import torch
 from torch.distributions import Categorical
 import numpy as np
+import copy
 
 __all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 
@@ -35,7 +36,7 @@ class AbstractQLearningAgent(AbstractAgent):
                  target_update_frequency=4, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self._q_function = q_function
-        self._q_target = q_function.copy()
+        self._q_target = copy.deepcopy(q_function)
         self._exploration = exploration
         self._criterion = criterion
         self._memory = memory
