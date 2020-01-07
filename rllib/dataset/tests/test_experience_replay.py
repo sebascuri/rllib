@@ -92,6 +92,7 @@ def test_transforms(experience_replay):
 
 def test_shuffle(memory):
     memory, max_len, number_of_samples = memory
+    np.random.seed(0)
     memory.shuffle()
     assert memory.__getitem__(0) is not memory._memory[0]
 
