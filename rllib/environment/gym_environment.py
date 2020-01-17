@@ -81,7 +81,7 @@ class GymEnvironment(AbstractEnvironment):
         elif hasattr(self._env, 's'):
             self._env.s = value
         else:
-            raise NotImplemented('Strange state')
+            raise NotImplementedError('Strange state')
 
     @property
     def time(self):
