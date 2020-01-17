@@ -116,6 +116,11 @@ class AbstractAgent(ABC):
         return self._num_episodes
 
     @property
+    def name(self):
+        """Return class name."""
+        return self.__class__.__name__
+
+    @property
     @abstractmethod
     def policy(self):
         """Return the policy the agent is currently using.

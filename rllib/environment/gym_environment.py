@@ -87,3 +87,8 @@ class GymEnvironment(AbstractEnvironment):
     def time(self):
         """See `AbstractEnvironment.time'."""
         return self._time
+
+    @property
+    def name(self):
+        """Return class name."""
+        return self._env.__class__.__name__

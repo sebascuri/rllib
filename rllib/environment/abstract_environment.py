@@ -143,3 +143,8 @@ class AbstractEnvironment(ABC):
     def discrete_observation(self):
         """Check if observation space is discrete."""
         return self.num_observations is not None
+
+    @property
+    def name(self):
+        """Return class name."""
+        return self.__class__.__name__

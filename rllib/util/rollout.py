@@ -2,7 +2,7 @@
 
 import torch
 from rllib.dataset import Observation
-
+import pickle
 
 __all__ = ['rollout_agent', 'rollout_policy']
 
@@ -20,7 +20,8 @@ def _step(environment, state, action, render):
     return observation, state, done
 
 
-def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False):
+def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
+                  milestones=None):
     """Conduct a single rollout of an agent in an environment.
 
     Parameters
@@ -30,9 +31,12 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     num_episodes: int, optional (default=1)
     max_steps: int.
     render: bool.
+    milestones: list.
+        List with episodes in which to save the agent.
 
     """
-    for _ in range(num_episodes):
+    milestones = list() if milestones is None else milestones
+    for episode in range(num_episodes):
         state = environment.reset()
         agent.start_episode()
         done = False
@@ -43,6 +47,11 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
             if max_steps <= environment.time:
                 break
         agent.end_episode()
+
+        if episode in milestones:
+            file_name = '{}_{}_{}.pkl'.format(environment.name, agent.name, episode)
+            with open(file_name, 'wb') as file:
+                pickle.dump(agent, file)
     agent.end_interaction()
 
 
