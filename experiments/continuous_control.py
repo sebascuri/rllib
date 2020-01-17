@@ -87,7 +87,7 @@ axes[0].plot(agent.episodes_cumulative_rewards, label='DDPG')
 tds = agent.logs['episode_td_errors']
 axes[1].plot(tds, label='DDPG')
 
-with open('../runs/{}_{}.pkl'.format('Pendulum', 'DDPG'), 'wb') as file:
+with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, 'DDPG'), 'wb') as file:
     pickle.dump(agent, file)
 
 axes[1].set_xlabel('Episode')

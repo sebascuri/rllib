@@ -19,8 +19,8 @@ MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.99
 MEMORY_MAX_SIZE = 5000
-BATCH_SIZE = 128
-LEARNING_RATE = 1e-3
+BATCH_SIZE = 64
+LEARNING_RATE = 1e-2
 WEIGHT_DECAY = 1e-4
 GAMMA = 0.99
 EPS_START = 1.0
@@ -48,8 +48,8 @@ for name, Agent in {
                              layers=LAYERS,
                              tau=TARGET_UPDATE_TAU)
 
-    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE,
-                                 weight_decay=WEIGHT_DECAY)
+    optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
+                                momentum=0.1, weight_decay=WEIGHT_DECAY)
     criterion = func.mse_loss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
