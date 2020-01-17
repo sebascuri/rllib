@@ -69,11 +69,19 @@ class GymEnvironment(AbstractEnvironment):
     @property
     def state(self):
         """See `AbstractEnvironment.state'."""
-        return self._env.state
+        try:
+            return self._env.state
+        except AttributeError:
+            return self._env.s
 
     @state.setter
     def state(self, value):
-        self._env.state = value
+        if hasattr(self._env, 'state'):
+            self._env.state = value
+        elif hasattr(self._env, 's'):
+            self._env.s = value
+        else:
+            raise NotImplemented('Strange state')
 
     @property
     def time(self):
