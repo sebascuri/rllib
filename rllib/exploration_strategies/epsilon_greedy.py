@@ -48,7 +48,7 @@ class EpsGreedy(AbstractExplorationStrategy):
         initial value of epsilon.
     eps_end: float, optional
         final value of epsilon.
-    eps_decay: int, optional
+    eps_decay: float, optional
         epsilon rate of decay.
 
     """

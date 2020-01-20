@@ -51,7 +51,7 @@ class AbstractQLearningAgent(AbstractAgent):
         """See `AbstractAgent.act'."""
         logits = self._q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
-        return self._exploration(action_distribution, self.total_steps)
+        return self._exploration(action_distribution, self.total_steps).item()
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
