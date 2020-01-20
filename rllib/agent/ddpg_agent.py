@@ -98,7 +98,7 @@ class DDPGAgent(AbstractAgent):
 
         """
         for batch in range(batches):
-            state, action, reward, next_state, done = self._memory.get_batch()
+            (state, action, reward, next_state, done), idx, w = self._memory.get_batch()
 
             # optimize critic
             self._critic_optimizer.zero_grad()
@@ -108,15 +108,17 @@ class DDPGAgent(AbstractAgent):
             self.logs['td_errors'].append(td_error)
             self.logs['episode_td_errors'][-1].append(td_error)
 
-            loss = self._criterion(pred_q, target_q)
-            loss.backward()
+            loss = self._criterion(pred_q, target_q, reduction='none')
+            loss = torch.tensor(w).float() * loss
+            loss.mean().backward()
             self._critic_optimizer.step()
 
             # optimize actor
             self._actor_optimizer.zero_grad()
             policy_action = self._policy(state.float()).loc
-            q = -(self._q_function(state.float(), policy_action)).mean()
-            q.backward()
+            q = -self._q_function(state.float(), policy_action)
+            loss = torch.tensor(w).float() * q
+            loss.mean().backward()
             self._actor_optimizer.step()
 
     def _td(self, state, action, reward, next_state, done):

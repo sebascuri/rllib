@@ -92,7 +92,7 @@ class AbstractQLearningAgent(AbstractAgent):
 
         """
         for batch in range(batches):
-            state, action, reward, next_state, done = self._memory.get_batch()
+            (state, action, reward, next_state, done), idx, w = self._memory.get_batch()
             self._optimizer.zero_grad()
             pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
                                         next_state.float(), done.float())
@@ -100,9 +100,9 @@ class AbstractQLearningAgent(AbstractAgent):
             td_error = (pred_q.detach() - target_q.detach()).mean().item()
             self.logs['td_errors'].append(td_error)
             self.logs['episode_td_errors'][-1].append(td_error)
-            loss = self._criterion(pred_q, target_q)
-
-            loss.backward()
+            loss = self._criterion(pred_q, target_q, reduction='none')
+            loss = torch.tensor(w).float() * loss
+            loss.mean().backward()
             self._optimizer.step()
 
     @abstractmethod

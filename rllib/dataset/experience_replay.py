@@ -5,7 +5,6 @@ import numpy as np
 from . import Observation
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
-from typing import List
 
 
 class ExperienceReplay(data.Dataset):
@@ -36,6 +35,8 @@ class ExperienceReplay(data.Dataset):
         check if buffer is full.
     has_batch: bool
         check if buffer has at least a batch.
+    update(observation, indexes, priority):
+        update experience replay sampling distribution with priority.
 
     """
 
@@ -43,7 +44,6 @@ class ExperienceReplay(data.Dataset):
         super().__init__()
         self._max_len = max_len
         self._memory = np.empty((self._max_len,), dtype=Observation)
-        self._sampling_idx = []  # type: List[int]
         self._ptr = 0
         self._transformations = transformations or list()
         self.batch_size = batch_size
@@ -60,12 +60,6 @@ class ExperienceReplay(data.Dataset):
         observation: Observation
 
         """
-        # assert idx < len(self)
-        idx = self._sampling_idx[idx]
-        """This is done for shuffling. If memory was directly shuffled, then ordering
-        would be lost.
-        """
-
         observation = self._memory[idx]
         for transform in self._transformations:
             observation = transform(observation)
@@ -94,22 +88,18 @@ class ExperienceReplay(data.Dataset):
             raise TypeError("""
             input has to be of type Observation, and it was found of type {}
             """.format(type(observation)))
-        if not self.is_full:
-            self._sampling_idx.append(self._ptr)
+
         self._memory[self._ptr] = observation
         self._ptr = (self._ptr + 1) % self._max_len
 
         for transformation in self._transformations:
             transformation.update(observation)
 
-    def shuffle(self):
-        """Shuffle the dataset."""
-        np.random.shuffle(self._sampling_idx)
-
     def get_batch(self):
         """Get a batch of data."""
         indices = np.random.choice(len(self), self.batch_size)
-        return default_collate([self[i] for i in indices])
+        weights = np.ones(self.batch_size)
+        return default_collate([self[i] for i in indices]), indices, weights
 
     @property
     def is_full(self):
@@ -125,3 +115,7 @@ class ExperienceReplay(data.Dataset):
     def has_batch(self):
         """Return true if there are more examples than the batch size."""
         return len(self) >= self.batch_size
+
+    def update(self, indexes, priority):
+        """Update experience replay sampling distribution with priority."""
+        pass

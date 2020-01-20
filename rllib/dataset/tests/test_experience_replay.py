@@ -72,6 +72,8 @@ def test_get_item(memory):
 def test_iter(memory):
     memory, max_len, number_of_samples = memory
     for idx, observation in enumerate(memory):
+        if idx >= len(memory):
+            continue
         assert observation is memory._memory[idx]
         assert observation == memory._memory[idx]
         assert observation.state.shape == torch.Size([3, ])
@@ -88,13 +90,6 @@ def test_transforms(experience_replay):
         print(observation == memory._memory[idx])
         assert observation is memory._memory[idx]
         assert type(observation) is Observation
-
-
-def test_shuffle(memory):
-    memory, max_len, number_of_samples = memory
-    np.random.seed(0)
-    memory.shuffle()
-    assert memory.__getitem__(0) is not memory._memory[0]
 
 
 def test_append_error(experience_replay):

@@ -1,4 +1,4 @@
-"""Implementation of Policy Evaluation Algorithms."""
+"""Implementation of Episodic Policy Evaluation Algorithms."""
 
 
 from .abstract_agent import AbstractAgent
