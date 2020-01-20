@@ -57,7 +57,11 @@ class DDPGAgent(AbstractAgent):
     def act(self, state):
         """See `AbstractAgent.act'."""
         action_distribution = self._policy(torch.tensor(state).float())
-        return np.clip(self._exploration(action_distribution, self.total_steps), -1, 1)
+        if self.training:
+            action = self._exploration(action_distribution, self.total_steps)
+        else:
+            action = np.clip(action_distribution.mean.detach().numpy(), -1, 1)
+        return np.clip(action, -1, 1)
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""

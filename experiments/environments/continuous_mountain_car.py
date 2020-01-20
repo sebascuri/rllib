@@ -55,9 +55,9 @@ agent = DDPGAgent(q_function, policy, exploration, criterion, critic_optimizer,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
                   gamma=GAMMA,
                   episode_length=MAX_STEPS)
-
+agent.train()
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
-              milestones=MILESTONES, render=RENDER)
+              milestones=MILESTONES)
 
 with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
     pickle.dump(agent, file)
@@ -67,3 +67,6 @@ plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.__class__.__name__, ENVIRONMENT))
 plt.show()
+
+agent.eval()
+rollout_agent(environment, agent, num_episodes=1, render=True)

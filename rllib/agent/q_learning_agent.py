@@ -51,7 +51,12 @@ class AbstractQLearningAgent(AbstractAgent):
         """See `AbstractAgent.act'."""
         logits = self._q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
-        return self._exploration(action_distribution, self.total_steps).item()
+        if self.training:
+            action = self._exploration(action_distribution, self.total_steps).item()
+        else:
+            action = torch.argmax(action_distribution.logits).item()
+
+        return action
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""

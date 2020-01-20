@@ -8,6 +8,7 @@ from rllib.exploration_strategies import EpsGreedy
 from rllib.util import rollout_agent
 import torch
 import torch.nn.functional as func
+import pickle
 
 ENVIRONMENT = 'Taxi-v2'
 NUM_EPISODES = 200
@@ -43,6 +44,7 @@ memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 agent = GQLearningAgent(q_function, exploration, criterion, optimizer, memory,
                         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
                         episode_length=MAX_STEPS)
+agent.train()
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
               milestones=MILESTONES)
 
@@ -52,4 +54,8 @@ plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))
 plt.show()
 
+with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
+    pickle.dump(agent, file)
+
+agent.eval()
 rollout_agent(environment, agent, num_episodes=1, render=True)

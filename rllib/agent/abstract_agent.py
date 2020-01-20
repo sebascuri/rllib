@@ -41,6 +41,8 @@ class AbstractAgent(ABC):
         self.gamma = gamma
         self.episode_length = episode_length if episode_length else float('+Inf')
 
+        self.training = True
+
     @abstractmethod
     def act(self, state):
         """Ask the agent for an action to interact with the environment.
@@ -136,3 +138,11 @@ class AbstractAgent(ABC):
 
         """
         raise NotImplementedError
+
+    def train(self, mode=True):
+        """Set the module in training mode."""
+        self.training = mode
+
+    def eval(self):
+        """Set the module in training mode."""
+        self.train(mode=False)
