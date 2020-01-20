@@ -1,100 +1,55 @@
 """Python Script Template."""
 import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent, GQLearningAgent, DQNAgent, DDQNAgent
+from rllib.agent import GQLearningAgent
 from rllib.environment import GymEnvironment
-from rllib.value_function import TabularQFunction
+from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import EpsGreedy
-from torch.distributions import Categorical
-
 from rllib.util import rollout_agent
-import time
-
-import numpy as np
 import torch
 import torch.nn.functional as func
 
-
 ENVIRONMENT = 'Taxi-v2'
-NUM_EPISODES = 10000
-MAX_STEPS = 200
-TARGET_UPDATE_FREQUENCY = 4
-TARGET_UPDATE_TAU = 0.99
-MEMORY_MAX_SIZE = 5000
-BATCH_SIZE = 1
-LEARNING_RATE = 0.1
-WEIGHT_DECAY = 1e-4
-GAMMA = 0.6
+NUM_EPISODES = 200
+MILESTONES = [0, 50, NUM_EPISODES - 1]
+MAX_STEPS = 2000
+TARGET_UPDATE_FREQUENCY = 1
+TARGET_UPDATE_TAU = 1
+MEMORY_MAX_SIZE = 2000
+BATCH_SIZE = 16
+LEARNING_RATE = 0.5
+MOMENTUM = 0
+WEIGHT_DECAY = 0
+GAMMA = 0.99
 EPSILON = 0.1
-LAYERS = [64, 64]
+LAYERS = []
 SEED = 0
 RENDER = True
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-q_table = np.ones([environment.num_states, environment.num_actions])
-policy = np.ones([environment.num_states, environment.num_actions])
+exploration = EpsGreedy(EPSILON)
+q_function = NNQFunction(
+    dim_state=environment.dim_state, dim_action=environment.dim_action,
+    num_states=environment.num_states, num_actions=environment.num_actions,
+    layers=LAYERS, biased_head=False, tau=1)
+q_function.q_function.head.weight.data = torch.ones_like(
+    q_function.q_function.head.weight)
 
-q_function = TabularQFunction(num_states=environment.num_states,
-                              num_actions=environment.num_actions,
-                              biased_head=False, tau=1)
-for s in range(environment.num_states):
-    for a in range(environment.num_actions):
-        q_function.set_value(s, a, 1)
+optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
+                            momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
+criterion = func.mse_loss
+memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-total_rewards = []
-for i in range(NUM_EPISODES):
-    state = environment.reset()
-    done = False
-    episode_rewards = 0
-    while not done:
-        state = torch.tensor(state)
-        if np.random.rand() < EPSILON:
-            # action = np.random.choice(environment.num_actions)
-            action = torch.tensor(np.random.choice(environment.num_actions))
-        else:
-            action = q_function.argmax(state)
-            # action = np.argmax(q_function(state))
+agent = GQLearningAgent(q_function, exploration, criterion, optimizer, memory,
+                        target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
+                        episode_length=MAX_STEPS)
+rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
+              milestones=MILESTONES)
 
-        next_state, reward, done, _ = environment.step(action.item())
-        tnext_state = torch.tensor(next_state)
-        episode_rewards += reward
-
-        td_error = reward + GAMMA * q_function.max(tnext_state) - q_function(state,
-                                                                             action)
-        # td_error = reward + GAMMA * np.max(q_table[next_state]) - q_table[state, action]
-
-        q_function.set_value(state, action,
-                             q_function(state, action) + LEARNING_RATE * td_error)
-        # q_table[state, action] += LEARNING_RATE * td_error
-        state = next_state
-
-    print(episode_rewards)
-    total_rewards.append(episode_rewards)
-
-plt.plot(total_rewards)
+plt.plot(agent.episodes_cumulative_rewards)
+plt.xlabel('Episode')
+plt.ylabel('Rewards')
+plt.title('{} in {}'.format(agent.name, environment.name))
 plt.show()
 
-state = environment.reset()
-done = False
-r = 0
-while not done:
-    action = q_function.argmax(torch.tensor(state)).item()
-    next_state, reward, done, _ = environment.step(action)
-    state = next_state
-    environment.render()
-    time.sleep(1)
-    r += reward
-print(r)
-# rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
-#
-# fig, axes = plt.subplots(2, 1, sharex=False)
-# axes[0].plot(agent.episodes_cumulative_rewards)
-# tds = agent.logs['episode_td_errors']
-# axes[1].plot(tds)
-#
-# axes[1].set_xlabel('Episode')
-# axes[0].set_ylabel('Rewards')
-# axes[0].legend(loc='best')
-# axes[1].set_xlabel('Episode')
-# axes[1].set_ylabel('Mean Absolute TD-Error')
-# plt.show()
+rollout_agent(environment, agent, num_episodes=1, render=True)
