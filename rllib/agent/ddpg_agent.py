@@ -39,17 +39,17 @@ class DDPGAgent(AbstractAgent):
                  episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
 
-        self._q_function = q_function
-        self._q_target = copy.deepcopy(q_function)
+        self.q_function = q_function
+        self.q_target = copy.deepcopy(q_function)
         self._policy = policy
-        self._policy_target = copy.deepcopy(policy)
+        self.policy_target = copy.deepcopy(policy)
 
-        self._exploration = exploration
-        self._criterion = criterion
-        self._memory = memory
-        self._target_update_frequency = target_update_frequency
-        self._critic_optimizer = critic_optimizer
-        self._actor_optimizer = actor_optimizer
+        self.exploration = exploration
+        self.criterion = criterion
+        self.memory = memory
+        self.target_update_frequency = target_update_frequency
+        self.critic_optimizer = critic_optimizer
+        self.actor_optimizer = actor_optimizer
 
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
@@ -58,7 +58,7 @@ class DDPGAgent(AbstractAgent):
         """See `AbstractAgent.act'."""
         action_distribution = self._policy(torch.tensor(state).float())
         if self.training:
-            action = self._exploration(action_distribution, self.total_steps)
+            action = self.exploration(action_distribution, self.total_steps)
         else:
             action = np.clip(action_distribution.mean.detach().numpy(), -1, 1)
         return np.clip(action, -1, 1)
@@ -66,12 +66,12 @@ class DDPGAgent(AbstractAgent):
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
-        self._memory.append(observation)
-        if self._memory.has_batch:
+        self.memory.append(observation)
+        if self.memory.has_batch:
             self._train()
-            if self.total_steps % self._target_update_frequency == 0:
-                self._q_target.parameters = self._q_function.parameters
-                self._policy_target.parameters = self._policy.parameters
+            if self.total_steps % self.target_update_frequency == 0:
+                self.q_target.parameters = self.q_function.parameters
+                self.policy_target.parameters = self._policy.parameters
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
@@ -98,35 +98,38 @@ class DDPGAgent(AbstractAgent):
 
         """
         for batch in range(batches):
-            (state, action, reward, next_state, done), idx, w = self._memory.get_batch()
+            (state, action, reward, next_state, done), idx, w = self.memory.get_batch()
 
             # optimize critic
-            self._critic_optimizer.zero_grad()
+            self.critic_optimizer.zero_grad()
             pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
                                         next_state.float(), done.float())
-            td_error = (pred_q.detach() - target_q.detach()).mean().item()
-            self.logs['td_errors'].append(td_error)
-            self.logs['episode_td_errors'][-1].append(td_error)
+            td_error = pred_q.detach() - target_q.detach()
+            td_error_mean = td_error.mean().item()
+            self.logs['td_errors'].append(td_error_mean)
+            self.logs['episode_td_errors'][-1].append(td_error_mean)
 
-            loss = self._criterion(pred_q, target_q, reduction='none')
+            loss = self.criterion(pred_q, target_q, reduction='none')
             loss = torch.tensor(w).float() * loss
             loss.mean().backward()
-            self._critic_optimizer.step()
+
+            self.critic_optimizer.step()
+            self.memory.update(idx, td_error)
 
             # optimize actor
-            self._actor_optimizer.zero_grad()
+            self.actor_optimizer.zero_grad()
             policy_action = self._policy(state.float()).loc
-            q = -self._q_function(state.float(), policy_action)
+            q = -self.q_function(state.float(), policy_action)
             loss = torch.tensor(w).float() * q
             loss.mean().backward()
-            self._actor_optimizer.step()
+            self.actor_optimizer.step()
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state, action)
+        pred_q = self.q_function(state, action)
 
         # target = r + gamma * Q_target(x', \pi_target(x'))
-        next_policy_action = self._policy_target(next_state).loc
-        next_q = self._q_target(next_state, next_policy_action)
+        next_policy_action = self.policy_target(next_state).loc
+        next_q = self.q_target(next_state, next_policy_action)
         target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()

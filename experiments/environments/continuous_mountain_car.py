@@ -4,7 +4,7 @@ from rllib.util import rollout_agent
 from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy
 from rllib.value_function import NNQFunction
-from rllib.dataset import ExperienceReplay
+from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
 from rllib.exploration_strategies import GaussianExploration
 from rllib.agent import DDPGAgent
 import torch.nn.functional as func
@@ -43,7 +43,8 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+# memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 actor_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE,
                                    weight_decay=WEIGHT_DECAY)
 critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE,

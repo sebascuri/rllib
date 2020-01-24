@@ -13,8 +13,8 @@ class RandomAgent(AbstractAgent):
                  episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self._policy = RandomPolicy(dim_state, dim_action, num_actions=num_actions)
-        self._trajectory = []
-        self._dataset = TrajectoryDataset(sequence_length=1)
+        self.trajectory = []
+        self.dataset = TrajectoryDataset(sequence_length=1)
 
     def act(self, state):
         """See `AbstractAgent.act'."""
@@ -25,16 +25,16 @@ class RandomAgent(AbstractAgent):
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
-        self._trajectory.append(observation)
+        self.trajectory.append(observation)
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
-        self._trajectory = []
+        self.trajectory = []
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        self._dataset.append(self._trajectory)
+        self.dataset.append(self.trajectory)
 
     @property
     def policy(self):

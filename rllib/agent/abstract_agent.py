@@ -32,8 +32,7 @@ class AbstractAgent(ABC):
     """
 
     def __init__(self, gamma=1.0, episode_length=None):
-        self._steps = {'total': 0, 'episode': 0}
-        self._num_episodes = 0
+        self.num_episodes = 0
         self.logs = {'total_steps': 0,
                      'episode_steps': [],
                      'rewards': [],
@@ -73,7 +72,7 @@ class AbstractAgent(ABC):
 
     def start_episode(self):
         """Start a new episode."""
-        self._num_episodes += 1
+        self.num_episodes += 1
 
         self.logs['episode_steps'].append(0)
         self.logs['episode_rewards'].append(0)
@@ -111,11 +110,6 @@ class AbstractAgent(ABC):
     def episode_steps(self):
         """Return total steps of interaction with environment in current episode."""
         return self.logs['episode_steps'][-1]
-
-    @property
-    def num_episodes(self):
-        """Return number of episodes the agent interacted with the environment."""
-        return self._num_episodes
 
     @property
     def name(self):

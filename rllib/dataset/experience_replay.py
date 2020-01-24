@@ -1,10 +1,11 @@
 """Implementation of an Experience Replay Buffer."""
 
-
 import numpy as np
 from . import Observation
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
+
+__all__ = ['ExperienceReplay', 'PrioritizedExperienceReplay']
 
 
 class ExperienceReplay(data.Dataset):
@@ -95,9 +96,10 @@ class ExperienceReplay(data.Dataset):
         for transformation in self._transformations:
             transformation.update(observation)
 
-    def get_batch(self):
+    def get_batch(self, size=None):
         """Get a batch of data."""
-        indices = np.random.choice(len(self), self.batch_size)
+        size = size if size is not None else self.batch_size
+        indices = np.random.choice(len(self), size)
         weights = np.ones(self.batch_size)
         return default_collate([self[i] for i in indices]), indices, weights
 
@@ -116,6 +118,65 @@ class ExperienceReplay(data.Dataset):
         """Return true if there are more examples than the batch size."""
         return len(self) >= self.batch_size
 
-    def update(self, indexes, priority):
-        """Update experience replay sampling distribution with priority."""
+    def update(self, indexes, td_error):
+        """Update experience replay sampling distribution with set of weights."""
         pass
+
+
+class PrioritizedExperienceReplay(ExperienceReplay):
+    """Implementation of Prioritized Experience Replay Algorithm.
+
+    References
+    ----------
+    Schaul, Tom, et al. "PRIORITIZED EXPERIENCE REPLAY." ICLR 2016.
+
+    """
+
+    def __init__(self, max_len, alpha=0.6, beta=0.4, epsilon=0.01, beta_inc=0.001,
+                 batch_size=1, max_priority=10., transformations: list = None):
+        super().__init__(max_len, batch_size, transformations)
+        self.alpha = alpha
+        self.beta = beta
+        self.epsilon = epsilon
+        self.beta_increment = beta_inc
+        self.max_priority = max_priority
+        self._priorities = np.empty((self._max_len,), dtype=np.float)
+
+    def append(self, observation):
+        """Append new observation to the dataset.
+
+        Parameters
+        ----------
+        observation: Observation
+
+        Raises
+        ------
+        TypeError
+            If the new observation is not of type Observation.
+        """
+        self._priorities[self._ptr] = self.max_priority
+        super().append(observation)
+
+    def update(self, indexes, td_error):
+        """Update experience replay sampling distribution with set of weights."""
+        priority = self._get_priority(td_error)
+        self._priorities[indexes] = priority
+
+    def _get_priority(self, td_error):
+        return (np.abs(td_error) + self.epsilon) ** self.alpha
+
+    def get_batch(self, size=None):
+        """Get a batch of data."""
+        size = size if size is not None else self.batch_size
+
+        self.beta = np.min([1., self.beta + self.beta_increment])
+        num = len(self)
+        probs = self._priorities[:num]
+        probs = probs / np.sum(probs)
+        indices = np.random.choice(num, size, p=probs)
+
+        probs = probs[indices]
+        weights = np.power(probs * num, -self.beta)
+        weights /= weights.max()
+
+        return default_collate([self[i] for i in indices]), indices, weights

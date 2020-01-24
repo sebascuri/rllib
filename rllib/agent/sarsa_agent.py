@@ -10,14 +10,14 @@ class SarsaAgent(AbstractAgent):
 
     def __init__(self, q_function, exploration, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
-        self._q_function = q_function
-        self._exploration = exploration
+        self.q_function = q_function
+        self.exploration = exploration
 
     def act(self, state):
         """See `AbstractAgent.act'."""
-        logits = self._q_function(torch.tensor(state).float())
+        logits = self.q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
-        return self._exploration(action_distribution, self.total_steps)
+        return self.exploration(action_distribution, self.total_steps)
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -30,9 +30,9 @@ class SarsaAgent(AbstractAgent):
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        self.logs['q_function'].append(self._q_function.state_dict())
+        self.logs['q_function'].append(self.q_function.state_dict())
 
     @property
     def policy(self):
         """See `AbstractAgent.policy'."""
-        return self._q_function.extract_policy(temperature=0.001)
+        return self.q_function.extract_policy(temperature=0.001)

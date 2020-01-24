@@ -35,13 +35,13 @@ class AbstractQLearningAgent(AbstractAgent):
     def __init__(self, q_function, exploration, criterion, optimizer, memory,
                  target_update_frequency=4, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
-        self._q_function = q_function
-        self._q_target = copy.deepcopy(q_function)
-        self._exploration = exploration
-        self._criterion = criterion
-        self._memory = memory
-        self._target_update_frequency = target_update_frequency
-        self._optimizer = optimizer
+        self.q_function = q_function
+        self.q_target = copy.deepcopy(q_function)
+        self.exploration = exploration
+        self.criterion = criterion
+        self.memory = memory
+        self.target_update_frequency = target_update_frequency
+        self.optimizer = optimizer
 
         # self.logs['q_function'] = []
         self.logs['td_errors'] = []
@@ -49,10 +49,10 @@ class AbstractQLearningAgent(AbstractAgent):
 
     def act(self, state):
         """See `AbstractAgent.act'."""
-        logits = self._q_function(torch.tensor(state).float())
+        logits = self.q_function(torch.tensor(state).float())
         action_distribution = Categorical(logits=logits)
         if self.training:
-            action = self._exploration(action_distribution, self.total_steps).item()
+            action = self.exploration(action_distribution, self.total_steps).item()
         else:
             action = torch.argmax(action_distribution.logits).item()
 
@@ -61,11 +61,11 @@ class AbstractQLearningAgent(AbstractAgent):
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
-        self._memory.append(observation)
-        if self._memory.has_batch:
+        self.memory.append(observation)
+        if self.memory.has_batch:
             self._train()
-            if self.total_steps % self._target_update_frequency == 0:
-                self._q_target.parameters = self._q_function.parameters
+            if self.total_steps % self.target_update_frequency == 0:
+                self.q_target.parameters = self.q_function.parameters
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
@@ -81,7 +81,7 @@ class AbstractQLearningAgent(AbstractAgent):
     @property
     def policy(self):
         """See `AbstractAgent.policy'."""
-        return self._q_function.extract_policy(temperature=0.001)
+        return self.q_function.extract_policy(temperature=0.001)
 
     def _train(self, batches=1):
         """Train the DQN for `batches' batches.
@@ -92,18 +92,21 @@ class AbstractQLearningAgent(AbstractAgent):
 
         """
         for batch in range(batches):
-            (state, action, reward, next_state, done), idx, w = self._memory.get_batch()
-            self._optimizer.zero_grad()
+            (state, action, reward, next_state, done), idx, w = self.memory.get_batch()
+            self.optimizer.zero_grad()
             pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
                                         next_state.float(), done.float())
 
-            td_error = (pred_q.detach() - target_q.detach()).mean().item()
-            self.logs['td_errors'].append(td_error)
-            self.logs['episode_td_errors'][-1].append(td_error)
-            loss = self._criterion(pred_q, target_q, reduction='none')
+            td_error = pred_q.detach() - target_q.detach()
+            td_error_mean = td_error.mean().item()
+            self.logs['td_errors'].append(td_error_mean)
+            self.logs['episode_td_errors'][-1].append(td_error_mean)
+            loss = self.criterion(pred_q, target_q, reduction='none')
             loss = torch.tensor(w).float() * loss
             loss.mean().backward()
-            self._optimizer.step()
+
+            self.optimizer.step()
+            self.memory.update(idx, td_error)
 
     @abstractmethod
     def _td(self, state, action, reward, next_state, done):
@@ -121,10 +124,10 @@ class QLearningAgent(AbstractQLearningAgent):
     """
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state, action)
+        pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q(x', a) and don't stop gradient.
-        target_q = self._q_function.max(next_state)
+        target_q = self.q_function.max(next_state)
         target_q = reward + self.gamma * target_q * (1 - done)
 
         return pred_q, target_q
@@ -144,10 +147,10 @@ class GQLearningAgent(AbstractQLearningAgent):
     """
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state, action)
+        pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q(x', a) and stop gradient.
-        next_q = self._q_function.max(next_state)
+        next_q = self.q_function.max(next_state)
         target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()
@@ -165,10 +168,10 @@ class DQNAgent(AbstractQLearningAgent):
     """
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state, action)
+        pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q_target(x', a)
-        next_q = self._q_target.max(next_state)
+        next_q = self.q_target.max(next_state)
         target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()
@@ -186,12 +189,12 @@ class DDQNAgent(AbstractQLearningAgent):
     """
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self._q_function(state, action)
+        pred_q = self.q_function(state, action)
 
         # target = r + gamma * Q_target(x', argmax Q(x', a))
 
-        next_action = self._q_function.argmax(next_state)
-        next_q = self._q_target(next_state, next_action)
+        next_action = self.q_function.argmax(next_state)
+        next_q = self.q_target(next_state, next_action)
         target_q = reward + self.gamma * next_q * (1 - done)
 
         return pred_q, target_q.detach()
