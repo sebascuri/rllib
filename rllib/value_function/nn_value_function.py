@@ -44,7 +44,7 @@ class NNValueFunction(AbstractValueFunction):
     def __call__(self, state, action=None):
         """Get value of the value-function at a given state."""
         if self.discrete_state:
-            state = one_hot_encode(state, self.num_states)
+            state = one_hot_encode(state.long(), self.num_states)
         return self.value_function(state).squeeze(-1)
 
     @property
