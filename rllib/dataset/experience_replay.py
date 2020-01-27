@@ -5,7 +5,8 @@ from . import Observation
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
-__all__ = ['ExperienceReplay', 'PrioritizedExperienceReplay']
+__all__ = ['ExperienceReplay', 'PrioritizedExperienceReplay',
+           'LinfSampler', 'L1Sampler']
 
 
 class ExperienceReplay(data.Dataset):
@@ -180,3 +181,59 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         weights /= weights.max()
 
         return default_collate([self[i] for i in indices]), indices, weights
+
+
+class LinfSampler(ExperienceReplay):
+    """Sampler for L-infinity Algorithm."""
+
+    def __init__(self, max_len, eta=0.1, beta=0.1, batch_size=1, max_priority=1.,
+                 transformations: list = None):
+        super().__init__(max_len, batch_size, transformations)
+        self.eta = eta
+        self.beta = beta
+        self.max_priority = max_priority
+        self._priorities = np.empty((self._max_len,), dtype=np.float)
+
+    def append(self, observation):
+        """Append new observations."""
+        self._priorities[self._ptr] = self.max_priority
+        super().append(observation)
+
+    def update(self, indexes, td_error):
+        """Update experience replay sampling distribution with set of weights."""
+        # Implement this way or in the primal space?
+        self._priorities[indexes] += self.eta * td_error / self.probabilities(indexes)
+
+    def probabilities(self, indexes=None, sign=1):
+        """Get probabilities of a given set of indexes."""
+        num = len(self)
+        if indexes is None:
+            indexes = np.arange(num)
+        probs = np.exp(sign * self._priorities[:num])
+        probs = probs / np.sum(probs)
+        probs = (1 - self.beta) * probs + self.beta / num
+        return probs[indexes]
+
+    def get_batch(self, size=None):
+        """Get a batch of data."""
+        size = size if size is not None else self.batch_size
+        num = len(self)
+        probs = self.probabilities()
+        indices = np.random.choice(num, size, p=probs)
+
+        return default_collate([self[i] for i in indices]), indices, 1 / probs[indices]
+
+
+class L1Sampler(LinfSampler):
+    """Sampler for L1 Algorithm."""
+
+    def get_batch(self, size=None):
+        """Get a batch of data."""
+        size = size if size is not None else self.batch_size
+        num = len(self)
+        pprobs = self.probabilities(sign=1)
+        nprobs = self.probabilities(sign=-1)
+        probs = 1 / 2 * (pprobs + nprobs)
+        indices = np.random.choice(num, size, p=probs)
+
+        return default_collate([self[i] for i in indices]), indices, 1 / pprobs[indices]
