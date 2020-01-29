@@ -97,11 +97,11 @@ class ExperienceReplay(data.Dataset):
         for transformation in self._transformations:
             transformation.update(observation)
 
-    def get_batch(self, size=None):
+    def get_batch(self, batch_size=None):
         """Get a batch of data."""
-        size = size if size is not None else self.batch_size
-        indices = np.random.choice(len(self), size)
-        weights = np.ones(self.batch_size)
+        batch_size = batch_size if batch_size is not None else self.batch_size
+        indices = np.random.choice(len(self), batch_size)
+        weights = np.ones(batch_size)
         return default_collate([self[i] for i in indices]), indices, weights
 
     @property
@@ -166,15 +166,15 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     def _get_priority(self, td_error):
         return (np.abs(td_error) + self.epsilon) ** self.alpha
 
-    def get_batch(self, size=None):
+    def get_batch(self, batch_size=None):
         """Get a batch of data."""
-        size = size if size is not None else self.batch_size
+        batch_size = batch_size if batch_size is not None else self.batch_size
 
         self.beta = np.min([1., self.beta + self.beta_increment])
         num = len(self)
         probs = self._priorities[:num]
         probs = probs / np.sum(probs)
-        indices = np.random.choice(num, size, p=probs)
+        indices = np.random.choice(num, batch_size, p=probs)
 
         probs = probs[indices]
         weights = np.power(probs * num, -self.beta)
@@ -214,12 +214,12 @@ class LinfSampler(ExperienceReplay):
         probs = (1 - self.beta) * probs + self.beta / num
         return probs[indexes]
 
-    def get_batch(self, size=None):
+    def get_batch(self, batch_size=None):
         """Get a batch of data."""
-        size = size if size is not None else self.batch_size
+        batch_size = batch_size if batch_size is not None else self.batch_size
         num = len(self)
         probs = self.probabilities()
-        indices = np.random.choice(num, size, p=probs)
+        indices = np.random.choice(num, batch_size, p=probs)
 
         return default_collate([self[i] for i in indices]), indices, 1 / probs[indices]
 
@@ -227,13 +227,13 @@ class LinfSampler(ExperienceReplay):
 class L1Sampler(LinfSampler):
     """Sampler for L1 Algorithm."""
 
-    def get_batch(self, size=None):
+    def get_batch(self, batch_size=None):
         """Get a batch of data."""
-        size = size if size is not None else self.batch_size
+        batch_size = batch_size if batch_size is not None else self.batch_size
         num = len(self)
         pprobs = self.probabilities(sign=1)
         nprobs = self.probabilities(sign=-1)
         probs = 1 / 2 * (pprobs + nprobs)
-        indices = np.random.choice(num, size, p=probs)
+        indices = np.random.choice(num, batch_size, p=probs)
 
         return default_collate([self[i] for i in indices]), indices, 1 / pprobs[indices]
