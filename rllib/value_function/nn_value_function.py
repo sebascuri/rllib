@@ -72,6 +72,7 @@ class NNValueFunction(AbstractValueFunction):
 
         return torch.cat((embeddings, torch.ones(embeddings.shape[0], 1)), dim=1)
 
+
 class NNQFunction(AbstractQFunction):
     """Implementation of a Q-Function implemented with a Neural Network.
 

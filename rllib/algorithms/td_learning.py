@@ -4,10 +4,11 @@ from abc import ABC, abstractmethod
 import torch
 from torch.distributions import Bernoulli
 import torch.testing
-import copy
 
 
 class TDLearning(ABC):
+    """Abstract Base Class for TD Learning algorithm family."""
+
     double_sample = False
 
     def __init__(self, environment, agent, sampler, value_function, gamma,
@@ -37,6 +38,7 @@ class TDLearning(ABC):
         return next_state, reward
 
     def simulate(self, observation):
+        """Run simulator in batch mode for a batch of observations."""
         if self.environment:
             batch_size = self.sampler.batch_size
             state = torch.zeros((batch_size, self.environment.dim_state))
@@ -83,16 +85,21 @@ class TDLearning(ABC):
                 self.sampler.update(idx, td.detach().numpy())
         return mspbe
 
+    @abstractmethod
     def _update(self, td_error, phi, next_phi, weight):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class TD(TDLearning):
+    """TD Learning algorithm."""
+
     def _update(self, td_error, phi, next_phi, weight):
         self.theta += self.lr_theta * td_error @ phi
 
 
 class GTD(TDLearning):
+    """GTD Learning algorithm."""
+
     def _update(self, td_error, phi, next_phi, weight):
         phitw = phi @ self.omega
 
@@ -101,6 +108,8 @@ class GTD(TDLearning):
 
 
 class GTD2(TDLearning):
+    """GTD2 Learning algorithm."""
+
     def _update(self, td_error, phi, next_phi, weight):
         phitw = phi @ self.omega
 
@@ -109,6 +118,8 @@ class GTD2(TDLearning):
 
 
 class TDC(TDLearning):
+    """TDC Learning algorithm."""
+
     def _update(self, td_error, phi, next_phi, weight):
         phitw = phi @ self.omega
 
@@ -118,6 +129,8 @@ class TDC(TDLearning):
 
 
 class TDLinf(TDLearning):
+    """TD-Linf Learning algorithm."""
+
     double_sample = True
 
     def _update(self, td_error, phi, next_phi, weight):
@@ -126,6 +139,8 @@ class TDLinf(TDLearning):
 
 
 class TDL1(TDLearning):
+    """TD-L1 Learning algorithm."""
+
     def _update(self, td_error, phi, next_phi, weight):
         weight_minus = 1 / weight
         s = Bernoulli(torch.tensor(weight / (weight_minus + weight))).sample().float()
