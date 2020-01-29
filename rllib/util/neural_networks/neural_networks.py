@@ -40,7 +40,7 @@ class DeterministicNN(nn.Module):
             layers_.append(nn.ReLU())
             in_dim = layer
 
-        self._layers = nn.Sequential(*layers_)
+        self.hidden_layers = nn.Sequential(*layers_)
         self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
 
     def forward(self, x):
@@ -56,7 +56,7 @@ class DeterministicNN(nn.Module):
         out: torch.Tensor
             Tensor of size [batch_size x out_dim].
         """
-        return self.head(self._layers(x))
+        return self.head(self.hidden_layers(x))
 
 
 class ProbabilisticNN(DeterministicNN):
@@ -108,7 +108,7 @@ class HeteroGaussianNN(ProbabilisticNN):
             Multivariate distribution with mean of size [batch_size x out_dim] and
             covariance of size [batch_size x out_dim x out_dim].
         """
-        x = self._layers(x)
+        x = self.hidden_layers(x)
         mean = torch.tanh(self.head(x))
         covariance = nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
@@ -143,7 +143,7 @@ class HomoGaussianNN(ProbabilisticNN):
             Multivariate distribution with mean of size [batch_size x out_dim] and
             covariance of size [batch_size x out_dim x out_dim].
         """
-        x = self._layers(x)
+        x = self.hidden_layers(x)
         mean = torch.tanh(self.head(x))
         covariance = functional.softplus(self._covariance)
         covariance = torch.diag_embed(covariance)
@@ -176,7 +176,7 @@ class CategoricalNN(ProbabilisticNN):
             Multivariate distribution with mean of size [batch_size x out_dim] and
             covariance of size [batch_size x out_dim x out_dim].
         """
-        output = self.head(self._layers(x))
+        output = self.head(self.hidden_layers(x))
         return Categorical(logits=output / (self.temperature + 1e-12))
 
 
@@ -221,7 +221,7 @@ class EnsembleNN(ProbabilisticNN):
             Multivariate distribution with mean of size [batch_size x out_dim] and
             covariance of size [batch_size x out_dim x out_dim].
         """
-        x = self._layers(x)
+        x = self.hidden_layers(x)
         out = self.head(x)
 
         out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))

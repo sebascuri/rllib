@@ -2,65 +2,131 @@
 
 from abc import ABC, abstractmethod
 import torch
+from torch.distributions import Bernoulli
+import torch.testing
 import copy
 
 
-class ERTDLearning(ABC):
-    """Implementation of TD Learning algorithms with an experience replay."""
+class TDLearning(ABC):
+    double_sample = False
 
-    def __init__(self, value_function, criterion, optimizer, environment, memory,
-                 gamma, target_update_frequency=1):
+    def __init__(self, environment, agent, sampler, value_function, gamma,
+                 lr_theta=0.1, lr_omega=0.1):
+        self.dimension = value_function.dimension
+        self.omega = torch.zeros(self.dimension)
+        self.theta = torch.zeros(self.dimension)
         self.value_function = value_function
-        self.value_function_target = copy.deepcopy(value_function)
-        self.criterion = criterion
-        self.optimizer = optimizer
+
         self.environment = environment
-        self.memory = memory
+        self.agent = agent
+        self.sampler = sampler
         self.gamma = gamma
-        self.target_update_frequency = target_update_frequency
+        self.lr_theta = lr_theta
+        self.lr_omega = lr_omega
 
-    def train(self, batches):
+    def _step(self, state):
+        try:
+            self.environment.state = state.item()
+        except ValueError:
+            self.environment.state = state.numpy()
+
+        action = self.agent.act(state)
+        next_state, reward, done, _ = self.environment.step(action)
+        next_state = torch.tensor(next_state)
+        reward = torch.tensor(reward).float()
+        return next_state, reward
+
+    def simulate(self, observation):
+        if self.environment:
+            batch_size = self.sampler.batch_size
+            state = torch.zeros((batch_size, self.environment.dim_state))
+            next_state = torch.zeros((batch_size, self.environment.dim_state))
+            reward = torch.zeros((batch_size, ))
+
+            for i in range(batch_size):
+                s = observation.state[i]
+                ns, r = self._step(s)
+                state[i] = s
+                next_state[i] = ns
+                reward[i] = r
+        else:
+            state = observation.state
+            next_state = observation.next_state
+            reward = observation.reward
+        return state, next_state, reward
+
+    def train(self, epochs):
         """Train using TD Learning."""
-        losses = []
-        td_errors = []
-        for batch in range(batches):
-            observation, idx, w = self.memory.get_batch()
-            self.optimizer.zero_grad()
+        mspbe = []
 
-            # Experience Replay
-            state, action, reward, next_state, done = observation
+        for _ in range(epochs):
+            for i in range(len(self.sampler) // self.sampler.batch_size):
+                observation, idx, weight = self.sampler.get_batch()
 
-            # Simulator
-            self.environment.state = state
-            action = self.policy(torch.tensor(state).float()).sample().numpy()
-            next_state, reward, done, _ = self.environment.step(action)
+                state, next_state, reward = self.simulate(observation)
 
-            pred_v, target_v = self._td(state.float(), reward.float(),
-                                        next_state.float(), done.float())
+                # Get embeddings of value function.
+                phi = self.value_function.embeddings(state)
+                next_phi = self.value_function.embeddings(next_state)
 
-            td_error = (pred_v.detach() - target_v.detach())
-            td_errors.append(td_error.mean().item())
+                # TD
+                td = reward + self.gamma * next_phi @ self.theta - phi @ self.theta
+                mspbe.append(td.mean().item() ** 2)
+                if self.double_sample:
+                    aux_state, next_state, reward = self.simulate(observation)
+                    torch.testing.assert_allclose(aux_state, state)
+                    next_phi = self.value_function.embeddings(next_state)
+                    td2 = reward + self.gamma * next_phi @ self.theta - phi @ self.theta
+                    td = td * td2
 
-            loss = self.criterion(pred_v, target_v, reduction='none')
-            loss = torch.tensor(w).float() * loss
-            loss.mean().backward()
+                self._update(td, phi, next_phi, weight)
+                self.sampler.update(idx, td.detach().numpy())
+        return mspbe
 
-            losses.append(loss.mean().item())
-
-            self.optimizer.step()
-            self.memory.update(idx, td_error.numpy())
-        return td_errors, losses
-
-    @abstractmethod
-    def _td(self, state, reward, next_state, done):
-        raise NotImplementedError
+    def _update(self, td_error, phi, next_phi, weight):
+        raise NotImplemented
 
 
-class ERLSTD(ERTDLearning):
-    """Experience replay LSTD algorithm."""
+class TD(TDLearning):
+    def _update(self, td_error, phi, next_phi, weight):
+        self.theta += self.lr_theta * td_error @ phi
 
-    def _td(self, state, reward, next_state, done):
-        pred_v = self.value_function(state)
-        target_v = reward + self.gamma * self.value_function(next_state) * (1 - done)
 
-        return pred_v, target_v.detach()
+class GTD(TDLearning):
+    def _update(self, td_error, phi, next_phi, weight):
+        phitw = phi @ self.omega
+
+        self.theta += self.lr_theta * phitw @ (phi - self.gamma * next_phi)
+        self.omega += self.lr_omega * (td_error @ phi - self.omega)
+
+
+class GTD2(TDLearning):
+    def _update(self, td_error, phi, next_phi, weight):
+        phitw = phi @ self.omega
+
+        self.theta += self.lr_theta * phitw @ (phi - self.gamma * next_phi)
+        self.omega += self.lr_omega * (td_error - phitw) @ phi
+
+
+class TDC(TDLearning):
+    def _update(self, td_error, phi, next_phi, weight):
+        phitw = phi @ self.omega
+
+        self.theta += self.lr_theta * td_error @ phi
+        self.theta -= self.lr_theta * self.gamma * phitw @ next_phi  # Correction term.
+        self.omega += self.lr_omega * (td_error - phitw) @ phi
+
+
+class TDLinf(TDLearning):
+    double_sample = True
+
+    def _update(self, td_error, phi, next_phi, weight):
+        self.theta += self.lr_theta * td_error @ phi
+        self.theta -= self.lr_theta * self.gamma * td_error @ next_phi
+
+
+class TDL1(TDLearning):
+    def _update(self, td_error, phi, next_phi, weight):
+        weight_minus = 1 / weight
+        s = Bernoulli(torch.tensor(weight / (weight_minus + weight))).sample().float()
+        self.theta += self.lr_theta * s @ (phi - self.gamma * next_phi)

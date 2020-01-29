@@ -41,6 +41,10 @@ class NNValueFunction(AbstractValueFunction):
                                               biased_head=biased_head)
         self._tau = tau
 
+        if not layers:
+            layers = [num_inputs]
+        self.dimension = layers[-1] + 1
+
     def __call__(self, state, action=None):
         """Get value of the value-function at a given state."""
         if self.discrete_state:
@@ -57,6 +61,16 @@ class NNValueFunction(AbstractValueFunction):
         """Set value function parameters."""
         update_parameters(self.value_function.parameters(), new_params, self._tau)
 
+    def embeddings(self, state):
+        """Get embeddings of the value-function at a given state."""
+        if self.discrete_state:
+            state = one_hot_encode(state.long(), self.num_states)
+        if self.value_function.layers is None:
+            embeddings = state.squeeze(0)
+        else:
+            embeddings = self.value_function.hidden_layers(state).squeeze(0)
+
+        return torch.cat((embeddings, torch.ones(embeddings.shape[0], 1)), dim=1)
 
 class NNQFunction(AbstractQFunction):
     """Implementation of a Q-Function implemented with a Neural Network.
