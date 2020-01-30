@@ -41,6 +41,7 @@ class DeterministicNN(nn.Module):
             in_dim = layer
 
         self.hidden_layers = nn.Sequential(*layers_)
+        self.embedding_dim = in_dim + 1 if biased_head else in_dim
         self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
 
     def forward(self, x):
@@ -57,6 +58,24 @@ class DeterministicNN(nn.Module):
             Tensor of size [batch_size x out_dim].
         """
         return self.head(self.hidden_layers(x))
+
+    def last_layer_embeddings(self, x):
+        """Get last layer embeddings of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.Tensor
+            Tensor of size [batch_size x embedding_dim].
+        """
+        out = self.hidden_layers(x)
+        if self.head.bias:
+            out = torch.cat((out, torch.ones(out.shape[0], 1)), dim=1)
+        return out
 
 
 class ProbabilisticNN(DeterministicNN):

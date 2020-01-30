@@ -41,9 +41,7 @@ class NNValueFunction(AbstractValueFunction):
                                               biased_head=biased_head)
         self._tau = tau
 
-        if not layers:
-            layers = [num_inputs]
-        self.dimension = layers[-1] + 1
+        self.dimension = self.value_function.embedding_dim
 
     def __call__(self, state, action=None):
         """Get value of the value-function at a given state."""
@@ -65,12 +63,7 @@ class NNValueFunction(AbstractValueFunction):
         """Get embeddings of the value-function at a given state."""
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
-        if self.value_function.layers is None:
-            embeddings = state.squeeze(0)
-        else:
-            embeddings = self.value_function.hidden_layers(state).squeeze(0)
-
-        return torch.cat((embeddings, torch.ones(embeddings.shape[0], 1)), dim=1)
+        return self.value_function.last_layer_embeddings(state).squeeze()
 
 
 class NNQFunction(AbstractQFunction):
