@@ -12,11 +12,13 @@ Chapter 4.
 """
 from rllib.value_function import TabularValueFunction
 from rllib.policy import TabularPolicy
+from rllib.environment.utilities import mdp2mrp
 import torch
 import numpy as np
+import torch.testing
 
-
-__all__ = ['policy_evaluation', 'policy_iteration', 'value_iteration']
+__all__ = ['inverse_policy_evaluation', 'policy_evaluation',
+           'policy_iteration', 'value_iteration']
 
 
 def _init_value_function(num_states, terminal_states: list = None):
@@ -28,9 +30,42 @@ def _init_value_function(num_states, terminal_states: list = None):
     return value_function
 
 
+def inverse_policy_evaluation(policy, model, gamma, value_function=None):
+    """Evaluate a policy in an MDP solving the system bellman of equations.
+
+    V = r + gamma * P * V
+    V = (I - gamma * P)^-1 r
+
+    Parameters
+    ----------
+    policy: AbstractPolicy
+    model: MDP
+    gamma: float.
+    value_function: TabularValueFunction, optional.
+
+    Returns
+    -------
+    value_function: TabularValueFunction.
+    """
+    if model.num_actions is None or model.num_states is None:
+        raise NotImplementedError("Actions and States must be discrete and countable.")
+
+    if value_function is None:
+        value_function = _init_value_function(model.num_states, model.terminal_states)
+
+    mrp = mdp2mrp(environment=model, policy=policy)
+    A = torch.eye(model.num_states) - gamma * mrp.kernel[:, 0, :]
+    # torch.testing.assert_allclose(A.inverse() @ A, torch.eye(model.num_states))
+    vals = A.inverse() @ mrp.reward[:, 0]
+    for state in range(model.num_states):
+        value_function.set_value(state, vals[state].item())
+
+    return value_function
+
+
 def policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
                       value_function=None):
-    """Implement of Policy Evaluation algorithm.
+    """Implement Policy Evaluation algorithm (policy iteration without max).
 
     Parameters
     ----------
@@ -67,28 +102,35 @@ def policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
         value_function = _init_value_function(model.num_states, model.terminal_states)
 
     for _ in range(max_iter):
-        error = 0
+        max_error = 0
+        avg_error = 0
         for state in range(model.num_states):
+            if state in model.terminal_states:
+                continue
             state = torch.tensor(state).long()
 
             value = value_function(state)
-            value_ = 0
+            value_estimate = 0
             policy_ = policy(state)
             for action in np.where(policy_.probs.detach().numpy())[0]:
-                value_estimate = 0
+                p_action = policy_.probs[action].item()
+                value_estimate += p_action * model.reward[state, action]
                 for next_state in np.where(model.kernel[state, action])[0]:
+                    p_next = model.kernel[state, action, next_state]
                     next_state = torch.tensor(next_state).long()
-                    value_estimate += model.kernel[state, action, next_state] * (
-                            model.reward[state, action]
-                            + gamma * value_function(next_state)
-                    )
+                    next_val = value_function(next_state)
+                    value_estimate += gamma * p_action * p_next * next_val
 
-                value_ += policy_.probs[action].item() * value_estimate
+            error = torch.abs(value_estimate - value).item()
+            if error > 1:
+                print(state, error)
+            max_error = max(max_error, error)
+            avg_error += error
+            value_function.set_value(state, value_estimate)
 
-            error = max(error, torch.abs(value_ - value.item()))
-            value_function.set_value(state, value_)
-        if error < eps:
+        if max_error < eps:
             break
+        print(max_error, avg_error / (model.num_states - len(model.terminal_states)))
 
     return value_function
 
