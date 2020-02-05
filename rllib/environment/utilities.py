@@ -7,11 +7,16 @@ from itertools import product
 
 
 def gym2mdp(environment):
-    """transition_kernel: nd-array [num_states x num_actions x num_states]
-    reward: nd-array [num_states x num_actions]
-    terminal_states: list of int, optional
-    initial_state: callable or int, optional"""
+    """Transform discrete gym environment to an mdp.
 
+    Parameters
+    ----------
+    environment: GymEnvironment.
+
+    Returns
+    -------
+    environment: MDP.
+    """
     num_states = environment.num_states
     num_actions = environment.num_actions
     transitions = environment._env.P
@@ -42,6 +47,17 @@ def gym2mdp(environment):
 
 
 def mdp2mrp(environment, policy):
+    """Transform MDP and Policy to an MRP.
+
+    Parameters
+    ----------
+    environment: MDP.
+    policy: AbstractPolicy.
+
+    Returns
+    -------
+    environment: MDP.
+    """
     mrp_kernel = torch.zeros((environment.num_states, 1, environment.num_states))
     mrp_reward = torch.zeros(environment.num_states, 1)
 
