@@ -175,6 +175,7 @@ class NNQFunction(AbstractQFunction):
                               num_states=self.num_states,
                               num_actions=self.num_actions,
                               layers=self.q_function.layers,
-                              temperature=temperature)
+                              temperature=temperature,
+                              biased_head=self.q_function.head.bias is not None)
             policy.parameters = self.q_function.parameters()
             return policy

@@ -1,6 +1,5 @@
 """Value Functions parametrized with tables."""
 
-
 from . import NNValueFunction, NNQFunction
 import torch.nn as nn
 
@@ -30,6 +29,13 @@ class TabularValueFunction(NNValueFunction):
 
         """
         self.value_function.head.weight[0, state] = new_value
+
+    def get_nn(self):
+        val = NNValueFunction(self.dim_state, self.num_states, layers=[], tau=self._tau,
+                              bias_head=self.value_function.head.bias is not None)
+        val.value_function.head.weight.data = self.value_function.head.weight.data
+
+        return val
 
 
 class TabularQFunction(NNQFunction):
