@@ -34,7 +34,8 @@ class GymEnvironment(AbstractEnvironment):
             num_states = None
         except IndexError:
             dim_state = 1
-            num_states = self._env.observation_space.n
+            # Add an extra final state as terminal state.
+            num_states = self._env.observation_space.n + 1
 
         super().__init__(
             dim_action=dim_action,
@@ -50,8 +51,10 @@ class GymEnvironment(AbstractEnvironment):
     def step(self, action):
         """See `AbstractEnvironment.step'."""
         self._time += 1
-        state, reward, done, info = self._env.step(action)
-        return state, reward, done, info
+        next_state, reward, done, info = self._env.step(action)
+        if done and self.num_states is not None:
+            next_state = self.num_states - 1
+        return next_state, reward, done, info
 
     def render(self, mode='human'):
         """See `AbstractEnvironment.render'."""

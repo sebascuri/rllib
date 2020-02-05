@@ -102,14 +102,16 @@ class MDP(AbstractEnvironment):
         self._time += 1
         next_state = Categorical(torch.tensor(self.kernel[self.state, action]))
         reward = self.reward[self.state, action]
-        self.state = next_state.sample().item()
+        next_state = next_state.sample().item()
+        self.state = next_state
 
         if self.state in self.terminal_states:
             done = True
+            next_state = self.num_states - 1
         else:
             done = False
 
-        return self.state, reward, done, {}
+        return next_state, reward, done, {}
 
 
 class EasyGridWorld(MDP):
