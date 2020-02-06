@@ -30,14 +30,6 @@ class TabularValueFunction(NNValueFunction):
         """
         self.value_function.head.weight[0, state] = new_value
 
-    def get_nn(self):
-        """Get a NNValueFunction."""
-        val = NNValueFunction(self.dim_state, self.num_states, layers=[], tau=self._tau,
-                              biased_head=self.value_function.head.bias is not None)
-        val.value_function.head.weight.data = self.value_function.head.weight.data
-
-        return val
-
 
 class TabularQFunction(NNQFunction):
     """Implement tabular value function."""
