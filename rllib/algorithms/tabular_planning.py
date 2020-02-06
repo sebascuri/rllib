@@ -14,6 +14,7 @@ from rllib.value_function import TabularValueFunction
 from rllib.policy import TabularPolicy
 from rllib.environment.utilities import mdp2mrp
 import torch
+from torch.distributions import Categorical
 import numpy as np
 import torch.testing
 
@@ -104,14 +105,14 @@ def policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
     for _ in range(max_iter):
         max_error = 0
         avg_error = 0
-        for state in range(model.num_states):
-            if state in model.terminal_states:
+        for state_ in range(model.num_states):
+            if state_ in model.terminal_states:
                 continue
-            state = torch.tensor(state).long()
+            state = torch.tensor(state_).long()
 
             value = value_function(state)
-            value_estimate = 0
-            policy_ = policy(state)
+            value_estimate = torch.tensor(0.)
+            policy_ = policy(state)  # type: Categorical
             for action in np.where(policy_.probs.detach().numpy())[0]:
                 p_action = policy_.probs[action].item()
                 value_estimate += p_action * model.reward[state, action]

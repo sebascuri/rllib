@@ -1,11 +1,15 @@
 from . import NNPolicy
-from torch import FloatTensor, LongTensor
+from torch import Tensor
+from torch.distributions import Categorical
+from typing import Union
 
 
 class TabularPolicy(NNPolicy):
     def __init__(self, num_states: int, num_actions: int) -> None: ...
 
-    @property
-    def table(self) -> FloatTensor: ...
+    def __call__(self, state: Tensor) -> Categorical: ...
 
-    def set_value(self, state: LongTensor, new_value: float) -> None: ...
+    @property
+    def table(self) -> Tensor: ...
+
+    def set_value(self, state: Tensor, new_value: Union[Tensor, float]) -> None: ...

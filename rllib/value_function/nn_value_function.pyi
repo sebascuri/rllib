@@ -8,6 +8,7 @@ from rllib.policy import AbstractPolicy
 class NNValueFunction(AbstractValueFunction):
     dimension: int
     value_function: DeterministicNN
+
     def __init__(self, dim_state: int, num_states: int = None, layers: List[int] = None,
                  tau: float = 1.0, biased_head: bool=True) -> None: ...
     def __call__(self, state: Tensor, action: Tensor = None) -> Tensor: ...
