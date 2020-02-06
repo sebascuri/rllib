@@ -84,7 +84,7 @@ class TDLearning(ABC):
                 td = reward + self.gamma * (next_phi @ self.theta) - phi @ self.theta
                 mspbe.append(td.mean().item() ** 2)
                 if self.double_sample:
-                    aux_state, next_state, reward = self.simulate(observation)
+                    aux_state, next_state, reward, done = self.simulate(observation)
                     torch.testing.assert_allclose(aux_state, state)
                     next_phi = self.value_function.embeddings(next_state)
                     td2 = reward + self.gamma * next_phi @ self.theta - phi @ self.theta
@@ -194,6 +194,6 @@ class TDL1(TDLearning):
     """TD-L1 Learning algorithm."""
 
     def _update(self, td_error, phi, next_phi, weight):
-        weight_minus = 1 / weight
+        weight_minus = torch.ones_like(weight) / weight
         s = Bernoulli(torch.tensor(weight / (weight_minus + weight))).sample().float()
         self.theta += self.lr_theta * s @ (phi - self.gamma * next_phi)
