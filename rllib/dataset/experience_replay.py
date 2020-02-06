@@ -44,8 +44,8 @@ class ExperienceReplay(data.Dataset):
 
     def __init__(self, max_len, batch_size=1, transformations: list = None):
         super().__init__()
-        self._max_len = max_len
-        self._memory = np.empty((self._max_len,), dtype=Observation)
+        self.max_len = max_len
+        self.memory = np.empty((self.max_len,), dtype=Observation)
         self._ptr = 0
         self._transformations = transformations or list()
         self.batch_size = batch_size
@@ -62,7 +62,7 @@ class ExperienceReplay(data.Dataset):
         observation: Observation
 
         """
-        observation = self._memory[idx]
+        observation = self.memory[idx]
         for transform in self._transformations:
             observation = transform(observation)
         return observation
@@ -70,7 +70,7 @@ class ExperienceReplay(data.Dataset):
     def __len__(self):
         """Return the current size of the buffer."""
         if self.is_full:
-            return self._max_len
+            return self.max_len
         else:
             return self._ptr
 
@@ -91,8 +91,8 @@ class ExperienceReplay(data.Dataset):
             input has to be of type Observation, and it was found of type {}
             """.format(type(observation)))
 
-        self._memory[self._ptr] = observation
-        self._ptr = (self._ptr + 1) % self._max_len
+        self.memory[self._ptr] = observation
+        self._ptr = (self._ptr + 1) % self.max_len
 
         for transformation in self._transformations:
             transformation.update(observation)
@@ -112,7 +112,7 @@ class ExperienceReplay(data.Dataset):
         -------
         bool
         """
-        return self._memory[-1] is not None  # check if the last element is not empty.
+        return self.memory[-1] is not None  # check if the last element is not empty.
 
     @property
     def has_batch(self):
@@ -141,7 +141,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         self.epsilon = epsilon
         self.beta_increment = beta_inc
         self.max_priority = max_priority
-        self._priorities = np.empty((self._max_len,), dtype=np.float)
+        self.priorities = np.empty((self.max_len,), dtype=np.float)
 
     def append(self, observation):
         """Append new observation to the dataset.
@@ -155,13 +155,13 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         TypeError
             If the new observation is not of type Observation.
         """
-        self._priorities[self._ptr] = self.max_priority
+        self.priorities[self._ptr] = self.max_priority
         super().append(observation)
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""
         priority = self._get_priority(td_error)
-        self._priorities[indexes] = priority
+        self.priorities[indexes] = priority
 
     def _get_priority(self, td_error):
         return (np.abs(td_error) + self.epsilon) ** self.alpha
@@ -172,7 +172,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
 
         self.beta = np.min([1., self.beta + self.beta_increment])
         num = len(self)
-        probs = self._priorities[:num]
+        probs = self.priorities[:num]
         probs = probs / np.sum(probs)
         indices = np.random.choice(num, batch_size, p=probs)
 
@@ -192,24 +192,24 @@ class LinfSampler(ExperienceReplay):
         self.eta = eta
         self.beta = beta
         self.max_priority = max_priority
-        self._priorities = np.empty((self._max_len,), dtype=np.float)
+        self.priorities = np.empty((self.max_len,), dtype=np.float)
 
     def append(self, observation):
         """Append new observations."""
-        self._priorities[self._ptr] = self.max_priority
+        self.priorities[self._ptr] = self.max_priority
         super().append(observation)
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""
         # Implement this way or in the primal space?
-        self._priorities[indexes] += self.eta * td_error / self.probabilities(indexes)
+        self.priorities[indexes] += self.eta * td_error / self.probabilities(indexes)
 
     def probabilities(self, indexes=None, sign=1):
         """Get probabilities of a given set of indexes."""
         num = len(self)
         if indexes is None:
             indexes = np.arange(num)
-        probs = np.exp(sign * self._priorities[:num])
+        probs = np.exp(sign * self.priorities[:num])
         probs = probs / np.sum(probs)
         probs = (1 - self.beta) * probs + self.beta / num
         return probs[indexes]

@@ -15,7 +15,7 @@ def memory(request):
     transformations = []  # MeanFunction(lambda state, action: state),
     # StateNormalizer(), ActionNormalizer(), RewardClipper(),
     # ]
-    memory_ = ExperienceReplay(max_len, transformations)
+    memory_ = ExperienceReplay(max_len, transformations=transformations)
     for _ in range(number_of_samples):
         memory_.append(Observation(state=np.random.randn(state_dim),
                                    action=np.random.randn(action_dim),
@@ -36,7 +36,7 @@ def experience_replay():
     transformations = [MeanFunction(lambda state, action: state),
                        StateNormalizer(), ActionNormalizer(), RewardClipper(),
                        ]
-    memory_ = ExperienceReplay(max_len, transformations)
+    memory_ = ExperienceReplay(max_len, transformations=transformations)
     for _ in range(number_of_samples):
         memory_.append(Observation(state=np.random.randn(state_dim),
                                    action=np.random.randn(action_dim),
@@ -61,8 +61,8 @@ def test_get_item(memory):
     memory, max_len, number_of_samples = memory
     for idx in range(len(memory)):
         observation = memory.__getitem__(idx)
-        assert observation is memory._memory[idx]
-        assert observation == memory._memory[idx]
+        assert observation is memory.memory[idx]
+        assert observation == memory.memory[idx]
         assert type(observation) is Observation
         assert observation.state.shape == torch.Size([3, ])
         assert observation.action.shape == torch.Size([2, ])
@@ -74,8 +74,8 @@ def test_iter(memory):
     for idx, observation in enumerate(memory):
         if idx >= len(memory):
             continue
-        assert observation is memory._memory[idx]
-        assert observation == memory._memory[idx]
+        assert observation is memory.memory[idx]
+        assert observation == memory.memory[idx]
         assert observation.state.shape == torch.Size([3, ])
         assert observation.action.shape == torch.Size([2, ])
         assert observation.next_state.shape == torch.Size([3, ])
@@ -86,9 +86,9 @@ def test_transforms(experience_replay):
     for idx in range(len(memory)):
         observation = memory.__getitem__(idx)
         print(observation)
-        print(memory._memory[idx])
-        print(observation == memory._memory[idx])
-        assert observation is memory._memory[idx]
+        print(memory.memory[idx])
+        assert observation != memory.memory[idx]
+        assert observation is not memory.memory[idx]
         assert type(observation) is Observation
 
 
