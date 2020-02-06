@@ -7,8 +7,10 @@ class Observation(namedtuple('Observation',
                              ('state', 'action', 'reward', 'next_state', 'done'))):
     """Observation datatype."""
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Check if two observations are equal."""
+        if not isinstance(other, Observation):
+            return NotImplemented
         is_equal = np.allclose(self.state, other.state)
         is_equal &= np.allclose(self.action, other.action)
         is_equal &= np.allclose(self.reward, other.reward)
@@ -17,6 +19,6 @@ class Observation(namedtuple('Observation',
 
         return is_equal
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         """Check if two observations are not equal."""
         return not (self == other)
