@@ -2,6 +2,7 @@ from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from torch import Tensor
 from typing import List, Iterator
 from rllib.util.neural_networks import DeterministicNN
+from rllib.policy import AbstractPolicy
 
 
 class NNValueFunction(AbstractValueFunction):
@@ -15,7 +16,8 @@ class NNValueFunction(AbstractValueFunction):
     def parameters(self) -> Iterator: ...
 
     @parameters.setter
-    def parameters(self, new_params: Iterator): ...
+    def parameters(self, new_params: Iterator) -> None: ...
+
 
     def embeddings(self, state: Tensor) -> Tensor: ...
 
@@ -33,22 +35,10 @@ class NNQFunction(AbstractQFunction):
     def parameters(self) -> Iterator: ...
 
     @parameters.setter
-    def parameters(self, new_params: Iterator): ...
+    def parameters(self, new_params: Iterator) -> None: ...
 
     def max(self, state: Tensor) -> Tensor: ...
 
     def argmax(self, state: Tensor) -> Tensor: ...
 
-    def extract_policy(self, temperature=1.0):
-        """Extract the policy induced by the Q-Value function."""
-        if not self.discrete_action:
-            raise NotImplementedError
-        else:
-            policy = NNPolicy(self.dim_state, self.dim_action,
-                              num_states=self.num_states,
-                              num_actions=self.num_actions,
-                              layers=self.q_function.layers,
-                              temperature=temperature,
-                              biased_head=self.q_function.head.bias is not None)
-            policy.parameters = self.q_function.parameters()
-            return policy
+    def extract_policy(self, temperature: float = 1.) -> AbstractPolicy: ...

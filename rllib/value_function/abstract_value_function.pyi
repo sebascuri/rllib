@@ -10,13 +10,14 @@ class AbstractValueFunction(ABC):
 
     def __init__(self, dim_state: int, num_states: int = None) -> None: ...
 
-    @abstractmethod
     def __call__(self, state: Tensor, action: Tensor = None) -> Tensor: ...
 
-    @property
+    @property  # type: ignore
+    @abstractmethod
     def parameters(self) -> Iterator: ...
 
-    @parameters.setter
+    @parameters.setter  # type: ignore
+    @abstractmethod
     def parameters(self, new_params: Iterator) -> None: ...
 
     @property

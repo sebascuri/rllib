@@ -1,5 +1,3 @@
-"""Value Functions parametrized with tables."""
-
 from . import NNValueFunction, NNQFunction
 from torch import LongTensor, FloatTensor
 

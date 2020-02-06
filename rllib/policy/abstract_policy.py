@@ -71,7 +71,7 @@ class AbstractPolicy(ABC):
         """
         raise NotImplementedError
 
-    @property  # type: ignore
+    @property
     @abstractmethod
     def parameters(self):
         """Parameters that describe the policy.
@@ -83,7 +83,7 @@ class AbstractPolicy(ABC):
         """
         raise NotImplementedError
 
-    @parameters.setter  # type: ignore
+    @parameters.setter
     @abstractmethod
     def parameters(self, new_params):
         raise NotImplementedError
