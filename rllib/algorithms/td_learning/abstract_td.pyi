@@ -7,9 +7,7 @@ from torch import Tensor
 from typing import Tuple, List
 
 
-
-
-class TDLearning(ABC):
+class AbstractTDLearning(ABC):
     double_sample: bool = False
     dimension: int
     omega: Tensor
@@ -43,35 +41,3 @@ class TDLearning(ABC):
     def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
                 ) -> None: ...
 
-
-class TD(TDLearning):
-
-    def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
-                ) -> None: ...
-
-
-class GTD(TDLearning):
-    def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
-                ) -> None: ...
-
-class GTD2(TDLearning):
-    def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
-                ) -> None: ...
-
-class TDC(TDLearning):
-    def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
-                ) -> None: ...
-
-class TDLinf(TDLearning):
-    """TD-Linf Learning algorithm."""
-
-    double_sample: bool = True
-
-    def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
-                ) -> None: ...
-
-class TDL1(TDLearning):
-    """TD-L1 Learning algorithm."""
-
-    def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
-                ) -> None: ...

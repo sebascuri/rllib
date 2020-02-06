@@ -1,12 +1,11 @@
-"""Implementation of LSTD algorithm."""
+"""Abstract TD Learning file."""
 
 from abc import ABC, abstractmethod
 import torch
-from torch.distributions import Bernoulli
 import torch.testing
 
 
-class TDLearning(ABC):
+class AbstractTDLearning(ABC):
     """Abstract Base Class for TD Learning algorithm family.
 
     V = theta * phi.
@@ -99,101 +98,3 @@ class TDLearning(ABC):
     @abstractmethod
     def _update(self, td_error, phi, next_phi, weight):
         raise NotImplementedError
-
-
-class TD(TDLearning):
-    """TD Learning algorithm.
-
-    theta <- theta + lr * td * PHI.
-
-    References
-    ----------
-    Sutton, Richard S. "Learning to predict by the methods of temporal differences."
-    Machine learning 3.1 (1988).
-    """
-
-    def _update(self, td_error, phi, next_phi, weight):
-        self.theta += self.lr_theta * td_error @ phi
-
-
-class GTD(TDLearning):
-    """GTD Learning algorithm.
-
-    omega <- omega + lr * (td * PHI - omega)
-    theta <- theta + lr * (PHI - gamma * PHI') PHI * omega
-
-    References
-    ----------
-    Sutton, Richard S., Csaba Szepesvári, and Hamid Reza Maei.
-    "A convergent O (n) algorithm for off-policy temporal-difference learning with
-    linear function approximation."
-    Advances in neural information processing systems (2008).
-    """
-
-    def _update(self, td_error, phi, next_phi, weight):
-        phitw = phi @ self.omega
-
-        self.theta += self.lr_theta * phitw @ (phi - self.gamma * next_phi)
-        self.omega += self.lr_omega * (td_error @ phi - self.omega)
-
-
-class GTD2(TDLearning):
-    """GTD2 Learning algorithm.
-
-    omega <- omega + lr * (td - PHI * omega) * PHI
-    theta <- theta + lr * (PHI - gamma * PHI') PHI * omega
-
-
-    References
-    ----------
-    Sutton, Richard S., et al. "Fast gradient-descent methods for temporal-difference
-    learning with linear function approximation." Proceedings of the 26th Annual
-    International Conference on Machine Learning. ACM, 2009.
-
-    """
-
-    def _update(self, td_error, phi, next_phi, weight):
-        phitw = phi @ self.omega
-
-        self.theta += self.lr_theta * phitw @ (phi - self.gamma * next_phi)
-        self.omega += self.lr_omega * (td_error - phitw) @ phi
-
-
-class TDC(TDLearning):
-    """TDC Learning algorithm.
-
-    omega <- omega + lr * (td - PHI * omega) * PHI
-    theta <- theta + lr * (td * PHI - gamma * PHI' * PHI * omega)
-
-    References
-    ----------
-    Sutton, Richard S., et al. "Fast gradient-descent methods for temporal-difference
-    learning with linear function approximation." Proceedings of the 26th Annual
-    International Conference on Machine Learning. ACM, 2009.
-    """
-
-    def _update(self, td_error, phi, next_phi, weight):
-        phitw = phi @ self.omega
-
-        self.theta += self.lr_theta * td_error @ phi
-        self.theta -= self.lr_theta * self.gamma * phitw @ next_phi  # Correction term.
-        self.omega += self.lr_omega * (td_error - phitw) @ phi
-
-
-class TDLinf(TDLearning):
-    """TD-Linf Learning algorithm."""
-
-    double_sample = True
-
-    def _update(self, td_error, phi, next_phi, weight):
-        self.theta += self.lr_theta * td_error @ phi
-        self.theta -= self.lr_theta * self.gamma * td_error @ next_phi
-
-
-class TDL1(TDLearning):
-    """TD-L1 Learning algorithm."""
-
-    def _update(self, td_error, phi, next_phi, weight):
-        weight_minus = torch.ones_like(weight) / weight
-        s = Bernoulli(torch.tensor(weight / (weight_minus + weight))).sample().float()
-        self.theta += self.lr_theta * s @ (phi - self.gamma * next_phi)

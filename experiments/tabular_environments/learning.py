@@ -2,7 +2,7 @@ from rllib.environment import EasyGridWorld
 from rllib.policy import RandomPolicy
 from rllib.value_function import TabularValueFunction
 from rllib.agent import TDAgent, MCAgent, OnLineTDLearning
-from rllib.algorithms import policy_evaluation
+from rllib.algorithms import iterative_policy_evaluation
 from rllib.util import rollout_agent
 
 import torch
@@ -34,7 +34,7 @@ hyper_params = {'learning_rate': LEARNING_RATE}
 
 policy = RandomPolicy(dim_state=1, dim_action=1, num_states=environment.num_states,
                       num_actions=environment.num_actions)
-true_value_function = policy_evaluation(policy, environment, GAMMA)
+true_value_function = iterative_policy_evaluation(policy, environment, GAMMA)
 print(true_value_function.table)
 
 

@@ -2,7 +2,7 @@ from rllib.environment import EasyGridWorld
 from rllib.environment.gym_environment import GymEnvironment
 
 from rllib.policy import RandomPolicy
-from rllib.algorithms import policy_evaluation, policy_iteration, value_iteration
+from rllib.algorithms import iterative_policy_evaluation, policy_iteration, value_iteration
 import torch.testing
 import pytest
 
@@ -14,7 +14,7 @@ def test_policy_evaluation():
 
     policy = RandomPolicy(dim_state=1, dim_action=1, num_states=environment.num_states,
                           num_actions=environment.num_actions)
-    value_function = policy_evaluation(policy, environment, GAMMA, eps=EPS)
+    value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(value_function.table,
                                   torch.tensor([3.3, 8.8, 4.4, 5.3, 1.5,
@@ -108,7 +108,7 @@ def test_value_iteration():
 def test_not_implemented():
     environment = GymEnvironment('CartPole-v0')
     with pytest.raises(NotImplementedError):
-        policy_evaluation(0, environment, 0.9)
+        iterative_policy_evaluation(0, environment, 0.9)
     with pytest.raises(NotImplementedError):
         value_iteration(environment, 0.9)
     with pytest.raises(NotImplementedError):
