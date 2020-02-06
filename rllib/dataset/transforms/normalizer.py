@@ -9,7 +9,7 @@ import numpy as np
 __all__ = ['StateNormalizer', 'ActionNormalizer']
 
 
-class Normalizer(AbstractTransform):
+class Normalizer(object):
     """Normalizer Class."""
 
     def __init__(self, preserve_origin=False):
