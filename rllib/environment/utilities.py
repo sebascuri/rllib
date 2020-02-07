@@ -3,7 +3,6 @@
 from .mdp import MDP
 import numpy as np
 import torch
-from torch.distributions import Categorical
 from itertools import product
 
 
@@ -69,7 +68,7 @@ def mdp2mrp(environment, policy):
             continue
 
         state = torch.tensor(state).long()
-        policy_ = policy(state)  # type: Categorical
+        policy_ = policy(state)
 
         for a, p_action in enumerate(policy_.probs):
             mrp_reward[state, 0] += p_action * environment.reward[state, a]

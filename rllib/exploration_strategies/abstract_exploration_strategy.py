@@ -2,10 +2,22 @@
 
 
 from abc import ABC, abstractmethod
+from .utilities import ExponentialDecay
+
+__all__ = ['AbstractExplorationStrategy']
 
 
 class AbstractExplorationStrategy(ABC):
     """Interface for policies to control an environment.
+
+    Parameters
+    ----------
+    start: float
+        initial value of exploration parameter.
+    end: float, optional
+        final value of exploration parameter.
+    decay: float, optional
+        rate of decay of exploration parameter.
 
     Attributes
     ----------
@@ -13,6 +25,9 @@ class AbstractExplorationStrategy(ABC):
     return the action that the action_distribution
 
     """
+
+    def __init__(self, start, end=None, decay=None):
+        self.param = ExponentialDecay(start, end, decay)
 
     @abstractmethod
     def __call__(self, action_distribution, steps=None):

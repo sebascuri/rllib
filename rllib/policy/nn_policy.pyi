@@ -1,7 +1,6 @@
-from .abstract_policy import AbstractPolicy
+from .abstract_policy import AbstractPolicy, Distribution
 from typing import List, Iterator
 from torch import Tensor
-from torch.distributions import Distribution
 
 
 class NNPolicy(AbstractPolicy):

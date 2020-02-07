@@ -12,19 +12,19 @@ def eps_start(request):
 
 
 def test_epsilon(eps_start):
-    strategy = EpsGreedy(eps_start=eps_start)
+    strategy = EpsGreedy(start=eps_start)
     for t in range(100):
-        assert strategy.epsilon(t) == eps_start
-        assert strategy.epsilon() == eps_start
+        assert strategy.param(t) == eps_start
+        assert strategy.param() == eps_start
 
-    strategy = EpsGreedy(eps_start=eps_start, eps_end=0.1, eps_decay=100)
+    strategy = EpsGreedy(start=eps_start, end=0.1, decay=100)
     for t in range(100):
-        assert strategy.epsilon(t) == 0.1 + (eps_start - 0.1) * np.exp(-t / 100)
-        assert strategy.epsilon() == eps_start
+        assert strategy.param(t) == 0.1 + (eps_start - 0.1) * np.exp(-t / 100)
+        assert strategy.param() == eps_start
 
 
 def test_exact_discrete():
-    strategy = EpsGreedy(eps_start=0.)
+    strategy = EpsGreedy(start=0.)
     for t in range(100):
         logits = np.random.randn(3) ** 2
         action_distribution = Categorical(logits=torch.tensor(logits))
@@ -32,7 +32,7 @@ def test_exact_discrete():
 
 
 def test_exact_continuous():
-    strategy = EpsGreedy(eps_start=0.)
+    strategy = EpsGreedy(start=0.)
     for t in range(100):
         mean = torch.randn(4)
         action_distribution = MultivariateNormal(loc=mean,
@@ -41,7 +41,7 @@ def test_exact_continuous():
 
 
 def test_call_discrete():
-    strategy = EpsGreedy(eps_start=0.9, eps_end=0.1, eps_decay=100)
+    strategy = EpsGreedy(start=0.9, end=0.1, decay=100)
     total = 0
     for t in range(100):
         logits = np.random.randn(3) ** 2
@@ -56,7 +56,7 @@ def test_call_discrete():
 
 
 def test_call_continuous():
-    strategy = EpsGreedy(eps_start=0.9, eps_end=0.1, eps_decay=100)
+    strategy = EpsGreedy(start=0.9, end=0.1, decay=100)
     total = 0
     for t in range(100):
         mean = torch.randn(4)
@@ -71,7 +71,7 @@ def test_call_continuous():
 
 
 def test_wrong_distribution():
-    strategy = EpsGreedy(eps_start=0)
+    strategy = EpsGreedy(start=0)
     action_distribution = HalfCauchy(scale=1)
     with pytest.raises(NotImplementedError):
         strategy(action_distribution)

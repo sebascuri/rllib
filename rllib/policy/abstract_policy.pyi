@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
-from torch.distributions import Distribution
-from typing import Iterator
+from torch.distributions import Categorical, MultivariateNormal
+from typing import Iterator, Union
 
+Distribution = Union[Categorical, MultivariateNormal]
 
 class AbstractPolicy(ABC):
     dim_state: int

@@ -14,17 +14,17 @@ def t_start(request):
 def test_temperature(t_start):
     strategy = BoltzmannExploration(t_start)
     for t in range(100):
-        assert strategy.temperature(t) == t_start
-        assert strategy.temperature() == t_start
+        assert strategy.param(t) == t_start
+        assert strategy.param() == t_start
 
-    strategy = BoltzmannExploration(t_start=t_start, t_end=0.1, t_decay=100)
+    strategy = BoltzmannExploration(start=t_start, end=0.1, decay=100)
     for t in range(100):
-        assert strategy.temperature(t) == 0.1 + (t_start - 0.1) * np.exp(-t / 100)
-        assert strategy.temperature() == t_start
+        assert strategy.param(t) == 0.1 + (t_start - 0.1) * np.exp(-t / 100)
+        assert strategy.param() == t_start
 
 
 def test_exact_discrete():
-    strategy = BoltzmannExploration(t_start=0.)
+    strategy = BoltzmannExploration(start=0.)
     for t in range(100):
         logits = np.random.randn(3) ** 2
         action_distribution = Categorical(logits=torch.tensor(logits))
@@ -32,7 +32,7 @@ def test_exact_discrete():
 
 
 def test_exact_continuous():
-    strategy = BoltzmannExploration(t_start=0.)
+    strategy = BoltzmannExploration(start=0.)
     for t in range(100):
         mean = torch.randn(4)
         action_distribution = MultivariateNormal(loc=mean,
@@ -41,7 +41,7 @@ def test_exact_continuous():
 
 
 def test_call_discrete():
-    strategy = BoltzmannExploration(t_start=0.9, t_end=0.1, t_decay=100)
+    strategy = BoltzmannExploration(start=0.9, end=0.1, decay=100)
     total = 0
     for t in range(100):
         logits = np.random.randn(3) ** 2
@@ -56,7 +56,7 @@ def test_call_discrete():
 
 
 def test_call_continuous():
-    strategy = BoltzmannExploration(t_start=0.9, t_end=0.1, t_decay=100)
+    strategy = BoltzmannExploration(start=0.9, end=0.1, decay=100)
     total = 0
     for t in range(100):
         mean = torch.randn(4)

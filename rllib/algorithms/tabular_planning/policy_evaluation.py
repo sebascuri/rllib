@@ -3,7 +3,6 @@
 from .utilities import init_value_function
 from rllib.environment import mdp2mrp
 import torch
-from torch.distributions import Categorical
 import numpy as np
 
 
@@ -77,7 +76,7 @@ def iterative_policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
 
             value = value_function(state)
             value_estimate = torch.tensor(0.)
-            policy_ = policy(state)  # type: Categorical
+            policy_ = policy(state)
             for action in np.where(policy_.probs.detach().numpy())[0]:
                 p_action = policy_.probs[action].item()
                 value_estimate += p_action * model.reward[state, action]
