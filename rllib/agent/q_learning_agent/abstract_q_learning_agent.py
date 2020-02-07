@@ -1,12 +1,10 @@
 """Implementation of QLearning Algorithms."""
-from .abstract_agent import AbstractAgent
+from rllib.agent.abstract_agent import AbstractAgent
 from abc import abstractmethod
 import torch
 from torch.distributions import Categorical
 import numpy as np
 import copy
-
-__all__ = ['QLearningAgent', 'GQLearningAgent', 'DQNAgent', 'DDQNAgent']
 
 
 class AbstractQLearningAgent(AbstractAgent):
@@ -111,90 +109,3 @@ class AbstractQLearningAgent(AbstractAgent):
     @abstractmethod
     def _td(self, state, action, reward, next_state, done):
         raise NotImplementedError
-
-
-class QLearningAgent(AbstractQLearningAgent):
-    """Implementation of Q-Learning algorithm.
-
-    loss = l[Q(x, a), r + Q(x', arg max Q(x', a))]
-
-    References
-    ----------
-    Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
-    """
-
-    def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * max Q(x', a) and don't stop gradient.
-        target_q = self.q_function.max(next_state)
-        target_q = reward + self.gamma * target_q * (1 - done)
-
-        return pred_q, target_q
-
-
-class GQLearningAgent(AbstractQLearningAgent):
-    """Implementation of Gradient Q-Learning algorithm.
-
-    loss = l[Q(x, a), r + Q(x', arg max Q(x', a)).stop_gradient]
-
-    References
-    ----------
-    Sutton, Richard S., et al. "Fast gradient-descent methods for temporal-difference
-    learning with linear function approximation." Proceedings of the 26th Annual
-    International Conference on Machine Learning. ACM, 2009.
-
-    """
-
-    def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * max Q(x', a) and stop gradient.
-        next_q = self.q_function.max(next_state)
-        target_q = reward + self.gamma * next_q * (1 - done)
-
-        return pred_q, target_q.detach()
-
-
-class DQNAgent(AbstractQLearningAgent):
-    """Implementation of DQN algorithm.
-
-    loss = l[Q(x, a), r + max_a Q'(x', a)]
-
-    References
-    ----------
-    Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning."
-    Nature 518.7540 (2015): 529.
-    """
-
-    def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * max Q_target(x', a)
-        next_q = self.q_target.max(next_state)
-        target_q = reward + self.gamma * next_q * (1 - done)
-
-        return pred_q, target_q.detach()
-
-
-class DDQNAgent(AbstractQLearningAgent):
-    """Implementation of Double DQN algorithm.
-
-    loss = l[Q(x, a), r + Q'(x', argmax Q(x,a))]
-
-    References
-    ----------
-    Van Hasselt, Hado, Arthur Guez, and David Silver. "Deep reinforcement learning
-    with double q-learning." Thirtieth AAAI conference on artificial intelligence. 2016.
-    """
-
-    def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * Q_target(x', argmax Q(x', a))
-
-        next_action = self.q_function.argmax(next_state)
-        next_q = self.q_target(next_state, next_action)
-        target_q = reward + self.gamma * next_q * (1 - done)
-
-        return pred_q, target_q.detach()

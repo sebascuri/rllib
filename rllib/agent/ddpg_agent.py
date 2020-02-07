@@ -114,7 +114,7 @@ class DDPGAgent(AbstractAgent):
             loss.mean().backward()
 
             self.critic_optimizer.step()
-            self.memory.update(idx, td_error)
+            self.memory.update(idx, td_error.detach().numpy())
 
             # optimize actor
             self.actor_optimizer.zero_grad()
