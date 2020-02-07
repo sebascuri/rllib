@@ -6,7 +6,6 @@ import torch.nn.functional as functional
 from torch.distributions import MultivariateNormal, Categorical
 from rllib.util.utilities import Delta
 from .utilities import inverse_softplus
-from typing import List
 
 __all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',
            'CategoricalNN', 'EnsembleNN', 'FelixNet']
@@ -33,7 +32,7 @@ class DeterministicNN(nn.Module):
         super().__init__()
         self.layers = layers or list()
 
-        layers_ = []  # type: List[nn.Module]
+        layers_ = []
 
         for layer in self.layers:
             layers_.append(nn.Linear(in_dim, layer))
