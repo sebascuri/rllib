@@ -38,7 +38,7 @@ jobs:
             OMP_NUM_THREADS: 2
             MKL_NUM_THREADS: 2
           command: |
-            bash scripts/test_code.sh
+            xvfb bash scripts/test_code.sh
 
 workflows:
   version: 2
