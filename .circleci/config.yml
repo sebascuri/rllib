@@ -11,7 +11,7 @@ jobs:
           name: Install build dependencies
           command: |
             apt-get update
-            apt-get install -y --no-install-recommends --quiet build-essential libopenblas-dev
+            apt-get install -y --no-install-recommends --quiet build-essential libopenblas-dev python-opengl
 
       - restore_cache:
           keys:
