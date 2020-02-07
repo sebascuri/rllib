@@ -42,7 +42,7 @@ class ExperienceReplay(data.Dataset):
 
     """
 
-    def __init__(self, max_len, batch_size=1, transformations: list = None):
+    def __init__(self, max_len, batch_size=1, transformations=None):
         super().__init__()
         self.max_len = max_len
         self.memory = np.empty((self.max_len,), dtype=Observation)
@@ -134,7 +134,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     """
 
     def __init__(self, max_len, alpha=0.6, beta=0.4, epsilon=0.01, beta_inc=0.001,
-                 batch_size=1, max_priority=10., transformations: list = None):
+                 batch_size=1, max_priority=10., transformations=None):
         super().__init__(max_len, batch_size, transformations)
         self.alpha = alpha
         self.beta = beta
@@ -187,7 +187,7 @@ class LinfSampler(ExperienceReplay):
     """Sampler for L-infinity Algorithm."""
 
     def __init__(self, max_len, eta=0.1, beta=0.1, batch_size=1, max_priority=1.,
-                 transformations: list = None):
+                 transformations=None):
         super().__init__(max_len, batch_size, transformations)
         self.eta = eta
         self.beta = beta

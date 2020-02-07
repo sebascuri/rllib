@@ -13,7 +13,7 @@ def _step(environment: AbstractEnvironment, state: Union[int, ndarray],
 
 def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False,
-                  milestones: list = None
+                  milestones: List[int] = None
                   ) -> None: ...
 
 def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,

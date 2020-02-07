@@ -28,7 +28,7 @@ class NNValueFunction(AbstractValueFunction):
 
     """
 
-    def __init__(self, dim_state, num_states=None, layers: list = None, tau=1.0,
+    def __init__(self, dim_state, num_states=None, layers=None, tau=1.0,
                  biased_head=True):
         super().__init__(dim_state, num_states)
 
@@ -88,7 +88,7 @@ class NNQFunction(AbstractQFunction):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers: list = None, tau=1.0, biased_head=True):
+                 layers=None, tau=1.0, biased_head=True):
         super().__init__(dim_state, dim_action, num_states, num_actions)
 
         if not self.discrete_state and not self.discrete_action:

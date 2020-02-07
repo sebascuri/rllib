@@ -29,7 +29,7 @@ class DeterministicNN(nn.Module):
 
     """
 
-    def __init__(self, in_dim, out_dim, layers: list = None, biased_head=True):
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
         super().__init__()
         self.layers = layers or list()
 
@@ -97,7 +97,7 @@ class ProbabilisticNN(DeterministicNN):
 
     """
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
                  biased_head=True):
         super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
         self.temperature = temperature
@@ -106,7 +106,7 @@ class ProbabilisticNN(DeterministicNN):
 class HeteroGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
                  biased_head=True):
         super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
                          biased_head=biased_head)
@@ -141,7 +141,7 @@ class HeteroGaussianNN(ProbabilisticNN):
 class HomoGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
                  biased_head=True):
         super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
                          biased_head=biased_head)
@@ -176,7 +176,7 @@ class HomoGaussianNN(ProbabilisticNN):
 class CategoricalNN(ProbabilisticNN):
     """A Module that parametrizes a Categorical distribution."""
 
-    def __init__(self, in_dim, out_dim, layers: list = None, temperature=1.0,
+    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
                  biased_head=True):
         super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
                          biased_head=biased_head)

@@ -34,7 +34,7 @@ class MDP(AbstractEnvironment):
     """
 
     def __init__(self, transition_kernel, reward, initial_state=None,
-                 terminal_states: list = None):
+                 terminal_states=None):
 
         self.num_states = transition_kernel.shape[0]
         self.num_actions = transition_kernel.shape[1]

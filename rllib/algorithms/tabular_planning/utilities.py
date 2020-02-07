@@ -3,7 +3,7 @@
 from rllib.value_function import TabularValueFunction
 
 
-def init_value_function(num_states, terminal_states: list = None):
+def init_value_function(num_states, terminal_states=None):
     """Initialize value function."""
     value_function = TabularValueFunction(num_states)
     terminal_states = [] if terminal_states is None else terminal_states

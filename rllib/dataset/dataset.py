@@ -4,7 +4,6 @@ import torch
 from torch.utils import data
 from . import Observation
 from .utilities import stack_list_of_tuples
-from typing import List
 
 
 __all__ = ['TrajectoryDataset']
@@ -38,11 +37,11 @@ class TrajectoryDataset(data.Dataset):
 
     """
 
-    def __init__(self, sequence_length=None, transformations: list = None):
+    def __init__(self, sequence_length=None, transformations=None):
         super().__init__()
         self._sequence_length = sequence_length
-        self._trajectories = []  # type: List[int]
-        self._sub_trajectory_indexes = []  # type: List[int]
+        self._trajectories = []
+        self._sub_trajectory_indexes = []
         self.transformations = transformations if transformations else []
 
     def __getitem__(self, idx):
