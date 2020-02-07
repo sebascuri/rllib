@@ -3,6 +3,7 @@
 from .mdp import MDP
 import numpy as np
 import torch
+from torch.distributions import Categorical
 from itertools import product
 
 
@@ -19,7 +20,7 @@ def gym2mdp(environment):
     """
     num_states = environment.num_states
     num_actions = environment.num_actions
-    transitions = environment._env.P
+    transitions = environment.env.P
 
     kernel = torch.zeros((num_states, num_actions, num_states))
     reward = torch.zeros((num_states, num_actions))
@@ -42,7 +43,7 @@ def gym2mdp(environment):
         assert kernel[state, action].sum() == 1
 
     return MDP(transition_kernel=kernel, reward=reward,
-               initial_state=environment._env.reset,
+               initial_state=environment.env.reset,
                terminal_states=terminal_states)
 
 
@@ -68,7 +69,7 @@ def mdp2mrp(environment, policy):
             continue
 
         state = torch.tensor(state).long()
-        policy_ = policy(state)
+        policy_ = policy(state)  # type: Categorical
 
         for a, p_action in enumerate(policy_.probs):
             mrp_reward[state, 0] += p_action * environment.reward[state, a]
