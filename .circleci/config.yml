@@ -11,7 +11,7 @@ jobs:
           name: Install build dependencies
           command: |
             apt-get update
-            apt-get install -y --no-install-recommends --quiet build-essential libopenblas-dev python-opengl xvfb
+            apt-get install -y --no-install-recommends --quiet build-essential libopenblas-dev python-opengl xvfb xauth
 
       - restore_cache:
           keys:
@@ -22,7 +22,7 @@ jobs:
           name: Install library
           command: |
             pip install --progress-bar off numpy
-            pip install --progress-bar off -e .[test,pytorch,gym]
+            pip install --progress-bar off -e .[test]
 
 
       - save_cache:
@@ -37,8 +37,7 @@ jobs:
             OMP_NUM_THREADS: 2
             MKL_NUM_THREADS: 2
           command: |
-            Xvfb :99 -screen 0 1280x1024x24
-            xvfb-run bash scripts/test_code.sh
+            xvfb-run -a bash scripts/test_code.sh
 
 workflows:
   version: 2
