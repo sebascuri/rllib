@@ -43,7 +43,7 @@ class LinearSystem(AbstractSystem):
         self.state = self.a @ self.state + self.b @ action
         return self.c @ self.state
 
-    def reset(self, state=None):
+    def reset(self, state):
         """See `AbstractSystem.reset'."""
         self._time = 0
         self.state = np.atleast_1d(state)

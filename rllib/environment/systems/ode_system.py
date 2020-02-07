@@ -27,14 +27,14 @@ class ODESystem(AbstractSystem):
                          dim_action=dim_action,
                          )
 
-        self._step_size = step_size
+        self.step_size = step_size
         self.ode = integrate.ode(ode, jac=jac)
         self.ode.set_integrator(integrator)
 
     def step(self, action):
         """See `AbstractSystem.step'."""
         self.ode.set_f_params(action)
-        self.ode.integrate(self.ode.t + self._step_size)
+        self.ode.integrate(self.ode.t + self.step_size)
         return self.state
 
     def reset(self, state=None):

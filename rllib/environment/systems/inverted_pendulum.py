@@ -1,11 +1,12 @@
 """Implementation of InvertedPendulum System."""
 
 
-from rllib.environment.systems.ode_system import ODESystem
+from .ode_system import ODESystem
 import numpy as np
 from scipy import signal
-from rllib.environment.systems.linear_system import LinearSystem
-
+from .linear_system import LinearSystem
+import os
+from gym.envs.classic_control import rendering
 
 __all__ = ['InvertedPendulum']
 
@@ -73,8 +74,6 @@ class InvertedPendulum(ODESystem):
     def render(self, mode='human'):
         """Render pendulum."""
         if self.viewer is None:
-            import os
-            from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(500, 500)
             self.viewer.set_bounds(-2.2, 2.2, -2.2, 2.2)
             rod = rendering.make_capsule(1, .2)
