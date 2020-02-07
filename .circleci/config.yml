@@ -37,6 +37,7 @@ jobs:
             OMP_NUM_THREADS: 2
             MKL_NUM_THREADS: 2
           command: |
+            Xvfb :99 -screen 0 1280x1024x24
             xvfb-run bash scripts/test_code.sh
 
 workflows:
