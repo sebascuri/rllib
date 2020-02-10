@@ -32,7 +32,7 @@ class AbstractPolicyGradient(AbstractAgent):
     def __init__(self, policy, optimizer, hyper_params, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self._trajectory = []
-        self._policy = policy
+        self.policy = policy
         self.hyper_params = hyper_params
         self._optimizer = optimizer(self._policy.parameters,
                                     lr=self.hyper_params['learning_rate'])
@@ -72,10 +72,6 @@ class AbstractPolicyGradient(AbstractAgent):
             loss -= pi.log_prob(torch.tensor(action)) * q_estimate[i]
         loss.backward()
         self._optimizer.step()
-
-    @property
-    def policy(self):
-        return self._policy
 
     @abstractmethod
     def _q_estimate(self, trajectory):

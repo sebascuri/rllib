@@ -1,7 +1,8 @@
 """Interface for agents."""
 
 
-from abc import ABC, abstractmethod
+from abc import ABC
+import torch
 
 
 class AbstractAgent(ABC):
@@ -26,8 +27,6 @@ class AbstractAgent(ABC):
         End an episode.
     end_interaction:
         End an interaction with an environment.
-    policy:
-        Return the policy the agent is using.
 
     """
 
@@ -39,23 +38,13 @@ class AbstractAgent(ABC):
                      'episode_rewards': []}
         self.gamma = gamma
         self.episode_length = episode_length if episode_length else float('+Inf')
-
         self.training = True
 
-    @abstractmethod
     def act(self, state):
-        """Ask the agent for an action to interact with the environment.
-
-        Parameters
-        ----------
-        state: int or ndarray
-
-        Returns
-        -------
-        action: int or ndarray
-
-        """
-        raise NotImplementedError
+        """Ask the agent for an action to interact with the environment."""
+        state = torch.tensor(state).float()
+        action = self.policy(state).sample()
+        return action.detach().numpy()
 
     def observe(self, observation):
         """Observe transition from the environment.
@@ -115,23 +104,6 @@ class AbstractAgent(ABC):
     def name(self):
         """Return class name."""
         return self.__class__.__name__
-
-    @property
-    @abstractmethod
-    def policy(self):
-        """Return the policy the agent is currently using.
-
-        Returns
-        -------
-        policy: AbstractPolicy
-
-        Raises
-        ------
-        NotImplementedError:
-            If a policy cannot be extracted.
-
-        """
-        raise NotImplementedError
 
     def train(self, mode=True):
         """Set the module in training mode."""

@@ -3,7 +3,6 @@
 from .abstract_agent import AbstractAgent
 from rllib.dataset import TrajectoryDataset
 from rllib.policy import RandomPolicy
-import torch
 
 
 class RandomAgent(AbstractAgent):
@@ -12,16 +11,10 @@ class RandomAgent(AbstractAgent):
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  gamma=None, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
-        self._policy = RandomPolicy(dim_state, dim_action, num_states=num_states,
-                                    num_actions=num_actions)
+        self.policy = RandomPolicy(dim_state, dim_action, num_states=num_states,
+                                   num_actions=num_actions)
         self.trajectory = []
         self.dataset = TrajectoryDataset(sequence_length=1)
-
-    def act(self, state):
-        """See `AbstractAgent.act'."""
-        state = torch.tensor(state)
-        action = self._policy(state).sample()
-        return action.detach().numpy()
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -36,8 +29,3 @@ class RandomAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         self.dataset.append(self.trajectory)
-
-    @property
-    def policy(self):
-        """See `AbstractAgent.policy'."""
-        return self._policy

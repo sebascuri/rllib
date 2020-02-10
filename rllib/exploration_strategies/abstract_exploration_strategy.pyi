@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from .utilities import Action, Distribution, ParameterDecay
+from .utilities import Action, Distribution
+from rllib.util import ParameterDecay
 
 
 class AbstractExplorationStrategy(ABC):

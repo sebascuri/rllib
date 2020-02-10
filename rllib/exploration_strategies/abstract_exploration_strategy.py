@@ -2,7 +2,7 @@
 
 
 from abc import ABC, abstractmethod
-from .utilities import ExponentialDecay
+from rllib.util import ExponentialDecay
 
 __all__ = ['AbstractExplorationStrategy']
 

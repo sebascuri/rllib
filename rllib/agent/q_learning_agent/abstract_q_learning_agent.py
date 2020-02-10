@@ -2,7 +2,6 @@
 from rllib.agent.abstract_agent import AbstractAgent
 from abc import abstractmethod
 import torch
-from torch.distributions import Categorical
 import numpy as np
 import copy
 
@@ -17,8 +16,8 @@ class AbstractQLearningAgent(AbstractAgent):
     ----------
     q_function: AbstractQFunction
         q_function that is learned.
-    exploration: AbstractExplorationStrategy.
-        exploration strategy that returns the actions.
+    policy: QFunctionPolicy.
+        Q-function derived policy.
     criterion: nn.Module
     optimizer: nn.optim
     memory: ExperienceReplay
@@ -30,12 +29,12 @@ class AbstractQLearningAgent(AbstractAgent):
 
     """
 
-    def __init__(self, q_function, exploration, criterion, optimizer, memory,
+    def __init__(self, q_function, policy, criterion, optimizer, memory,
                  target_update_frequency=4, gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
         self.q_function = q_function
+        self.policy = policy
         self.q_target = copy.deepcopy(q_function)
-        self.exploration = exploration
         self.criterion = criterion
         self.memory = memory
         self.target_update_frequency = target_update_frequency
@@ -45,16 +44,15 @@ class AbstractQLearningAgent(AbstractAgent):
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
 
-    def act(self, state):
-        """See `AbstractAgent.act'."""
-        logits = self.q_function(torch.tensor(state).float())
-        action_distribution = Categorical(logits=logits)
-        if self.training:
-            action = self.exploration(action_distribution, self.total_steps).item()
-        else:
-            action = torch.argmax(action_distribution.logits).item()
-
-        return action
+    # def act(self, state):
+    #     """See `AbstractAgent.act'."""
+    #     action_distribution = self.policy(torch.tensor(state).float())
+    #     if self.training:
+    #         action = action_distribution.sample().item()
+    #     else:
+    #         action = torch.argmax(action_distribution.logits).item()
+    #
+    #     return action
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -75,11 +73,6 @@ class AbstractQLearningAgent(AbstractAgent):
         aux = self.logs['episode_td_errors'].pop(-1)
         if len(aux) > 0:
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
-
-    @property
-    def policy(self):
-        """See `AbstractAgent.policy'."""
-        return self.q_function.extract_policy(temperature=0.001)
 
     def _train(self, batches=1):
         """Train the DQN for `batches' batches.

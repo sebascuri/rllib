@@ -4,7 +4,7 @@ from rllib.agent import DDQNAgent
 from rllib.environment import GymEnvironment
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
-from rllib.exploration_strategies import EpsGreedy
+from rllib.policy import EpsGreedy
 from rllib.util import rollout_agent
 import pickle
 
@@ -35,12 +35,13 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
+policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
+
 
 optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
@@ -48,7 +49,7 @@ criterion = func.mse_loss
 memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 # memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-agent = DDQNAgent(q_function, exploration, criterion, optimizer, memory,
+agent = DDQNAgent(q_function, policy, criterion, optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
                   episode_length=MAX_STEPS)
 agent.train()

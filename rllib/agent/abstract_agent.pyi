@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Union, List
 import numpy as np
 from torch import Tensor
@@ -16,10 +16,10 @@ class AbstractAgent(ABC):
     episode_length: int
     logs: dict
     gamma: float
+    policy: AbstractPolicy
 
     def __init__(self, gamma: float = 1.0, episode_length: int = None) -> None: ...
 
-    @abstractmethod
     def act(self, state: State) -> Action: ...
 
     def observe(self, observation: Observation) -> None: ...
@@ -47,10 +47,6 @@ class AbstractAgent(ABC):
 
     @property
     def name(self) -> str: ...
-
-    @property
-    @abstractmethod
-    def policy(self) -> AbstractPolicy: ...
 
     def train(self, mode: bool = True) -> None: ...
 

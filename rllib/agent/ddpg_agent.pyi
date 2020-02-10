@@ -36,9 +36,6 @@ class DDPGAgent(AbstractAgent):
 
     def end_episode(self) -> None: ...
 
-    @property
-    def policy(self) -> AbstractPolicy: ...
-
     def _train(self, batches: int = 1) -> None: ...
 
     def _td(self, state: State, action: Action, reward: Reward, next_state: State,

@@ -3,8 +3,7 @@ from rllib.agent import QLearningAgent, GQLearningAgent, DQNAgent, DDQNAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
-from rllib.exploration_strategies import EpsGreedy
-# from rllib.environment.systems import InvertedPendulum, CartPole
+from rllib.policy import EpsGreedy
 from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
@@ -21,6 +20,7 @@ TARGET_UPDATE_TAU = 0.99
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-2
+MOMENTUM = 0.1
 WEIGHT_DECAY = 1e-4
 GAMMA = 0.99
 EPS_START = 1.0
@@ -41,19 +41,19 @@ for name, Agent in {
     np.random.seed(SEED)
 
     environment = GymEnvironment(ENVIRONMENT, SEED)
-    exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
     q_function = NNQFunction(environment.dim_state, environment.dim_action,
                              num_states=environment.num_states,
                              num_actions=environment.num_actions,
                              layers=LAYERS,
                              tau=TARGET_UPDATE_TAU)
+    policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 
     optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
-                                momentum=0.1, weight_decay=WEIGHT_DECAY)
+                                momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
     criterion = func.mse_loss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    agent = Agent(q_function, exploration, criterion, optimizer, memory,
+    agent = Agent(q_function, policy, criterion, optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
                   episode_length=MAX_STEPS)
     rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)

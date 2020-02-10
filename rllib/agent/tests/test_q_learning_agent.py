@@ -3,7 +3,7 @@ from rllib.agent import DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
-from rllib.exploration_strategies import EpsGreedy
+from rllib.policy import EpsGreedy
 from rllib.environment import GymEnvironment, EasyGridWorld
 import torch.nn.functional as func
 import torch.optim
@@ -35,19 +35,20 @@ def agent(request):
 
 def test_nnq_interaction(environment, agent):
     environment = GymEnvironment(environment, SEED)
-    exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
+
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
                              num_states=environment.num_states,
                              num_actions=environment.num_actions,
                              layers=LAYERS,
                              tau=TARGET_UPDATE_TAU,
                              )
+    policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = agent(q_function=q_function, exploration=exploration,
+    q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer, memory=memory,
                     target_update_frequency=TARGET_UPDATE_FREQUENCY,
                     episode_length=MAX_STEPS, gamma=GAMMA)
@@ -57,15 +58,15 @@ def test_nnq_interaction(environment, agent):
 def test_tabular_interaction(agent):
     LEARNING_RATE = 0.1
     environment = EasyGridWorld()
-    exploration = EpsGreedy(EPS_START, EPS_END, EPS_DECAY)
+
     q_function = TabularQFunction(num_states=environment.num_states,
                                   num_actions=environment.num_actions)
-
+    policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = agent(q_function=q_function, exploration=exploration,
+    q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer, memory=memory,
                     target_update_frequency=TARGET_UPDATE_FREQUENCY,
                     episode_length=10, gamma=GAMMA)

@@ -31,8 +31,3 @@ class SarsaAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         self.logs['q_function'].append(self.q_function.state_dict())
-
-    @property
-    def policy(self):
-        """See `AbstractAgent.policy'."""
-        return self.q_function.extract_policy(temperature=0.001)

@@ -32,7 +32,7 @@ class EpisodicPolicyEvaluation(AbstractAgent):
     def __init__(self, policy, value_function, criterion, optimizer, hyper_params,
                  gamma=1.0, episode_length=None):
         super().__init__(gamma=gamma, episode_length=episode_length)
-        self._policy = policy
+        self.policy = policy
         self._value_function = value_function
 
         self._criterion = criterion
@@ -46,7 +46,7 @@ class EpisodicPolicyEvaluation(AbstractAgent):
 
     def act(self, state):
         """See `AbstractAgent.act'."""
-        action_distribution = self._policy(torch.tensor(state))
+        action_distribution = self.policy(torch.tensor(state))
         return action_distribution.sample().item()
 
     def observe(self, observation):
@@ -69,11 +69,6 @@ class EpisodicPolicyEvaluation(AbstractAgent):
     def end_interaction(self):
         """See `AbstractAgent.end_interaction'."""
         pass
-
-    @property
-    def policy(self):
-        """See `AbstractAgent.policy'."""
-        return self._policy
 
     def _train(self):
         for t, observation in enumerate(self._trajectory):

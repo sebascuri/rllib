@@ -41,7 +41,7 @@ class DDPGAgent(AbstractAgent):
 
         self.q_function = q_function
         self.q_target = copy.deepcopy(q_function)
-        self._policy = policy
+        self.policy = policy
         self.policy_target = copy.deepcopy(policy)
 
         self.exploration = exploration
@@ -83,11 +83,6 @@ class DDPGAgent(AbstractAgent):
         aux = self.logs['episode_td_errors'].pop(-1)
         if len(aux) > 0:
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
-
-    @property
-    def policy(self):
-        """See `AbstractAgent.policy'."""
-        return self._policy
 
     def _train(self, batches=1):
         """Train the DDPG for `batches' batches.
