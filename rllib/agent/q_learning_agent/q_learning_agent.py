@@ -16,7 +16,7 @@ class QLearningAgent(AbstractQLearningAgent):
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q(x', a) and don't stop gradient.
-        target_q = self.q_function.max(next_state)
+        target_q = self.q_function(next_state).max(dim=-1)[0]
         target_q = reward + self.gamma * target_q * (1 - done)
 
         return pred_q, target_q

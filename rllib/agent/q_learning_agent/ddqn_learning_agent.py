@@ -18,7 +18,7 @@ class DDQNAgent(AbstractQLearningAgent):
 
         # target = r + gamma * Q_target(x', argmax Q(x', a))
 
-        next_action = self.q_function.argmax(next_state)
+        next_action = self.q_function(next_state).argmax(dim=-1)
         next_q = self.q_target(next_state, next_action)
         target_q = reward + self.gamma * next_q * (1 - done)
 

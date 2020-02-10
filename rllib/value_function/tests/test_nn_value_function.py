@@ -144,47 +144,6 @@ class TestNNQFunction(object):
                 )
                 assert action_value.dtype is torch.float
 
-    def test_max(self, discrete_state, discrete_action, dim_state, dim_action, batch_size):
-        if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action)
-            state = random_tensor(discrete_state, dim_state, batch_size)
-
-            if not discrete_action:
-                with pytest.raises(NotImplementedError):
-                    self.q_function.max(state)
-            else:
-                q_max = self.q_function.max(state)
-                assert q_max.dtype == torch.float
-                assert q_max.shape == torch.Size([batch_size] if batch_size else [])
-
-    def test_argmax(self, discrete_state, discrete_action, dim_state, dim_action, batch_size):
-        if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action)
-            state = random_tensor(discrete_state, dim_state, batch_size)
-
-            if not discrete_action:
-                with pytest.raises(NotImplementedError):
-                    self.q_function.argmax(state)
-            else:
-                best_action = self.q_function.argmax(state)
-                assert best_action.dtype == torch.long
-                assert best_action.shape == torch.Size([batch_size] if batch_size else [])
-
-    def test_extract_policy(self, discrete_state, discrete_action, dim_state, dim_action, batch_size):
-        if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action)
-
-            if not discrete_action:
-                with pytest.raises(NotImplementedError):
-                    self.q_function.extract_policy(temperature=10.)
-            else:
-                policy = self.q_function.extract_policy(temperature=10.)
-                state = random_tensor(discrete_state, dim_state, batch_size)
-                action = random_tensor(discrete_action, dim_state, batch_size)
-                sample_action = policy(state).sample()
-                assert sample_action.shape == torch.Size([batch_size] if batch_size else [])
-                assert sample_action.dtype is torch.long
-
 
 class TestTabularValueFunction(object):
     def test_init(self):

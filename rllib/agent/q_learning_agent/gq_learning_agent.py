@@ -1,8 +1,8 @@
 """Implementation of GQ-Learning Algorithms."""
-from .abstract_q_learning_agent import AbstractQLearningAgent
+from .q_learning_agent import QLearningAgent
 
 
-class GQLearningAgent(AbstractQLearningAgent):
+class GQLearningAgent(QLearningAgent):
     """Implementation of Gradient Q-Learning algorithm.
 
     loss = l[Q(x, a), r + Q(x', arg max Q(x', a)).stop_gradient]
@@ -16,10 +16,5 @@ class GQLearningAgent(AbstractQLearningAgent):
     """
 
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * max Q(x', a) and stop gradient.
-        next_q = self.q_function.max(next_state)
-        target_q = reward + self.gamma * next_q * (1 - done)
-
+        pred_q, target_q = super()._td(state, action, reward, next_state, done)
         return pred_q, target_q.detach()

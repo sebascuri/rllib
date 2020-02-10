@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
 from typing import Iterator
-from rllib.policy import AbstractPolicy
 
 
 class AbstractValueFunction(ABC):
@@ -36,12 +35,3 @@ class AbstractQFunction(AbstractValueFunction):
 
     @property
     def discrete_action(self) -> bool: ...
-
-    @abstractmethod
-    def max(self, state: Tensor) -> Tensor: ...
-
-    @abstractmethod
-    def argmax(self, state: Tensor) -> Tensor: ...
-
-    @abstractmethod
-    def extract_policy(self, temperature: float = 1.) -> AbstractPolicy: ...

@@ -4,7 +4,6 @@ import torch
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.neural_networks import DeterministicNN
 from rllib.util.neural_networks import update_parameters, one_hot_encode
-from rllib.policy import NNPolicy
 
 
 __all__ = ['NNValueFunction', 'NNQFunction']
@@ -151,31 +150,3 @@ class NNQFunction(AbstractQFunction):
     def parameters(self, new_params):
         """Set q-function parameters."""
         update_parameters(self.q_function.parameters(), new_params, self._tau)
-
-    def max(self, state):
-        """Get the maximum over actions of the q-function at a given state."""
-        if not self.discrete_action:
-            raise NotImplementedError
-        else:
-            return self(state).max(dim=-1)[0]
-
-    def argmax(self, state):
-        """Get the action that maximizes the q-function at a given state."""
-        if not self.discrete_action:
-            raise NotImplementedError
-        else:
-            return self(state).argmax(dim=-1)
-
-    def extract_policy(self, temperature=1.0):
-        """Extract the policy induced by the Q-Value function."""
-        if not self.discrete_action:
-            raise NotImplementedError
-        else:
-            policy = NNPolicy(self.dim_state, self.dim_action,
-                              num_states=self.num_states,
-                              num_actions=self.num_actions,
-                              layers=self.q_function.layers,
-                              temperature=temperature,
-                              biased_head=self.q_function.head.bias is not None)
-            policy.parameters = self.q_function.parameters()
-            return policy
