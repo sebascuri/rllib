@@ -1,4 +1,2 @@
 from .abstract_exploration_strategy import AbstractExplorationStrategy
-from .epsilon_greedy import EpsGreedy
 from .gaussian_exploration import GaussianExploration
-from .boltzmann_exploration import BoltzmannExploration

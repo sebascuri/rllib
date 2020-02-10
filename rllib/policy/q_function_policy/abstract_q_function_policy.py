@@ -22,7 +22,6 @@ class AbstractQFunctionPolicy(AbstractPolicy):
             raise NotImplementedError
         self.q_function = q_function
         self.param = ExponentialDecay(start, end, decay)
-        self.step = 0
         super().__init__(q_function.dim_state,
                          q_function.dim_action,
                          num_states=q_function.num_states,

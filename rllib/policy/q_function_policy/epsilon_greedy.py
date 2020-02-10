@@ -19,9 +19,8 @@ class EpsGreedy(AbstractQFunctionPolicy):
 
     def __call__(self, state):
         """See `AbstractQFunctionPolicy.__call__'."""
-        self.step += 1
         # Epsilon part.
-        epsilon = self.param(self.step)
+        epsilon = self.param()
         probs = epsilon / self.num_actions * torch.ones(self.num_actions)
 
         # Greedy part.
