@@ -1,12 +1,16 @@
 from .abstract_policy import AbstractPolicy, Distribution
 from typing import List, Iterator
 from torch import Tensor
+from rllib.util.neural_networks import ProbabilisticNN
 
 
 class NNPolicy(AbstractPolicy):
+    policy: ProbabilisticNN
+    _tau: float
+
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,
-                 temperature: float = 1., layers: List[int] = None, tau: float = 1.,
+                 layers: List[int] = None, tau: float = 1.,
                  biased_head: bool = True) -> None: ...
 
     def __call__(self, state: Tensor) -> Distribution: ...
@@ -21,5 +25,4 @@ class NNPolicy(AbstractPolicy):
 class FelixPolicy(NNPolicy):
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None,
-                 temperature: float = 1.) -> None: ...
+                 num_states: int = None, num_actions: int = None) -> None: ...

@@ -25,17 +25,16 @@ class DeterministicNN(nn.Module):
 
 
 class ProbabilisticNN(DeterministicNN):
-    temperature: float
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 temperature: float = 1.0, biased_head: bool = True) -> None: ...
+                 biased_head: bool = True) -> None: ...
 
 
 class HeteroGaussianNN(ProbabilisticNN):
     _covariance: nn.Linear
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 temperature: float = 1.0, biased_head: bool = True) -> None: ...
+                 biased_head: bool = True) -> None: ...
 
 
     def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
@@ -45,7 +44,7 @@ class HomoGaussianNN(ProbabilisticNN):
     _covariance: nn.Linear
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 temperature: float = 1.0, biased_head: bool = True) -> None: ...
+                 biased_head: bool = True) -> None: ...
 
     def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
 
@@ -53,7 +52,7 @@ class HomoGaussianNN(ProbabilisticNN):
 class CategoricalNN(ProbabilisticNN):
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 temperature: float = 1.0, biased_head: bool = True) -> None: ...
+                 biased_head: bool = True) -> None: ...
 
     def forward(self, x: Tensor) -> Categorical: ... # type: ignore
 
@@ -62,19 +61,18 @@ class EnsembleNN(ProbabilisticNN):
     num_heads: int
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 temperature: float = 1.0, biased_head: bool = True) -> None: ...
+                 biased_head: bool = True) -> None: ...
 
     def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
 
 
 class FelixNet(nn.Module):
-    temperature: float
     layers: List[int]
     linear1: nn.Linear
     linear2: nn.Linear
     _mean: nn.Linear
     _covariance: nn.Linear
 
-    def __init__(self, in_dim: int, out_dim: int, temperature: float = 1.0) -> None: ...
+    def __init__(self, in_dim: int, out_dim: int) -> None: ...
 
     def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore

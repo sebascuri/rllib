@@ -25,19 +25,13 @@ def dim_action(request):
     return request.param
 
 
-@pytest.fixture(params=[None, 0.1, 1.0])
-def temperature(request):
-    return request.param
-
-
 @pytest.fixture(params=[None, 1, 4])
 def batch_size(request):
     return request.param
 
 
 class TestRandomPolicy(object):
-    def init(self, discrete_state, discrete_action, dim_state, dim_action,
-             temperature=None):
+    def init(self, discrete_state, discrete_action, dim_state, dim_action):
 
         if discrete_state:
             self.num_states = dim_state
@@ -53,16 +47,12 @@ class TestRandomPolicy(object):
             self.num_actions = None
             self.dim_action = dim_action
 
-        if temperature is None:
-            self.policy = RandomPolicy(self.dim_state, self.dim_action,
-                                       self.num_states, self.num_actions)
-        else:
-            self.policy = RandomPolicy(self.dim_state, self.dim_action,
-                                       self.num_states, self.num_actions, temperature)
+        self.policy = RandomPolicy(self.dim_state, self.dim_action,
+                                   self.num_states, self.num_actions)
 
     def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
-                                dim_action, temperature):
-        self.init(discrete_state, discrete_action, dim_state, dim_action, temperature)
+                                dim_action):
+        self.init(discrete_state, discrete_action, dim_state, dim_action)
         assert self.num_states == self.policy.num_states
         assert self.num_actions == self.policy.num_actions
 
@@ -73,11 +63,6 @@ class TestRandomPolicy(object):
 
         assert discrete_state == self.policy.discrete_state
         assert discrete_action == self.policy.discrete_action
-
-        if temperature is None:
-            assert self.policy.temperature == 1.
-        else:
-            assert self.policy.temperature == temperature
 
     def test_random_action(self, discrete_state, discrete_action, dim_state,
                            dim_action):

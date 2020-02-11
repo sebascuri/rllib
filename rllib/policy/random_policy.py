@@ -11,14 +11,12 @@ __all__ = ['RandomPolicy']
 class RandomPolicy(AbstractPolicy):
     """Random Policy implementation of AbstractPolicy base class.
 
-    This policy will always return a centered distribution with a scaling given by the
-    temperature parameter.
+    This policy will always return a centered distribution with a unit scaling.
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 temperature=1.0):
-        super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
+    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None):
+        super().__init__(dim_state, dim_action, num_states, num_actions)
 
     def __call__(self, states):
         """Get distribution over actions."""

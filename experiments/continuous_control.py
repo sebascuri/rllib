@@ -5,7 +5,7 @@ from rllib.environment import SystemEnvironment, GymEnvironment
 from rllib.policy import FelixPolicy
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
-from rllib.exploration_strategies import GaussianExploration
+from rllib.exploration_strategies import GaussianNoise
 from rllib.agent import DDPGAgent
 import torch.nn.functional as func
 import numpy as np
@@ -59,7 +59,7 @@ fig, axes = plt.subplots(2, 1, sharex=False)
 environment = GymEnvironment(ENVIRONMENT, SEED)
 
 policy = FelixPolicy(environment.dim_state, environment.dim_action, temperature=0.)
-exploration = GaussianExploration(EPS_START, EPS_END, EPS_DECAY)
+noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions,
@@ -72,11 +72,12 @@ critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RA
                                     weight_decay=WEIGHT_DECAY)
 criterion = func.mse_loss
 
-agent = DDPGAgent(q_function, policy, exploration, criterion, critic_optimizer,
+agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
                   actor_optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
                   gamma=GAMMA,
-                  episode_length=MAX_STEPS)
+                  episode_length=MAX_STEPS,
+                  random_steps=100)
 # rollout_policy(environment, agent.policy, max_steps=100, render=True)
 
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS,

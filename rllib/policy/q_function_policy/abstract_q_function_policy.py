@@ -25,8 +25,7 @@ class AbstractQFunctionPolicy(AbstractPolicy):
         super().__init__(q_function.dim_state,
                          q_function.dim_action,
                          num_states=q_function.num_states,
-                         num_actions=q_function.num_actions,
-                         temperature=1.)
+                         num_actions=q_function.num_actions)
 
     @abstractmethod
     def __call__(self, state):

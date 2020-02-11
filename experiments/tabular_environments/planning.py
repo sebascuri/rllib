@@ -1,6 +1,7 @@
 from rllib.environment import EasyGridWorld
 from rllib.policy import RandomPolicy
-from rllib.algorithms import iterative_policy_evaluation, policy_iteration, value_iteration
+from rllib.algorithms import iterative_policy_evaluation, policy_iteration, \
+    value_iteration, linear_system_policy_evaluation
 
 environment = EasyGridWorld()
 GAMMA = 0.9
@@ -11,6 +12,11 @@ policy = RandomPolicy(dim_state=1, dim_action=1, num_states=environment.num_stat
 
 print("Policy Evaluation:")
 value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)
+print(value_function.table)
+print()
+
+print("Policy Evaluation:")
+value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
 print(value_function.table)
 print()
 
@@ -32,4 +38,9 @@ value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS
 print(value_function.table)
 print()
 
+
+print("Policy Evaluation:")
+value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
+print(value_function.table)
+print()
 

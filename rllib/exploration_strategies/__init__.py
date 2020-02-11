@@ -1,2 +1,2 @@
 from .abstract_exploration_strategy import AbstractExplorationStrategy
-from .gaussian_exploration import GaussianExploration
+from .gaussian_noise import GaussianNoise

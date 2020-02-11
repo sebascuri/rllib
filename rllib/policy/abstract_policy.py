@@ -1,6 +1,5 @@
 """Interface for policies."""
 
-
 from abc import ABC, abstractmethod
 import torch
 from torch.distributions import MultivariateNormal, Categorical
@@ -19,8 +18,6 @@ class AbstractPolicy(ABC):
         number of discrete states (None if state is continuous).
     num_actions: int, optional
         number of discrete actions (None if action is continuous).
-    temperature: float, optional
-        temperature scaling of output distribution.
 
     Attributes
     ----------
@@ -47,14 +44,12 @@ class AbstractPolicy(ABC):
         Flag that indicates if action space is discrete.
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 temperature=1.):
+    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
         self.num_states = num_states
         self.num_actions = num_actions
-        self.temperature = temperature
 
     @abstractmethod
     def __call__(self, state):
@@ -105,7 +100,7 @@ class AbstractPolicy(ABC):
         else:
             distribution = MultivariateNormal(
                 loc=torch.zeros(self.dim_action),
-                covariance_matrix=self.temperature * torch.eye(self.dim_action))
+                covariance_matrix=torch.eye(self.dim_action))
 
         if batch_size is not None:
             return distribution.expand(batch_shape=(batch_size,))

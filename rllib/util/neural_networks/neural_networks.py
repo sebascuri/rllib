@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as functional
 from torch.distributions import MultivariateNormal, Categorical
-from rllib.util.utilities import Delta
 from .utilities import inverse_softplus
 
 __all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',
@@ -89,26 +88,20 @@ class ProbabilisticNN(DeterministicNN):
     layers: list of int
         list of width of neural network layers, each separated with a ReLU
         non-linearity.
-    temperature: float, optional
-        temperature scaling of output distribution.
     biased_head: bool, optional
         flag that indicates if head of NN has a bias term or not.
 
     """
 
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
-                 biased_head=True):
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
         super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
-        self.temperature = temperature
 
 
 class HeteroGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
-                 biased_head=True):
-        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
-                         biased_head=biased_head)
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
         in_dim = self.head.in_features
         self._covariance = nn.Linear(in_dim, out_dim, bias=biased_head)
 
@@ -131,19 +124,14 @@ class HeteroGaussianNN(ProbabilisticNN):
         covariance = nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        if self.temperature > 0:
-            return MultivariateNormal(mean, covariance * self.temperature)
-        else:
-            return Delta(mean)
+        return MultivariateNormal(mean, covariance)
 
 
 class HomoGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
-                 biased_head=True):
-        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
-                         biased_head=biased_head)
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
         initial_scale = inverse_softplus(torch.ones(out_dim))
         self._covariance = nn.Parameter(initial_scale, requires_grad=True)
 
@@ -166,19 +154,14 @@ class HomoGaussianNN(ProbabilisticNN):
         covariance = functional.softplus(self._covariance)
         covariance = torch.diag_embed(covariance)
 
-        if self.temperature > 0:
-            return MultivariateNormal(mean, covariance * self.temperature)
-        else:
-            return Delta(mean)
+        return MultivariateNormal(mean, covariance)
 
 
 class CategoricalNN(ProbabilisticNN):
     """A Module that parametrizes a Categorical distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0,
-                 biased_head=True):
-        super().__init__(in_dim, out_dim, layers=layers, temperature=temperature,
-                         biased_head=biased_head)
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -195,7 +178,7 @@ class CategoricalNN(ProbabilisticNN):
             covariance of size [batch_size x out_dim x out_dim].
         """
         output = self.head(self.hidden_layers(x))
-        return Categorical(logits=output / (self.temperature + 1e-12))
+        return Categorical(logits=output)
 
 
 class EnsembleNN(ProbabilisticNN):
@@ -214,16 +197,14 @@ class EnsembleNN(ProbabilisticNN):
     layers: list of int
         list of width of neural network layers, each separated with a ReLU
         non-linearity.
-    temperature: float, optional
-        temperature scaling of output distribution.
     num_heads: int
         number of heads of ensemble
 
     """
 
-    def __init__(self, in_dim, out_dim, layers=None, temperature=1.0, num_heads=5):
+    def __init__(self, in_dim, out_dim, layers=None, num_heads=5):
         self.num_heads = num_heads
-        super().__init__(in_dim, out_dim * num_heads, layers, temperature)
+        super().__init__(in_dim, out_dim * num_heads, layers)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -247,18 +228,14 @@ class EnsembleNN(ProbabilisticNN):
         mean = torch.mean(out, dim=-1)
         covariance = torch.diag_embed(torch.var(out, dim=-1))
 
-        if self.temperature > 0:
-            return MultivariateNormal(mean, covariance * self.temperature)
-        else:
-            return Delta(mean)
+        return MultivariateNormal(mean, covariance)
 
 
 class FelixNet(nn.Module):
     """A Module that implements FelixNet."""
 
-    def __init__(self, in_dim, out_dim, temperature=1.0):
+    def __init__(self, in_dim, out_dim):
         super().__init__()
-        self.temperature = temperature
         self.layers = [64, 64]
 
         self.linear1 = nn.Linear(in_dim, 64, bias=True)
@@ -282,7 +259,4 @@ class FelixNet(nn.Module):
         covariance = functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        if self.temperature > 0:
-            return MultivariateNormal(mean, covariance * self.temperature)
-        else:
-            return Delta(mean)
+        return MultivariateNormal(mean, covariance)

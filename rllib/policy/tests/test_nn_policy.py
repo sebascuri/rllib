@@ -25,19 +25,13 @@ def dim_action(request):
     return request.param
 
 
-@pytest.fixture(params=[None, 0.1, 1.0])
-def temperature(request):
-    return request.param
-
-
 @pytest.fixture(params=[None, 1, 4])
 def batch_size(request):
     return request.param
 
 
 class TestNNPolicy(object):
-    def init(self, discrete_state, discrete_action, dim_state, dim_action,
-             temperature=None):
+    def init(self, discrete_state, discrete_action, dim_state, dim_action):
 
         if discrete_state:
             self.num_states = dim_state
@@ -53,18 +47,13 @@ class TestNNPolicy(object):
             self.num_actions = None
             self.dim_action = dim_action
 
-        if temperature is None:
-            self.policy = NNPolicy(self.dim_state, self.dim_action,
-                                   self.num_states, self.num_actions,
-                                   layers=[32, 32])
-        else:
-            self.policy = NNPolicy(self.dim_state, self.dim_action,
-                                   self.num_states, self.num_actions, temperature,
-                                   layers=[32, 32])
+        self.policy = NNPolicy(self.dim_state, self.dim_action,
+                               self.num_states, self.num_actions,
+                               layers=[32, 32])
 
     def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
-                                dim_action, temperature):
-        self.init(discrete_state, discrete_action, dim_state, dim_action, temperature)
+                                dim_action):
+        self.init(discrete_state, discrete_action, dim_state, dim_action)
         assert self.num_states == self.policy.num_states
         assert self.num_actions == self.policy.num_actions
 
@@ -75,11 +64,6 @@ class TestNNPolicy(object):
 
         assert discrete_state == self.policy.discrete_state
         assert discrete_action == self.policy.discrete_action
-
-        if temperature is None:
-            assert self.policy.temperature == 1.
-        else:
-            assert self.policy.temperature == temperature
 
     def test_random_action(self, discrete_state, discrete_action, dim_state,
                            dim_action):
@@ -132,11 +116,8 @@ class TestNNPolicy(object):
 
 
 class TestFelixNet(object):
-    def init(self, dim_state, dim_action, temperature=None):
-        if temperature is None:
-            self.policy = FelixPolicy(dim_state, dim_action)
-        else:
-            self.policy = FelixPolicy(dim_state, dim_action, temperature=temperature)
+    def init(self, dim_state, dim_action):
+        self.policy = FelixPolicy(dim_state, dim_action)
 
     def test_discrete(self, dim_state, dim_action):
         with pytest.raises(ValueError):
@@ -146,19 +127,14 @@ class TestFelixNet(object):
         with pytest.raises(ValueError):
             FelixPolicy(1, 1, num_states=dim_state, num_actions=dim_action)
 
-    def test_num_states_actions(self, dim_state, dim_action, temperature):
-        self.init(dim_state, dim_action, temperature)
+    def test_num_states_actions(self, dim_state, dim_action):
+        self.init(dim_state, dim_action)
         assert self.policy.num_states is None
         assert self.policy.num_actions is None
         assert not self.policy.discrete_state
         assert not self.policy.discrete_action
         assert self.policy.dim_state == dim_state
         assert self.policy.dim_action == dim_action
-
-        if temperature is None:
-            assert self.policy.temperature == 1.
-        else:
-            assert self.policy.temperature == temperature
 
     def test_random_action(self, dim_state, dim_action):
         self.init(dim_state, dim_action)
@@ -193,7 +169,7 @@ class TestFelixNet(object):
         self.policy.parameters = old_parameter
 
 
-class TestTabularValueFunction(object):
+class TestTabularPolicy(object):
     def test_init(self):
         policy = TabularPolicy(num_states=4, num_actions=2)
         torch.testing.assert_allclose(policy.table, 1)
@@ -201,13 +177,15 @@ class TestTabularValueFunction(object):
     def test_set_value(self):
         policy = TabularPolicy(num_states=4, num_actions=2)
         policy.set_value(2, torch.tensor(1))
+        l1 = torch.log(torch.tensor(1e-12))
+        l2 = torch.log(torch.tensor(1. + 1e-12))
         torch.testing.assert_allclose(policy.table,
-                                      torch.tensor([[1., 1., 0., 1],
-                                                    [1., 1., 1., 1]]))
+                                      torch.tensor([[1., 1., l1, 1],
+                                                    [1., 1., l2, 1]]))
 
         policy.set_value(0, torch.tensor([0.3, 0.7]))
         torch.testing.assert_allclose(policy.table,
-                                      torch.tensor([[.3, 1., 0., 1],
-                                                    [.7, 1., 1., 1]]))
+                                      torch.tensor([[.3, 1., l1, 1],
+                                                    [.7, 1., l2, 1]]))
 
 

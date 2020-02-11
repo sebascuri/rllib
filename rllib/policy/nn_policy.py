@@ -22,8 +22,6 @@ class NNPolicy(AbstractPolicy):
         number of discrete states (None if state is continuous).
     num_actions: int, optional
         number of discrete actions (None if action is continuous).
-    temperature: float, optional
-        temperature scaling of output distribution.
     layers: list, optional
         width of layers, each layer is connected with ReLUs non-linearities.
     biased_head: bool, optional
@@ -32,26 +30,26 @@ class NNPolicy(AbstractPolicy):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 temperature=1.0, layers=None, tau=1.0, biased_head=True):
-        super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
+                 layers=None, tau=1.0, biased_head=True):
+        super().__init__(dim_state, dim_action, num_states, num_actions)
         if self.discrete_state:
             in_dim = self.num_states
         else:
             in_dim = self.dim_state
 
         if self.discrete_action:
-            self._policy = CategoricalNN(in_dim, self.num_actions, layers,
-                                         self.temperature, biased_head=biased_head)
+            self.policy = CategoricalNN(in_dim, self.num_actions, layers,
+                                        biased_head=biased_head)
         else:
-            self._policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
-                                            self.temperature, biased_head=biased_head)
+            self.policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
+                                           biased_head=biased_head)
         self._tau = tau
 
     def __call__(self, state):
         """Get distribution over actions."""
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
-        return self._policy(state)
+        return self.policy(state)
 
     @property
     def parameters(self):
@@ -61,12 +59,12 @@ class NNPolicy(AbstractPolicy):
         -------
         generator
         """
-        return self._policy.parameters()
+        return self.policy.parameters()
 
     @parameters.setter
     def parameters(self, new_params):
         """See `AbstractPolicy.parameters'."""
-        update_parameters(self._policy.parameters(), new_params, tau=self._tau)
+        update_parameters(self.policy.parameters(), new_params, tau=self._tau)
 
 
 class FelixPolicy(NNPolicy):
@@ -82,8 +80,6 @@ class FelixPolicy(NNPolicy):
         number of discrete states (None if state is continuous).
     num_actions: int, optional
         number of discrete actions (None if action is continuous).
-    temperature: float, optional
-        temperature scaling of output distribution.
 
     Notes
     -----
@@ -91,11 +87,10 @@ class FelixPolicy(NNPolicy):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 temperature=1.0):
-        super().__init__(dim_state, dim_action, num_states, num_actions, temperature)
+    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None):
+        super().__init__(dim_state, dim_action, num_states, num_actions)
 
         if self.discrete_state or self.discrete_action:
             raise ValueError("Felix Policy is for Continuous Problems")
 
-        self._policy = FelixNet(dim_state, dim_action, temperature=temperature)
+        self.policy = FelixNet(dim_state, dim_action)

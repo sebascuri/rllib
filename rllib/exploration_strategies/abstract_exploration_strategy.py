@@ -26,24 +26,12 @@ class AbstractExplorationStrategy(ABC):
 
     """
 
-    def __init__(self, start, end=None, decay=None):
+    def __init__(self, start, end=None, decay=None, max_value=1, dimension=1):
         self.param = ExponentialDecay(start, end, decay)
+        self.max_value = max_value
+        self.dimension = dimension
 
     @abstractmethod
-    def __call__(self, action_distribution, steps=None):
-        """Get action from the exploration strategy.
-
-        Parameters
-        ----------
-        action_distribution: torch.distributions.Distribution
-            Action distribution suggested by the policy.
-        steps: int, optional
-            Number of steps performed so far.
-
-        Returns
-        -------
-        action: array_like
-            action sample that the exploration strategy selects.
-
-        """
+    def __call__(self):
+        """Get noise from exploration strategy."""
         raise NotImplementedError

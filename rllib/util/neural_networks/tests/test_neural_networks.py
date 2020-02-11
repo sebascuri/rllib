@@ -25,11 +25,6 @@ def out_dim(request):
     return request.param
 
 
-@pytest.fixture(params=[0.1, 1.0, 10.0])
-def temperature(request):
-    return request.param
-
-
 @pytest.fixture(params=[2, 5, 32])
 def num_heads(request):
     return request.param
@@ -96,10 +91,6 @@ class TestHeteroGaussianNN(object):
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
 
-    def test_temperature(self, net, temperature):
-        net = net(4, 2, temperature=temperature)
-        assert net.temperature == temperature
-
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim, layers)
         layers = layers or list()
@@ -145,10 +136,6 @@ class TestHomoGaussianNN(object):
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
-
-    def test_temperature(self, net, temperature):
-        net = net(4, 2, temperature=temperature)
-        assert net.temperature == temperature
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim, layers)
@@ -200,10 +187,6 @@ class TestCategoricalNN(object):
         assert o.has_enumerate_support
         assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
 
-    def test_temperature(self, net, temperature):
-        net = net(4, 2, temperature=temperature)
-        assert net.temperature == temperature
-
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim, layers)
         layers = layers or list()
@@ -224,10 +207,6 @@ class TestEnsembleNN(object):
     @pytest.fixture(scope="class")
     def net(self):
         return EnsembleNN
-
-    def test_temperature(self, net, temperature):
-        net = net(4, 2, temperature=temperature)
-        assert net.temperature == temperature
 
     def test_num_heads(self, net, num_heads):
         net = net(4, 2, num_heads=num_heads)
@@ -304,10 +283,6 @@ class TestFelixNet(object):
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
-
-    def test_temperature(self, net, temperature):
-        net = net(4, 2, temperature=temperature)
-        assert net.temperature == temperature
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim)

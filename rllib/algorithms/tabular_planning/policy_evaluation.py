@@ -87,14 +87,11 @@ def iterative_policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
                     value_estimate += gamma * p_action * p_next * next_val
 
             error = torch.abs(value_estimate - value).item()
-            if error > 1:
-                print(state, error)
             max_error = max(max_error, error)
             avg_error += error
             value_function.set_value(state, value_estimate)
 
         if max_error < eps:
             break
-        print(max_error, avg_error / (model.num_states - len(model.terminal_states)))
 
     return value_function
