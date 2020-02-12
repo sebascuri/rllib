@@ -32,6 +32,6 @@ class AbstractExplorationStrategy(ABC):
         self.dimension = dimension
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self, state=None):
         """Get noise from exploration strategy."""
         raise NotImplementedError
