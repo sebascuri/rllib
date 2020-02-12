@@ -30,8 +30,8 @@ class AbstractQLearningAgent(AbstractAgent):
     """
 
     def __init__(self, q_function, policy, criterion, optimizer, memory,
-                 target_update_frequency=4, gamma=1.0, episode_length=None):
-        super().__init__(gamma=gamma, episode_length=episode_length)
+                 target_update_frequency=4, gamma=1.0):
+        super().__init__(gamma=gamma)
         self.q_function = q_function
         self.policy = policy
         self.q_target = copy.deepcopy(q_function)
@@ -43,16 +43,6 @@ class AbstractQLearningAgent(AbstractAgent):
         # self.logs['q_function'] = []
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
-
-    # def act(self, state):
-    #     """See `AbstractAgent.act'."""
-    #     action_distribution = self.policy(torch.tensor(state).float())
-    #     if self.training:
-    #         action = action_distribution.sample().item()
-    #     else:
-    #         action = torch.argmax(action_distribution.logits).item()
-    #
-    #     return action
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""

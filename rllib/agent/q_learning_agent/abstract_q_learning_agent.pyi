@@ -21,8 +21,7 @@ class AbstractQLearningAgent(AbstractAgent):
     def __init__(self, q_function: AbstractQFunction,
                  policy: AbstractQFunctionPolicy, criterion: _Loss,
                  optimizer: Optimizer, memory: ExperienceReplay,
-                 target_update_frequency: int = 4, gamma: float = 1.0,
-                 episode_length: int = None) -> None: ...
+                 target_update_frequency: int = 4, gamma: float = 1.0) -> None: ...
 
     def act(self, state: State) -> Action: ...
 

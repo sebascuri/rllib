@@ -50,8 +50,7 @@ def test_nnq_interaction(environment, agent):
 
     q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer, memory=memory,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                    episode_length=MAX_STEPS, gamma=GAMMA)
+                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
@@ -68,8 +67,7 @@ def test_tabular_interaction(agent):
 
     q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer, memory=memory,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                    episode_length=10, gamma=GAMMA)
+                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
     print(q_function.table)

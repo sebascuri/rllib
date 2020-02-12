@@ -12,7 +12,6 @@ from typing import Tuple
 class DDPGAgent(AbstractAgent):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
-    _policy: AbstractPolicy
     policy_target: AbstractPolicy
     exploration: AbstractExplorationStrategy
     memory: ExperienceReplay
@@ -21,16 +20,16 @@ class DDPGAgent(AbstractAgent):
     actor_optimizer: Optimizer
     target_update_frequency: int
     max_action: float
-    random_steps: int
     policy_update_frequency: int
 
     def __init__(self, q_function: AbstractQFunction, policy: AbstractPolicy,
                  exploration: AbstractExplorationStrategy, criterion: _Loss,
                  critic_optimizer: Optimizer, actor_optimizer: Optimizer,
-                 memory: ExperienceReplay,
-                 target_update_frequency: int = 4, gamma: float = 1.0,
-                 episode_length: int = None,  max_action: float = 1.0,
-                 random_steps: int = 1, policy_update_frequency: int = 1) -> None: ...
+                 memory: ExperienceReplay, max_action: float = 1.0,
+                 target_update_frequency: int = 4, policy_update_frequency: int = 1,
+                 gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 ) -> None: ...
 
     def act(self, state: State) -> Action: ...
 

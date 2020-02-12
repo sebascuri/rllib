@@ -8,8 +8,8 @@ from torch.distributions import Categorical
 class SarsaAgent(AbstractAgent):
     """Implementation of SARSA (On-Line)-Control."""
 
-    def __init__(self, q_function, exploration, gamma=1.0, episode_length=None):
-        super().__init__(gamma=gamma, episode_length=episode_length)
+    def __init__(self, q_function, exploration, gamma=1.0):
+        super().__init__(gamma=gamma)
         self.q_function = q_function
         self.exploration = exploration
 

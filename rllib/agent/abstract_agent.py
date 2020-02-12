@@ -1,6 +1,5 @@
 """Interface for agents."""
 
-
 from abc import ABC
 import torch
 
@@ -12,8 +11,10 @@ class AbstractAgent(ABC):
     ----------
     gamma: float, optional (default=1.0)
         MDP discount factor.
-    episode_length: int, optional (default=None)
-        maximum number of interaction steps in a single episode.
+    exploration_steps: int, optional (default=0)
+        initial exploratory steps.
+    exploration_episodes: int, optional (default=0)
+        initial exploratory episodes
 
     Methods
     -------
@@ -30,20 +31,26 @@ class AbstractAgent(ABC):
 
     """
 
-    def __init__(self, gamma=1.0, episode_length=None):
-        self.num_episodes = 0
-        self.logs = {'total_steps': 0,
-                     'episode_steps': [],
-                     'rewards': [],
-                     'episode_rewards': []}
+    def __init__(self, gamma=1.0, exploration_steps=0, exploration_episodes=0):
+        self.logs = {
+            'total_episodes': 0,
+            'total_steps': 0,
+            'episode_steps': [],
+            'rewards': [],
+            'episode_rewards': []}
         self.gamma = gamma
-        self.episode_length = episode_length if episode_length else float('+Inf')
-        self.training = True
+        self.exploration_episodes = exploration_episodes
+        self.exploration_steps = exploration_steps
 
     def act(self, state):
         """Ask the agent for an action to interact with the environment."""
-        state = torch.tensor(state).float()
-        action = self.policy(state).sample()
+        if self.total_steps < self.exploration_steps or (
+                self.total_episodes < self.exploration_episodes):
+            action = self.policy.random().sample()
+        else:
+            state = torch.tensor(state).float()
+            action = self.policy(state).sample()
+
         return action.detach().numpy()
 
     def observe(self, observation):
@@ -61,8 +68,7 @@ class AbstractAgent(ABC):
 
     def start_episode(self):
         """Start a new episode."""
-        self.num_episodes += 1
-
+        self.logs['total_episodes'] += 1
         self.logs['episode_steps'].append(0)
         self.logs['episode_rewards'].append(0)
         self.logs['rewards'].append([])
@@ -74,6 +80,11 @@ class AbstractAgent(ABC):
     def end_interaction(self):
         """End the interaction with the environment."""
         pass
+
+    @property
+    def total_episodes(self):
+        """Return number of steps in current episode."""
+        return self.logs['total_episodes']
 
     @property
     def episodes_steps(self):
@@ -104,11 +115,3 @@ class AbstractAgent(ABC):
     def name(self):
         """Return class name."""
         return self.__class__.__name__
-
-    def train(self, mode=True):
-        """Set the module in training mode."""
-        self.training = mode
-
-    def eval(self):
-        """Set the module in training mode."""
-        self.train(mode=False)

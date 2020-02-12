@@ -11,14 +11,14 @@ Reward = Union[np.ndarray, float, Tensor]
 Done = Union[np.ndarray, bool, Tensor]
 
 class AbstractAgent(ABC):
-    num_episodes: int
-    training: bool
-    episode_length: int
+    policy: AbstractPolicy
     logs: dict
     gamma: float
-    policy: AbstractPolicy
+    exploration_steps: int
+    exploration_episodes: int
 
-    def __init__(self, gamma: float = 1.0, episode_length: int = None) -> None: ...
+    def __init__(self, gamma: float = 1.0, exploration_steps: int = 0,
+                 exploration_episodes: int = 0) -> None: ...
 
     def act(self, state: State) -> Action: ...
 
@@ -40,6 +40,9 @@ class AbstractAgent(ABC):
     def episodes_cumulative_rewards(self) -> List[float]: ...
 
     @property
+    def total_episodes(self) -> int: ...
+
+    @property
     def total_steps(self) -> int: ...
 
     @property
@@ -47,7 +50,3 @@ class AbstractAgent(ABC):
 
     @property
     def name(self) -> str: ...
-
-    def train(self, mode: bool = True) -> None: ...
-
-    def eval(self) -> None: ...

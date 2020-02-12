@@ -34,10 +34,11 @@ class DDPGAgent(AbstractAgent):
     """
 
     def __init__(self, q_function, policy, exploration, criterion, critic_optimizer,
-                 actor_optimizer, memory, target_update_frequency=4, gamma=1.0,
-                 episode_length=None, max_action=1, random_steps=1,
-                 policy_update_frequency=1):
-        super().__init__(gamma=gamma, episode_length=episode_length)
+                 actor_optimizer, memory, max_action=1,
+                 target_update_frequency=4, policy_update_frequency=1,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
+        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes)
 
         self.q_function = q_function
         self.q_target = copy.deepcopy(q_function)
@@ -51,7 +52,6 @@ class DDPGAgent(AbstractAgent):
         self.critic_optimizer = critic_optimizer
         self.actor_optimizer = actor_optimizer
         self.max_action = max_action
-        self.random_steps = random_steps
         self.policy_update_frequency = policy_update_frequency
 
         self.logs['td_errors'] = []
@@ -59,18 +59,16 @@ class DDPGAgent(AbstractAgent):
 
     def act(self, state):
         """See `AbstractAgent.act'."""
-        if self.total_steps < self.random_steps:
-            action = self.policy.random().sample().detach().numpy()
-        else:
-            action = self.policy(torch.tensor(state).float()).mean.detach().numpy()
-            action += self.exploration()
+        action = super().act(state)
+        action += self.exploration()
         return np.clip(action, -self.max_action, self.max_action)
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.memory.append(observation)
-        if self.memory.has_batch and self.total_steps > self.random_steps:
+        if self.memory.has_batch and (self.total_steps > self.exploration_steps) and (
+                self.total_episodes > self.exploration_episodes):
             self._train(
                 optimize_actor=not (self.total_steps % self.policy_update_frequency))
             if self.total_steps % self.target_update_frequency == 0:
