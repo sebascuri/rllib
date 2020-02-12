@@ -4,7 +4,7 @@
 from .abstract_policy import AbstractPolicy
 from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN, FelixNet
 from rllib.util.neural_networks import update_parameters, one_hot_encode
-
+from rllib.util.utilities import Delta
 
 __all__ = ['NNPolicy', 'FelixPolicy']
 
@@ -30,7 +30,7 @@ class NNPolicy(AbstractPolicy):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, tau=1.0, biased_head=True):
+                 layers=None, biased_head=True, tau=1.0, deterministic=False):
         super().__init__(dim_state, dim_action, num_states, num_actions)
         if self.discrete_state:
             in_dim = self.num_states
@@ -44,12 +44,16 @@ class NNPolicy(AbstractPolicy):
             self.policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
                                            biased_head=biased_head)
         self._tau = tau
+        self._deterministic = deterministic
 
     def __call__(self, state):
         """Get distribution over actions."""
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
-        return self.policy(state)
+        action = self.policy(state)
+        if self._deterministic:
+            return Delta(action.mean)
+        return action
 
     @property
     def parameters(self):
@@ -87,8 +91,11 @@ class FelixPolicy(NNPolicy):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None):
-        super().__init__(dim_state, dim_action, num_states, num_actions)
+    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
+                 tau=1.0, deterministic=False):
+
+        super().__init__(dim_state, dim_action, num_states, num_actions, tau=tau,
+                         deterministic=deterministic)
 
         if self.discrete_state or self.discrete_action:
             raise ValueError("Felix Policy is for Continuous Problems")
