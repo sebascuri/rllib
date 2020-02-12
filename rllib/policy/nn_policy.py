@@ -31,7 +31,7 @@ class NNPolicy(AbstractPolicy):
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  layers=None, biased_head=True, tau=1.0, deterministic=False):
-        super().__init__(dim_state, dim_action, num_states, num_actions)
+        super().__init__(dim_state, dim_action, num_states, num_actions, deterministic)
         if self.discrete_state:
             in_dim = self.num_states
         else:
@@ -43,15 +43,14 @@ class NNPolicy(AbstractPolicy):
         else:
             self.policy = HeteroGaussianNN(in_dim, self.dim_action, layers,
                                            biased_head=biased_head)
-        self._tau = tau
-        self._deterministic = deterministic
+        self.tau = tau
 
     def __call__(self, state):
         """Get distribution over actions."""
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
         action = self.policy(state)
-        if self._deterministic:
+        if self.deterministic:
             return Delta(action.mean)
         return action
 
@@ -68,7 +67,7 @@ class NNPolicy(AbstractPolicy):
     @parameters.setter
     def parameters(self, new_params):
         """See `AbstractPolicy.parameters'."""
-        update_parameters(self.policy.parameters(), new_params, tau=self._tau)
+        update_parameters(self.policy.parameters(), new_params, tau=self.tau)
 
 
 class FelixPolicy(NNPolicy):

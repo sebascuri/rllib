@@ -39,6 +39,7 @@ class DDPGAgent(AbstractAgent):
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
+        assert policy.deterministic, "Policy must be deterministic."
 
         self.q_function = q_function
         self.q_target = copy.deepcopy(q_function)

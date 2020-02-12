@@ -8,7 +8,7 @@ from rllib.policy import AbstractPolicy
 class NNValueFunction(AbstractValueFunction):
     dimension: int
     value_function: DeterministicNN
-    _tau: float
+    tau: float
 
     def __init__(self, dim_state: int, num_states: int = None, layers: List[int] = None,
                  tau: float = 1.0, biased_head: bool=True) -> None: ...
@@ -25,7 +25,7 @@ class NNValueFunction(AbstractValueFunction):
 
 class NNQFunction(AbstractQFunction):
     q_function: DeterministicNN
-    _tau: float
+    tau: float
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,

@@ -44,12 +44,14 @@ class AbstractPolicy(ABC):
         Flag that indicates if action space is discrete.
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None):
+    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
+                 deterministic=False):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
         self.num_states = num_states
         self.num_actions = num_actions
+        self.deterministic = deterministic
 
     @abstractmethod
     def __call__(self, state):

@@ -6,8 +6,7 @@ from rllib.util.neural_networks import ProbabilisticNN
 
 class NNPolicy(AbstractPolicy):
     policy: ProbabilisticNN
-    _tau: float
-    _deterministic: bool
+    tau: float
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,

@@ -10,9 +10,11 @@ class AbstractPolicy(ABC):
     dim_action: int
     num_states: int
     num_actions: int
+    deterministic: bool
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None) -> None: ...
+                 num_states: int = None, num_actions: int = None,
+                 deterministic: bool = False) -> None: ...
 
     @abstractmethod
     def __call__(self, state: Tensor) -> Distribution: ...

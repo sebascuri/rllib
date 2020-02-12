@@ -38,7 +38,7 @@ class NNValueFunction(AbstractValueFunction):
 
         self.value_function = DeterministicNN(num_inputs, 1, layers,
                                               biased_head=biased_head)
-        self._tau = tau
+        self.tau = tau
 
         self.dimension = self.value_function.embedding_dim
 
@@ -56,7 +56,7 @@ class NNValueFunction(AbstractValueFunction):
     @parameters.setter
     def parameters(self, new_params):
         """Set value function parameters."""
-        update_parameters(self.value_function.parameters(), new_params, self._tau)
+        update_parameters(self.value_function.parameters(), new_params, self.tau)
 
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
@@ -104,7 +104,7 @@ class NNQFunction(AbstractQFunction):
 
         self.q_function = DeterministicNN(num_inputs, num_outputs, layers,
                                           biased_head=biased_head)
-        self._tau = tau
+        self.tau = tau
 
     def __call__(self, state, action=None):
         """Get value of the value-function at a given state.
@@ -149,4 +149,4 @@ class NNQFunction(AbstractQFunction):
     @parameters.setter
     def parameters(self, new_params):
         """Set q-function parameters."""
-        update_parameters(self.q_function.parameters(), new_params, self._tau)
+        update_parameters(self.q_function.parameters(), new_params, self.tau)
