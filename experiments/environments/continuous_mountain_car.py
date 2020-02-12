@@ -27,17 +27,17 @@ WEIGHT_DECAY = 0
 GAMMA = 0.99
 EPS_START = 1.0
 EPS_END = 0.1
-EPS_DECAY = 10000
+EPS_DECAY = 1e6
 LAYERS = [64, 64]
 SEED = 0
-RENDER = True
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-policy = FelixPolicy(environment.dim_state, environment.dim_action, temperature=1.)
-noise = GaussianNoise(EPS_START, max_value=10)
+policy = FelixPolicy(environment.dim_state, environment.dim_action,
+                     tau=TARGET_UPDATE_TAU, deterministic=True)
+noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions,
@@ -54,12 +54,9 @@ criterion = func.mse_loss
 agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
                   actor_optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                  gamma=GAMMA,
-                  episode_length=MAX_STEPS,
-                  random_steps=1000.)
-agent.train()
+                  gamma=GAMMA, exploration_steps=0)
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
-              milestones=MILESTONES, render=True)
+              milestones=MILESTONES)
 
 with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
     pickle.dump(agent, file)
@@ -70,5 +67,4 @@ plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.__class__.__name__, ENVIRONMENT))
 plt.show()
 
-agent.eval()
 rollout_agent(environment, agent, num_episodes=1, render=True)

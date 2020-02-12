@@ -50,9 +50,7 @@ memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_S
 # memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
 agent = DDQNAgent(q_function, policy, criterion, optimizer, memory,
-                  target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
-                  episode_length=MAX_STEPS)
-agent.train()
+                  target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
               milestones=MILESTONES)
 
@@ -65,5 +63,4 @@ plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))
 plt.show()
 
-agent.eval()
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
