@@ -5,7 +5,8 @@ from rllib.environment import GymEnvironment, EasyGridWorld
 import pytest
 
 
-@pytest.fixture(params=['CartPole-v0', 'Pendulum-v0'])
+@pytest.fixture(params=['CartPole-v0', 'Pendulum-v0', 'MountainCarContinuous-v0',
+                        'Taxi-v2'])
 def environment(request):
     return GymEnvironment(request.param)
 
@@ -27,7 +28,7 @@ def test_rollout_agent(environment):
 def test_rollout_easy_grid_world():
     environment = EasyGridWorld()
     agent = RandomAgent(environment.dim_state, environment.dim_action,
-                        num_actions=environment.num_actions, episode_length=10)
+                        num_actions=environment.num_actions)
     rollout_agent(environment, agent, max_steps=20)
 
     policy = agent.policy

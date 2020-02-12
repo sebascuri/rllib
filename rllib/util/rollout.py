@@ -8,7 +8,10 @@ __all__ = ['rollout_agent', 'rollout_policy']
 
 
 def _step(environment, state, action, render):
-    next_state, reward, done, _ = environment.step(action)
+    try:
+        next_state, reward, done, _ = environment.step(action)
+    except TypeError:
+        next_state, reward, done, _ = environment.step(action.item())
     observation = Observation(state=state,
                               action=action,
                               reward=reward,
