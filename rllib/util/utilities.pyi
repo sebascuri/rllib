@@ -1,10 +1,11 @@
 from rllib.dataset import Observation
-from typing import List
+from typing import List, Union
 from numpy import ndarray
 from torch.distributions import Distribution
 from torch import Tensor
 import torch
 
+Array = Union[Tensor, ndarray]
 
 def _mc_value_slow(trajectory: List[Observation], gamma: float = 1.0) -> ndarray: ...
 
@@ -14,6 +15,7 @@ def mc_value(trajectory: List[Observation], gamma: float = 1.0) -> ndarray: ...
 def sum_discounted_rewards(trajectory: List[Observation], gamma: float = 1.0
                            ) -> float: ...
 
+def mellow_max(values: Array, omega: float = 1.) -> Array: ...
 
 class Delta(Distribution):
     arg_constraints: dict

@@ -8,12 +8,8 @@ import torch
 class SoftMax(AbstractQFunctionPolicy):
     """Implementation of Softmax Policy.
 
-    An epsilon greedy exploration strategy chooses the greedy strategy with probability
-    1-epsilon, and a random action with probability epsilon.
-
-    If eps_end and eps_decay are not set, then epsilon will be always eps_start.
-    If not, epsilon will decay exponentially at rate eps_decay from eps_start to
-    eps_end.
+    A soft-max policy is one that has a policy given by:
+        pi(a|s) propto exp[q(s, a)]
 
     """
 
@@ -21,4 +17,4 @@ class SoftMax(AbstractQFunctionPolicy):
         """See `AbstractQFunctionPolicy.__call__'."""
         q_val = self.q_function(state)
         temperature = self.param()
-        return Categorical(torch.softmax(q_val / temperature, dim=0))
+        return Categorical(torch.softmax(q_val / temperature, dim=-1))

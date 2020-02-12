@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.distributions import constraints
 from torch.distributions import Distribution
-__all__ = ['mc_value', 'sum_discounted_rewards', 'Delta']
+__all__ = ['mc_value', 'sum_discounted_rewards', 'Delta', 'mellow_max']
 
 
 def _mc_value_slow(trajectory, gamma=1.0):
@@ -76,6 +76,28 @@ def sum_discounted_rewards(trajectory, gamma):
     rewards = np.array(rewards)
     i = np.arange(len(rewards))
     return np.sum(rewards * np.power(gamma, i))
+
+
+def mellow_max(values, omega=1.):
+    """Find mellow-max of an array of values.
+
+    The mellow max is log(1/n sum(e^x)).
+
+    Parameters
+    ----------
+    values: Array.
+        array of values to find mellow max.
+    omega: float, optional (default=1.).
+        parameter of mellow-max.
+
+    References
+    ----------
+    Asadi, Kavosh, and Michael L. Littman.
+    "An alternative softmax operator for reinforcement learning."
+    Proceedings of the 34th International Conference on Machine Learning. 2017.
+    """
+    n = torch.tensor(values.shape[-1]).float()
+    return (torch.logsumexp(omega * values, dim=-1) - torch.log(n)) / omega
 
 
 class Delta(Distribution):
