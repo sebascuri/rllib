@@ -40,7 +40,6 @@ class AbstractQLearningAgent(AbstractAgent):
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
 
-        # self.logs['q_function'] = []
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
 
@@ -87,7 +86,7 @@ class AbstractQLearningAgent(AbstractAgent):
             loss.mean().backward()
 
             self.optimizer.step()
-            self.memory.update(idx, td_error)
+            self.memory.update(idx, td_error.numpy())
 
     @abstractmethod
     def _td(self, state, action, reward, next_state, done):
