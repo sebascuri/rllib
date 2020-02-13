@@ -1,5 +1,5 @@
 import pytest
-from rllib.agent import DDPGAgent
+from rllib.agent import DPGAgent, GDPGAgent, DDPGAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.dataset import PrioritizedExperienceReplay
@@ -33,7 +33,12 @@ def environment(request):
     return request.param
 
 
-def test_ddpg_interaction(environment):
+@pytest.fixture(params=[DPGAgent, GDPGAgent, DDPGAgent])
+def agent(request):
+    return request.param
+
+
+def test_ddpg_interaction(environment, agent):
     environment = GymEnvironment(environment, SEED)
 
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
@@ -54,8 +59,9 @@ def test_ddpg_interaction(environment):
     critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE,
                                         weight_decay=WEIGHT_DECAY)
 
-    agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
-                      actor_optimizer, memory,
-                      target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                      gamma=GAMMA, exploration_steps=0)
+    agent = DDPGAgent(
+        q_function, policy, noise, criterion, critic_optimizer,
+        actor_optimizer, memory,
+        target_update_frequency=TARGET_UPDATE_FREQUENCY,
+        gamma=GAMMA, exploration_steps=0)
     rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)

@@ -1,15 +1,16 @@
-"""Implementation of DDPG Algorithms."""
-from .abstract_agent import AbstractAgent
+"""Implementation of Deterministic Policy Gradient Algorithms."""
+from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
+from abc import abstractmethod
 import torch
 import numpy as np
 import copy
 
 
-class DDPGAgent(AbstractAgent):
-    """Abstract Implementation of the DDPG Algorithm.
+class AbstractDPGAgent(AbstractAgent):
+    """Abstract Implementation of the Deterministic Policy Gradient Algorithm.
 
-    The AbstractDDPGAgent algorithm implements the DDPT-Learning algorithm except for
+    The AbstractDDPGAgent algorithm implements the DPG-Learning algorithm except for
     the computation of the TD-Error, which leads to different algorithms.
 
     Parameters
@@ -30,8 +31,7 @@ class DDPGAgent(AbstractAgent):
 
     References
     ----------
-    Lillicrap et. al. (2016). CONTINUOUS CONTROL WITH DEEP REINFORCEMENT LEARNING. ICLR.
-
+    Silver, David, et al. (2014) "Deterministic policy gradient algorithms." JMLR.
     """
 
     def __init__(self, q_function, policy, exploration, criterion, critic_optimizer,
@@ -97,17 +97,17 @@ class DDPGAgent(AbstractAgent):
 
         """
         for batch in range(batches):
-            observation, idx, w = self.memory.get_batch()
-            w = torch.tensor(w).float()
+            observation, idx, weight = self.memory.get_batch()
+            weight = torch.tensor(weight).float()
             observation = Observation(*map(lambda x: x.float(), observation))
 
             # optimize critic
-            td_error = self._train_critic(*observation, w)
+            td_error = self._train_critic(*observation, weight)
             self.memory.update(idx, td_error.detach().numpy())
 
             # optimize actor
             if optimize_actor:
-                self._train_actor(observation.state, w)
+                self._train_actor(observation.state, weight)
 
     def _train_critic(self, state, action, reward, next_state, done, weight):
         self.critic_optimizer.zero_grad()
@@ -132,12 +132,6 @@ class DDPGAgent(AbstractAgent):
         loss.mean().backward()
         self.actor_optimizer.step()
 
+    @abstractmethod
     def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * Q_target(x', \pi_target(x'))
-        next_policy_action = self.policy_target(next_state).loc
-        next_q = self.q_target(next_state, next_policy_action)
-        target_q = reward + self.gamma * next_q * (1 - done)
-
-        return pred_q, target_q.detach()
+        raise NotImplementedError

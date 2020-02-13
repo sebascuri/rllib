@@ -6,7 +6,7 @@ from rllib.policy import FelixPolicy
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
-from rllib.agent import DDPGAgent
+from rllib.agent import DDPGAgent, DPGAgent, GDPGAgent
 import torch.nn.functional as func
 import numpy as np
 import torch.optim

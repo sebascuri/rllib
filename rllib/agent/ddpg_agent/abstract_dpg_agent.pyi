@@ -1,15 +1,16 @@
-from .abstract_agent import AbstractAgent, State, Action, Reward, Done
+from ..abstract_agent import AbstractAgent, State, Action, Reward, Done
 from rllib.value_function import AbstractQFunction
 from rllib.policy import AbstractPolicy
 from rllib.exploration_strategies import AbstractExplorationStrategy
 from rllib.dataset import ExperienceReplay, Observation
+from abc import abstractmethod
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 from typing import Tuple
 
 
-class DDPGAgent(AbstractAgent):
+class AbstractDPGAgent(AbstractAgent):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     policy_target: AbstractPolicy
@@ -46,5 +47,6 @@ class DDPGAgent(AbstractAgent):
 
     def _train_actor(self, state: State, weight: Tensor) -> None: ...
 
+    @abstractmethod
     def _td(self, state: State, action: Action, reward: Reward, next_state: State,
             done: Done) -> Tuple[Tensor, Tensor]: ...

@@ -1,5 +1,6 @@
 """Implementation of QLearning Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.dataset import Observation
 from abc import abstractmethod
 import torch
 import numpy as np
@@ -72,17 +73,18 @@ class AbstractQLearningAgent(AbstractAgent):
 
         """
         for batch in range(batches):
-            (state, action, reward, next_state, done), idx, w = self.memory.get_batch()
+            observation, idx, weight = self.memory.get_batch()
+            weight = torch.tensor(weight).float()
+            observation = Observation(*map(lambda x: x.float(), observation))
+
             self.optimizer.zero_grad()
-            pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
-                                        next_state.float(), done.float())
+            pred_q, target_q = self._td(*observation)
 
             td_error = pred_q.detach() - target_q.detach()
             td_error_mean = td_error.mean().item()
             self.logs['td_errors'].append(td_error_mean)
             self.logs['episode_td_errors'][-1].append(td_error_mean)
-            loss = self.criterion(pred_q, target_q, reduction='none')
-            loss = torch.tensor(w).float() * loss
+            loss = weight * self.criterion(pred_q, target_q, reduction='none')
             loss.mean().backward()
 
             self.optimizer.step()
