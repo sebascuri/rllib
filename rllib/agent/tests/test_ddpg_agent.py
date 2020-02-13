@@ -9,7 +9,7 @@ from rllib.environment import GymEnvironment
 import torch.nn.functional as func
 import torch.optim
 
-NUM_EPISODES = 25
+NUM_EPISODES = 10
 MAX_STEPS = 25
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
