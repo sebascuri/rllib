@@ -2,12 +2,13 @@ from rllib.environment import EasyGridWorld
 from rllib.environment.gym_environment import GymEnvironment
 
 from rllib.policy import RandomPolicy
-from rllib.algorithms import iterative_policy_evaluation, policy_iteration, value_iteration
+from rllib.algorithms import iterative_policy_evaluation, policy_iteration, \
+    value_iteration, linear_system_policy_evaluation
 import torch.testing
 import pytest
 
 
-def test_policy_evaluation():
+def test_iterative_policy_evaluation():
     environment = EasyGridWorld()
     GAMMA = 0.9
     EPS = 1e-3
@@ -15,6 +16,24 @@ def test_policy_evaluation():
     policy = RandomPolicy(dim_state=1, dim_action=1, num_states=environment.num_states,
                           num_actions=environment.num_actions)
     value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)
+
+    torch.testing.assert_allclose(value_function.table,
+                                  torch.tensor([3.3, 8.8, 4.4, 5.3, 1.5,
+                                                1.5, 3.0, 2.3, 1.9, 0.5,
+                                                0.1, 0.7, 0.7, 0.4, -0.4,
+                                                -1.0, -0.4, -0.4, -0.6, -1.2,
+                                                -1.9, -1.3, -1.2, -1.4, -2.0]),
+                                  atol=0.05, rtol=EPS)
+
+
+def test_linear_system_policy_evaluation():
+    environment = EasyGridWorld()
+    GAMMA = 0.9
+    EPS = 1e-3
+
+    policy = RandomPolicy(dim_state=1, dim_action=1, num_states=environment.num_states,
+                          num_actions=environment.num_actions)
+    value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
 
     torch.testing.assert_allclose(value_function.table,
                                   torch.tensor([3.3, 8.8, 4.4, 5.3, 1.5,

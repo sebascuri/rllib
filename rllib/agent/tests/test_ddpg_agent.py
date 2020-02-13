@@ -60,7 +60,7 @@ def test_ddpg_interaction(environment, agent):
     critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE,
                                         weight_decay=WEIGHT_DECAY)
 
-    agent = DDPGAgent(
+    agent = agent(
         q_function, policy, noise, criterion, critic_optimizer,
         actor_optimizer, memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
