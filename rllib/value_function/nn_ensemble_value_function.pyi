@@ -1,5 +1,3 @@
-"""Value and Q-Functions parametrized with Neural Networks."""
-
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from .nn_value_function import NNValueFunction, NNQFunction
 from typing import List, Iterator

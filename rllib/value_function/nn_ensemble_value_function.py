@@ -107,11 +107,6 @@ class NNEnsembleQFunction(AbstractQFunction):
         super().__init__(dim_state, dim_action, num_states, num_actions)
 
         assert num_heads > 0
-        # Initialize from q-function.
-        if q_function is not None:
-            layers = q_function.q_function.layers
-            biased_head = q_function.q_function.head.bias is not None
-            tau = q_function.tau
 
         self.ensemble = [NNQFunction(
             dim_state, dim_action, num_states, num_actions, layers, tau, biased_head
