@@ -27,15 +27,20 @@ class MellowMax(AbstractQFunctionPolicy):
         q_value = self.q_function(state)
         omega = self.param()
 
-        adv = q_value - mellow_max(q_value, omega)
+        mm = mellow_max(q_value, omega).unsqueeze(-1)
+        adv = q_value - mm
+        if adv.dim() < 2:
+            adv = adv.unsqueeze(0)
+        beta = torch.zeros_like(mm)
 
-        def f(beta_):
-            """Solve for beta."""
-            return (torch.exp(beta_ * adv) * adv).sum().detach().numpy()
+        for i in range(len(mm)):
+            def f(beta_):
+                """Solve for beta."""
+                return (torch.exp(beta_ * adv[i]) * adv[i]).sum().detach().numpy()
 
-        try:
-            beta = scipy.optimize.brentq(f, a=-100, b=100)
-        except ValueError:
-            beta = 0
+            try:
+                beta[i] = torch.tensor(scipy.optimize.brentq(f, a=-100, b=100))
+            except ValueError:
+                pass
 
         return Categorical(torch.softmax(beta * q_value, dim=-1))

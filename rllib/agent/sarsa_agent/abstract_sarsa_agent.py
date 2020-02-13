@@ -1,6 +1,8 @@
 """Implementation of SARSA Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.dataset import SARSAObservation
+from rllib.dataset.utilities import stack_list_of_tuples
 from abc import abstractmethod
 import copy
 import numpy as np
@@ -10,7 +12,7 @@ import torch
 class AbstractSARSAAgent(AbstractAgent):
     """Abstract base class for SARSA (On-Line)-Control."""
 
-    def __init__(self, q_function, policy, criterion, optimizer,
+    def __init__(self, q_function, policy, criterion, optimizer, batch_size=1,
                  target_update_frequency=1, gamma=1.0):
         super().__init__(gamma=gamma)
         self.q_function = q_function
@@ -21,6 +23,8 @@ class AbstractSARSAAgent(AbstractAgent):
         self.criterion = criterion
         self.optimizer = optimizer
         self._last_observation = None
+        self._batch_size = batch_size
+        self._trajectory = list()
 
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
@@ -28,16 +32,20 @@ class AbstractSARSAAgent(AbstractAgent):
     def act(self, state):
         """See `AbstractAgent.act'."""
         action = super().act(state)
-        if self._last_observation is not None:
-            self._train(self._last_observation, action)
-        if self.total_steps % self.target_update_frequency == 0:
-            self.q_target.parameters = self.q_function.parameters
+        if self._last_observation:
+            self._trajectory.append(SARSAObservation(*self._last_observation, action))
         return action
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self._last_observation = observation
+
+        if len(self._trajectory) >= self._batch_size:
+            self._train(self._trajectory)
+            self._trajectory = list()
+        if self.total_steps % self.target_update_frequency == 0:
+            self.q_target.parameters = self.q_function.parameters
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
@@ -49,18 +57,20 @@ class AbstractSARSAAgent(AbstractAgent):
         """See `AbstractAgent.end_episode'."""
         # The next action is irrelevant as the next value is zero for all actions.
         next_action = super().act(self._last_observation.state)
-        self._train(self._last_observation, next_action)
+        self._trajectory.append(SARSAObservation(*self._last_observation, next_action))
+        self._train(self._trajectory)
 
         aux = self.logs['episode_td_errors'].pop(-1)
         if len(aux) > 0:
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
-    def _train(self, observation, next_action):
+    def _train(self, trajectory):
+        trajectory = stack_list_of_tuples(trajectory, dtype=np.float32)
+        trajectory = SARSAObservation(*map(torch.from_numpy, trajectory))
+
         self.optimizer.zero_grad()
 
-        pred_q, target_q = self._td(
-            *map(lambda x: torch.tensor(x).float(), observation),
-            torch.tensor(next_action).float())
+        pred_q, target_q = self._td(*trajectory)
 
         td_error = pred_q.detach() - target_q.detach()
         td_error_mean = td_error.mean().item()

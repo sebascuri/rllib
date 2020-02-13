@@ -15,6 +15,7 @@ NUM_EPISODES = 500
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.99
+BATCH_SIZE = 4  # Batch size doesn't bring much because the data is heavily correlated.
 LEARNING_RATE = 1e-2
 MOMENTUM = 0.1
 WEIGHT_DECAY = 0
@@ -42,7 +43,7 @@ criterion = func.mse_loss
 
 agent = DExpectedSARSAAgent(q_function, policy, criterion, optimizer,
                             target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                            gamma=GAMMA)
+                            gamma=GAMMA, batch_size=BATCH_SIZE)
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 plt.plot(agent.episodes_cumulative_rewards)

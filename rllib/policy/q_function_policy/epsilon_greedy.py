@@ -3,6 +3,7 @@
 from .abstract_q_function_policy import AbstractQFunctionPolicy
 from torch.distributions import Categorical
 import torch
+from rllib.util.neural_networks import get_batch_size
 
 
 class EpsGreedy(AbstractQFunctionPolicy):
@@ -19,11 +20,18 @@ class EpsGreedy(AbstractQFunctionPolicy):
 
     def __call__(self, state):
         """See `AbstractQFunctionPolicy.__call__'."""
+        batch_size = get_batch_size(state, is_discrete=self.discrete_state)
+        aux_size = 1 if not batch_size else batch_size
+
         # Epsilon part.
         epsilon = self.param()
-        probs = epsilon / self.num_actions * torch.ones(self.num_actions)
+        probs = epsilon / self.num_actions * torch.ones((aux_size, self.num_actions))
 
         # Greedy part.
-        a = torch.argmax(self.q_function(state))
-        probs[a] += (1 - epsilon)
-        return Categorical(probs)
+        a = torch.argmax(self.q_function(state), dim=-1)
+        probs[torch.arange(aux_size), a] += (1 - epsilon)
+
+        if batch_size:
+            return Categorical(probs)
+        else:
+            return Categorical(probs.squeeze(0))

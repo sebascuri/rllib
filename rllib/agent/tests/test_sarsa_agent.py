@@ -1,8 +1,8 @@
 import pytest
-from rllib.agent import DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent
+from rllib.agent import SARSAAgent, DSARSAAgent, GSARSAAgent, ExpectedSARSAAgent, \
+    DExpectedSARSAAgent, GExpectedSARSAAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction, TabularQFunction
-from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
 from rllib.environment import GymEnvironment, EasyGridWorld
 import torch.nn.functional as func
@@ -13,8 +13,8 @@ MAX_STEPS = 25
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.9
 MEMORY_MAX_SIZE = 5000
-BATCH_SIZE = 64
 LEARNING_RATE = 0.001
+BATCH_SIZE = 4
 GAMMA = 0.99
 EPS_START = 1.0
 EPS_END = 0.01
@@ -28,13 +28,19 @@ def environment(request):
     return request.param
 
 
-@pytest.fixture(params=[DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent])
+@pytest.fixture(params=[SARSAAgent, DSARSAAgent, GSARSAAgent, ExpectedSARSAAgent,
+                        DExpectedSARSAAgent, GExpectedSARSAAgent])
 def agent(request):
     return request.param
 
 
-@pytest.fixture(params=[EpsGreedy, SoftMax, MellowMax])
+@pytest.fixture(params=[SoftMax, MellowMax, EpsGreedy])
 def policy(request):
+    return request.param
+
+
+@pytest.fixture(params=[1, 4])
+def batch_size(request):
     return request.param
 
 
@@ -51,15 +57,13 @@ def test_nnq_interaction(environment, agent):
 
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
-
     q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer, memory=memory,
+                    criterion=criterion, optimizer=optimizer,
                     target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
-def test_policies(environment, policy):
+def test_policies(environment, policy, batch_size):
     environment = GymEnvironment(environment, SEED)
 
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
@@ -73,11 +77,9 @@ def test_policies(environment, policy):
 
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
-
-    q_agent = DDQNAgent(
+    q_agent = DExpectedSARSAAgent(
         q_function=q_function, policy=policy,
-        criterion=criterion, optimizer=optimizer, memory=memory,
+        criterion=criterion, optimizer=optimizer, batch_size=batch_size,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
@@ -91,10 +93,9 @@ def test_tabular_interaction(agent, policy):
     policy = policy(q_function, 0.1)
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
     criterion = func.mse_loss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
     q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer, memory=memory,
+                    criterion=criterion, optimizer=optimizer,
                     target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
