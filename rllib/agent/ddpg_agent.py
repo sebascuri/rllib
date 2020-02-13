@@ -1,5 +1,6 @@
 """Implementation of DDPG Algorithms."""
 from .abstract_agent import AbstractAgent
+from rllib.dataset import Observation
 import torch
 import numpy as np
 import copy
@@ -98,19 +99,15 @@ class DDPGAgent(AbstractAgent):
         for batch in range(batches):
             observation, idx, w = self.memory.get_batch()
             w = torch.tensor(w).float()
-            state = observation.state.float()
-            action = observation.action.float()
-            reward = observation.reward.float()
-            next_state = observation.next_state.float()
-            done = observation.done.float()
+            observation = Observation(*map(lambda x: x.float(), observation))
 
             # optimize critic
-            td_error = self._train_critic(state, action, reward, next_state, done, w)
+            td_error = self._train_critic(*observation, w)
             self.memory.update(idx, td_error.detach().numpy())
 
             # optimize actor
             if optimize_actor:
-                self._train_actor(state, w)
+                self._train_actor(observation.state, w)
 
     def _train_critic(self, state, action, reward, next_state, done, weight):
         self.critic_optimizer.zero_grad()
