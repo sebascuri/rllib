@@ -6,7 +6,7 @@ from rllib.policy import FelixPolicy
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
-from rllib.agent import DDPGAgent, DPGAgent, GDPGAgent
+from rllib.agent import DDPGAgent, DPGAgent, GDPGAgent, TD3Agent
 import torch.nn.functional as func
 import numpy as np
 import torch.optim
@@ -51,12 +51,14 @@ critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RA
                                     weight_decay=WEIGHT_DECAY)
 criterion = func.mse_loss
 
-agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
-                  actor_optimizer, memory,
-                  target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                  gamma=GAMMA, exploration_steps=0)
+agent = TD3Agent(q_function, policy, noise, criterion, critic_optimizer,
+                 actor_optimizer, memory,
+                 target_update_frequency=TARGET_UPDATE_FREQUENCY,
+                 gamma=GAMMA, exploration_steps=0,
+                 policy_noise=0.2
+                 )
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
-              milestones=MILESTONES)
+              milestones=MILESTONES, render=False)
 
 with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
     pickle.dump(agent, file)

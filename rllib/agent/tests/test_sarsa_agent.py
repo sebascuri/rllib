@@ -59,7 +59,8 @@ def test_nnq_interaction(environment, agent):
     criterion = func.mse_loss
     q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
+                    exploration_episodes=2)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 

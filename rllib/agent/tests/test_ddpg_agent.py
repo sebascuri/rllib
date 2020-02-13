@@ -1,5 +1,5 @@
 import pytest
-from rllib.agent import DPGAgent, GDPGAgent, DDPGAgent
+from rllib.agent import DPGAgent, GDPGAgent, DDPGAgent, TD3Agent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.dataset import PrioritizedExperienceReplay
@@ -24,6 +24,7 @@ GAMMA = 0.99
 EPS_START = 1.0
 EPS_END = 0.01
 EPS_DECAY = 500
+POLICY_NOISE = 0.2
 LAYERS = [64, 64]
 SEED = 0
 
@@ -33,7 +34,7 @@ def environment(request):
     return request.param
 
 
-@pytest.fixture(params=[DPGAgent, GDPGAgent, DDPGAgent])
+@pytest.fixture(params=[DPGAgent, GDPGAgent, DDPGAgent, TD3Agent])
 def agent(request):
     return request.param
 
@@ -63,5 +64,5 @@ def test_ddpg_interaction(environment, agent):
         q_function, policy, noise, criterion, critic_optimizer,
         actor_optimizer, memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
-        gamma=GAMMA, exploration_steps=0)
+        gamma=GAMMA, exploration_steps=2, policy_noise=POLICY_NOISE)
     rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)

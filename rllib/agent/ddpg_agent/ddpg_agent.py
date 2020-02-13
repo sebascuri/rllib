@@ -17,7 +17,7 @@ class DDPGAgent(AbstractDPGAgent):
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * Q_target(x', \pi_target(x'))
-        next_policy_action = self.policy_target(next_state).loc
+        next_policy_action = self.policy_target(next_state).mean
         next_q = self.q_target(next_state, next_policy_action)
         target_q = reward + self.gamma * next_q * (1 - done)
 

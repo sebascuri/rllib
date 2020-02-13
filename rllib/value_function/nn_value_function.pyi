@@ -2,7 +2,6 @@ from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from torch import Tensor
 from typing import List, Iterator
 from rllib.util.neural_networks import DeterministicNN
-from rllib.policy import AbstractPolicy
 
 
 class NNValueFunction(AbstractValueFunction):
@@ -12,6 +11,7 @@ class NNValueFunction(AbstractValueFunction):
 
     def __init__(self, dim_state: int, num_states: int = None, layers: List[int] = None,
                  tau: float = 1.0, biased_head: bool=True) -> None: ...
+
     def __call__(self, state: Tensor, action: Tensor = None) -> Tensor: ...
 
     @property

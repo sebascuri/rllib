@@ -11,7 +11,8 @@ class RandomAgent(AbstractAgent):
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,
-                 gamma: float = None, episode_length: int = None) -> None: ...
+                 gamma: float = None,
+                 exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
 
     def act(self, state: State) -> Action: ...
 

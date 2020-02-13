@@ -37,6 +37,7 @@ class AbstractDPGAgent(AbstractAgent):
     def __init__(self, q_function, policy, exploration, criterion, critic_optimizer,
                  actor_optimizer, memory, max_action=1,
                  target_update_frequency=4, policy_update_frequency=1,
+                 policy_noise=0., noise_clip=1.,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
@@ -55,6 +56,8 @@ class AbstractDPGAgent(AbstractAgent):
         self.actor_optimizer = actor_optimizer
         self.max_action = max_action
         self.policy_update_frequency = policy_update_frequency
+        self.policy_noise = policy_noise
+        self.noise_clip = noise_clip
 
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
@@ -63,7 +66,7 @@ class AbstractDPGAgent(AbstractAgent):
         """See `AbstractAgent.act'."""
         action = super().act(state)
         action += self.exploration()
-        return np.clip(action, -self.max_action, self.max_action)
+        return self.max_action * np.clip(action, -1, 1)
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -111,8 +114,7 @@ class AbstractDPGAgent(AbstractAgent):
 
     def _train_critic(self, state, action, reward, next_state, done, weight):
         self.critic_optimizer.zero_grad()
-        pred_q, target_q = self._td(state.float(), action.float(), reward.float(),
-                                    next_state.float(), done.float())
+        pred_q, target_q = self._td(state, action, reward, next_state, done)
         loss = self.criterion(pred_q, target_q, reduction='none')
         loss = weight * loss
         loss.mean().backward()
@@ -126,8 +128,8 @@ class AbstractDPGAgent(AbstractAgent):
 
     def _train_actor(self, state, weight):
         self.actor_optimizer.zero_grad()
-        policy_action = self.policy(state).loc
-        q = -self.q_function(state.float(), policy_action)
+        action = self.policy(state).mean.clamp(-1, 1)
+        q = -self.q_function(state.float(), action)
         loss = weight * q
         loss.mean().backward()
         self.actor_optimizer.step()

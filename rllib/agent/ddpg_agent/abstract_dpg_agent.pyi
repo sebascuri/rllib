@@ -22,15 +22,17 @@ class AbstractDPGAgent(AbstractAgent):
     target_update_frequency: int
     max_action: float
     policy_update_frequency: int
+    policy_noise: float
+    noise_clip: float
 
     def __init__(self, q_function: AbstractQFunction, policy: AbstractPolicy,
                  exploration: AbstractExplorationStrategy, criterion: _Loss,
                  critic_optimizer: Optimizer, actor_optimizer: Optimizer,
                  memory: ExperienceReplay, max_action: float = 1.0,
                  target_update_frequency: int = 4, policy_update_frequency: int = 1,
+                 policy_noise: float = 0., noise_clip: float = 1.,
                  gamma: float = 1.0,
-                 exploration_steps: int = 0, exploration_episodes: int = 0,
-                 ) -> None: ...
+                 exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
 
     def act(self, state: State) -> Action: ...
 

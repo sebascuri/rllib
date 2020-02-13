@@ -31,8 +31,10 @@ class AbstractQLearningAgent(AbstractAgent):
     """
 
     def __init__(self, q_function, policy, criterion, optimizer, memory,
-                 target_update_frequency=4, gamma=1.0):
-        super().__init__(gamma=gamma)
+                 target_update_frequency=4, gamma=1.0,
+                 exploration_steps=0, exploration_episodes=0):
+        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes)
         self.q_function = q_function
         self.policy = policy
         self.q_target = copy.deepcopy(q_function)
