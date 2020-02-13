@@ -1,13 +1,24 @@
 """Project Data-types."""
-from collections import namedtuple
 import numpy as np
+import torch
+from typing import NamedTuple, Union
+
+State = Union[int, float, np.ndarray, torch.Tensor]
+Action = Union[int, float, np.ndarray, torch.Tensor]
+Reward = Union[int, float, np.ndarray, torch.Tensor]
+Done = Union[bool, np.ndarray, torch.Tensor]
 
 
-class Observation(namedtuple('Observation',
-                             ('state', 'action', 'reward', 'next_state', 'done'))):
+class Observation(NamedTuple):
     """Observation datatype."""
 
-    def __eq__(self, other: object) -> bool:
+    state: State
+    action: Action
+    reward: Reward
+    next_state: State
+    done: Done
+
+    def __eq__(self, other):
         """Check if two observations are equal."""
         if not isinstance(other, Observation):
             return NotImplemented
@@ -16,9 +27,35 @@ class Observation(namedtuple('Observation',
         is_equal &= np.allclose(self.reward, other.reward)
         is_equal &= np.allclose(self.next_state, other.next_state)
         is_equal &= self.done == other.done
-
         return is_equal
 
-    def __ne__(self, other: object) -> bool:
+    def __ne__(self, other):
         """Check if two observations are not equal."""
-        return not (self == other)
+        return not self.__eq__(other)
+
+
+class SARSAObservation(NamedTuple):
+    """SARSA Observation datatype."""
+
+    state: State
+    action: Action
+    reward: Reward
+    next_state: State
+    done: Done
+    next_action: Action
+
+    def __eq__(self, other):
+        """Check if two SARSA observations are equal."""
+        if not isinstance(other, SARSAObservation):
+            return NotImplemented
+        is_equal = np.allclose(self.state, other.state)
+        is_equal &= np.allclose(self.action, other.action)
+        is_equal &= np.allclose(self.reward, other.reward)
+        is_equal &= np.allclose(self.next_state, other.next_state)
+        is_equal &= np.allclose(self.next_action, other.next_action)
+        is_equal &= self.done == other.done
+        return is_equal
+
+    def __ne__(self, other):
+        """Check if two SARSA observations are not equal."""
+        return not self.__eq__(other)
