@@ -1,6 +1,5 @@
 """Implementation of a Trajectory Dataset."""
 import numpy as np
-import torch
 from torch.utils import data
 from . import Observation
 from .utilities import stack_list_of_tuples

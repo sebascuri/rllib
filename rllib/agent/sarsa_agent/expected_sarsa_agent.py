@@ -1,7 +1,6 @@
 """Implementation of expected SARSA Algorithm."""
 
 from .abstract_sarsa_agent import AbstractSARSAAgent
-import torch
 
 
 class ExpectedSARSAAgent(AbstractSARSAAgent):

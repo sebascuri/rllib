@@ -53,6 +53,7 @@ class ExpectedActorCritic(ActorCritic):
 
 
 class AdvantageActorCritic(AbstractPolicyGradient):
+    """Implementation of Advantage Actor-Critic Algorithm."""
 
     def _value_estimate(self, trajectories):
         values = []
