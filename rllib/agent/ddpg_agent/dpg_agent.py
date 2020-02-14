@@ -23,7 +23,7 @@ class DPGAgent(AbstractDPGAgent):
                              ).clamp(-self.noise_clip, self.noise_clip)
         next_policy_action = (next_policy_action + next_action_noise).clamp(-1, 1)
 
-        next_q = self.q_function(next_state, next_policy_action)
-        target_q = reward + self.gamma * next_q * (1 - done)
+        next_v = self.q_function(next_state, next_policy_action)
+        target_q = reward + self.gamma * next_v * (1 - done)
 
         return pred_q, target_q
