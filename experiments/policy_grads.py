@@ -1,16 +1,21 @@
 import matplotlib.pyplot as plt
-from rllib.agent import REINFORCE
+from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
 from rllib.policy import NNPolicy
+from rllib.value_function import NNValueFunction
 import torch
 import numpy as np
+import torch.nn.functional as func
 
 ENVIRONMENT = 'CartPole-v0'
+MAX_STEPS = 200
 NUM_EPISODES = 2000
-LEARNING_RATE = 0.001
+LEARNING_RATE = 1e-3
+BASELINE_LEARNING_RATE = 1e-2
+NUM_ROLLOUTS = 1
 GAMMA = 0.99
-LAYERS = [64]
+LAYERS = [64, 64]
 SEED = 0
 
 torch.manual_seed(SEED)
@@ -22,16 +27,23 @@ policy = NNPolicy(environment.dim_state, environment.dim_action,
                   num_actions=environment.num_actions,
                   layers=LAYERS)
 
-optimizer = torch.optim.Adam
-hyper_params = {
-        'gamma': GAMMA,
-        'learning_rate': LEARNING_RATE
-    }
-agent = REINFORCE(policy, optimizer, hyper_params)
-rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
+value_function = NNValueFunction(environment.dim_state,
+                                 num_states=environment.num_states, layers=LAYERS)
 
-plt.plot(agent.episodes_steps, label=str(agent))
+policy_optimizer = torch.optim.Adam(policy.parameters, lr=LEARNING_RATE)
+value_optimizer = torch.optim.Adam(value_function.parameters, lr=BASELINE_LEARNING_RATE)
+
+criterion = func.mse_loss
+
+agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
+                       baseline=value_function, baseline_optimizer=value_optimizer,
+                       criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
+
+plt.plot(agent.episodes_cumulative_rewards)
 plt.xlabel('Episode')
-plt.ylabel('Duration')
-plt.legend(loc='best')
+plt.ylabel('Rewards')
+plt.title('{} in {}'.format(agent.name, environment.name))
 plt.show()
+
+rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)

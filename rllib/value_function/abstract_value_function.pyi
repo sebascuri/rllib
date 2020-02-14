@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from rllib.policy import AbstractPolicy
 from torch import Tensor
 from typing import Iterator, Union, List
 
@@ -35,3 +36,6 @@ class AbstractQFunction(AbstractValueFunction):
 
     @property
     def discrete_action(self) -> bool: ...
+
+    @abstractmethod
+    def value(self, state: Tensor, policy: AbstractPolicy, n_samples: int = 0) -> Union[List[Tensor], Tensor]: ...

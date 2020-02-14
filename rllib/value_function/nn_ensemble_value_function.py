@@ -134,3 +134,8 @@ class NNEnsembleQFunction(AbstractQFunction):
         """Set q-function parameters."""
         for q_function, new_param in zip(self.ensemble, new_params):
             q_function.parameters = new_param
+
+    def value(self, state, policy, num_samples=0):
+        """See `AbstractQFunction.value'."""
+        return [q_function.value(state, policy, num_samples)
+                for q_function in self.ensemble]
