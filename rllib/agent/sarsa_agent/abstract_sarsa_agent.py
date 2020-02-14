@@ -6,7 +6,6 @@ from rllib.dataset.utilities import stack_list_of_tuples
 from abc import abstractmethod
 import copy
 import numpy as np
-import torch
 
 
 class AbstractSARSAAgent(AbstractAgent):
@@ -67,8 +66,7 @@ class AbstractSARSAAgent(AbstractAgent):
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
     def _train(self, trajectory):
-        trajectory = stack_list_of_tuples(trajectory, dtype=np.float32)
-        trajectory = SARSAObservation(*map(torch.from_numpy, trajectory))
+        trajectory = SARSAObservation(*stack_list_of_tuples(trajectory))
 
         self.optimizer.zero_grad()
 

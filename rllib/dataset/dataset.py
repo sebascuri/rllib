@@ -115,8 +115,7 @@ class TrajectoryDataset(data.Dataset):
             raise ValueError('The sequence is shorter than the sequence length')
 
         # Add trajectory to dataset
-        trajectory = stack_list_of_tuples(trajectory, dtype=np.float32)
-        trajectory = Observation(*map(torch.from_numpy, trajectory))
+        trajectory = stack_list_of_tuples(trajectory)
 
         self._trajectories.append(trajectory)
 

@@ -132,9 +132,10 @@ class TestActionNormalize(object):
 
     def test_update(self, trajectory, preserve_origin):
         transformer = ActionNormalizer(preserve_origin)
-        backend = get_backend(trajectory[0].state)
 
-        trajectory = stack_list_of_tuples(trajectory, backend=backend)
+        trajectory = stack_list_of_tuples(trajectory)
+
+        backend = get_backend(trajectory.state)
 
         mean = backend.mean(trajectory.action, 0)
         var = backend.var(trajectory.action, 0)
@@ -144,12 +145,11 @@ class TestActionNormalize(object):
         backend.testing.assert_allclose(transformer._normalizer._variance, var)
 
     def test_call(self, trajectory, preserve_origin):
-        backend = get_backend(trajectory[0].state)
-
         transformer = ActionNormalizer(preserve_origin)
 
-        trajectory = stack_list_of_tuples(trajectory, backend=backend)
+        trajectory = stack_list_of_tuples(trajectory)
         transformer.update(trajectory)
+        backend = get_backend(trajectory.state)
         observation = get_observation(backend)
         transformed = transformer(observation)
 
@@ -169,10 +169,11 @@ class TestActionNormalize(object):
         backend.testing.assert_allclose(transformed.done, observation.done)
 
     def test_inverse(self, trajectory, preserve_origin):
-        backend = get_backend(trajectory[0].state)
 
         transformer = ActionNormalizer(preserve_origin)
-        trajectory = stack_list_of_tuples(trajectory, backend=backend)
+        trajectory = stack_list_of_tuples(trajectory)
+        backend = get_backend(trajectory.state)
+
         transformer.update(trajectory)
 
         observation = get_observation(backend)
@@ -188,10 +189,10 @@ class TestStateNormalize(object):
 
     def test_update(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
-        backend = get_backend(trajectory[0].state)
 
-        trajectory = stack_list_of_tuples(trajectory, backend=backend)
+        trajectory = stack_list_of_tuples(trajectory)
 
+        backend = get_backend(trajectory.state)
         mean = backend.mean(trajectory.state, 0)
         var = backend.var(trajectory.state, 0)
 
@@ -201,9 +202,9 @@ class TestStateNormalize(object):
 
     def test_call(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
-        backend = get_backend(trajectory[0].state)
+        trajectory = stack_list_of_tuples(trajectory)
+        backend = get_backend(trajectory.state)
 
-        trajectory = stack_list_of_tuples(trajectory, backend=backend)
         transformer.update(trajectory)
         observation = get_observation(backend)
         transformed = transformer(observation)
@@ -226,9 +227,11 @@ class TestStateNormalize(object):
 
     def test_inverse(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
-        backend = get_backend(trajectory[0].state)
 
-        trajectory = stack_list_of_tuples(trajectory, backend=backend)
+
+        trajectory = stack_list_of_tuples(trajectory)
+
+        backend = get_backend(trajectory.state)
         transformer.update(trajectory)
 
         observation = get_observation(backend)
