@@ -1,20 +1,17 @@
-"""Implementation of Model-Free Policy Gradient Algorithms."""
+"""Implementation of REINFORCE Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
-from abc import abstractmethod
 import torch
 import copy
 from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
-class AbstractEpisodicPolicyGradient(AbstractAgent):
-    """Abstract Implementation of the Policy-Gradient Algorithm.
+class REINFORCE(AbstractAgent):
+    """Implementation of the REINFORCE algorithm.
 
-    The AbstractPolicyGradient algorithm implements the Policy-Gradient algorithm except
-    for the computation of the rewards, which leads to different algorithms.
-
-    TODO: build compatible function approximation.
+    The REINFORCE algorithm computes the policy gradient using MC
+    approximation for the returns (sum of discounted rewards).
 
     References
     ----------

@@ -1,36 +1,20 @@
-from ..abstract_agent import AbstractAgent, State, Action, Reward, Done
+from .abstract_agent import AbstractAgent, State, Action, Reward, Done
 from rllib.value_function import AbstractQFunction, AbstractValueFunction
 from rllib.policy import AbstractPolicy
 from rllib.dataset import Observation
-from abc import abstractmethod
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 from typing import Tuple, List
 
 
-class AbstractEpisodicPolicyGradient(AbstractAgent):
-    """Abstract Implementation of the Policy-Gradient Algorithm.
-
-    The AbstractPolicyGradient algorithm implements the Policy-Gradient algorithm except
-    for the computation of the rewards, which leads to different algorithms.
-
-    TODO: build compatible function approximation.
-
-    References
-    ----------
-    Williams, Ronald J. "Simple statistical gradient-following algorithms for
-    connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
-    """
+class REINFORCE(AbstractAgent):
     trajectories: List[List[Observation]]
     policy: AbstractPolicy
     policy_target: AbstractPolicy
     policy_optimizer: Optimizer
     baseline: AbstractValueFunction
     baseline_optimizer: Optimizer
-    critic: AbstractQFunction
-    critic_target: AbstractQFunction
-    critic_optimizer: Optimizer
     criterion: _Loss
     target_update_freq: int
     num_rollouts: int
