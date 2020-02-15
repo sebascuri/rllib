@@ -13,6 +13,8 @@ class AbstractDPGAgent(AbstractAgent):
     The AbstractDDPGAgent algorithm implements the DPG-Learning algorithm except for
     the computation of the TD-Error, which leads to different algorithms.
 
+    TODO: build compatible q-function approximation.
+
     Parameters
     ----------
     q_function: AbstractQFunction

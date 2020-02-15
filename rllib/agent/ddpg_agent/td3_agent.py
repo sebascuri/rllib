@@ -28,7 +28,8 @@ class TD3Agent(AbstractDPGAgent):
 
     References
     ----------
-    Lillicrap et. al. (2016). CONTINUOUS CONTROL WITH DEEP REINFORCEMENT LEARNING. ICLR.
+    Fujimoto, S., et al. (2018). Addressing Function Approximation Error in
+    Actor-Critic Methods. ICML.
 
     """
 
