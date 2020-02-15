@@ -24,3 +24,4 @@ class AbstractQFunctionPolicy(AbstractPolicy):
 
     @parameters.setter
     def parameters(self, new_params: Iterator) -> None: ...
+

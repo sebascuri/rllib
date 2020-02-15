@@ -25,6 +25,11 @@ class ParameterDecay(ABC):
         """Call parameter value at a given number of steps."""
         raise NotImplementedError
 
+    @abstractmethod
+    def update(self):
+        """Update parameter."""
+        raise NotImplementedError
+
 
 class ExponentialDecay(ParameterDecay):
     """Exponential decay of parameter."""
@@ -32,8 +37,11 @@ class ExponentialDecay(ParameterDecay):
     def __call__(self):
         """See `ParameterDecay.__call__'."""
         decay = (self.start - self.end) * np.exp(-self.step / self.decay)
-        self.step += 1
         return self.end + decay
+
+    def update(self):
+        """Update parameter."""
+        self.step += 1
 
 
 class LinearDecay(ParameterDecay):
@@ -41,7 +49,9 @@ class LinearDecay(ParameterDecay):
 
     def __call__(self):
         """See `ParameterDecay.__call__'."""
+        return self.start
+
+    def update(self):
+        """Update parameter."""
         self.step += 1
         self.start = max(self.end, self.start - self.decay)
-
-        return self.start

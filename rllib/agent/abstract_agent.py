@@ -50,6 +50,7 @@ class AbstractAgent(ABC):
         else:
             state = torch.tensor(state).float()
             action = self.policy(state).sample()
+            self.policy.update()  # update policy parameters (eps-greedy.)
 
         return action.detach().numpy()
 

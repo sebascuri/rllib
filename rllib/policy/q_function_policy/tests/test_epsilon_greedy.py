@@ -20,10 +20,12 @@ def test_epsilon(eps_start, q_function):
     policy = EpsGreedy(q_function, start=eps_start)
     for t in range(100):
         assert policy.param() == eps_start
+        policy.update()
 
     policy = EpsGreedy(q_function, start=eps_start, end=0.1, decay=100)
     for t in range(100):
         assert policy.param() == 0.1 + (eps_start - 0.1) * np.exp(-t / 100)
+        policy.update()
 
 
 def test_discrete(eps_start, q_function):

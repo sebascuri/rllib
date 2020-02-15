@@ -109,6 +109,10 @@ class AbstractPolicy(ABC):
         else:
             return distribution
 
+    def update(self):
+        """Update policy parameters."""
+        pass
+
     @property
     def discrete_state(self):
         """Flag that indicates if states are discrete.

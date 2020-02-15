@@ -51,3 +51,7 @@ class AbstractQFunctionPolicy(AbstractPolicy):
     def parameters(self, new_params):
         """Set policy parameters."""
         self.q_function.parameters = new_params
+
+    def update(self):
+        """Update policy parameters."""
+        self.param.update()
