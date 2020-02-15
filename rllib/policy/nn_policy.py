@@ -54,6 +54,14 @@ class NNPolicy(AbstractPolicy):
             return Delta(action.mean)
         return action
 
+    def embeddings(self, state):
+        """Get embeddings of the value-function at a given state."""
+        if self.discrete_state:
+            state = one_hot_encode(state.long(), self.num_states)
+
+        features = self.policy.last_layer_embeddings(state)
+        return features.squeeze()
+
     @property
     def parameters(self):
         """Return parameters of nn.Module that parametrize the policy.

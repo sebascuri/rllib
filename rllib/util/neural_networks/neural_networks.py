@@ -71,7 +71,7 @@ class DeterministicNN(nn.Module):
             Tensor of size [batch_size x embedding_dim].
         """
         out = self.hidden_layers(x)
-        if self.head.bias:
+        if self.head.bias is not None:
             out = torch.cat((out, torch.ones(out.shape[0], 1)), dim=1)
         return out
 
