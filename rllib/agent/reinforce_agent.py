@@ -8,16 +8,13 @@ from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
-class AbstractPolicyGradient(AbstractAgent):
+class AbstractEpisodicPolicyGradient(AbstractAgent):
     """Abstract Implementation of the Policy-Gradient Algorithm.
 
     The AbstractPolicyGradient algorithm implements the Policy-Gradient algorithm except
     for the computation of the rewards, which leads to different algorithms.
 
-    Parameters
-    ----------
-    policy: AbstractPolicy
-        learnable policy.
+    TODO: build compatible function approximation.
 
     References
     ----------
@@ -27,10 +24,9 @@ class AbstractPolicyGradient(AbstractAgent):
 
     eps = 1e-12
 
-    def __init__(self, policy, policy_optimizer, baseline=None, critic=None,
-                 baseline_optimizer=None, critic_optimizer=None, criterion=None,
-                 num_rollouts=1, target_update_frequency=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
+    def __init__(self, policy, policy_optimizer, baseline=None, baseline_optimizer=None,
+                 criterion=None, num_rollouts=1, target_update_frequency=1, gamma=1.0,
+                 exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.trajectories = []
@@ -39,9 +35,6 @@ class AbstractPolicyGradient(AbstractAgent):
         self.policy_optimizer = policy_optimizer
         self.baseline = baseline
         self.baseline_optimizer = baseline_optimizer
-        self.critic = critic
-        self.critic_target = copy.deepcopy(critic)
-        self.critic_optimizer = critic_optimizer
         self.criterion = criterion
         self.num_rollouts = num_rollouts
         self.target_update_freq = target_update_frequency
@@ -65,9 +58,6 @@ class AbstractPolicyGradient(AbstractAgent):
         if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
             self.policy_target.parameters = self.policy.parameters
 
-            if self.critic:
-                self.critic_target.parameters = self.critic.parameters
-
     def _train(self):
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]
@@ -75,11 +65,8 @@ class AbstractPolicyGradient(AbstractAgent):
         value_estimates = self._value_estimate(trajectories)
         self._train_actor(trajectories, value_estimates)
 
-        # This could be trained from an off-line dataset ?.
         if self.baseline:
             self._train_baseline(trajectories, value_estimates)
-        if self.critic:
-            self._train_critic(trajectories)
 
     def _train_actor(self, observations, value_estimates):
         self.policy_optimizer.zero_grad()
@@ -102,29 +89,20 @@ class AbstractPolicyGradient(AbstractAgent):
         self.baseline_optimizer.zero_grad()
 
         for observation, value_estimate in zip(observations, value_estimates):
-            pred_v, target_v = self._td_base(*observation, value_estimate)
-            loss = self.criterion(pred_v, target_v, reduction='none')
+            loss = self.criterion(self.baseline(observation.state), value_estimate)
             loss.mean().backward()
 
         self.baseline_optimizer.step()
 
-    def _train_critic(self, observations):
-        self.critic_optimizer.zero_grad()
-
-        for observation in observations:
-            pred_q, target_q = self._tdq(*observation)
-            loss = self.criterion(pred_q, target_q, reduction='none')
-            loss.mean().backward()
-        self.critic_optimizer.step()
-
-    @abstractmethod
     def _value_estimate(self, trajectories):
-        raise NotImplementedError
+        values = []
+        for trajectory in trajectories:
+            val = torch.zeros_like(trajectory.reward)
+            r = 0
+            for i, reward in enumerate(reversed(trajectory.reward)):
+                r = reward + self.gamma * r
+                val[-1-i] = r
 
-    @abstractmethod
-    def _td_base(self, state, action, reward, next_state, done, value_estimates=None):
-        raise NotImplementedError
+            values.append((val - val.mean()) / (val.std() + self.eps))
 
-    @abstractmethod
-    def _td_critic(self, state, action, reward, next_state, done):
-        raise NotImplementedError
+        return values

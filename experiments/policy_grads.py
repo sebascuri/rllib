@@ -1,21 +1,22 @@
 import matplotlib.pyplot as plt
-from rllib.agent import REINFORCEAgent
+from rllib.agent import REINFORCE
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
 from rllib.policy import NNPolicy
-from rllib.value_function import NNValueFunction
+from rllib.value_function import NNValueFunction, NNQFunction, CompatibleValueFunction, \
+    CompatibleQFunction
 import torch
 import numpy as np
 import torch.nn.functional as func
 
 ENVIRONMENT = 'CartPole-v0'
 MAX_STEPS = 200
-NUM_EPISODES = 2000
+NUM_EPISODES = 1000
 LEARNING_RATE = 1e-3
 BASELINE_LEARNING_RATE = 1e-2
 NUM_ROLLOUTS = 1
 GAMMA = 0.99
-LAYERS = [64, 64]
+LAYERS = [200, 200]
 SEED = 0
 
 torch.manual_seed(SEED)
@@ -27,17 +28,32 @@ policy = NNPolicy(environment.dim_state, environment.dim_action,
                   num_actions=environment.num_actions,
                   layers=LAYERS)
 
+# value_function = CompatibleValueFunction(policy)
+# q_function = CompatibleQFunction(policy)
 value_function = NNValueFunction(environment.dim_state,
                                  num_states=environment.num_states, layers=LAYERS)
 
+q_function = NNQFunction(environment.dim_state, environment.num_actions,
+                         num_states=environment.num_states,
+                         num_actions=environment.num_actions, layers=LAYERS)
+
 policy_optimizer = torch.optim.Adam(policy.parameters, lr=LEARNING_RATE)
 value_optimizer = torch.optim.Adam(value_function.parameters, lr=BASELINE_LEARNING_RATE)
-
+# q_function_optimizer = torch.optim.Adam(q_function.parameters, lr=BASELINE_LEARNING_RATE)
 criterion = func.mse_loss
 
-agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
-                       baseline=value_function, baseline_optimizer=value_optimizer,
-                       criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,
+                  # baseline=value_function, baseline_optimizer=value_optimizer,
+                  criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+
+# agent = A2CAgent(policy=policy, policy_optimizer=policy_optimizer,
+#                  critic=value_function, critic_optimizer=value_optimizer,
+#                  criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+#
+# agent = ACAgent(policy=policy, policy_optimizer=policy_optimizer,
+#                  critic=q_function, critic_optimizer=q_function_optimizer,
+#                  criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
 plt.plot(agent.episodes_cumulative_rewards)
