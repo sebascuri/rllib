@@ -4,7 +4,39 @@ import numpy as np
 import torch
 from torch.distributions import constraints
 from torch.distributions import Distribution
-__all__ = ['mc_value', 'sum_discounted_rewards', 'Delta', 'mellow_max']
+__all__ = ['mc_value', 'sum_discounted_rewards', 'Delta', 'integrate', 'mellow_max']
+
+
+def integrate(function, distribution, num_samples=1):
+    """Integrate a function over a distribution.
+
+    Parameters
+    ----------
+    function: Callable.
+        Function to integrate.
+    distribution: Distribution.
+        Distribution to integrate the function w.r.t..
+    num_samples: int.
+        Number of samples in MC integration.
+
+    Returns
+    -------
+    integral value.
+    """
+    batch_size = distribution.batch_shape
+    ans = torch.zeros(batch_size)
+    if distribution.has_enumerate_support:
+        for action in distribution.enumerate_support():
+            prob = distribution.probs.gather(-1, action.unsqueeze(-1)).squeeze()
+            q_val = function(action)
+            ans += prob * q_val
+
+    else:
+        for _ in range(num_samples):
+            q_val = function(distribution.rsample())
+            ans += q_val
+
+    return ans
 
 
 def _mc_value_slow(trajectory, gamma=1.0):

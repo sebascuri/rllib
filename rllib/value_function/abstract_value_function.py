@@ -2,7 +2,8 @@
 
 
 from abc import ABC, abstractmethod
-import torch
+from rllib.util.utilities import integrate
+
 
 __all__ = ['AbstractValueFunction', 'AbstractQFunction']
 
@@ -151,7 +152,7 @@ class AbstractQFunction(AbstractValueFunction):
         """
         raise NotImplementedError
 
-    def value(self, state, policy, num_samples=0):
+    def value(self, state, policy, num_samples=1):
         """Return the value of the state given a policy.
 
         Integrate Q(s, a) by sampling a from the policy.
@@ -167,23 +168,7 @@ class AbstractQFunction(AbstractValueFunction):
         -------
         tensor
         """
-        pi = policy(state)
-        if self.discrete_action:
-            batch_size = state.shape[0]
-            ans = torch.zeros(batch_size)
-            for action in range(policy.num_actions):
-                action = torch.tensor([action]).repeat(batch_size, 1)
-                prob = pi.probs.gather(-1, action).squeeze()
-                q_val = self(state, action.squeeze(-1))
-                ans += prob * q_val
-
-        else:
-            ans = torch.zeros(state.shape[0])
-            for _ in range(num_samples):
-                q_val = self(state, pi.rsample())
-                ans += q_val
-
-        return ans
+        return integrate(lambda action: self(state, action), policy(state), num_samples)
 
     @property
     def discrete_action(self):
