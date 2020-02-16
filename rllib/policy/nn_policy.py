@@ -48,7 +48,7 @@ class NNPolicy(AbstractPolicy):
     def __call__(self, state):
         """Get distribution over actions."""
         if self.discrete_state:
-            state = one_hot_encode(state, self.num_states)
+            state = one_hot_encode(state.long(), self.num_states)
         action = self.policy(state)
         if self.deterministic:
             return Delta(action.mean)

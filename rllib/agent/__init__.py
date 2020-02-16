@@ -4,3 +4,4 @@ from .q_learning_agent import *
 from .sarsa_agent import *
 from .ddpg_agent import *
 from .reinforce_agent import REINFORCE
+from .actor_critic_agent import *
