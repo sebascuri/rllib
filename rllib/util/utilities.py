@@ -2,9 +2,8 @@
 
 import numpy as np
 import torch
-from torch.distributions import constraints
-from torch.distributions import Distribution
-__all__ = ['mc_value', 'sum_discounted_rewards', 'Delta', 'integrate', 'mellow_max']
+
+__all__ = ['mc_value', 'sum_discounted_rewards', 'integrate', 'mellow_max']
 
 
 def integrate(function, distribution, num_samples=1):
@@ -82,7 +81,7 @@ def mc_value(trajectory, gamma=1.0):
     value_estimate = [0] * len(trajectory)
     value_estimate[-1] = trajectory[-1].reward
 
-    for t in reversed(range(len(trajectory)-1)):
+    for t in reversed(range(len(trajectory) - 1)):
         value_estimate[t] = trajectory[t].reward + gamma * value_estimate[t + 1]
 
     return np.array(value_estimate)
@@ -130,42 +129,3 @@ def mellow_max(values, omega=1.):
     """
     n = torch.tensor(values.shape[-1]).float()
     return (torch.logsumexp(omega * values, dim=-1) - torch.log(n)) / omega
-
-
-class Delta(Distribution):
-    """Implementation of a Dirac Delta distribution."""
-
-    arg_constraints = {'loc': constraints.real_vector}
-    support = constraints.real  # type: ignore
-    has_rsample = True
-
-    def __init__(self, loc, validate_args=False):
-        self.loc = loc
-        batch_shape, event_shape = self.loc.shape[:-1], self.loc.shape[-1:]
-        super().__init__(batch_shape=batch_shape, event_shape=event_shape,
-                         validate_args=validate_args)
-
-    @property
-    def mean(self):
-        """Return mean of distribution."""
-        return self.loc
-
-    @property
-    def variance(self):
-        """Return variance of distribution."""
-        return torch.zeros_like(self.loc)
-
-    def rsample(self, sample_shape=torch.Size()):
-        """Return differentiable sample of distribution."""
-        return self.loc.expand(sample_shape + self.loc.shape)
-
-    def log_prob(self, value):
-        """Return log probability of distribution."""
-        if value == self.loc:
-            return 0.
-        else:
-            return float('-Inf')
-
-    def entropy(self):
-        """Return entropy of distribution."""
-        return float('-inf')
