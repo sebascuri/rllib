@@ -109,7 +109,7 @@ class AbstractPolicy(ABC):
         else:
             return distribution
 
-    def update(self):
+    def update(self, observation):
         """Update policy parameters."""
         pass
 

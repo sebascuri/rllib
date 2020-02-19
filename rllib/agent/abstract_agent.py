@@ -50,7 +50,6 @@ class AbstractAgent(ABC):
         else:
             state = torch.tensor(state).float()
             action = self.policy(state).sample()
-            self.policy.update()  # update policy parameters (eps-greedy.)
 
         return action.detach().numpy()
 
@@ -62,6 +61,8 @@ class AbstractAgent(ABC):
         observation: Observation
 
         """
+        self.policy.update(observation)  # update policy parameters (eps-greedy.)
+
         self.logs['total_steps'] += 1
         self.logs['episode_steps'][-1] += 1
         self.logs['episode_rewards'][-1] += observation.reward

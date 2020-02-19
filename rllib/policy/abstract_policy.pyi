@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
 from torch.distributions import Categorical, MultivariateNormal
+from gpytorch.distributions import Delta
 from typing import Iterator, Union
+from rllib.dataset import Observation
 
-Distribution = Union[Categorical, MultivariateNormal]
+Distribution = Union[Categorical, MultivariateNormal, Delta]
 
 class AbstractPolicy(ABC):
     dim_state: int
@@ -29,7 +31,7 @@ class AbstractPolicy(ABC):
 
     def random(self, batch_size: int = None) -> Distribution: ...
 
-    def update(self) -> None: ...
+    def update(self, observation: Observation) -> None: ...
 
     @property
     def discrete_state(self) -> bool: ...

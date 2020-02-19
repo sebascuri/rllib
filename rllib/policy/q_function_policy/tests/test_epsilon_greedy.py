@@ -1,5 +1,6 @@
 from rllib.policy import EpsGreedy
 from rllib.value_function import NNQFunction
+from rllib.dataset.datatypes import Observation
 import torch
 import torch.testing
 import pytest
@@ -20,12 +21,12 @@ def test_epsilon(eps_start, q_function):
     policy = EpsGreedy(q_function, start=eps_start)
     for t in range(100):
         assert policy.param() == eps_start
-        policy.update()
+        policy.update(Observation(1, 2, 3, 4, True))
 
     policy = EpsGreedy(q_function, start=eps_start, end=0.1, decay=100)
     for t in range(100):
         assert policy.param() == 0.1 + (eps_start - 0.1) * np.exp(-t / 100)
-        policy.update()
+        policy.update(Observation(1, 2, 3, 4, True))
 
 
 def test_discrete(eps_start, q_function):
@@ -37,4 +38,3 @@ def test_discrete(eps_start, q_function):
         probs[action] += (1 - eps_start)
 
         assert (policy(state).probs == probs).all()
-
