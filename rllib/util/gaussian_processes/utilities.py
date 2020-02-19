@@ -5,7 +5,7 @@ import gpytorch
 import matplotlib.pyplot as plt
 
 
-def plot_gp(x, model, num_samples):
+def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> None:
     """Plot 1-D GP.
 
     Parameters

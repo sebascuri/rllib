@@ -6,7 +6,7 @@ import gpytorch
 class ApproximateGPModel(gpytorch.models.ApproximateGP):
     """Approximate GP model."""
 
-    def __init__(self, inducing_points, learn_loc=True):
+    def __init__(self, inducing_points, learn_loc=True, mean=None, kernel=None):
         variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(
             inducing_points.size(-1))
         variational_strategy = gpytorch.variational.VariationalStrategy(
@@ -14,8 +14,13 @@ class ApproximateGPModel(gpytorch.models.ApproximateGP):
             learn_inducing_locations=learn_loc
         )
         super().__init__(variational_strategy)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+
+        if mean is None:
+            mean = gpytorch.means.ConstantMean()
+        self.mean_module = mean
+        if kernel is None:
+            kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+        self.covar_module = kernel
 
     def forward(self, x):
         """Forward computation of GP."""

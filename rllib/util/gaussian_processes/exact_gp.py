@@ -5,10 +5,14 @@ import gpytorch
 class ExactGPModel(gpytorch.models.ExactGP):
     """Exact GP Model."""
 
-    def __init__(self, train_x, train_y, likelihood):
+    def __init__(self, train_x, train_y, likelihood, mean=None, kernel=None):
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+        if mean is None:
+            mean = gpytorch.means.ConstantMean()
+        self.mean_module = mean
+        if kernel is None:
+            kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+        self.covar_module = kernel
 
     def forward(self, x):
         """Forward computation of GP."""
