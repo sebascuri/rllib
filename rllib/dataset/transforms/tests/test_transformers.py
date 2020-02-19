@@ -43,8 +43,7 @@ class TestMeanFunction(object):
                                             observation.action)
             backend.testing.assert_allclose(transformed_observation.reward,
                                             observation.reward)
-            backend.testing.assert_allclose(transformed_observation.done,
-                                            observation.done)
+            assert transformed_observation.done == observation.done
 
             mean = 2 * observation.state + observation.action
             backend.testing.assert_allclose(transformed_observation.next_state,
@@ -95,8 +94,7 @@ class TestRewardClipper(object):
                                             observation.action)
             backend.testing.assert_allclose(transformed_observation.next_state,
                                             observation.next_state)
-            backend.testing.assert_allclose(transformed_observation.done,
-                                            observation.done)
+            assert transformed_observation.done == observation.done
 
             if 0 <= observation.reward <= 1:
                 assert transformed_observation.reward == observation.reward
@@ -118,9 +116,7 @@ class TestRewardClipper(object):
                                             observation.action)
             backend.testing.assert_allclose(transformed_observation.next_state,
                                             observation.next_state)
-            backend.testing.assert_allclose(transformed_observation.done,
-                                            observation.done)
-
+            assert transformed_observation.done == observation.done
             backend.testing.assert_allclose(inverse_observation.reward,
                                             transformed_observation.reward)
 
@@ -166,7 +162,7 @@ class TestActionNormalize(object):
         backend.testing.assert_allclose(transformed.state, observation.state)
         backend.testing.assert_allclose(transformed.reward, observation.reward)
         backend.testing.assert_allclose(transformed.next_state, observation.next_state)
-        backend.testing.assert_allclose(transformed.done, observation.done)
+        assert transformed.done == observation.done
 
     def test_inverse(self, trajectory, preserve_origin):
 
@@ -223,7 +219,7 @@ class TestStateNormalize(object):
 
         backend.testing.assert_allclose(transformed.action, observation.action)
         backend.testing.assert_allclose(transformed.reward, observation.reward)
-        backend.testing.assert_allclose(transformed.done, observation.done)
+        assert transformed.done == observation.done
 
     def test_inverse(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
