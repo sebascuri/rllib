@@ -2,11 +2,15 @@
 import numpy as np
 import torch
 from typing import NamedTuple, Union
+from torch.distributions import MultivariateNormal, Categorical
+from gpytorch.distributions import Delta
 
 State = Union[int, float, np.ndarray, torch.Tensor]
 Action = Union[int, float, np.ndarray, torch.Tensor]
 Reward = Union[int, float, np.ndarray, torch.Tensor]
 Done = Union[bool, np.ndarray, torch.Tensor]
+Gaussian = Union[MultivariateNormal, Delta]
+Distribution = Union[MultivariateNormal, Delta, Categorical]
 
 
 class Observation(NamedTuple):

@@ -1,11 +1,8 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
-from torch.distributions import Categorical, MultivariateNormal
-from gpytorch.distributions import Delta
-from typing import Iterator, Union
-from rllib.dataset import Observation
+from typing import Iterator
+from rllib.dataset.datatypes import Observation, Distribution
 
-Distribution = Union[Categorical, MultivariateNormal, Delta]
 
 class AbstractPolicy(ABC):
     dim_state: int

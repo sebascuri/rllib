@@ -4,7 +4,7 @@
 from .abstract_policy import AbstractPolicy
 from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN, FelixNet
 from rllib.util.neural_networks import update_parameters, one_hot_encode
-from rllib.util.utilities import Delta
+from gpytorch.distributions import Delta
 
 __all__ = ['NNPolicy', 'FelixPolicy']
 

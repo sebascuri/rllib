@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from rllib.util import ParameterDecay
-from typing import Union
-
-State = Union[np.ndarray, int]
+from rllib.dataset.datatypes import State
 
 class AbstractExplorationStrategy(ABC):
     param: ParameterDecay
@@ -14,4 +12,4 @@ class AbstractExplorationStrategy(ABC):
                  max_value: float = None, dimension: int = 1) -> None: ...
 
     @abstractmethod
-    def __call__(self, state: State=None) -> np.ndarray: ...
+    def __call__(self, state: State = None) -> np.ndarray: ...

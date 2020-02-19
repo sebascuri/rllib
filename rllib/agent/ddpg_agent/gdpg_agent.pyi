@@ -1,4 +1,4 @@
-from ..abstract_agent import State, Action, Reward, Done
+from rllib.dataset.datatypes import State, Action, Reward, Done
 from .dpg_agent import DPGAgent
 from typing import Tuple
 from torch import Tensor

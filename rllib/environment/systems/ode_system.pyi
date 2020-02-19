@@ -1,4 +1,5 @@
-from .abstract_system import AbstractSystem, State, Action
+from .abstract_system import AbstractSystem
+from rllib.dataset.datatypes import Action, State
 from typing import Callable
 from scipy.integrate import OdeSolver
 

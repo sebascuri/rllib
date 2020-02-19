@@ -1,7 +1,6 @@
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
-from rllib.policy.abstract_policy import Distribution
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation, Distribution
 from rllib.util.gaussian_processes import ExactGPModel
 from torch import Tensor
 from typing import Iterator

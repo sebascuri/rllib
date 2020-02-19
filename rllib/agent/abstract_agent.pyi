@@ -1,14 +1,9 @@
 from abc import ABC
-from typing import Union, List
+from typing import List
 import numpy as np
-from torch import Tensor
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation, State, Action
 from rllib.policy import AbstractPolicy
 
-State = Union[np.ndarray, int, Tensor]
-Action = Union[np.ndarray, int, Tensor]
-Reward = Union[np.ndarray, float, Tensor]
-Done = Union[np.ndarray, bool, Tensor]
 
 class AbstractAgent(ABC):
     policy: AbstractPolicy

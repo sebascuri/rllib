@@ -1,5 +1,6 @@
-from .abstract_agent import AbstractAgent, State, Action
-from rllib.dataset import TrajectoryDataset, Observation
+from .abstract_agent import AbstractAgent
+from rllib.dataset import TrajectoryDataset
+from rllib.dataset.datatypes import Observation, State, Action
 from rllib.policy import RandomPolicy
 from typing import List
 

@@ -2,12 +2,9 @@
 
 import torch.nn as nn
 from torch import Tensor
-from typing import List, Union
-from torch.distributions import MultivariateNormal, Categorical
-from rllib.util.utilities import Delta
-
-Gaussian = Union[MultivariateNormal, Delta]
-Distribution = Union[MultivariateNormal, Delta, Categorical]
+from typing import List
+from torch.distributions import Categorical
+from rllib.dataset.datatypes import Gaussian
 
 
 class DeterministicNN(nn.Module):

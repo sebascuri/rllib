@@ -1,7 +1,7 @@
-from ..abstract_agent import AbstractAgent, State, Action, Reward, Done
+from ..abstract_agent import AbstractAgent
 from rllib.value_function import AbstractValueFunction
 from rllib.policy import AbstractPolicy
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
 from abc import abstractmethod
 from torch import Tensor
 from torch.nn.modules.loss import _Loss

@@ -1,8 +1,9 @@
-from ..abstract_agent import AbstractAgent, State, Action, Reward, Done
+from ..abstract_agent import AbstractAgent
 from abc import abstractmethod
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
-from rllib.dataset import ExperienceReplay, Observation
+from rllib.dataset import ExperienceReplay
+from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer

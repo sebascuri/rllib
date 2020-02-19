@@ -3,10 +3,8 @@ from abc import abstractmethod
 from ..abstract_policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
 from rllib.util import ParameterDecay
-from torch.distributions import Categorical, MultivariateNormal
-from typing import Iterator, Union
-
-Distribution = Union[Categorical, MultivariateNormal]
+from rllib.dataset.datatypes import Distribution
+from typing import Iterator
 
 
 class AbstractQFunctionPolicy(AbstractPolicy):

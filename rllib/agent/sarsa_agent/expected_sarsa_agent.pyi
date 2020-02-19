@@ -1,5 +1,5 @@
 from .abstract_sarsa_agent import AbstractSARSAAgent
-from ..abstract_agent import State, Action, Reward, Done
+from rllib.dataset.datatypes import State, Action, Reward, Done
 from torch import Tensor
 from typing import Tuple
 

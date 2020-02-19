@@ -1,4 +1,5 @@
-from .abstract_policy import AbstractPolicy, Distribution
+from .abstract_policy import AbstractPolicy
+from rllib.dataset.datatypes import Distribution
 from typing import List, Iterator
 from torch import Tensor
 from rllib.util.neural_networks import ProbabilisticNN

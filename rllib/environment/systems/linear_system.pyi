@@ -1,5 +1,7 @@
 import numpy as np
-from .abstract_system import AbstractSystem, State, Action
+from .abstract_system import AbstractSystem
+from rllib.dataset.datatypes import Action, State
+
 
 
 class LinearSystem(AbstractSystem):

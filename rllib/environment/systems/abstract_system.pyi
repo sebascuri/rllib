@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 from gym import spaces
 import numpy as np
-from typing import Union
+from rllib.dataset.datatypes import State, Action
 
-State = Union[np.ndarray, int]
-Action = Union[np.ndarray, int]
 
 class AbstractSystem(ABC):
     dim_state: int

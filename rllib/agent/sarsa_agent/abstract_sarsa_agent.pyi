@@ -1,8 +1,8 @@
-from ..abstract_agent import AbstractAgent, State, Action, Reward, Done
+from ..abstract_agent import AbstractAgent
+from rllib.dataset.datatypes import SARSAObservation, Observation, State, Action, Reward, Done
 from abc import abstractmethod
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
-from rllib.dataset import Observation, SARSAObservation
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer

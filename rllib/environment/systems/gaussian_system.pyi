@@ -1,5 +1,6 @@
-from .abstract_system import AbstractSystem, Action, State
+from .abstract_system import AbstractSystem
 import numpy as np
+from rllib.dataset.datatypes import Action, State
 
 
 class GaussianSystem(AbstractSystem):
