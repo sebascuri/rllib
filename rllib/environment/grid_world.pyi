@@ -1,7 +1,8 @@
-from .abstract_environment import State, Action
 from .mdp import MDP
 from typing import List, Tuple
 import numpy as np
+from rllib.dataset.datatypes import State, Action
+
 
 
 class EasyGridWorld(MDP):

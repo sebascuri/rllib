@@ -1,7 +1,8 @@
-from .abstract_environment import AbstractEnvironment, Action, State
+from .abstract_environment import AbstractEnvironment
 import numpy as np
 from torch import Tensor
 from typing import List, Union, Callable, Tuple
+from rllib.dataset.datatypes import State, Action
 
 Array = Union[np.ndarray, Tensor]
 

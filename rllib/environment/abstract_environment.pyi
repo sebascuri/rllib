@@ -1,11 +1,8 @@
 from abc import ABC, abstractmethod
 from gym.spaces import Space
-from typing import Tuple, Union
+from typing import Tuple
 import numpy as np
-from torch import Tensor
-
-State = Union[np.ndarray, int, Tensor]
-Action = Union[np.ndarray, int, Tensor]
+from rllib.dataset.datatypes import State, Action, Reward, Done
 
 
 class AbstractEnvironment(ABC):
@@ -19,7 +16,7 @@ class AbstractEnvironment(ABC):
     observation_space: Space
 
     @abstractmethod
-    def step(self, action: Action) -> Tuple[State, float, bool, dict]: ...
+    def step(self, action: Action) -> Tuple[State, Reward, Done, dict]: ...
 
     @abstractmethod
     def reset(self) -> State: ...
