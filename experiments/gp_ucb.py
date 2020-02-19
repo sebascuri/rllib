@@ -5,8 +5,8 @@ import torch
 import matplotlib.pyplot as plt
 from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
-from rllib.dataset import Observation
 from rllib.util.gaussian_processes import ExactGPModel, plot_gp
+from rllib.util import rollout_agent
 
 
 def predict(x, model, noise=True):
@@ -18,7 +18,7 @@ def predict(x, model, noise=True):
 
         pred = model(x).mean
         if noise:
-            pred = likelihood(pred).sample()
+            pred = model.likelihood(pred).sample()
         return pred.numpy()
 
 
@@ -82,28 +82,15 @@ if __name__ == '__main__':
     x0 = x[x > 0.2][[0]]
     y0 = torch.tensor(objective(x0)).float()
     model = ExactGPModel(x0, y0, likelihood)
+    model.covar_module.base_kernel.lengthscale = 1
     agent = GPUCBAgent(model, x, beta=2.0)
     environment = BanditEnvironment(objective,
                                     x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
     state = environment.reset()
 
-    agent.start_episode()
     fig, axes = plt.subplots(5, 2)
-
     for i in range(STEPS):
         plot(agent, objective, noise=False, axis=axes[i % 5][i // 5])
-
-        action = agent.act(state)
-        next_state, reward, done, _ = environment.step(action.item())
-        observation = Observation(state=state,
-                                  action=action,
-                                  reward=reward,
-                                  next_state=next_state,
-                                  done=done)
-        agent.observe(observation)
-        state = next_state
-
-    agent.end_episode()
-    agent.end_interaction()
+        rollout_agent(environment, agent, num_episodes=1, max_steps=1)
 
     plt.show()
