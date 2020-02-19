@@ -9,11 +9,11 @@ setup(
     packages=find_packages(exclude=['docs']),
     install_requires=['numpy>=1.0,<2',
                       'scipy>=1.3.0,<1.4.0',
-                      'torch>=1.1,<1.2',
+                      'torch==1.4.0',
                       'gym>=0.13,<0.15',
                       'tqdm>=4.0.0,<5.0',
                       'matplotlib>=3.1.0',
-                      'gpytorch==0.3.4',
+                      'gpytorch==1.0.1',
                       ],
     extras_require={
         'test': [
