@@ -1,44 +1,24 @@
 """Implementation of a Variational GP with gpytorch."""
 
-
 import gpytorch
-from gpytorch.models import AbstractVariationalGP
-from gpytorch.variational import CholeskyVariationalDistribution, \
-    WhitenedVariationalStrategy
 
 
-__all__ = ['VariationalGP']
+class ApproximateGPModel(gpytorch.models.ApproximateGP):
+    """Approximate GP model."""
 
-
-class VariationalGP(AbstractVariationalGP):
-    """Implementation of a Variational GP with gpytorch."""
-
-    def __init__(self, inducing_points):
-        variational_distribution = CholeskyVariationalDistribution(
-            inducing_points.size(0))
-        variational_strategy = WhitenedVariationalStrategy(
-            self,
-            inducing_points, variational_distribution, learn_inducing_locations=True)
-        super(VariationalGP, self).__init__(variational_strategy)
+    def __init__(self, inducing_points, learn_loc=True):
+        variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(
+            inducing_points.size(-1))
+        variational_strategy = gpytorch.variational.VariationalStrategy(
+            self, inducing_points, variational_distribution,
+            learn_inducing_locations=learn_loc
+        )
+        super().__init__(variational_strategy)
         self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(
-            gpytorch.kernels.LinearKernel())
+        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
 
     def forward(self, x):
-        """Execute forward computation of the Gaussian Process.
-
-        Parameters
-        ----------
-        x: torch.Tensor
-            Tensor of size [batch_size x in_dim] where the GP is evaluated.
-
-        Returns
-        -------
-        out: gpytorch.distributions.MultivariateNormal
-            Multivariate distribution with mean of size [batch_size x out_dim] and
-            covariance of size [batch_size x batch_size x out_dim].
-
-        """
+        """Forward computation of GP."""
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)

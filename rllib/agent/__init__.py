@@ -5,3 +5,4 @@ from .sarsa_agent import *
 from .ddpg_agent import *
 from .reinforce_agent import REINFORCE
 from .actor_critic_agent import *
+from .gp_ucb_agent import GPUCBAgent
