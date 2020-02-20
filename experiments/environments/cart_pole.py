@@ -45,7 +45,7 @@ policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 
 optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
-criterion = func.mse_loss
+criterion = torch.nn.MSELoss
 memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 # memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 

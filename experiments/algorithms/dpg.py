@@ -33,32 +33,8 @@ RENDER = True
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
-system = InvertedPendulum(mass=0.1, length=0.5, friction=0.)
-# system = system.linearize()
-
-
-def initial_state():
-    return np.array([np.deg2rad(20), 0.])
-
-
-def termination(state):
-    return bool(np.abs(state[..., 0]) >= np.deg2rad(45))
-
-
-def reward_function(state, action):
-    theta = np.rad2deg(state[..., 0])
-    reward = np.exp(- 0.5 / (10 ** 2) * theta ** 2)
-    print(reward, theta)
-    return reward
-    # return -(np.rad2deg(state[..., 0]) ** 2)
-
-
-fig, axes = plt.subplots(2, 1, sharex=False)
-# environment = SystemEnvironment(system, initial_state, reward=reward_function,
-#                                 termination=termination)
 environment = GymEnvironment(ENVIRONMENT, SEED)
-
-policy = FelixPolicy(environment.dim_state, environment.dim_action, temperature=0.)
+policy = FelixPolicy(environment.dim_state, environment.dim_action, deterministic=True)
 noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
@@ -70,32 +46,20 @@ actor_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE,
                                    weight_decay=WEIGHT_DECAY)
 critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE,
                                     weight_decay=WEIGHT_DECAY)
-criterion = func.mse_loss
+criterion = torch.nn.MSELoss
 
 agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
                   actor_optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                  gamma=GAMMA,
-                  episode_length=MAX_STEPS,
-                  random_steps=100)
-# rollout_policy(environment, agent.policy, max_steps=100, render=True)
+                  gamma=GAMMA)
 
-rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS,
-              render=RENDER)
-
-# rollout
-axes[0].plot(agent.episodes_cumulative_rewards, label='DDPG')
-tds = agent.logs['episode_td_errors']
-axes[1].plot(tds, label='DDPG')
-
-with open('../runs/{}_{}.pkl'.format(ENVIRONMENT, 'DDPG'), 'wb') as file:
-    pickle.dump(agent, file)
-
-axes[1].set_xlabel('Episode')
-axes[0].set_ylabel('Rewards')
-axes[0].legend(loc='best')
-axes[1].set_xlabel('Episode')
-axes[1].set_ylabel('Mean Absolute TD-Error')
+rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
+plt.plot(agent.episodes_cumulative_rewards)
+plt.xlabel('Episode')
+plt.ylabel('Rewards')
+plt.title('{} in {}'.format(agent.name, environment.name))
 plt.show()
+
+rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
 
 # rollout_policy(environment, agent.policy, max_steps=100, render=True)

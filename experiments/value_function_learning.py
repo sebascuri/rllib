@@ -1,51 +1,32 @@
-import matplotlib.pyplot as plt
-import torch
-import torch.optim
-import torch.nn.functional
-
-import numpy as np
-from rllib.environment import GymEnvironment
-from rllib.agent import TDAgent, MCAgent
+from rllib.environment.systems import InvertedPendulum
+from rllib.environment import SystemEnvironment
+from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
-from rllib.util import rollout_agent
-import pickle
+import torch.nn as nn
+import torch.optim as optim
+from rllib.model import LinearModel
+import numpy as np
+from rllib.agent import DDPGAgent
 
-ENVIRONMENT = 'CartPole-v0'
-AGENT = 'DDQN-Agent'
-NUM_EPISODES = 200
-LAYERS = [32]
-GAMMA = 0.99
-LEARNING_RATE = 0.0001
-SEED = 0
 
-torch.manual_seed(SEED)
-np.random.seed(SEED)
-environment = GymEnvironment(ENVIRONMENT, SEED)
+system = InvertedPendulum(mass=0.1, length=0.5, friction=0.)
+system = system.linearize()
+q = np.eye(2)
+r = 0.01 * np.eye(1)
+gamma = 0.99
 
-with open('runs/{}_{}.pkl'.format(ENVIRONMENT, AGENT), 'rb') as file:
-    training_agent = pickle.load(file)
-policy = training_agent.policy
-value_function = NNValueFunction(environment.dim_observation,
-                                 num_states=environment.num_observations,
-                                 layers=LAYERS)
 
-criterion = torch.nn.functional.mse_loss
-optimizer = torch.optim.Adam
-hyper_params = {
-    'gamma': GAMMA,
-    'learning_rate': LEARNING_RATE,
-}
-for key, Agent in {'MC': MCAgent,
-                   'TD': TDAgent
-                   }.items():
-    agent = Agent(policy, value_function, criterion, optimizer, hyper_params)
-    rollout_agent(environment, agent, num_episodes=NUM_EPISODES)
+environment = SystemEnvironment(system, initial_state=None, termination=None, reward=None)
 
-    states = torch.zeros(100, 4)
-    states[:, 2] = torch.linspace(-1, 1, 100)
+model = LinearModel(system.a, system.b)
+policy = NNPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
+                  layers=[], biased_head=False, deterministic=True)  # Linear policy.
+value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64],
+                                 biased_head=False)
 
-    plt.plot(states[:, 2].numpy(), value_function(states).detach().numpy(),
-             label=key)
+loss_function = nn.MSELoss()
+value_optimizer = optim.Adam(value_function.parameters, lr=5e-4)
+policy_optimizer = optim.Adam(policy.parameters, lr=5e-4)
 
-plt.legend(loc='best')
-plt.show()
+agent = DDPGAgent(value_function, policy, None, loss_function, value_optimizer,
+                  policy_optimizer, None)

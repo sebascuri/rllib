@@ -49,7 +49,7 @@ actor_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE,
                                    weight_decay=WEIGHT_DECAY)
 critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE,
                                     weight_decay=WEIGHT_DECAY)
-criterion = func.mse_loss
+criterion = torch.nn.MSELoss
 
 agent = TD3Agent(q_function, policy, noise, criterion, critic_optimizer,
                  actor_optimizer, memory,
