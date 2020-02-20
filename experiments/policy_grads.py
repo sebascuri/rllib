@@ -8,6 +8,7 @@ from rllib.value_function import NNValueFunction, NNQFunction
 import torch
 import numpy as np
 import torch.nn.functional as func
+import torch.nn.modules.loss as loss
 
 ENVIRONMENT = 'CartPole-v0'
 MAX_STEPS = 200
@@ -42,16 +43,16 @@ q_function = NNQFunction(environment.dim_state, environment.num_actions,
 policy_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE)
 value_optimizer = torch.optim.Adam(value_function.parameters, lr=CRITIC_LEARNING_RATE)
 q_function_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE)
-criterion = func.mse_loss
+criterion = loss.MSELoss
 
-# agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,
-#                   # baseline=value_function, baseline_optimizer=value_optimizer,
-#                   criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,
+                  # baseline=value_function, baseline_optimizer=value_optimizer,
+                  criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
-agent = ACAgent(policy=policy, policy_optimizer=policy_optimizer,
-                  critic=q_function, critic_optimizer=q_function_optimizer,
-                  criterion=criterion, num_rollouts=NUM_ROLLOUTS,
-                  target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+# agent = ACAgent(policy=policy, policy_optimizer=policy_optimizer,
+#                   critic=q_function, critic_optimizer=q_function_optimizer,
+#                   criterion=criterion, num_rollouts=NUM_ROLLOUTS,
+#                   target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
 
 # agent = TDACAgent(policy=policy, policy_optimizer=policy_optimizer,

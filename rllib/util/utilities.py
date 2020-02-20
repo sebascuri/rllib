@@ -1,9 +1,10 @@
 """Utilities for the rllib library."""
 
-import numpy as np
+import scipy.signal
 import torch
+import numpy as np
 
-__all__ = ['mc_value', 'sum_discounted_rewards', 'integrate', 'mellow_max']
+__all__ = ['integrate', 'mellow_max', 'discount_cumsum']
 
 
 def integrate(function, distribution, num_samples=1):
@@ -38,77 +39,6 @@ def integrate(function, distribution, num_samples=1):
     return ans
 
 
-def _mc_value_slow(trajectory, gamma=1.0):
-    """Monte-Carlo estimation of the value given a trajectory.
-
-    Parameters
-    ----------
-    trajectory: sized list of Observations.
-        list of Observations
-    gamma: float, optional (default=1.0)
-        discount factor
-
-    Returns
-    -------
-    estimate: ndarray
-        Monte-Carlo estimate of value_functions for the trajectory.
-    """
-    q_estimate = []
-    for t in range(len(trajectory)):
-        q_t = 0
-        for i, observation in enumerate(trajectory[t:]):
-            q_t = q_t + gamma ** i * observation.reward
-        q_estimate.append(q_t)
-
-    return np.array(q_estimate)
-
-
-def mc_value(trajectory, gamma=1.0):
-    """Monte-Carlo estimation of the value given a trajectory.
-
-    Parameters
-    ----------
-    trajectory: sized list of Observations.
-        list of Observations
-    gamma: float, optional (default=1.0)
-        discount factor
-
-    Returns
-    -------
-    estimate: ndarray
-        Monte-Carlo estimate of value_functions for the trajectory.
-    """
-    value_estimate = [0] * len(trajectory)
-    value_estimate[-1] = trajectory[-1].reward
-
-    for t in reversed(range(len(trajectory) - 1)):
-        value_estimate[t] = trajectory[t].reward + gamma * value_estimate[t + 1]
-
-    return np.array(value_estimate)
-
-
-def sum_discounted_rewards(trajectory, gamma):
-    """Sum of discounted rewards seen in a trajectory.
-
-    Parameters
-    ----------
-    trajectory: sized list of Observations.
-        list of Observations
-    gamma: float
-        discount factor
-
-    Returns
-    -------
-    sum: float
-    """
-    rewards = []
-    for observation in trajectory:
-        rewards.append(observation.reward)
-    rewards = np.array(rewards)
-    i = np.arange(len(rewards))
-    return np.sum(rewards * np.power(gamma, i))
-
-
 def mellow_max(values, omega=1.):
     """Find mellow-max of an array of values.
 
@@ -129,3 +59,34 @@ def mellow_max(values, omega=1.):
     """
     n = torch.tensor(values.shape[-1]).float()
     return (torch.logsumexp(omega * values, dim=-1) - torch.log(n)) / omega
+
+
+def discount_cumsum(rewards, gamma=1.0):
+    """Get cumulative discounted returns.
+
+    Given a vector [r0, r1, r2], return [r0 + gamma r1 + gamma^2 r2, r1 + gamma r2, r2].
+
+    Parameters
+    ----------
+    rewards: array of rewards.
+    gamma: discount factor.
+
+    Returns
+    -------
+    discounted_returns: sum of discounted returns.
+
+    References
+    ----------
+    From rllab.
+    """
+    if type(rewards) is np.ndarray:
+        # The copy is for future transforms to pytorch
+        return scipy.signal.lfilter([1], [1, -float(gamma)], rewards[::-1]
+                                    )[::-1].copy()
+
+    val = torch.zeros_like(rewards)
+    r = 0
+    for i, reward in enumerate(reversed(rewards)):
+        r = reward + gamma * r
+        val[-1 - i] = r
+    return val

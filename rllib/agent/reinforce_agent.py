@@ -5,6 +5,7 @@ import torch
 import copy
 from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util import discount_cumsum
 
 
 class REINFORCE(AbstractAgent):
@@ -94,12 +95,7 @@ class REINFORCE(AbstractAgent):
     def _value_estimate(self, trajectories):
         values = []
         for trajectory in trajectories:
-            val = torch.zeros_like(trajectory.reward)
-            r = 0
-            for i, reward in enumerate(reversed(trajectory.reward)):
-                r = reward + self.gamma * r
-                val[-1-i] = r
-
+            val = discount_cumsum(trajectory.reward, self.gamma)
             values.append((val - val.mean()) / (val.std() + self.eps))
 
         return values
