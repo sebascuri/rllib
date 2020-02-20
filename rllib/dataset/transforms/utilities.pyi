@@ -1,13 +1,11 @@
 """Utilities for the transformers."""
 
-from numpy import ndarray
-from torch import Tensor
+from rllib.dataset.datatypes import Array
 import numpy as np
 import torch.__spec__ as torch_mod
 from typing import Union
 
 
-Array = Union[ndarray, Tensor]
 Module = Union[np, torch_mod]
 
 def get_backend(array: Array) -> Module: ...

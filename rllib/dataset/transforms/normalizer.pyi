@@ -1,10 +1,5 @@
 from .abstract_transform import AbstractTransform
-from .. import Observation
-from numpy import ndarray
-from torch import Tensor
-from typing import Union
-
-Array = Union[ndarray, Tensor]
+from rllib.dataset.datatypes import Observation, Array
 
 
 class Normalizer(object):

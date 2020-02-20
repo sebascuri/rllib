@@ -1,10 +1,8 @@
 from .abstract_environment import AbstractEnvironment
 import numpy as np
-from torch import Tensor
 from typing import List, Union, Callable, Tuple
-from rllib.dataset.datatypes import State, Action
+from rllib.dataset.datatypes import State, Action, Array
 
-Array = Union[np.ndarray, Tensor]
 
 class MDP(AbstractEnvironment):
     _state: Union[State, Callable[..., State]]
