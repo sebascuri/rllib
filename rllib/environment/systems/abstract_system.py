@@ -1,11 +1,11 @@
 """Interface for physical systems."""
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from gym import spaces
 import numpy as np
 
 
-class AbstractSystem(ABC):
+class AbstractSystem(object, metaclass=ABCMeta):
     """Interface for physical systems with continuous state-action spaces.
 
     Parameters
@@ -77,6 +77,10 @@ class AbstractSystem(ABC):
 
         """
         raise NotImplementedError
+
+    def render(self, mode='human'):
+        """Render system."""
+        pass
 
     @property
     def action_space(self):

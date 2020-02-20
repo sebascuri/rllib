@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
-class ParameterDecay(ABC):
+class ParameterDecay(object, metaclass=ABCMeta):
     start: float
     end: float
     decay: float

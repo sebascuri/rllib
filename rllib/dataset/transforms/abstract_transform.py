@@ -1,10 +1,10 @@
 """Interface for Transformers of a dataset."""
 
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class AbstractTransform(ABC):
+class AbstractTransform(object, metaclass=ABCMeta):
     """Abstract transform to apply on a dataset.
 
     Methods

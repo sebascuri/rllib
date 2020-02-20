@@ -1,11 +1,11 @@
 """Interface for policies."""
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import torch
 from torch.distributions import MultivariateNormal, Categorical
 
 
-class AbstractPolicy(ABC):
+class AbstractPolicy(object, metaclass=ABCMeta):
     """Interface for policies to control an environment.
 
     Parameters
@@ -69,7 +69,6 @@ class AbstractPolicy(ABC):
         raise NotImplementedError
 
     @property
-    @abstractmethod
     def parameters(self):
         """Parameters that describe the policy.
 
@@ -78,12 +77,11 @@ class AbstractPolicy(ABC):
         generator
 
         """
-        raise NotImplementedError
+        return None
 
     @parameters.setter
-    @abstractmethod
     def parameters(self, new_params):
-        raise NotImplementedError
+        pass
 
     def random(self, batch_size=None):
         """Return a uniform random distribution of the output space.

@@ -1,13 +1,11 @@
 """Interface for exploration strategies."""
 
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from rllib.util import ExponentialDecay
 
-__all__ = ['AbstractExplorationStrategy']
 
-
-class AbstractExplorationStrategy(ABC):
+class AbstractExplorationStrategy(object, metaclass=ABCMeta):
     """Interface for policies to control an environment.
 
     Parameters

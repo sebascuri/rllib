@@ -12,12 +12,10 @@ class AbstractValueFunction(ABC):
 
     def __call__(self, state: Tensor, action: Tensor = None) -> Union[List[Tensor], Tensor]: ...
 
-    @property  # type: ignore
-    @abstractmethod
+    @property
     def parameters(self) -> Union[List[Iterator], Iterator]: ...
 
-    @parameters.setter  # type: ignore
-    @abstractmethod
+    @parameters.setter
     def parameters(self, new_params: Union[List[Iterator], Iterator]) -> None: ...
 
     @property

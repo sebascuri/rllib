@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from .. import Observation
 
 
-class AbstractTransform(ABC):
+class AbstractTransform(object, metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(self, observation: Observation) -> Observation: ...

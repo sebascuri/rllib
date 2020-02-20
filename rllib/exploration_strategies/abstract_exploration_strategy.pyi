@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import numpy as np
 from rllib.util import ParameterDecay
 from rllib.dataset.datatypes import State
 
-class AbstractExplorationStrategy(ABC):
+class AbstractExplorationStrategy(object, metaclass=ABCMeta):
     param: ParameterDecay
     max_value: float
     dimension: int

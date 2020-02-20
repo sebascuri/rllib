@@ -7,9 +7,6 @@ import torch
 from torch.distributions import Categorical
 
 
-__all__ = ['MDP']
-
-
 class MDP(AbstractEnvironment):
     """Interface MDP environments.
 

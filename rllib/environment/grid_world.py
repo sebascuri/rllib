@@ -3,8 +3,6 @@
 from .mdp import MDP
 import numpy as np
 
-__all__ = ['EasyGridWorld']
-
 
 class EasyGridWorld(MDP):
     """Easy implementation of a GridWorld from Sutton & Barto Example 3.5."""

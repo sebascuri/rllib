@@ -1,10 +1,10 @@
 """Interface for agents."""
 
-from abc import ABC
+from abc import ABCMeta
 import torch
 
 
-class AbstractAgent(ABC):
+class AbstractAgent(object, metaclass=ABCMeta):
     """Interface for agents that interact with an environment.
 
     Parameters

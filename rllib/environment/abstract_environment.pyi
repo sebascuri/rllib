@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from gym.spaces import Space
 from typing import Tuple
 import numpy as np
 from rllib.dataset.datatypes import State, Action, Reward, Done
 
 
-class AbstractEnvironment(ABC):
+class AbstractEnvironment(object, metaclass=ABCMeta):
     dim_action: int
     dim_state: int
     dim_observation: int
@@ -21,7 +21,7 @@ class AbstractEnvironment(ABC):
     @abstractmethod
     def reset(self) -> State: ...
 
-    def render(self, mode: str = 'human'): ...
+    def render(self, mode: str = 'human') -> None: ...
 
     def close(self) -> None: ...
 

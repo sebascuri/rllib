@@ -5,9 +5,6 @@ from . import Observation
 from .utilities import stack_list_of_tuples
 
 
-__all__ = ['TrajectoryDataset']
-
-
 class TrajectoryDataset(data.Dataset):
     """A dataset has trajectories from different interactions.
 

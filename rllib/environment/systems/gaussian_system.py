@@ -3,8 +3,6 @@
 from .abstract_system import AbstractSystem
 import numpy as np
 
-__all__ = ['GaussianSystem']
-
 
 class GaussianSystem(AbstractSystem):
     """Modify a system with gaussian transition and measurement noise.

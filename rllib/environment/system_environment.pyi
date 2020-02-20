@@ -1,84 +1,32 @@
-"""Wrapper for Custom System Environments."""
-
-
 from .abstract_environment import AbstractEnvironment
-
-
-__all__ = ['SystemEnvironment']
-
+from rllib.dataset.datatypes import State, Action, Reward, Done
+from typing import Tuple, Callable, Union
+from .systems.abstract_system import AbstractSystem
 
 class SystemEnvironment(AbstractEnvironment):
-    """Wrapper for System Environments.
-
-    Parameters
-    ----------
+    reward: Callable[..., Reward]
     system: AbstractSystem
-        underlying system
-    initial_state: callable, optional
-        callable that returns an initial state
-    reward: callable, optional
-        callable that, given state and action returns a rewards
-    termination: callable, optional
-        callable that checks if interaction should terminate.
+    termination: Callable[..., Done]
+    initial_state: Callable[..., State]
+    _time: float
 
-    """
 
-    def __init__(self, system, initial_state=None, reward=None, termination=None):
-        super().__init__(
-            dim_state=system.dim_state,
-            dim_action=system.dim_action,
-            dim_observation=system.dim_observation,
-            action_space=system.action_space,
-            observation_space=system.observation_space
-        )
-        self.reward = reward
-        self.system = system
-        self.termination = termination
-        self._time = 0
+    def __init__(self, system: AbstractSystem,
+                 initial_state: Union[State, Callable[..., State]] = None,
+                 reward: Callable[..., Reward] = None,
+                 termination: Callable[..., Done] = None) -> None: ...
 
-        if initial_state is None:
-            initial_state = self.system.observation_space.sample()
-        if not callable(initial_state):
-            self.initial_state = lambda: initial_state
-        else:
-            self.initial_state = initial_state
+    def step(self, action: Action) -> Tuple[State, Reward, Done, dict]: ...
 
-    def render(self, mode='human'):
-        """See `AbstractEnvironment.render'."""
-        self.system.render(mode=mode)
+    def reset(self) -> State: ...
 
-    def step(self, action):
-        """See `AbstractEnvironment.step'."""
-        self._time += 1
-        state = self.system.state  # this might be noisy.
-        reward = None
-        if self.reward is not None:
-            reward = self.reward(state, action)
-
-        next_state = self.system.step(action)
-        if self.termination is not None:
-            done = self.termination(next_state)
-        else:
-            done = False
-
-        return next_state, reward, done, {}
-
-    def reset(self):
-        """See `AbstractEnvironment.reset'."""
-        initial_state = self.initial_state()
-        self._time = 0
-        return self.system.reset(initial_state)
+    def render(self, mode: str = 'human') -> None: ...
 
     @property
-    def state(self):
-        """See `AbstractEnvironment.state'."""
-        return self.system.state
+    def state(self) -> State: ...
 
     @state.setter
-    def state(self, value):
-        self.system.state = value
+    def state(self, value: State) -> None: ...
 
     @property
-    def time(self):
-        """See `AbstractEnvironment.time'."""
-        return self._time
+    def time(self) -> float: ...

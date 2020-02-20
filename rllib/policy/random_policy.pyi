@@ -10,11 +10,3 @@ class RandomPolicy(AbstractPolicy):
 
 
     def __call__(self, state: Tensor) -> Distribution: ...
-
-    @property
-    def parameters(self) -> Iterator: ...
-
-
-    @parameters.setter
-    def parameters(self, new_params: Iterator) -> None: ...
-

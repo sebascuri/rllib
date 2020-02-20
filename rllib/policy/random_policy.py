@@ -1,11 +1,7 @@
 """Random policy implementation."""
 
-
 from .abstract_policy import AbstractPolicy
 from rllib.util.neural_networks import get_batch_size
-
-
-__all__ = ['RandomPolicy']
 
 
 class RandomPolicy(AbstractPolicy):
@@ -25,13 +21,3 @@ class RandomPolicy(AbstractPolicy):
             return self.random(batch_size)
         else:
             return self.random()
-
-    @property
-    def parameters(self):
-        """See `AbstractPolicy.parameters'."""
-        return None
-
-    @parameters.setter
-    def parameters(self, new_params):
-        """See `AbstractPolicy.parameters.setter'."""
-        pass

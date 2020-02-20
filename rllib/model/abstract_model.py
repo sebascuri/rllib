@@ -1,9 +1,9 @@
 """Interface for dynamical models."""
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class AbstractModel(ABC):
+class AbstractModel(object, metaclass=ABCMeta):
     """Interface for Models of an Environment.
 
     A Model is an approximation of the environment.
@@ -89,6 +89,15 @@ class AbstractModel(ABC):
     def initial_state(self):
         """Get initial state distribution."""
         raise NotImplementedError
+
+    @property
+    def parameters(self):
+        """Get model parameters."""
+        return None
+
+    @parameters.setter
+    def parameters(self, new_value):
+        pass
 
     @property
     def discrete_state(self):

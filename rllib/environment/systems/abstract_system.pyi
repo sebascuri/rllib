@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from gym import spaces
 import numpy as np
 from rllib.dataset.datatypes import State, Action
 
 
-class AbstractSystem(ABC):
+class AbstractSystem(object, metaclass=ABCMeta):
     dim_state: int
     dim_action: int
     dim_observation: int
@@ -28,6 +28,8 @@ class AbstractSystem(ABC):
 
     @abstractmethod
     def reset(self, state: State) -> State: ...
+
+    def render(self, mode: str = 'human') -> None: ...
 
     @property
     def action_space(self) -> spaces.Space: ...

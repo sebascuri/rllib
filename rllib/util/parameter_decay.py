@@ -1,10 +1,10 @@
 """Implementation of a Parameter decay class."""
 
 import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class ParameterDecay(ABC):
+class ParameterDecay(object, metaclass=ABCMeta):
     """Abstract class that implements the decay of a parameter."""
 
     def __init__(self, start, end=None, decay=None):

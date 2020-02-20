@@ -1,11 +1,11 @@
-from abc import ABC
+from abc import ABCMeta
 from typing import List
 import numpy as np
 from rllib.dataset.datatypes import Observation, State, Action
 from rllib.policy import AbstractPolicy
 
 
-class AbstractAgent(ABC):
+class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
     logs: dict
     gamma: float

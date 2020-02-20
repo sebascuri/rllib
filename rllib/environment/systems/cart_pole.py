@@ -6,9 +6,6 @@ from scipy import signal
 import numpy as np
 
 
-__all__ = ['CartPole']
-
-
 class CartPole(ODESystem):
     """Cart with mounted inverted pendulum.
 

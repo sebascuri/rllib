@@ -1,30 +1,30 @@
 from .abstract_environment import AbstractEnvironment
 import numpy as np
 from typing import List, Union, Callable, Tuple
-from rllib.dataset.datatypes import State, Action, Array
+from rllib.dataset.datatypes import Action, Array
 
 
 class MDP(AbstractEnvironment):
-    _state: Union[State, Callable[..., State]]
+    _state: int
     _time: float
     kernel: Array
     reward: Array
-    terminal_states: List[State]
-    initial_state: Callable[..., State]
+    terminal_states: List[int]
+    initial_state: Callable[..., int]
 
     def __init__(self, transition_kernel: Array, reward: Array,
-                 initial_state: Union[State, Callable[..., State]] = None,
-                 terminal_states: List[State] = None): ...
+                 initial_state: Union[int, Callable[..., int]] = None,
+                 terminal_states: List[int] = None): ...
 
     @property
-    def state(self) -> State: ...
+    def state(self) -> int: ...
 
     @state.setter
-    def state(self, value: State) -> None: ...
+    def state(self, value: int) -> None: ...
 
-    def reset(self) -> State: ...
+    def reset(self) -> int: ...
 
     @property
     def time(self) -> float: ...
 
-    def step(self, action: Action) -> Tuple[State, float, bool, dict]: ...
+    def step(self, action: Action) -> Tuple[int, float, bool, dict]: ...

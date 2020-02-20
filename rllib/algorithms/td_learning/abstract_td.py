@@ -1,11 +1,11 @@
 """Abstract TD Learning file."""
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import torch
 import torch.testing
 
 
-class AbstractTDLearning(ABC):
+class AbstractTDLearning(object, metaclass=ABCMeta):
     """Abstract Base Class for TD Learning algorithm family.
 
     V = theta * phi.

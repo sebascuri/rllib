@@ -8,8 +8,6 @@ from .linear_system import LinearSystem
 import os
 from gym.envs.classic_control import rendering
 
-__all__ = ['InvertedPendulum']
-
 
 class InvertedPendulum(ODESystem):
     """Inverted Pendulum system.

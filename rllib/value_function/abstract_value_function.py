@@ -1,14 +1,14 @@
 """Interface for value and q-functions."""
 
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from rllib.util.utilities import integrate
 
 
 __all__ = ['AbstractValueFunction', 'AbstractQFunction']
 
 
-class AbstractValueFunction(ABC):
+class AbstractValueFunction(object, metaclass=ABCMeta):
     """Interface for Value Functions that describe the policy on an environment.
 
     A Value Function is a function that maps a state to a real value. This value is the
@@ -61,7 +61,6 @@ class AbstractValueFunction(ABC):
         raise NotImplementedError
 
     @property
-    @abstractmethod
     def parameters(self):
         """Parameters that describe the policy.
 
@@ -69,12 +68,11 @@ class AbstractValueFunction(ABC):
         -------
         generator
         """
-        raise NotImplementedError
+        return None
 
     @parameters.setter
-    @abstractmethod
     def parameters(self, new_params):
-        raise NotImplementedError
+        pass
 
     @property
     def discrete_state(self):

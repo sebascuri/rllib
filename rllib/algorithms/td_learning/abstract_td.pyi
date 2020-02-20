@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy
 from rllib.dataset import ExperienceReplay, Observation
@@ -7,7 +7,7 @@ from torch import Tensor
 from typing import Tuple, List
 
 
-class AbstractTDLearning(ABC):
+class AbstractTDLearning(object, metaclass=ABCMeta):
     double_sample: bool = False
     dimension: int
     omega: Tensor

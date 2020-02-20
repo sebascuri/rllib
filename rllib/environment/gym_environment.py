@@ -4,9 +4,6 @@ from .abstract_environment import AbstractEnvironment
 import gym
 
 
-__all__ = ['GymEnvironment']
-
-
 class GymEnvironment(AbstractEnvironment):
     """Wrapper for OpenAI-Gym Environments.
 

@@ -4,8 +4,6 @@ from .abstract_transform import AbstractTransform
 from .. import Observation
 import numpy as np
 
-__all__ = ['RewardClipper']
-
 
 class RewardClipper(AbstractTransform):
     """Implementation of a Reward Clipper.

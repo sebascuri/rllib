@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from torch import Tensor
 from typing import Iterator
 from rllib.dataset.datatypes import Observation, Distribution
 
 
-class AbstractPolicy(ABC):
+class AbstractPolicy(object, metaclass=ABCMeta):
     dim_state: int
     dim_action: int
     num_states: int
@@ -18,12 +18,10 @@ class AbstractPolicy(ABC):
     @abstractmethod
     def __call__(self, state: Tensor) -> Distribution: ...
 
-    @property  # type: ignore
-    @abstractmethod
+    @property
     def parameters(self) -> Iterator: ...
 
-    @parameters.setter  # type: ignore
-    @abstractmethod
+    @parameters.setter
     def parameters(self, new_params: Iterator) -> None: ...
 
     def random(self, batch_size: int = None) -> Distribution: ...

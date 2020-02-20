@@ -1,10 +1,5 @@
 """Wrapper for Custom System Environments."""
-
-
 from .abstract_environment import AbstractEnvironment
-
-
-__all__ = ['SystemEnvironment']
 
 
 class SystemEnvironment(AbstractEnvironment):

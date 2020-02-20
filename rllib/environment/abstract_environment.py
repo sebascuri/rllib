@@ -1,10 +1,10 @@
 """Interface for Environments."""
 
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class AbstractEnvironment(ABC):
+class AbstractEnvironment(object, metaclass=ABCMeta):
     """Interface for Environments.
 
     Parameters

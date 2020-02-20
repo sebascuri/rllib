@@ -5,9 +5,6 @@ import numpy as np
 from .abstract_system import AbstractSystem
 
 
-__all__ = ['LinearSystem']
-
-
 class LinearSystem(AbstractSystem):
     """An environment Discrete Time for Linear Dynamical Systems.
 
