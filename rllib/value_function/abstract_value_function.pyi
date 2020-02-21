@@ -1,22 +1,21 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta
 from rllib.policy import AbstractPolicy
 from torch import Tensor
-from typing import Iterator, Union, List
+import torch.nn as nn
+from torch.nn import Parameter
+from typing import Iterator
 
 
-class AbstractValueFunction(ABC):
+class AbstractValueFunction(nn.Module, metaclass=ABCMeta):
     dim_state: int
     num_states: int
+    tau: float
 
-    def __init__(self, dim_state: int, num_states: int = None) -> None: ...
+    def __init__(self, dim_state: int, num_states: int = None, tau: float = 1.) -> None: ...
 
-    def __call__(self, state: Tensor, action: Tensor = None) -> Union[List[Tensor], Tensor]: ...
+    def forward(self, *args:Tensor, **kwargs) -> Tensor: ...
 
-    @property
-    def parameters(self) -> Union[List[Iterator], Iterator]: ...
-
-    @parameters.setter
-    def parameters(self, new_params: Union[List[Iterator], Iterator]) -> None: ...
+    def update_parameters(self, new_parameters: Iterator[Parameter]) -> None: ...
 
     @property
     def discrete_state(self) -> bool: ...
@@ -27,12 +26,10 @@ class AbstractQFunction(AbstractValueFunction):
     num_actions: int
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None) -> None: ...
-
-    @abstractmethod
-    def __call__(self, state: Tensor, action: Tensor = None) -> Union[List[Tensor], Tensor]: ...
+                 num_states: int = None, num_actions: int = None, tau: float = 1.) -> None: ...
 
     @property
     def discrete_action(self) -> bool: ...
 
-    def value(self, state: Tensor, policy: AbstractPolicy, n_samples: int = 1) -> Union[List[Tensor], Tensor]: ...
+    def value(self, state: Tensor, policy: AbstractPolicy, n_samples: int = 1
+              ) -> Tensor: ...

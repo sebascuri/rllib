@@ -45,13 +45,12 @@ for name, Policy in {
                            tau=TARGET_UPDATE_TAU
                            )
 
-    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
-    criterion = func.mse_loss
+    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
+    criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
     agent = DDQNAgent(q_function, policy, criterion, optimizer, memory,
-                      target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
-                      episode_length=MAX_STEPS)
+                      target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
     plt.plot(agent.episodes_cumulative_rewards, label=name)

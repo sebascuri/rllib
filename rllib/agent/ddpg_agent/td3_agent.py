@@ -39,10 +39,8 @@ class TD3Agent(DDPGAgent):
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
 
         q_function = NNEnsembleQFunction(q_function=q_function, num_heads=2)
-        params = list()
-        for q in q_function.ensemble:
-            params += list(q.parameters)
-        critic_optimizer = type(critic_optimizer)(params, **critic_optimizer.defaults)
+        critic_optimizer = type(critic_optimizer)(q_function.parameters(),
+                                                  **critic_optimizer.defaults)
         super().__init__(q_function, policy, exploration, criterion, critic_optimizer,
                          actor_optimizer, memory, max_action=max_action,
                          target_update_frequency=target_update_frequency,

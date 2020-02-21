@@ -32,7 +32,7 @@ value_function = NNValueFunction(environment.dim_state,
                                  num_states=environment.num_states, layers=LAYERS)
 
 policy_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
-value_optimizer = torch.optim.Adam(value_function.parameters, lr=CRITIC_LEARNING_RATE)
+value_optimizer = torch.optim.Adam(value_function.parameters(), lr=CRITIC_LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
 agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,

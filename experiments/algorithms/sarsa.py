@@ -34,7 +34,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
 policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
-optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
+optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
 agent = DExpectedSARSAAgent(q_function, policy, criterion, optimizer,

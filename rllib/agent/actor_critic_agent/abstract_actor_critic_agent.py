@@ -64,9 +64,9 @@ class AbstractPolicyGradient(AbstractAgent):
             self.policy_target.update_parameters(self.policy.parameters())
 
             if self.critic:
-                self.critic_target.parameters = self.critic.parameters
+                self.critic_target.update_parameters(self.critic.parameters())
             if self.baseline:
-                self.baseline_target.parameters = self.baseline.parameters
+                self.baseline_target.update_parameters(self.baseline.parameters())
 
     def _train(self):
         trajectories = [Observation(*stack_list_of_tuples(t))

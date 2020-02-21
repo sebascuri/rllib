@@ -86,8 +86,8 @@ value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64, 64]
 # policy.policy = torch.jit.trace(policy.policy, torch.empty(3, 2))
 
 loss_function = nn.MSELoss()
-value_optimizer = optim.Adam(value_function.parameters, lr=5e-4)
-policy_optimizer = optim.Adam(policy.parameters, lr=5e-4)
+value_optimizer = optim.Adam(value_function.parameters(), lr=5e-4)
+policy_optimizer = optim.Adam(policy.parameters(), lr=5e-4)
 
 policy_losses = []
 value_losses = []

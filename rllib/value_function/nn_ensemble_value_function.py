@@ -2,6 +2,7 @@
 
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from .nn_value_function import NNValueFunction, NNQFunction
+import torch.nn as nn
 
 
 class NNEnsembleValueFunction(AbstractValueFunction):
@@ -24,20 +25,21 @@ class NNEnsembleValueFunction(AbstractValueFunction):
 
     def __init__(self, value_function=None, dim_state=1, num_states=None, layers=None,
                  tau=1.0, biased_head=True, num_heads=1):
+        assert num_heads > 0
         # Initialize from value-function.
         if value_function is not None:
             dim_state = value_function.dim_state
             num_states = value_function.num_states
-            layers = value_function.value_function.layers
-            tau = value_function.tau
-            biased_head = value_function.value_function.head.bias is not None
 
         super().__init__(dim_state, num_states)
+        if value_function is not None:
+            layers = value_function.nn.layers
+            tau = value_function.tau
+            biased_head = value_function.nn.head.bias is not None
 
-        assert num_heads > 0
-
-        self.ensemble = [NNValueFunction(dim_state, num_states, layers, tau, biased_head
-                                         ) for _ in range(num_heads)]
+        self.ensemble = nn.ModuleList(
+            [NNValueFunction(dim_state, num_states, layers, tau, biased_head
+                             ) for _ in range(num_heads)])
 
         self.dimension = self.ensemble[0].dimension
 
@@ -52,21 +54,6 @@ class NNEnsembleValueFunction(AbstractValueFunction):
     def __call__(self, state, action=None):
         """Get value of the value-function at a given state."""
         return [value_function(state, action) for value_function in self.ensemble]
-
-    @property
-    def parameters(self):
-        """Get iterator of value function parameters."""
-        return [value_function.parameters for value_function in self.ensemble]
-
-    @parameters.setter
-    def parameters(self, new_params):
-        """Set value function parameters."""
-        for value_function, new_param in zip(self.ensemble, new_params):
-            value_function.parameters = new_param
-
-    def embeddings(self, state):
-        """Get embeddings of the value-function at a given state."""
-        return [value_function.embeddings(state) for value_function in self.ensemble]
 
 
 class NNEnsembleQFunction(AbstractQFunction):
@@ -94,23 +81,21 @@ class NNEnsembleQFunction(AbstractQFunction):
                  num_states=None, num_actions=None,
                  layers=None, tau=1.0, biased_head=True, num_heads=1):
 
-        # Initialize from value-function.
+        assert num_heads > 0
+        # Initialize from q-function.
         if q_function is not None:
             dim_state = q_function.dim_state
             num_states = q_function.num_states
-            dim_action = q_function.dim_action
-            num_actions = q_function.num_actions
-            layers = q_function.q_function.layers
+
+        super().__init__(dim_state, num_states)
+        if q_function is not None:
+            layers = q_function.nn.layers
             tau = q_function.tau
-            biased_head = q_function.q_function.head.bias is not None
+            biased_head = q_function.nn.head.bias is not None
 
-        super().__init__(dim_state, dim_action, num_states, num_actions)
-
-        assert num_heads > 0
-
-        self.ensemble = [NNQFunction(
-            dim_state, dim_action, num_states, num_actions, layers, tau, biased_head
-        ) for _ in range(num_heads)]
+        self.ensemble = nn.ModuleList(
+            [NNQFunction(dim_state, dim_action, num_states, num_actions, layers, tau,
+                         biased_head) for _ in range(num_heads)])
 
     def __len__(self):
         """Get size of ensemble."""
@@ -120,20 +105,9 @@ class NNEnsembleQFunction(AbstractQFunction):
         """Get ensemble item."""
         return self.ensemble[item]
 
-    def __call__(self, state, action=None):
+    def forward(self, *args, **kwargs):
         """Get value of the q-function at a given state-action pair."""
-        return [q_function(state, action) for q_function in self.ensemble]
-
-    @property
-    def parameters(self):
-        """Get iterator of q function parameters."""
-        return [q_function.parameters for q_function in self.ensemble]
-
-    @parameters.setter
-    def parameters(self, new_params):
-        """Set q-function parameters."""
-        for q_function, new_param in zip(self.ensemble, new_params):
-            q_function.parameters = new_param
+        return [q_function(*args) for q_function in self.ensemble]
 
     def value(self, state, policy, num_samples=0):
         """See `AbstractQFunction.value'."""

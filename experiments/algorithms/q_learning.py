@@ -40,7 +40,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          tau=TARGET_UPDATE_TAU)
 policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 
-optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
+optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)

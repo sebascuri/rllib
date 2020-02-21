@@ -46,7 +46,7 @@ class AbstractSARSAAgent(AbstractAgent):
             self._train(self._trajectory)
             self._trajectory = list()
         if self.total_steps % self.target_update_frequency == 0:
-            self.q_target.parameters = self.q_function.parameters
+            self.q_target.update_parameters(self.q_function.parameters())
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""

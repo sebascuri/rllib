@@ -41,8 +41,8 @@ q_function = NNQFunction(environment.dim_state, environment.num_actions,
                          num_actions=environment.num_actions, layers=LAYERS)
 
 policy_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
-value_optimizer = torch.optim.Adam(value_function.parameters, lr=CRITIC_LEARNING_RATE)
-q_function_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE)
+value_optimizer = torch.optim.Adam(value_function.parameters(), lr=CRITIC_LEARNING_RATE)
+q_function_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_RATE)
 criterion = loss.MSELoss
 
 agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,

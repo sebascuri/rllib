@@ -54,14 +54,14 @@ def test_ac_agent(environment, agent, num_rollouts, baseline):
     critic = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions, layers=LAYERS)
-    critic_optimizer = torch.optim.Adam(critic.parameters,
+    critic_optimizer = torch.optim.Adam(critic.parameters(),
                                         lr=CRITIC_LEARNING_RATE)
 
     if baseline:
         value_function = NNValueFunction(environment.dim_state,
                                          num_states=environment.num_states,
                                          layers=LAYERS)
-        value_optimizer = torch.optim.Adam(value_function.parameters,
+        value_optimizer = torch.optim.Adam(value_function.parameters(),
                                            lr=CRITIC_LEARNING_RATE)
     else:
         value_function, value_optimizer = None, None
@@ -88,14 +88,14 @@ def test_tdac_agent(environment, num_rollouts, baseline):
 
     critic = NNValueFunction(environment.dim_state,
                              num_states=environment.num_states, layers=LAYERS)
-    critic_optimizer = torch.optim.Adam(critic.parameters,
+    critic_optimizer = torch.optim.Adam(critic.parameters(),
                                         lr=CRITIC_LEARNING_RATE)
 
     if baseline:
         value_function = NNValueFunction(environment.dim_state,
                                          num_states=environment.num_states,
                                          layers=LAYERS)
-        value_optimizer = torch.optim.Adam(value_function.parameters,
+        value_optimizer = torch.optim.Adam(value_function.parameters(),
                                            lr=CRITIC_LEARNING_RATE)
     else:
         value_function, value_optimizer = None, None

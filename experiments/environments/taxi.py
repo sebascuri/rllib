@@ -36,7 +36,7 @@ q_function.q_function.head.weight.data = torch.ones_like(
     q_function.q_function.head.weight)
 
 policy = EpsGreedy(q_function, EPSILON)
-optimizer = torch.optim.SGD(q_function.parameters, lr=LEARNING_RATE,
+optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)

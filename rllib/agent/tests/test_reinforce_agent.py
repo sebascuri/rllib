@@ -50,7 +50,7 @@ def test_REINFORCE(environment, num_rollouts, baseline):
         value_function = NNValueFunction(environment.dim_state,
                                          num_states=environment.num_states,
                                          layers=LAYERS)
-        value_optimizer = torch.optim.Adam(value_function.parameters,
+        value_optimizer = torch.optim.Adam(value_function.parameters(),
                                            lr=CRITIC_LEARNING_RATE)
     else:
         value_function, value_optimizer = None, None

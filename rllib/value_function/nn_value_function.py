@@ -1,12 +1,10 @@
 """Value and Q-Functions parametrized with Neural Networks."""
 
 import torch
+import torch.nn as nn
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.neural_networks import DeterministicNN
-from rllib.util.neural_networks import update_parameters, one_hot_encode
-
-
-__all__ = ['NNValueFunction', 'NNQFunction']
+from rllib.util.neural_networks import one_hot_encode
 
 
 class NNValueFunction(AbstractValueFunction):
@@ -29,34 +27,22 @@ class NNValueFunction(AbstractValueFunction):
 
     def __init__(self, dim_state, num_states=None, layers=None, tau=1.0,
                  biased_head=True):
-        super().__init__(dim_state, num_states)
+        super().__init__(dim_state, num_states, tau=tau)
 
         if self.discrete_state:
             num_inputs = self.num_states
         else:
             num_inputs = self.dim_state
 
-        self.value_function = DeterministicNN(num_inputs, 1, layers,
-                                              biased_head=biased_head)
-        self.tau = tau
+        self.nn = DeterministicNN(num_inputs, 1, layers, biased_head=biased_head)
+        self.dimension = self.nn.embedding_dim
 
-        self.dimension = self.value_function.embedding_dim
-
-    def __call__(self, state, action=None):
+    def forward(self, *args, **kwargs):
         """Get value of the value-function at a given state."""
+        state = args[0]
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
-        return self.value_function(state).squeeze(-1)
-
-    @property
-    def parameters(self):
-        """Get iterator of value function parameters."""
-        return self.value_function.parameters()
-
-    @parameters.setter
-    def parameters(self, new_params):
-        """Set value function parameters."""
-        update_parameters(self.value_function.parameters(), new_params, self.tau)
+        return self.nn(state).squeeze(-1)
 
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
@@ -88,7 +74,7 @@ class NNQFunction(AbstractQFunction):
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
                  layers=None, tau=1.0, biased_head=True):
-        super().__init__(dim_state, dim_action, num_states, num_actions)
+        super().__init__(dim_state, dim_action, num_states, num_actions, tau)
 
         if not self.discrete_state and not self.discrete_action:
             num_inputs = self.dim_state + self.dim_action
@@ -102,11 +88,10 @@ class NNQFunction(AbstractQFunction):
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
-        self.q_function = DeterministicNN(num_inputs, num_outputs, layers,
-                                          biased_head=biased_head)
-        self.tau = tau
+        self.nn = DeterministicNN(num_inputs, num_outputs, layers,
+                                  biased_head=biased_head)
 
-    def __call__(self, state, action=None):
+    def forward(self, *args, **kwargs):
         """Get value of the value-function at a given state.
 
         Parameters
@@ -119,13 +104,20 @@ class NNQFunction(AbstractQFunction):
         value: torch.Tensor
 
         """
+        state = args[0]
+
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
+
+        if len(args) > 1:
+            action = args[1]
+        else:
+            action = None
 
         if action is None:
             if not self.discrete_action:
                 raise NotImplementedError
-            action_value = self.q_function(state)
+            action_value = self.nn(state)
             return action_value
         elif action.dim() == 0:
             action.unsqueeze(0)
@@ -135,16 +127,64 @@ class NNQFunction(AbstractQFunction):
 
         if not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
-            return self.q_function(state_action).squeeze(-1)
+            return self.nn(state_action).squeeze(-1)
         else:
-            return self.q_function(state).gather(-1, action).squeeze(-1)
+            return self.nn(state).gather(-1, action).squeeze(-1)
+
+
+class TabularValueFunction(NNValueFunction):
+    """Implement tabular value function."""
+
+    def __init__(self, num_states, tau=1.0, biased_head=False):
+        super().__init__(dim_state=1, num_states=num_states, tau=tau,
+                         biased_head=biased_head)
+        nn.init.zeros_(self.nn.head.weight)
 
     @property
-    def parameters(self):
-        """Get iterator of q-function parameters."""
-        return self.q_function.parameters()
+    def table(self):
+        """Get table representation of value function."""
+        return self.nn.head.weight
 
-    @parameters.setter
-    def parameters(self, new_params):
-        """Set q-function parameters."""
-        update_parameters(self.q_function.parameters(), new_params, self.tau)
+    def set_value(self, state, new_value):
+        """Set value to value function at a given state.
+
+        Parameters
+        ----------
+        state: int
+            State number.
+        new_value: float
+            value of state.
+
+        """
+        self.nn.head.weight[0, state] = new_value
+
+
+class TabularQFunction(NNQFunction):
+    """Implement tabular value function."""
+
+    def __init__(self, num_states, num_actions, tau=1.0, biased_head=False):
+        super().__init__(dim_state=1, dim_action=1,
+                         num_states=num_states, num_actions=num_actions,
+                         tau=tau, biased_head=biased_head)
+
+        nn.init.zeros_(self.nn.head.weight)
+
+    @property
+    def table(self):
+        """Get table representation of Q-function."""
+        return self.nn.head.weight
+
+    def set_value(self, state, action, new_value):
+        """Set value to q-function at a given state-action pair.
+
+        Parameters
+        ----------
+        state: int
+            State number.
+        action: int
+            Action number.
+        new_value: float
+            value of state.
+
+        """
+        self.nn.head.weight[action, state] = new_value

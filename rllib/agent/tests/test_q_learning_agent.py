@@ -49,7 +49,7 @@ def test_nnq_interaction(environment, agent):
                              )
     policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 
-    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
@@ -72,7 +72,7 @@ def test_policies(environment, policy):
 
     policy = policy(q_function, 0.1)
 
-    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
@@ -90,7 +90,7 @@ def test_tabular_interaction(agent, policy):
     q_function = TabularQFunction(num_states=environment.num_states,
                                   num_actions=environment.num_actions)
     policy = policy(q_function, 0.1)
-    optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 

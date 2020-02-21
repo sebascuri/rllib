@@ -64,8 +64,8 @@ class TestNNValueFunction(object):
 
     def test_parameters(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
-        old_parameter = self.value_function.parameters
-        self.value_function.parameters = old_parameter
+        old_parameter = self.value_function.parameters()
+        self.value_function.update_parameters(old_parameter)
 
 
 class TestNNQFunction(object):
@@ -126,8 +126,8 @@ class TestNNQFunction(object):
     def test_parameters(self, discrete_state, discrete_action, dim_state, dim_action):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
-            old_parameter = self.q_function.parameters
-            self.q_function.parameters = old_parameter
+            old_parameter = self.q_function.parameters()
+            self.q_function.update_parameters(old_parameter)
 
     def test_partial_q_function(self, discrete_state, discrete_action, dim_state, dim_action, batch_size):
         if not (discrete_state and not discrete_action):
