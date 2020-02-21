@@ -5,7 +5,9 @@ import torch.nn as nn
 
 
 __all__ = ['update_parameters', 'zero_bias', 'inverse_softplus', 'one_hot_encode',
-           'get_batch_size', 'random_tensor']
+           'get_batch_size', 'random_tensor', 'repeat_along_dimension',
+           'torch_quadratic', 'freeze_parameters', 'unfreeze_parameters',
+           'disable_gradient']
 
 
 def update_parameters(target_params, new_params, tau=1.0):
@@ -44,6 +46,68 @@ def zero_bias(named_params):
     for name, param in named_params:
         if name.endswith('bias'):
             nn.init.zeros_(param)
+
+
+def repeat_along_dimension(array, number, dim=0):
+    """Return a view into the array with a new, repeated dimension.
+
+    Parameters
+    ----------
+    array : torch.Tensor
+    number : int
+        The number of repeats.
+    dim : int
+        The dimension along which to repeat.
+
+    Returns
+    -------
+    array : torch.Tensor
+        A view into the input array. It has an additional dimension added at `dim` and
+        the this new dimension is repeated `number` times.
+
+    >>> import torch
+    >>> array = torch.tensor([[1., 2.], [3., 4.]])
+
+    >>> repeat_along_dimension(array, number=3, dim=0)
+    tensor([[[1., 2.],
+             [3., 4.]],
+    <BLANKLINE>
+            [[1., 2.],
+             [3., 4.]],
+    <BLANKLINE>
+            [[1., 2.],
+             [3., 4.]]])
+
+    >>> repeat_along_dimension(array, number=3, dim=1)
+    tensor([[[1., 2.],
+             [1., 2.],
+             [1., 2.]],
+    <BLANKLINE>
+            [[3., 4.],
+             [3., 4.],
+             [3., 4.]]])
+    """
+    expanded_array = array.unsqueeze(dim)
+    shape = [-1] * expanded_array.dim()
+    shape[dim] = number
+    return expanded_array.expand(*shape)
+
+
+def torch_quadratic(array, matrix):
+    """Compute the quadratic form in pytorch.
+
+    Parameters
+    ----------
+    array : torch.Tensor
+    matrix : torch.Tensor
+
+    Returns
+    -------
+    ndarray
+        The quadratic form evaluated for each x.
+    """
+    squared_values = array * (array @ matrix)
+    return torch.sum(squared_values, dim=-1, keepdim=True)
 
 
 def inverse_softplus(x):
@@ -149,3 +213,52 @@ def random_tensor(discrete, dim, batch_size=None):
             return torch.randn(batch_size, dim)
         else:
             return torch.randn(dim)
+
+
+def freeze_parameters(module):
+    """Freeze all module parameters.
+
+    Can be used to exclude module parameters from the graph.
+
+    Parameters
+    ----------
+    module : torch.nn.Module
+    """
+    for param in module.parameters():
+        param.requires_grad = False
+
+
+def unfreeze_parameters(module):
+    """Unfreeze all module parameters.
+
+    Can be used to include excluded module parameters in the graph.
+
+    Parameters
+    ----------
+    module : torch.nn.Module
+    """
+    for param in module.parameters():
+        param.requires_grad = True
+
+
+class disable_gradient(object):
+    """Context manager to disable gradients temporarily.
+
+    Parameters
+    ----------
+    modules : sequence
+        List of torch.nn.Module.
+    """
+
+    def __init__(self, *modules):
+        self.modules = modules
+
+    def __enter__(self):
+        """Freeze the parameters."""
+        for module in self.modules:
+            freeze_parameters(module)
+
+    def __exit__(self, *args):
+        """Unfreeze the parameters."""
+        for module in self.modules:
+            unfreeze_parameters(module)
