@@ -1,7 +1,7 @@
 from rllib.agent import REINFORCE
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
-from rllib.policy import NNPolicy
+from rllib.policy import MLPPolicy
 from rllib.value_function import NNValueFunction
 import torch
 import numpy as np
@@ -40,11 +40,11 @@ def test_REINFORCE(environment, num_rollouts, baseline):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    policy = NNPolicy(environment.dim_state, environment.dim_action,
-                      num_states=environment.num_states,
-                      num_actions=environment.num_actions,
-                      layers=LAYERS)
-    policy_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE)
+    policy = MLPPolicy(environment.dim_state, environment.dim_action,
+                       num_states=environment.num_states,
+                       num_actions=environment.num_actions,
+                       layers=LAYERS)
+    policy_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 
     if baseline:
         value_function = NNValueFunction(environment.dim_state,

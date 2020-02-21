@@ -22,8 +22,9 @@ class MellowMax(AbstractQFunctionPolicy):
     Proceedings of the 34th International Conference on Machine Learning. 2017.
     """
 
-    def __call__(self, state):
+    def __call__(self, *args, **kwargs):
         """See `AbstractQFunctionPolicy.__call__'."""
+        state = args[0]
         q_value = self.q_function(state)
         omega = self.param()
 

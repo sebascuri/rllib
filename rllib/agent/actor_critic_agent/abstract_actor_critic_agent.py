@@ -61,7 +61,7 @@ class AbstractPolicyGradient(AbstractAgent):
             self.trajectories = []
 
         if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
-            self.policy_target.parameters = self.policy.parameters
+            self.policy_target.update_parameters(self.policy.parameters())
 
             if self.critic:
                 self.critic_target.parameters = self.critic.parameters

@@ -54,7 +54,7 @@ class REINFORCE(AbstractAgent):
             self.trajectories = []
 
         if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
-            self.policy_target.parameters = self.policy.parameters
+            self.policy_target.update_parameters(self.policy.parameters())
 
     def _train(self):
         trajectories = [Observation(*stack_list_of_tuples(t))

@@ -55,7 +55,7 @@ def test_ddpg_interaction(environment, agent):
 
     noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
     memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
-    actor_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE,
+    actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
                                        weight_decay=WEIGHT_DECAY)
     critic_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE,
                                         weight_decay=WEIGHT_DECAY)

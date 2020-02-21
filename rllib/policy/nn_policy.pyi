@@ -1,32 +1,36 @@
 from .abstract_policy import AbstractPolicy
 from rllib.dataset.datatypes import Distribution
-from typing import List, Iterator
+from torch.distributions import Categorical
+from typing import List, Union
 from torch import Tensor
-from rllib.util.neural_networks import ProbabilisticNN
 
 
-class NNPolicy(AbstractPolicy):
-    policy: ProbabilisticNN
-    tau: float
-
+class MLPPolicy(AbstractPolicy):
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,
                  layers: List[int] = None, biased_head: bool = True,
                  tau: float = 1., deterministic: bool = False) -> None: ...
 
-    def __call__(self, state: Tensor) -> Distribution: ...
+    def forward(self, *args: Tensor, **kwargs) -> Distribution: ...
 
     def embeddings(self, state: Tensor, action: Tensor = None) -> Tensor: ...
 
+
+class TabularPolicy(MLPPolicy):
+    def __init__(self, num_states: int, num_actions: int) -> None: ...
+
+    def forward(self, *args: Tensor, **kwargs) -> Categorical: ...
+
     @property
-    def parameters(self) -> Iterator: ...
+    def table(self) -> Tensor: ...
 
-    @parameters.setter
-    def parameters(self, new_params: Iterator) -> None: ...
+    def set_value(self, state: Tensor, new_value: Union[Tensor, float]) -> None: ...
 
 
-class FelixPolicy(NNPolicy):
+class FelixPolicy(AbstractPolicy):
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,
                  tau: float = 1., deterministic: bool = False) -> None: ...
+
+    def forward(self, *args: Tensor, **kwargs) -> Distribution: ...

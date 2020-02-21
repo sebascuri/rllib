@@ -109,5 +109,5 @@ class TestRandomPolicy(object):
 
     def test_parameters(self, discrete_state, discrete_action, dim_state, dim_action):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
-        old_parameter = self.policy.parameters
-        self.policy.parameters = old_parameter
+        old_parameter = self.policy.parameters()
+        self.policy.update_parameters(old_parameter)

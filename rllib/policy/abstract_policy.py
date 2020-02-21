@@ -1,11 +1,13 @@
 """Interface for policies."""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 import torch
+import torch.nn as nn
 from torch.distributions import MultivariateNormal, Categorical
+from rllib.util.neural_networks import update_parameters
 
 
-class AbstractPolicy(object, metaclass=ABCMeta):
+class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     """Interface for policies to control an environment.
 
     Parameters
@@ -29,6 +31,10 @@ class AbstractPolicy(object, metaclass=ABCMeta):
         number of discrete states (None if state is continuous).
     num_actions: int
         number of discrete actions (None if action is continuous).
+    tau: float, optional.
+        low pass coefficient for parameter update.
+    deterministic: bool, optional.
+        flag that indicates if the policy is deterministic.
 
     Methods
     -------
@@ -45,43 +51,14 @@ class AbstractPolicy(object, metaclass=ABCMeta):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 deterministic=False):
+                 tau=1.0, deterministic=False):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
         self.num_states = num_states
         self.num_actions = num_actions
         self.deterministic = deterministic
-
-    @abstractmethod
-    def __call__(self, state):
-        """Return the action distribution of the policy.
-
-        Parameters
-        ----------
-        state: tensor
-
-        Returns
-        -------
-        action: torch.distributions.Distribution
-
-        """
-        raise NotImplementedError
-
-    @property
-    def parameters(self):
-        """Parameters that describe the policy.
-
-        Returns
-        -------
-        generator
-
-        """
-        return None
-
-    @parameters.setter
-    def parameters(self, new_params):
-        pass
+        self.tau = tau
 
     def random(self, batch_size=None):
         """Return a uniform random distribution of the output space.
@@ -103,13 +80,17 @@ class AbstractPolicy(object, metaclass=ABCMeta):
                 covariance_matrix=torch.eye(self.dim_action))
 
         if batch_size is not None:
-            return distribution.expand(batch_shape=(batch_size,))
+            return distribution.expand(batch_shape=torch.Size((batch_size,)))
         else:
             return distribution
 
     def update(self, observation):
         """Update policy parameters."""
         pass
+
+    def update_parameters(self, new_parameters):
+        """Update policy parameters."""
+        update_parameters(self.parameters(), new_parameters, tau=self.tau)
 
     @property
     def discrete_state(self):

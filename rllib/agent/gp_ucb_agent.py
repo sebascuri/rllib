@@ -31,16 +31,15 @@ class GPUCBPolicy(AbstractPolicy):
     """
 
     def __init__(self, gp, x, beta=2.0):
+        super().__init__(dim_state=1, dim_action=x.shape[0],
+                         num_states=1, num_actions=None)
         self.gp = gp
         self.gp.eval()
         self.gp.likelihood.eval()
         self.x = x
         self.beta = beta
 
-        super().__init__(dim_state=1, dim_action=x.shape[0],
-                         num_states=1, num_actions=None)
-
-    def __call__(self, state):
+    def forward(self, *args, **kwargs):
         """Call the GP-UCB algorithm."""
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             pred = self.gp(self.x)
@@ -54,17 +53,6 @@ class GPUCBPolicy(AbstractPolicy):
         """Update the GP posterior."""
         self.gp = self.gp.get_fantasy_model(torch.tensor(observation.action),
                                             torch.tensor(observation.reward))
-
-    @property
-    def parameters(self):
-        """Get the GP parameters."""
-        return self.gp.parameters()
-
-    @parameters.setter
-    def parameters(self, new_params):
-        """Set the GP parameters."""
-        for param, new_param in zip(self.parameters, new_params):
-            param.data.copy_(new_param)
 
 
 class GPUCBAgent(AbstractAgent):

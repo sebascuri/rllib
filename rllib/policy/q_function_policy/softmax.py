@@ -13,8 +13,9 @@ class SoftMax(AbstractQFunctionPolicy):
 
     """
 
-    def __call__(self, state):
+    def __call__(self, *args, **kwargs):
         """See `AbstractQFunctionPolicy.__call__'."""
+        state = args[0]
         q_val = self.q_function(state)
         temperature = self.param()
         return Categorical(torch.softmax(q_val / temperature, dim=-1))

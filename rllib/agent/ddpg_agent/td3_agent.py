@@ -1,7 +1,6 @@
 """Implementation of TD3 Algorithm."""
 from .ddpg_agent import DDPGAgent
 from rllib.value_function import NNEnsembleQFunction
-import torch
 
 
 class TD3Agent(DDPGAgent):

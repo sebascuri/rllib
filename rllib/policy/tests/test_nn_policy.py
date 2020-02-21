@@ -1,4 +1,4 @@
-from rllib.policy import NNPolicy, FelixPolicy, TabularPolicy
+from rllib.policy import MLPPolicy, FelixPolicy, TabularPolicy
 from rllib.util.neural_networks import random_tensor
 import torch
 from torch.distributions import MultivariateNormal, Categorical
@@ -30,7 +30,7 @@ def batch_size(request):
     return request.param
 
 
-class TestNNPolicy(object):
+class TestMLPPolicy(object):
     def init(self, discrete_state, discrete_action, dim_state, dim_action):
 
         if discrete_state:
@@ -47,9 +47,9 @@ class TestNNPolicy(object):
             self.num_actions = None
             self.dim_action = dim_action
 
-        self.policy = NNPolicy(self.dim_state, self.dim_action,
-                               self.num_states, self.num_actions,
-                               layers=[32, 32])
+        self.policy = MLPPolicy(self.dim_state, self.dim_action,
+                                self.num_states, self.num_actions,
+                                layers=[32, 32])
 
     def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
                                 dim_action):
@@ -111,8 +111,8 @@ class TestNNPolicy(object):
 
     def test_parameters(self, discrete_state, discrete_action, dim_state, dim_action):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
-        old_parameter = self.policy.parameters
-        self.policy.parameters = old_parameter
+        old_parameter = self.policy.parameters()
+        self.policy.update_parameters(old_parameter)
 
 
 class TestFelixNet(object):
@@ -187,5 +187,3 @@ class TestTabularPolicy(object):
         torch.testing.assert_allclose(policy.table,
                                       torch.tensor([[.3, 1., l1, 1],
                                                     [.7, 1., l2, 1]]))
-
-

@@ -80,7 +80,7 @@ class AbstractDPGAgent(AbstractAgent):
                 optimize_actor=not (self.total_steps % self.policy_update_frequency))
             if self.total_steps % self.target_update_frequency == 0:
                 self.q_target.parameters = self.q_function.parameters
-                self.policy_target.parameters = self.policy.parameters
+                self.policy_target.update_parameters(self.policy.parameters())
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""

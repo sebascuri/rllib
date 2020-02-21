@@ -3,7 +3,7 @@ from rllib.agent import REINFORCE, ACAgent, AECAgent, A2CAgent, A2ECAgent, TDACA
     EACAgent, EA2CAgent
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
-from rllib.policy import NNPolicy
+from rllib.policy import MLPPolicy
 from rllib.value_function import NNValueFunction, NNQFunction
 import torch
 import numpy as np
@@ -26,10 +26,10 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-policy = NNPolicy(environment.dim_state, environment.dim_action,
-                  num_states=environment.num_states,
-                  num_actions=environment.num_actions,
-                  layers=LAYERS)
+policy = MLPPolicy(environment.dim_state, environment.dim_action,
+                   num_states=environment.num_states,
+                   num_actions=environment.num_actions,
+                   layers=LAYERS)
 
 # value_function = CompatibleValueFunction(policy)
 # q_function = CompatibleQFunction(policy)
@@ -40,7 +40,7 @@ q_function = NNQFunction(environment.dim_state, environment.num_actions,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions, layers=LAYERS)
 
-policy_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE)
+policy_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 value_optimizer = torch.optim.Adam(value_function.parameters, lr=CRITIC_LEARNING_RATE)
 q_function_optimizer = torch.optim.Adam(q_function.parameters, lr=CRITIC_LEARNING_RATE)
 criterion = loss.MSELoss
