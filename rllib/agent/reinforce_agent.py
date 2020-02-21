@@ -33,7 +33,7 @@ class REINFORCE(AbstractAgent):
         self.policy_optimizer = policy_optimizer
         self.baseline = baseline
         self.baseline_optimizer = baseline_optimizer
-        self.criterion = criterion
+        self.criterion = criterion(reduction='none')
         self.num_rollouts = num_rollouts
         self.target_update_freq = target_update_frequency
 

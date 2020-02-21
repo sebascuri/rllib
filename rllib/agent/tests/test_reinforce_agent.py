@@ -55,7 +55,7 @@ def test_REINFORCE(environment, num_rollouts, baseline):
     else:
         value_function, value_optimizer = None, None
 
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
 
     agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,
                       baseline=value_function, baseline_optimizer=value_optimizer,

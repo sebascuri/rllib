@@ -66,7 +66,7 @@ def test_ac_agent(environment, agent, num_rollouts, baseline):
     else:
         value_function, value_optimizer = None, None
     policy_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE)
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
 
     agent = agent(policy=policy, policy_optimizer=policy_optimizer,
                   critic=critic, critic_optimizer=critic_optimizer,
@@ -100,7 +100,7 @@ def test_tdac_agent(environment, num_rollouts, baseline):
     else:
         value_function, value_optimizer = None, None
     policy_optimizer = torch.optim.Adam(policy.parameters, lr=ACTOR_LEARNING_RATE)
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
 
     agent = TDACAgent(policy=policy, policy_optimizer=policy_optimizer,
                       critic=critic, critic_optimizer=critic_optimizer,

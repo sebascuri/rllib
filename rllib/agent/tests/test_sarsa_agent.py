@@ -56,7 +56,7 @@ def test_nnq_interaction(environment, agent):
     policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
     q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer,
                     target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
@@ -77,7 +77,7 @@ def test_policies(environment, policy, batch_size):
     policy = policy(q_function, 0.1)
 
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
     q_agent = DExpectedSARSAAgent(
         q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer, batch_size=batch_size,
@@ -93,7 +93,7 @@ def test_tabular_interaction(agent, policy):
                                   num_actions=environment.num_actions)
     policy = policy(q_function, 0.1)
     optimizer = torch.optim.Adam(q_function.parameters, lr=LEARNING_RATE)
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
 
     q_agent = agent(q_function=q_function, policy=policy,
                     criterion=criterion, optimizer=optimizer,

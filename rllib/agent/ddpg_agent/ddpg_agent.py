@@ -24,6 +24,8 @@ class DDPGAgent(AbstractDPGAgent):
         next_policy_action = (next_policy_action + next_action_noise).clamp(-1, 1)
 
         next_v = self.q_target(next_state, next_policy_action)
+        if type(next_v) is list:
+            next_v = torch.min(*next_v)
         target_q = reward + self.gamma * next_v * (1 - done)
 
         return pred_q, target_q.detach()

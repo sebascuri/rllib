@@ -51,7 +51,7 @@ def test_ddpg_interaction(environment, agent):
     policy = FelixPolicy(environment.dim_state, environment.dim_action,
                          tau=TARGET_UPDATE_TAU, deterministic=True)
 
-    criterion = func.mse_loss
+    criterion = torch.nn.MSELoss
 
     noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
     memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)

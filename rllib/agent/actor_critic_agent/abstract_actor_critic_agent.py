@@ -40,7 +40,7 @@ class AbstractPolicyGradient(AbstractAgent):
         self.critic = critic
         self.critic_target = copy.deepcopy(critic)
         self.critic_optimizer = critic_optimizer
-        self.criterion = criterion
+        self.criterion = criterion(reduction='none')
         self.num_rollouts = num_rollouts
         self.target_update_freq = target_update_frequency
 
@@ -97,7 +97,7 @@ class AbstractPolicyGradient(AbstractAgent):
 
         for trajectory in zip(trajectories):
             pred_v, target_v = self._td_base(*trajectory)
-            loss = self.criterion(pred_v, target_v, reduction='none')
+            loss = self.criterion(pred_v, target_v)
             loss.mean().backward()
 
         self.baseline_optimizer.step()
@@ -107,7 +107,7 @@ class AbstractPolicyGradient(AbstractAgent):
 
         for trajectory in trajectories:
             pred_q, target_q = self._td_critic(*trajectory)
-            loss = self.criterion(pred_q, target_q, reduction='none')
+            loss = self.criterion(pred_q, target_q)
             loss.mean().backward()
 
         self.critic_optimizer.step()

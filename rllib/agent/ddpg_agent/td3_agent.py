@@ -1,14 +1,14 @@
 """Implementation of TD3 Algorithm."""
-from .abstract_dpg_agent import AbstractDPGAgent
+from .ddpg_agent import DDPGAgent
 from rllib.value_function import NNEnsembleQFunction
 import torch
 
 
-class TD3Agent(AbstractDPGAgent):
-    """Abstract Implementation of the DDPG Algorithm.
+class TD3Agent(DDPGAgent):
+    """Abstract Implementation of the TD3 Algorithm.
 
-    The AbstractDDPGAgent algorithm implements the DDPT-Learning algorithm except for
-    the computation of the TD-Error, which leads to different algorithms.
+    The TD3 algorithm is like the DDPG algorithm but it has an ensamble of Q-functions
+    to decrease the maximization bias.
 
     Parameters
     ----------
@@ -51,41 +51,3 @@ class TD3Agent(AbstractDPGAgent):
                          policy_noise=policy_noise, noise_clip=noise_clip,
                          gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
-
-    def _train_critic(self, state, action, reward, next_state, done, weight):
-        self.critic_optimizer.zero_grad()
-        pred_q, target_q = self._td(state, action, reward, next_state, done)
-        loss = torch.zeros_like(target_q)
-        td_error = torch.zeros_like(target_q)
-        for q in pred_q:
-            loss += (weight * self.criterion(q, target_q, reduction='none'))
-            td_error += q.detach() - target_q.detach()
-
-        loss.mean().backward()
-        self.critic_optimizer.step()
-
-        td_error_mean = td_error.mean().item()
-        self.logs['td_errors'].append(td_error_mean)
-        self.logs['episode_td_errors'][-1].append(td_error_mean)
-        return td_error
-
-    def _train_actor(self, state, weight):
-        self.actor_optimizer.zero_grad()
-        action = self.policy(state).mean.clamp(-1, 1)
-        q = -self.q_function[0](state.float(), action)
-        loss = weight * q
-        loss.mean().backward()
-        self.actor_optimizer.step()
-
-    def _td(self, state, action, reward, next_state, done):
-        pred_q = self.q_function(state, action)
-
-        next_policy_action = self.policy_target(next_state).mean
-        next_action_noise = (torch.randn_like(next_policy_action) * self.policy_noise
-                             ).clamp(-self.noise_clip, self.noise_clip)
-        next_policy_action = (next_policy_action + next_action_noise).clamp(-1, 1)
-
-        next_v = torch.min(*self.q_target(next_state, next_policy_action))
-        target_q = reward + self.gamma * next_v * (1 - done)
-
-        return pred_q, target_q.detach()

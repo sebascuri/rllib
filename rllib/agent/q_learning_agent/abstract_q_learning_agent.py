@@ -38,7 +38,7 @@ class AbstractQLearningAgent(AbstractAgent):
         self.q_function = q_function
         self.policy = policy
         self.q_target = copy.deepcopy(q_function)
-        self.criterion = criterion
+        self.criterion = criterion(reduction='none')
         self.memory = memory
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
@@ -86,7 +86,7 @@ class AbstractQLearningAgent(AbstractAgent):
             td_error_mean = td_error.mean().item()
             self.logs['td_errors'].append(td_error_mean)
             self.logs['episode_td_errors'][-1].append(td_error_mean)
-            loss = weight * self.criterion(pred_q, target_q, reduction='none')
+            loss = weight * self.criterion(pred_q, target_q)
             loss.mean().backward()
 
             self.optimizer.step()

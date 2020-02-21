@@ -51,7 +51,7 @@ class AbstractDPGAgent(AbstractAgent):
         self.policy_target = copy.deepcopy(policy)
 
         self.exploration = exploration
-        self.criterion = criterion
+        self.criterion = criterion(reduction='none')
         self.memory = memory
         self.target_update_frequency = target_update_frequency
         self.critic_optimizer = critic_optimizer
@@ -117,12 +117,18 @@ class AbstractDPGAgent(AbstractAgent):
     def _train_critic(self, state, action, reward, next_state, done, weight):
         self.critic_optimizer.zero_grad()
         pred_q, target_q = self._td(state, action, reward, next_state, done)
-        loss = self.criterion(pred_q, target_q, reduction='none')
-        loss = weight * loss
-        loss.mean().backward()
+        if type(pred_q) is not list:
+            pred_q = [pred_q]
+        loss = torch.zeros_like(target_q)
+        td_error = torch.zeros_like(target_q)
+        for q in pred_q:
+            loss += (weight * self.criterion(q, target_q))
+            td_error += q.detach() - target_q.detach()
+
+        loss = loss.mean()
+        loss.backward()
         self.critic_optimizer.step()
 
-        td_error = pred_q.detach() - target_q.detach()
         td_error_mean = td_error.mean().item()
         self.logs['td_errors'].append(td_error_mean)
         self.logs['episode_td_errors'][-1].append(td_error_mean)
@@ -131,9 +137,11 @@ class AbstractDPGAgent(AbstractAgent):
     def _train_actor(self, state, weight):
         self.actor_optimizer.zero_grad()
         action = self.policy(state).mean.clamp(-1, 1)
-        q = -self.q_function(state.float(), action)
-        loss = weight * q
-        loss.mean().backward()
+        q = self.q_function(state.float(), action)
+        if type(q) is list:
+            q = q[0]
+        loss = (-weight * q).mean()
+        loss.backward()
         self.actor_optimizer.step()
 
     @abstractmethod

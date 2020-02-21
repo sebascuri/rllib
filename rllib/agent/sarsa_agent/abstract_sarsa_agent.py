@@ -21,7 +21,7 @@ class AbstractSARSAAgent(AbstractAgent):
         self.q_target = copy.deepcopy(q_function)
 
         self.target_update_frequency = target_update_frequency
-        self.criterion = criterion
+        self.criterion = criterion(reduction='none')
         self.optimizer = optimizer
         self._last_observation = None
         self._batch_size = batch_size
@@ -69,14 +69,13 @@ class AbstractSARSAAgent(AbstractAgent):
         trajectory = SARSAObservation(*stack_list_of_tuples(trajectory))
 
         self.optimizer.zero_grad()
-
         pred_q, target_q = self._td(*trajectory)
 
         td_error = pred_q.detach() - target_q.detach()
         td_error_mean = td_error.mean().item()
         self.logs['td_errors'].append(td_error_mean)
         self.logs['episode_td_errors'][-1].append(td_error_mean)
-        loss = self.criterion(pred_q, target_q, reduction='mean')
+        loss = self.criterion(pred_q, target_q).mean()
         loss.backward()
 
         self.optimizer.step()
