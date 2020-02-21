@@ -69,21 +69,24 @@ model.b.requires_grad = False
 
 policy = MLPPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
                    layers=[], biased_head=False, deterministic=True)  # Linear policy.
-# policy = torch.nn.Linear(2, 1)
+policy2 = torch.nn.Linear(2, 1)
 
-print(f'initial: {policy.policy.head.weight}')
-value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64, 64],
+print(f'initial: {policy._nn.head.weight}')
+# print(f'initial: {policy.weight}')
+
+
+value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64],
                                  biased_head=False)
-# value_function = nn.Sequential(OrderedDict(
-#     linear1=nn.Linear(model.dim_state, 64),
-#     relu1=nn.ReLU(),
-#     linear2=nn.Linear(64, 64),
-#     relu2=nn.ReLU(),
-#     linear3=nn.Linear(64, 1, bias=False)
-# ))
+value_function2 = nn.Sequential(OrderedDict(
+    linear1=nn.Linear(model.dim_state, 64),
+    relu1=nn.ReLU(),
+    linear2=nn.Linear(64, 64),
+    relu2=nn.ReLU(),
+    linear3=nn.Linear(64, 1, bias=False)
+))
 
-# value_function = torch.jit.trace(value_function, torch.empty(3, 2))
-# policy.policy = torch.jit.trace(policy.policy, torch.empty(3, 2))
+# value_function = torch.jit.trace(value_function, torch.empty(25, 2))
+# policy = torch.jit.trace(policy, torch.empty(25, 2))
 
 loss_function = nn.MSELoss()
 value_optimizer = optim.Adam(value_function.parameters(), lr=5e-4)
@@ -97,7 +100,7 @@ for i in tqdm(range(10000)):
     policy_optimizer.zero_grad()
 
     states = 0.5 * torch.randn(batch_size, 2)
-    with rllib.util.neural_networks.disable_gradient(value_function.value_function):
+    with rllib.util.neural_networks.disable_gradient(value_function):
         values = rllib.model.utilities.estimate_value(
             states=states,
             model=model,
@@ -142,7 +145,8 @@ plt.legend()
 plt.show()
 
 print(f'optimal: {K}')
-print(f'learned: {policy.policy.head.weight}')
+print(f'learned: {policy._nn.head.weight}')
+# print(f'learned: {policy.weight}')
 
 bounds = [(-0.5, 0.5), (-0.5, 0.5)]
 num_entries = [100, 100]

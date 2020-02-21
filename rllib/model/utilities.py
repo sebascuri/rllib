@@ -44,11 +44,14 @@ def estimate_value(states, model, policy, reward, steps, gamma=0.99, bootstrap=N
         states = repeat_along_dimension(states, number=num_samples, dim=-2)
 
     for _ in range(steps + 1):
-        actions = policy(states).rsample()
-        # if actions.has_rsample:
-        #     actions = actions.rsample()
-        # else:
-        #     actions = actions.sample()
+        actions = policy(states)
+        try:
+            if actions.has_rsample:
+                actions = actions.rsample()
+            else:
+                actions = actions.sample()
+        except AttributeError:
+            pass
 
         value = value + discount * reward(states, actions)
         states = model(states, actions).rsample()
