@@ -75,4 +75,3 @@ def plot_combinations_as_grid(axis, values, num_entries, bounds=None, **kwargs):
         kwargs['extent'] = list(itertools.chain(*bounds))
 
     return axis.imshow(values.reshape(*num_entries).T, **kwargs)
-
