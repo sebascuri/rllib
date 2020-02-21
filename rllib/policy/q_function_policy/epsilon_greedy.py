@@ -19,7 +19,7 @@ class EpsGreedy(AbstractQFunctionPolicy):
     """
 
     def forward(self, *args, **kwargs):
-        """See `AbstractQFunctionPolicy.__call__'."""
+        """See `AbstractQFunctionPolicy.forward'."""
         state = args[0]
         batch_size = get_batch_size(state, is_discrete=self.discrete_state)
         aux_size = 1 if not batch_size else batch_size

@@ -13,8 +13,8 @@ class SoftMax(AbstractQFunctionPolicy):
 
     """
 
-    def __call__(self, *args, **kwargs):
-        """See `AbstractQFunctionPolicy.__call__'."""
+    def forward(self, *args, **kwargs):
+        """See `AbstractQFunctionPolicy.forward'."""
         state = args[0]
         q_val = self.q_function(state)
         temperature = self.param()

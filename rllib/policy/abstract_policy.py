@@ -38,10 +38,8 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
     Methods
     -------
-    __call__(state): torch.distribution.Distribution
+    forward(state): torch.distribution.Distribution
         return the action distribution that the policy suggests.
-    parameters: generator
-        return the policy parametrization.
     random: torch.distribution.Distribution
         return a uniform action distribution (same family as policy).
     discrete_state: bool
