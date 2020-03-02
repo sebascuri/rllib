@@ -3,9 +3,10 @@ from rllib.dataset.datatypes import Distribution
 from torch.distributions import Categorical
 from typing import List, Union
 from torch import Tensor
-
+import torch.nn as nn
 
 class MLPPolicy(AbstractPolicy):
+    nn: nn.Module
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,
                  layers: List[int] = None, biased_head: bool = True,

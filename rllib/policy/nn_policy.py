@@ -40,18 +40,18 @@ class MLPPolicy(AbstractPolicy):
             in_dim = self.dim_state
 
         if self.discrete_action:
-            self._nn = CategoricalNN(in_dim, self.num_actions, layers,
-                                     biased_head=biased_head)
+            self.nn = CategoricalNN(in_dim, self.num_actions, layers,
+                                    biased_head=biased_head)
         else:
-            self._nn = HeteroGaussianNN(in_dim, self.dim_action, layers,
-                                        biased_head=biased_head)
+            self.nn = HeteroGaussianNN(in_dim, self.dim_action, layers,
+                                       biased_head=biased_head)
 
     def forward(self, *args, **kwargs):
         """Get distribution over actions."""
         state = args[0]
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
-        action = self._nn(state)
+        action = self.nn(state)
         if self.deterministic:
             return Delta(action.mean)
         return action
@@ -61,7 +61,7 @@ class MLPPolicy(AbstractPolicy):
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
 
-        features = self._nn.last_layer_embeddings(state)
+        features = self.nn.last_layer_embeddings(state)
         return features.squeeze()
 
 
@@ -72,12 +72,12 @@ class TabularPolicy(MLPPolicy):
         super().__init__(dim_state=1, dim_action=1,
                          num_states=num_states, num_actions=num_actions,
                          biased_head=False)
-        nn.init.ones_(self._nn.head.weight)
+        nn.init.ones_(self.nn.head.weight)
 
     @property
     def table(self):
         """Get table representation of policy."""
-        return self._nn.head.weight
+        return self.nn.head.weight
 
     def set_value(self, state, new_value):
         """Set value to value function at a given state."""
@@ -87,7 +87,7 @@ class TabularPolicy(MLPPolicy):
             )
         except TypeError:
             pass
-        self._nn.head.weight[:, state] = new_value
+        self.nn.head.weight[:, state] = new_value
 
 
 class FelixPolicy(AbstractPolicy):
