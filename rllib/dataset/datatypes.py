@@ -9,6 +9,7 @@ Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]
 Action = Union[int, float, Array]
 Reward = Union[int, float, Array]
+Probability = Union[int, float, Array]
 Done = Union[bool, Array]
 Gaussian = Union[MultivariateNormal, Delta]
 Distribution = Union[MultivariateNormal, Delta, Categorical]
@@ -22,7 +23,8 @@ class Observation(NamedTuple):
     reward: Reward = np.nan
     next_state: State = np.nan
     done: Done = True
-    next_action: Action = np.nan
+    next_action: Action = np.nan  # SARSA algorithm.
+    prob_action: Probability = np.nan  # Off-policy algorithms.
 
     @staticmethod
     def _is_equal_nan(x, y):
@@ -42,6 +44,7 @@ class Observation(NamedTuple):
         is_equal &= self._is_equal_nan(self.reward, other.reward)
         is_equal &= self._is_equal_nan(self.next_state, other.next_state)
         is_equal &= self._is_equal_nan(self.next_action, other.next_action)
+        is_equal &= self._is_equal_nan(self.prob_action, other.prob_action)
         is_equal &= self.done == other.done
         return is_equal
 

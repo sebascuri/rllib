@@ -224,7 +224,6 @@ class TestStateNormalize(object):
     def test_inverse(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
 
-
         trajectory = stack_list_of_tuples(trajectory)
 
         backend = get_backend(trajectory.state)
