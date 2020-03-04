@@ -2,9 +2,9 @@
 
 import torch.nn as nn
 from torch import Tensor
-from typing import List
+from typing import List, Union
 from torch.distributions import Categorical
-from rllib.dataset.datatypes import Gaussian
+from rllib.dataset.datatypes import Gaussian, Distribution
 
 
 class DeterministicNN(nn.Module):
@@ -16,7 +16,7 @@ class DeterministicNN(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
                  biased_head: bool = True) -> None: ...
 
-    def forward(self, x: Tensor) -> Tensor: ...  # type: ignore
+    def forward(self, *args: Tensor, **kwargs) -> Union[Tensor, Distribution]: ...
 
     def last_layer_embeddings(self, x: Tensor) -> Tensor: ...
 
@@ -34,7 +34,7 @@ class HeteroGaussianNN(ProbabilisticNN):
                  biased_head: bool = True, squashed_output: bool = True) -> None: ...
 
 
-    def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
+    def forward(self, *args: Tensor, **kwargs) -> Gaussian: ...
 
 
 class HomoGaussianNN(ProbabilisticNN):
@@ -43,7 +43,7 @@ class HomoGaussianNN(ProbabilisticNN):
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
                  biased_head: bool = True, squashed_output: bool = True) -> None: ...
 
-    def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
+    def forward(self, *args: Tensor, **kwargs) -> Gaussian: ...
 
 
 class CategoricalNN(ProbabilisticNN):
@@ -51,7 +51,7 @@ class CategoricalNN(ProbabilisticNN):
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
                  biased_head: bool = True) -> None: ...
 
-    def forward(self, x: Tensor) -> Categorical: ... # type: ignore
+    def forward(self, *args: Tensor, **kwargs) -> Categorical: ...
 
 
 class EnsembleNN(ProbabilisticNN):
@@ -60,7 +60,7 @@ class EnsembleNN(ProbabilisticNN):
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
                  biased_head: bool = True) -> None: ...
 
-    def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
+    def forward(self, *args: Tensor, **kwargs) -> Gaussian: ...
 
 
 class FelixNet(nn.Module):
@@ -72,4 +72,4 @@ class FelixNet(nn.Module):
 
     def __init__(self, in_dim: int, out_dim: int) -> None: ...
 
-    def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
+    def forward(self, *args: Tensor, **kwargs) -> Gaussian: ...

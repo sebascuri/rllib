@@ -13,9 +13,8 @@ class SoftMax(AbstractQFunctionPolicy):
 
     """
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
-        state = args[0]
         q_val = self.q_function(state)
         temperature = self.param()
         return Categorical(torch.softmax(q_val / temperature, dim=-1))

@@ -22,9 +22,8 @@ class MellowMax(AbstractQFunctionPolicy):
     Proceedings of the 34th International Conference on Machine Learning. 2017.
     """
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
-        state = args[0]
         q_value = self.q_function(state)
         omega = self.param()
 

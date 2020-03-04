@@ -38,9 +38,8 @@ class NNValueFunction(AbstractValueFunction):
         self.nn = DeterministicNN(num_inputs, 1, layers, biased_head=biased_head)
         self.dimension = self.nn.embedding_dim
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state, action=None):
         """Get value of the value-function at a given state."""
-        state = args[0]
         if self.input_transform is not None:
             state = self.input_transform(state)
 
@@ -96,7 +95,7 @@ class NNQFunction(AbstractQFunction):
         self.nn = DeterministicNN(num_inputs, num_outputs, layers,
                                   biased_head=biased_head)
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state, action=None):
         """Get value of the value-function at a given state.
 
         Parameters
@@ -109,15 +108,8 @@ class NNQFunction(AbstractQFunction):
         value: torch.Tensor
 
         """
-        state = args[0]
-
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
-
-        if len(args) > 1:
-            action = args[1]
-        else:
-            action = None
 
         if self.input_transform is not None:
             state, action = self.input_transform(state, action)

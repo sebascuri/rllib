@@ -105,9 +105,9 @@ class NNEnsembleQFunction(AbstractQFunction):
         """Get ensemble item."""
         return self.ensemble[item]
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state, action=None):
         """Get value of the q-function at a given state-action pair."""
-        return [q_function(*args) for q_function in self.ensemble]
+        return [q_function(state, action) for q_function in self.ensemble]
 
     def value(self, state, policy, num_samples=0):
         """See `AbstractQFunction.value'."""

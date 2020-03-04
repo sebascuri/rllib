@@ -39,7 +39,7 @@ class GPUCBPolicy(AbstractPolicy):
         self.x = x
         self.beta = beta
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state):
         """Call the GP-UCB algorithm."""
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             pred = self.gp(self.x)

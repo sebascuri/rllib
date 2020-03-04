@@ -49,9 +49,8 @@ class NNPolicy(AbstractPolicy):
                                        biased_head=biased_head,
                                        squashed_output=squashed_output)
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state):
         """Get distribution over actions."""
-        state = args[0]
         if self.input_transform is not None:
             state = self.input_transform(state)
 
@@ -137,9 +136,8 @@ class FelixPolicy(AbstractPolicy):
         if self.discrete_state or self.discrete_action:
             raise ValueError("Felix Policy is for Continuous Problems")
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state):
         """Execute felix network."""
-        state = args[0]
         x = torch.relu(self.linear1(state))
         x = torch.relu(self.linear2(x))
 

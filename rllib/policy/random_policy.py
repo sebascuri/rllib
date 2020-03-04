@@ -14,10 +14,9 @@ class RandomPolicy(AbstractPolicy):
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None):
         super().__init__(dim_state, dim_action, num_states, num_actions)
 
-    def forward(self, *args, **kwargs):
+    def forward(self, state):
         """Get distribution over actions."""
-        states = args[0]
-        batch_size = get_batch_size(states)
+        batch_size = get_batch_size(state)
         if batch_size:
             return self.random(batch_size)
         else:
