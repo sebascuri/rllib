@@ -100,10 +100,12 @@ class ProbabilisticNN(DeterministicNN):
 class HeteroGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True,
+                 squashed_output=True):
         super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
         in_dim = self.head.in_features
         self._covariance = nn.Linear(in_dim, out_dim, bias=biased_head)
+        self.squashed_output = squashed_output
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -120,7 +122,10 @@ class HeteroGaussianNN(ProbabilisticNN):
             covariance of size [batch_size x out_dim x out_dim].
         """
         x = self.hidden_layers(x)
-        mean = torch.tanh(self.head(x))
+        mean = self.head(x)
+        if self.squashed_output:
+            mean = torch.tanh(mean)
+
         covariance = nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
@@ -130,10 +135,12 @@ class HeteroGaussianNN(ProbabilisticNN):
 class HomoGaussianNN(ProbabilisticNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
+    def __init__(self, in_dim, out_dim, layers=None, biased_head=True,
+                 squashed_output=True):
         super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
         initial_scale = inverse_softplus(torch.ones(out_dim))
         self._covariance = nn.Parameter(initial_scale, requires_grad=True)
+        self.squashed_output = squashed_output
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -150,7 +157,10 @@ class HomoGaussianNN(ProbabilisticNN):
             covariance of size [batch_size x out_dim x out_dim].
         """
         x = self.hidden_layers(x)
-        mean = torch.tanh(self.head(x))
+        mean = self.head(x)
+        if self.squashed_output:
+            mean = torch.tanh(mean)
+
         covariance = functional.softplus(self._covariance)
         covariance = torch.diag_embed(covariance)
 

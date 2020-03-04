@@ -31,17 +31,17 @@ class HeteroGaussianNN(ProbabilisticNN):
     _covariance: nn.Linear
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True) -> None: ...
+                 biased_head: bool = True, squashed_output: bool = True) -> None: ...
 
 
     def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
 
 
 class HomoGaussianNN(ProbabilisticNN):
-    _covariance: nn.Linear
+    _covariance: nn.Parameter
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True) -> None: ...
+                 biased_head: bool = True, squashed_output: bool = True) -> None: ...
 
     def forward(self, x: Tensor) -> Gaussian: ...  # type: ignore
 
