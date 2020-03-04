@@ -10,7 +10,7 @@ import torch.nn.functional
 from torch.distributions import MultivariateNormal
 
 
-class MLPPolicy(AbstractPolicy):
+class NNPolicy(AbstractPolicy):
     """Implementation of a Policy implemented with a Neural Network.
 
     Parameters
@@ -31,7 +31,8 @@ class MLPPolicy(AbstractPolicy):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, biased_head=True, tau=1.0, deterministic=False):
+                 layers=None, biased_head=True, tau=1.0, deterministic=False,
+                 squashed_output=True, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau,
                          deterministic)
         if self.discrete_state:
@@ -39,16 +40,21 @@ class MLPPolicy(AbstractPolicy):
         else:
             in_dim = self.dim_state
 
+        self.input_transform = input_transform
         if self.discrete_action:
             self.nn = CategoricalNN(in_dim, self.num_actions, layers,
                                     biased_head=biased_head)
         else:
             self.nn = HeteroGaussianNN(in_dim, self.dim_action, layers,
-                                       biased_head=biased_head)
+                                       biased_head=biased_head,
+                                       squashed_output=squashed_output)
 
     def forward(self, *args, **kwargs):
         """Get distribution over actions."""
         state = args[0]
+        if self.input_transform is not None:
+            state = self.input_transform(state)
+
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
         action = self.nn(state)
@@ -65,7 +71,7 @@ class MLPPolicy(AbstractPolicy):
         return features.squeeze()
 
 
-class TabularPolicy(MLPPolicy):
+class TabularPolicy(NNPolicy):
     """Implement tabular policy."""
 
     def __init__(self, num_states, num_actions):
