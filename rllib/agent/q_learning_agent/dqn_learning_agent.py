@@ -13,7 +13,7 @@ class DQNAgent(AbstractQLearningAgent):
     Nature 518.7540 (2015): 529.
     """
 
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args):
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q_target(x', a)

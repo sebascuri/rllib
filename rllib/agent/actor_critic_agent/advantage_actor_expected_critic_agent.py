@@ -12,7 +12,8 @@ class A2ECAgent(A2CAgent):
     "High-dimensional continuous control using generalized advantage estimation." ICLR.
     """
 
-    def _td_critic(self, state, action=None, reward=None, next_state=None, done=None):
+    def _td_critic(self, state, action=None, reward=None, next_state=None, done=None,
+                   *args, **kwargs):
         pred_q = self.critic(state, action)
 
         next_v = self.critic_target.value(next_state, self.policy) * (1 - done)

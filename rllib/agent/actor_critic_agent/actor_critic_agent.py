@@ -20,7 +20,8 @@ class ACAgent(AbstractPolicyGradient):
     critic: AbstractQFunction
     critic_target: AbstractQFunction
 
-    def _return(self, state, action=None, reward=None, next_state=None, done=None):
+    def _return(self, state, action=None, reward=None, next_state=None, done=None,
+                *args, **kwargs):
         if self.baseline is not None:
             baseline = self.baseline(state).detach()
         else:
@@ -28,7 +29,8 @@ class ACAgent(AbstractPolicyGradient):
 
         return self.critic(state, action) - baseline
 
-    def _td_critic(self, state, action=None, reward=None, next_state=None, done=None):
+    def _td_critic(self, state, action=None, reward=None, next_state=None, done=None,
+                   *args, **kwargs):
         pred_q = self.critic(state, action)
 
         next_policy_action = self.policy_target(next_state).sample()

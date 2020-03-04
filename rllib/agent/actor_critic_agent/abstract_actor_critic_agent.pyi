@@ -6,7 +6,7 @@ from abc import abstractmethod
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Tuple, List
+from typing import Tuple, List, Any
 
 
 class AbstractPolicyGradient(AbstractAgent):
@@ -52,12 +52,12 @@ class AbstractPolicyGradient(AbstractAgent):
     def _train_critic(self, observations: List[Observation]) -> None: ...
 
     def _td_base(self, state: State, action: Action = None, reward: Reward = None,
-             next_state: State = None, done: Done = None) -> Tuple[Tensor, Tensor]: ...
+             next_state: State = None, done: Done = None, *args: Any, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...
 
     @abstractmethod
     def _return(self, state: State, action: Action = None, reward: Reward = None,
-                 next_state: State = None, done: Done = None) -> Tensor: ...
+                 next_state: State = None, done: Done = None, *args: Any, **kwargs: Any) -> Tensor: ...
 
     @abstractmethod
     def _td_critic(self, state: State, action: Action = None, reward: Reward = None,
-                 next_state: State = None, done: Done = None) -> Tuple[Tensor, Tensor]: ...
+                 next_state: State = None, done: Done = None, *args: Any, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...

@@ -1,7 +1,6 @@
 """Implementation of a Transformation that clips rewards."""
 
 from .abstract_transform import AbstractTransform
-from .. import Observation
 import numpy as np
 
 
@@ -31,14 +30,8 @@ class RewardClipper(AbstractTransform):
 
     def __call__(self, observation):
         """See `AbstractTransform.__call__'."""
-        return Observation(state=observation.state,
-                           action=observation.action,
-                           next_state=observation.next_state,
-                           done=observation.done,
-                           reward=np.clip(observation.reward,
-                                          self._min_reward,
-                                          self._max_reward)
-                           )
+        return observation._replace(reward=np.clip(observation.reward,
+                                                   self._min_reward, self._max_reward))
 
     def inverse(self, observation):
         """See `AbstractTransform.inverse'."""

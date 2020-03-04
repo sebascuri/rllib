@@ -8,6 +8,8 @@ from rllib.policy import NNPolicy
 from rllib.model.pendulum_model import PendulumModel
 from rllib.environment.system_environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.algorithms.control.mmpo import ModelBasedMPO
 from gpytorch.distributions import Delta
 import torch
@@ -80,9 +82,11 @@ for i in tqdm(range(100)):
     # Compute the state distribution
     if i % refresh_interval == 0:
         with torch.no_grad():
-            states = init_distribution.sample((num_trajectories,))
-            states, actions = rollout_model(model, policy, initial_states=states,
-                                            max_steps=num_simulation_steps)
+            initial_states = init_distribution.sample((num_trajectories,))
+            trajectory = rollout_model(model, policy, initial_states=initial_states,
+                                       max_steps=num_simulation_steps)
+            trajectory = Observation(*stack_list_of_tuples(trajectory))
+            states, actions = trajectory.state, trajectory.action
 
             # Sum along trajectory, average across samples
             reward = reward_function(states, actions).sum(dim=0).mean()
@@ -92,8 +96,8 @@ for i in tqdm(range(100)):
         break
 
     # Shuffle to get a state distribution
-    trajectory = states.reshape(-1, states.shape[-1])
-    np.random.shuffle(trajectory.numpy())
+    states = states.reshape(-1, states.shape[-1])
+    np.random.shuffle(states.numpy())
 
     policy_episode_loss = 0.
     value_episode_loss = 0.
@@ -102,7 +106,7 @@ for i in tqdm(range(100)):
     mpo.reset()
 
     # Iterate over state batches in the state distribution
-    state_batches = torch.split(trajectory, batch_size)[::num_subsample]
+    state_batches = torch.split(states, batch_size)[::num_subsample]
     for states in state_batches:
         optimizer.zero_grad()
         losses = mpo(states, num_action_samples=15)
@@ -137,8 +141,11 @@ environment.initial_state = lambda: test_state
 rollout_policy(environment, lambda x: Delta(policy(x).mean), max_steps=400, render=True)
 
 with torch.no_grad():
-    states, actions = rollout_model(model, lambda x: Delta(policy(x).mean),
-                                    initial_states=test_state, max_steps=400)
+    trajectory = rollout_model(model, lambda x: Delta(policy(x).mean),
+                               initial_states=test_state, max_steps=400)
+    trajectory = Observation(*stack_list_of_tuples(trajectory))
+    states = trajectory.state
+    actions = trajectory.action
     rewards = reward_function(states, actions).numpy()
     states = states.numpy()
 

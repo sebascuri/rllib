@@ -107,14 +107,15 @@ class AbstractDPGAgent(AbstractAgent):
             observation = Observation(*map(lambda x: x.float(), observation))
 
             # optimize critic
-            td_error = self._train_critic(*observation, weight)
+            td_error = self._train_critic(**observation._asdict(), weight=weight)
             self.memory.update(idx, td_error.detach().numpy())
 
             # optimize actor
             if optimize_actor:
                 self._train_actor(observation.state, weight)
 
-    def _train_critic(self, state, action, reward, next_state, done, weight):
+    def _train_critic(self, state, action, reward, next_state, done, weight, *args,
+                      **kwargs):
         self.critic_optimizer.zero_grad()
         pred_q, target_q = self._td(state, action, reward, next_state, done)
         if type(pred_q) is not list:
@@ -145,5 +146,5 @@ class AbstractDPGAgent(AbstractAgent):
         self.actor_optimizer.step()
 
     @abstractmethod
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args, **kwargs):
         raise NotImplementedError

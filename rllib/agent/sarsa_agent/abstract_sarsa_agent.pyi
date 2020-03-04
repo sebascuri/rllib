@@ -1,12 +1,12 @@
 from ..abstract_agent import AbstractAgent
-from rllib.dataset.datatypes import SARSAObservation, Observation, State, Action, Reward, Done
+from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
 from abc import abstractmethod
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Any
 
 
 class AbstractSARSAAgent(AbstractAgent):
@@ -18,7 +18,7 @@ class AbstractSARSAAgent(AbstractAgent):
     target_update_frequency: int
     _last_observation: Union[None, Observation]
     _batch_size: int
-    _trajectory = List[SARSAObservation]
+    _trajectory = List[Observation]
 
     def __init__(self, q_function: AbstractQFunction,
                  policy: AbstractQFunctionPolicy, criterion: _Loss,
@@ -34,8 +34,8 @@ class AbstractSARSAAgent(AbstractAgent):
 
     def end_episode(self) -> None: ...
 
-    def _train(self, trajectory: List[SARSAObservation]) -> None: ...
+    def _train(self, trajectory: List[Observation]) -> None: ...
 
     @abstractmethod
     def _td(self, state: State, action: Action, reward: Reward, next_state: State,
-            done: Done, next_action: Action) -> Tuple[Tensor, Tensor]: ...
+            done: Done, next_action: Action, *args: Any, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...

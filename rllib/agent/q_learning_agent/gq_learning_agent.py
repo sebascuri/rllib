@@ -15,6 +15,6 @@ class GQLearningAgent(QLearningAgent):
 
     """
 
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args):
         pred_q, target_q = super()._td(state, action, reward, next_state, done)
         return pred_q, target_q.detach()

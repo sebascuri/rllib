@@ -63,13 +63,9 @@ class TrajectoryDataset(data.Dataset):
 
             trajectory = self._trajectories[trajectory_idx]
 
-            observation = Observation(
-                state=trajectory.state[start:end],
-                action=trajectory.action[start:end],
-                reward=trajectory.reward[start:end],
-                next_state=trajectory.next_state[start:end],
-                done=trajectory.done[start:end]
-            )
+            observation = Observation(**{key: val[start:end] for key, val in
+                                         trajectory._asdict().items()})
+
             for transform in self.transformations:
                 observation = transform(observation)
 

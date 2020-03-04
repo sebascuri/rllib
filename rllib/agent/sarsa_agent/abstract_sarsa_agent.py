@@ -1,7 +1,7 @@
 """Implementation of SARSA Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset import SARSAObservation
+from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from abc import abstractmethod
 import copy
@@ -34,7 +34,7 @@ class AbstractSARSAAgent(AbstractAgent):
         """See `AbstractAgent.act'."""
         action = super().act(state)
         if self._last_observation:
-            self._trajectory.append(SARSAObservation(*self._last_observation, action))
+            self._trajectory.append(self._last_observation._replace(next_action=action))
         return action
 
     def observe(self, observation):
@@ -57,8 +57,8 @@ class AbstractSARSAAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         # The next action is irrelevant as the next value is zero for all actions.
-        next_action = super().act(self._last_observation.state)
-        self._trajectory.append(SARSAObservation(*self._last_observation, next_action))
+        action = super().act(self._last_observation.state)
+        self._trajectory.append(self._last_observation._replace(next_action=action))
         self._train(self._trajectory)
 
         aux = self.logs['episode_td_errors'].pop(-1)
@@ -66,7 +66,7 @@ class AbstractSARSAAgent(AbstractAgent):
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
     def _train(self, trajectory):
-        trajectory = SARSAObservation(*stack_list_of_tuples(trajectory))
+        trajectory = Observation(*stack_list_of_tuples(trajectory))
 
         self.optimizer.zero_grad()
         pred_q, target_q = self._td(*trajectory)
@@ -81,5 +81,6 @@ class AbstractSARSAAgent(AbstractAgent):
         self.optimizer.step()
 
     @abstractmethod
-    def _td(self, state, action, reward, next_state, done, next_action):
+    def _td(self, state, action, reward, next_state, done, next_action, *args, **kwargs
+            ):
         raise NotImplementedError

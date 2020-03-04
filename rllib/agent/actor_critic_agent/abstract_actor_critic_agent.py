@@ -112,15 +112,18 @@ class AbstractPolicyGradient(AbstractAgent):
 
         self.critic_optimizer.step()
 
-    def _td_base(self, state, _=None, reward=None, next_state=None, done=None):
+    def _td_base(self, state, _=None, reward=None, next_state=None, done=None,
+                 *args, **kwargs):
         next_v = self.baseline_target(next_state) * (1 - done)
         target_v = reward + self.gamma * next_v
         return self.baseline(state), target_v.detach()
 
     @abstractmethod
-    def _return(self, state, action=None, reward=None, next_state=None, done=None):
+    def _return(self, state, action=None, reward=None, next_state=None, done=None,
+                *args, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
-    def _td_critic(self, state, action=None, reward=None, next_state=None, done=None):
+    def _td_critic(self, state, action=None, reward=None, next_state=None, done=None,
+                   *args, **kwargs):
         raise NotImplementedError

@@ -12,7 +12,7 @@ class QLearningAgent(AbstractQLearningAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args):
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q(x', a) and don't stop gradient.

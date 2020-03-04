@@ -13,7 +13,7 @@ class DDQNAgent(AbstractQLearningAgent):
     with double q-learning." Thirtieth AAAI conference on artificial intelligence. 2016.
     """
 
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args):
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * Q_target(x', argmax Q(x', a))

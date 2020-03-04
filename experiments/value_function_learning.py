@@ -1,6 +1,6 @@
 from rllib.environment.systems import InvertedPendulum
 from rllib.environment import SystemEnvironment
-from rllib.policy import MLPPolicy
+from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
 import torch.nn as nn
 import torch.optim as optim
@@ -67,11 +67,11 @@ model.b.requires_grad = False
 # for param in model.parameters:
 #     param.requires_grad = False
 
-policy = MLPPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
+policy = NNPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
                    layers=[], biased_head=False, deterministic=True)  # Linear policy.
 policy2 = torch.nn.Linear(2, 1)
 
-print(f'initial: {policy._nn.head.weight}')
+print(f'initial: {policy.nn.head.weight}')
 # print(f'initial: {policy.weight}')
 
 
@@ -145,7 +145,7 @@ plt.legend()
 plt.show()
 
 print(f'optimal: {K}')
-print(f'learned: {policy._nn.head.weight}')
+print(f'learned: {policy.nn.head.weight}')
 # print(f'learned: {policy.weight}')
 
 bounds = [(-0.5, 0.5), (-0.5, 0.5)]

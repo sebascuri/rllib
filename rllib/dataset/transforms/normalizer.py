@@ -1,7 +1,6 @@
 """Implementation of a Transformation that normalizes a vector."""
 
 from .abstract_transform import AbstractTransform
-from .. import Observation
 from rllib.dataset.transforms.utilities import get_backend, normalize, denormalize, \
     update_var, update_mean
 import numpy as np
@@ -70,23 +69,14 @@ class StateNormalizer(AbstractTransform):
 
     def __call__(self, observation):
         """See `AbstractTransform.__call__'."""
-        return Observation(
-            state=self._normalizer(observation.state),
-            action=observation.action,
-            reward=observation.reward,
-            next_state=self._normalizer(observation.next_state),
-            done=observation.done
-        )
+        return observation._replace(state=self._normalizer(observation.state),
+                                    next_state=self._normalizer(observation.next_state))
 
     def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
-        return Observation(
+        return observation._replace(
             state=self._normalizer.inverse(observation.state),
-            action=observation.action,
-            reward=observation.reward,
-            next_state=self._normalizer.inverse(observation.next_state),
-            done=observation.done
-        )
+            next_state=self._normalizer.inverse(observation.next_state))
 
     def update(self, observation):
         """See `AbstractTransform.update'."""
@@ -115,23 +105,11 @@ class ActionNormalizer(AbstractTransform):
 
     def __call__(self, observation):
         """See `AbstractTransform.__call__'."""
-        return Observation(
-            state=observation.state,
-            action=self._normalizer(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done
-        )
+        return observation._replace(action=self._normalizer(observation.action))
 
     def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
-        return Observation(
-            state=observation.state,
-            action=self._normalizer.inverse(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done
-        )
+        return observation._replace(action=self._normalizer.inverse(observation.action))
 
     def update(self, observation):
         """See `AbstractTransform.update'."""

@@ -3,7 +3,7 @@ from rllib.policy.abstract_policy import AbstractPolicy
 from rllib.environment.abstract_environment import AbstractEnvironment
 from rllib.model.abstract_model import AbstractModel
 from typing import List, Union, Tuple, Callable
-from rllib.dataset.datatypes import Observation, State, Action, StateAction
+from rllib.dataset.datatypes import Observation, State, Action
 from numpy import ndarray
 
 
@@ -23,4 +23,4 @@ def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
 
 def rollout_model(model: AbstractModel, policy: AbstractPolicy, initial_states: State,
                   max_steps: int = 1000,
-                  termination: Callable[[State, Action], bool] = None) -> StateAction: ...
+                  termination: Callable[[State, Action], bool] = None) -> List[Observation]: ...

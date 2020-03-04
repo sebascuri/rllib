@@ -93,5 +93,5 @@ class AbstractQLearningAgent(AbstractAgent):
             self.memory.update(idx, td_error.numpy())
 
     @abstractmethod
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args):
         raise NotImplementedError

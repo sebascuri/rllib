@@ -1,7 +1,6 @@
 """Implementation of a Transformation that offsets the data with a mean function."""
 
 from .abstract_transform import AbstractTransform
-from .. import Observation
 
 
 class MeanFunction(AbstractTransform):
@@ -21,22 +20,10 @@ class MeanFunction(AbstractTransform):
 
     def __call__(self, observation):
         """See `AbstractTransform.__call__'."""
-        predicted_next_state = self.mean_function(observation.state, observation.action)
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=observation.next_state - predicted_next_state,
-            done=observation.done
-        )
+        mean_next_state = self.mean_function(observation.state, observation.action)
+        return observation._replace(next_state=observation.next_state - mean_next_state)
 
     def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
-        predicted_next_state = self.mean_function(observation.state, observation.action)
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=observation.next_state + predicted_next_state,
-            done=observation.done
-        )
+        mean_next_state = self.mean_function(observation.state, observation.action)
+        return observation._replace(next_state=observation.next_state + mean_next_state)

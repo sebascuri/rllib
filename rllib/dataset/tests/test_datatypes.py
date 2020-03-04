@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from rllib.dataset import Observation, SARSAObservation
+from rllib.dataset import Observation
 
 
 class TestObservation(object):
@@ -49,34 +49,34 @@ class TestSARSAObservation(object):
 
     def test_equality(self):
         state, action, reward, nstate, done, n_action = self.init()
-        o = SARSAObservation(state, action, reward, nstate, done, n_action)
-        assert o == SARSAObservation(state, action, reward, nstate, done, n_action)
-        assert not o != SARSAObservation(state, action, reward, nstate, done, n_action)
+        o = Observation(state, action, reward, nstate, done, n_action)
+        assert o == Observation(state, action, reward, nstate, done, n_action)
+        assert not o != Observation(state, action, reward, nstate, done, n_action)
 
     def test_inequality(self):
         state, action, reward, nstate, done, nact = self.init()
-        o = SARSAObservation(state, action, reward, nstate, done, nact)
-        assert o != SARSAObservation(state + 1, action, reward, nstate, done, nact)
-        assert not o == SARSAObservation(state + 1, action, reward, nstate, done, nact)
+        o = Observation(state, action, reward, nstate, done, nact)
+        assert o != Observation(state + 1, action, reward, nstate, done, nact)
+        assert not o == Observation(state + 1, action, reward, nstate, done, nact)
 
-        assert o != SARSAObservation(state, action + 1, reward, nstate, done, nact)
-        assert not o == SARSAObservation(state, action + 1, reward, nstate, done, nact)
+        assert o != Observation(state, action + 1, reward, nstate, done, nact)
+        assert not o == Observation(state, action + 1, reward, nstate, done, nact)
 
-        assert o != SARSAObservation(state, action, reward + 1, nstate, done, nact)
-        assert not o == SARSAObservation(state, action, reward + 1, nstate, done, nact)
+        assert o != Observation(state, action, reward + 1, nstate, done, nact)
+        assert not o == Observation(state, action, reward + 1, nstate, done, nact)
 
-        assert o != SARSAObservation(state, action, reward, nstate + 1, done, nact)
-        assert not o == SARSAObservation(state, action, reward, nstate + 1, done, nact)
+        assert o != Observation(state, action, reward, nstate + 1, done, nact)
+        assert not o == Observation(state, action, reward, nstate + 1, done, nact)
 
-        assert o != SARSAObservation(state, action, reward, nstate, not done, nact)
-        assert not o == SARSAObservation(state, action, reward, nstate, not done, nact)
+        assert o != Observation(state, action, reward, nstate, not done, nact)
+        assert not o == Observation(state, action, reward, nstate, not done, nact)
 
-        assert o != SARSAObservation(state, action, reward, nstate, done, nact + 1)
-        assert not o == SARSAObservation(state, action, reward, nstate, done, nact + 1)
+        assert o != Observation(state, action, reward, nstate, done, nact + 1)
+        assert not o == Observation(state, action, reward, nstate, done, nact + 1)
 
     def test_type_inequality(self):
         state, action, reward, nstate, done, nact = self.init()
-        o = SARSAObservation(state, action, reward, nstate, done, nact)
+        o = Observation(state, action, reward, nstate, done, nact)
 
         assert not o == Observation(state, action, reward, nstate, done)
         assert not Observation(state, action, reward, nstate, done) == o

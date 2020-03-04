@@ -7,7 +7,7 @@ from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Tuple
+from typing import Tuple, Any
 
 
 class AbstractQLearningAgent(AbstractAgent):
@@ -35,4 +35,4 @@ class AbstractQLearningAgent(AbstractAgent):
 
     @abstractmethod
     def _td(self, state: State, action: Action, reward: Reward, next_state: State,
-            done: Done) -> Tuple[Tensor, Tensor]: ...
+            done: Done, *args: Any, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...

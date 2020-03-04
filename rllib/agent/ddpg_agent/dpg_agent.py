@@ -14,7 +14,7 @@ class DPGAgent(AbstractDPGAgent):
 
     """
 
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args, **kwargs):
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * Q(x', \pi(x'))

@@ -37,8 +37,7 @@ def init_er_from_environment(target_er, environment):
     assert environment.num_states is not None
 
     for state in range(environment.num_states):
-        observation = Observation(state, torch.empty(0), torch.empty(0), torch.empty(0),
-                                  torch.empty(0))
+        observation = Observation(state, torch.empty(0))
         target_er.append(observation)
 
 

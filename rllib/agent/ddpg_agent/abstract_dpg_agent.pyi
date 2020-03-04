@@ -8,7 +8,7 @@ from abc import abstractmethod
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Tuple
+from typing import Tuple, Any
 
 
 class AbstractDPGAgent(AbstractAgent):
@@ -46,10 +46,10 @@ class AbstractDPGAgent(AbstractAgent):
     def _train(self, batches: int = 1, optimize_actor: bool = True) -> None: ...
 
     def _train_critic(self, state: State, action: Action, reward: Reward,
-                      next_state: State, done: Done, weight: Tensor) -> Tensor: ...
+                      next_state: State, done: Done, weight: Tensor, *args, **kwargs) -> Tensor: ...
 
     def _train_actor(self, state: State, weight: Tensor) -> None: ...
 
     @abstractmethod
     def _td(self, state: State, action: Action, reward: Reward, next_state: State,
-            done: Done) -> Tuple[Tensor, Tensor]: ...
+            done: Done, *args: Any, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...

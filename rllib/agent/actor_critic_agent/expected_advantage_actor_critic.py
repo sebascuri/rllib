@@ -15,6 +15,7 @@ class EA2CAgent(EACAgent):
 
     """
 
-    def _return(self, state, action=None, reward=None, next_state=None, done=None):
+    def _return(self, state, action=None, reward=None, next_state=None, done=None,
+                *args, **kwargs):
         value = self.critic_target.value(next_state, self.policy)
         return super()._return(state, action, reward, next_state, done) - value

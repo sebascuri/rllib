@@ -13,6 +13,6 @@ class GDPGAgent(DPGAgent):
 
     """
 
-    def _td(self, state, action, reward, next_state, done):
+    def _td(self, state, action, reward, next_state, done, *args, **kwargs):
         pred_q, target_q = super()._td(state, action, reward, next_state, done)
         return pred_q, target_q.detach()
