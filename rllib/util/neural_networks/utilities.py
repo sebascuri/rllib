@@ -35,15 +35,15 @@ def update_parameters(target_params, new_params, tau=1.0):
             target_param.data.copy_(new_param_)
 
 
-def zero_bias(named_params):
+def zero_bias(module):
     """Zero all bias terms in the parameters.
 
     Parameters
     ----------
-    named_params: iter
+    module: module to zero the biases to.
 
     """
-    for name, param in named_params:
+    for name, param in module.named_parameters():
         if name.endswith('bias'):
             nn.init.zeros_(param)
 
