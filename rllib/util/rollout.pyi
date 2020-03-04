@@ -1,8 +1,9 @@
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.policy.abstract_policy import AbstractPolicy
 from rllib.environment.abstract_environment import AbstractEnvironment
-from typing import List, Union, Tuple
-from rllib.dataset import Observation
+from rllib.model.abstract_model import AbstractModel
+from typing import List, Union, Tuple, Callable
+from rllib.dataset.datatypes import Observation, State, Action, StateAction
 from numpy import ndarray
 
 
@@ -19,3 +20,7 @@ def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
 def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False
                   ) -> List[List[Observation]]: ...
+
+def rollout_model(model: AbstractModel, policy: AbstractPolicy, initial_states: State,
+                  max_steps: int = 1000,
+                  termination: Callable[[State, Action], bool] = None) -> StateAction: ...

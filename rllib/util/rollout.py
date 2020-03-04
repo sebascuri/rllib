@@ -1,10 +1,11 @@
 """Helper functions to conduct a rollout with policies or agents."""
 
 import torch
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation, StateAction
+from rllib.dataset.utilities import stack_list_of_tuples
 import pickle
 
-__all__ = ['rollout_agent', 'rollout_policy']
+__all__ = ['rollout_agent', 'rollout_policy', 'rollout_model']
 
 
 def _step(environment, state, action, render):
@@ -88,3 +89,35 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                     break
         trajectories.append(trajectory)
     return trajectories
+
+
+def rollout_model(model, policy, initial_states, max_steps=1000, termination=None):
+    """Rollout a system for a number of steps."""
+    trajectory = list()
+    states = initial_states
+    for _ in range(max_steps):
+        # Sample actions
+        actions = policy(states)
+        if actions.has_rsample:
+            actions = actions.rsample()
+        else:
+            actions = actions.sample()
+
+        # Sample next states
+        next_states = model(states, actions)
+        if next_states.has_rsample:
+            next_states = next_states.rsample()
+        else:
+            next_states = next_states.sample()
+
+        # Store state, action tuples
+        trajectory.append(StateAction(states, actions))
+
+        # Update state
+        states = next_states
+
+        # Check for termination.
+        if termination is not None and termination(states, actions):
+            break
+
+    return StateAction(*stack_list_of_tuples(trajectory))
