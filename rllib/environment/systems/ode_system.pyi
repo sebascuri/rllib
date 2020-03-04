@@ -1,15 +1,16 @@
 from .abstract_system import AbstractSystem
 from rllib.dataset.datatypes import Action, State
-from typing import Callable
-from scipy.integrate import OdeSolver
+from typing import Callable, Type
+from scipy.integrate import OdeSolver, RK45
 
 
 class ODESystem(AbstractSystem):
     step_size: float
-    ode: OdeSolver
+    func: Callable
+    integrator: Type[OdeSolver]
 
-    def __init__(self, ode: Callable, step_size: float, dim_state: int, dim_action: int,
-                 integrator: str = 'dopri5', jac: Callable=None) -> None: ...
+    def __init__(self, func: Callable, step_size: float, dim_state: int, dim_action: int,
+                 integrator: Type[OdeSolver] = RK45) -> None: ...
 
     def step(self, action: Action) -> State: ...
 

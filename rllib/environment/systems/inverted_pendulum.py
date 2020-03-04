@@ -30,7 +30,7 @@ class InvertedPendulum(ODESystem):
         self.gravity = gravity
 
         super().__init__(
-            ode=self._ode,
+            func=self._ode,
             step_size=step_size,
             dim_action=1,
             dim_state=2,
