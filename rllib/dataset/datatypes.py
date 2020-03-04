@@ -4,6 +4,7 @@ import torch
 from typing import NamedTuple, Union
 from torch.distributions import MultivariateNormal, Categorical
 from gpytorch.distributions import Delta
+
 Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]
 Action = Union[int, float, Array]
@@ -11,6 +12,25 @@ Reward = Union[int, float, Array]
 Done = Union[bool, Array]
 Gaussian = Union[MultivariateNormal, Delta]
 Distribution = Union[MultivariateNormal, Delta, Categorical]
+
+
+class StateAction(NamedTuple):
+    """State Action datatype."""
+
+    state: State
+    action: Action
+
+    def __eq__(self, other):
+        """Check if two state-actions are equal."""
+        if not isinstance(other, Observation):
+            return NotImplemented
+        is_equal = np.allclose(self.state, other.state)
+        is_equal &= np.allclose(self.action, other.action)
+        return is_equal
+
+    def __ne__(self, other):
+        """Check if two observations are not equal."""
+        return not self.__eq__(other)
 
 
 class Observation(NamedTuple):
