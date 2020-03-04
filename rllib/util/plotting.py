@@ -1,9 +1,12 @@
 """Python Script Template."""
 import numpy as np
+import torch
 import itertools
+import matplotlib.pyplot as plt
+from rllib.util import moving_average_filter
 
-
-__all__ = ['combinations', 'linearly_spaced_combinations', 'plot_combinations_as_grid']
+__all__ = ['combinations', 'linearly_spaced_combinations', 'plot_combinations_as_grid',
+           'plot_learning_losses', 'plot_on_grid', 'plot_values_and_policy']
 
 
 def combinations(arrays):
@@ -75,3 +78,93 @@ def plot_combinations_as_grid(axis, values, num_entries, bounds=None, **kwargs):
         kwargs['extent'] = list(itertools.chain(*bounds))
 
     return axis.imshow(values.reshape(*num_entries).T, **kwargs)
+
+
+def plot_learning_losses(policy_losses, value_losses, horizon):
+    """Plot the losses encountnered during learning.
+
+    Parameters
+    ----------
+    policy_losses : list or ndarray
+    value_losses : list or ndarray
+    horizon : int
+        Horizon used for smoothing
+    """
+    t = np.arange(len(policy_losses))
+
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
+
+    plt.sca(ax1)
+    plt.plot(t, policy_losses)
+    plt.plot(*moving_average_filter(t, policy_losses, horizon),
+             label='smoothed')
+    plt.xlabel('Iteration')
+    plt.ylabel('Policy loss')
+    plt.legend()
+
+    plt.sca(ax2)
+    plt.plot(t, value_losses)
+    plt.plot(*moving_average_filter(t, value_losses, horizon),
+             label='smoothed')
+    plt.xlabel('Iteration')
+    plt.ylabel('Value loss')
+    plt.legend()
+
+
+def plot_on_grid(function, bounds, num_entries):
+    """Plot function values on a grid.
+
+    Parameters
+    ----------
+    function : callable
+    bounds : list
+    num_entries : list
+
+    Returns
+    -------
+    axis
+    """
+    axis = plt.gca()
+    states = linearly_spaced_combinations(bounds, num_entries)
+    values = function(torch.from_numpy(states).float())
+    values = values.detach().numpy()
+
+    img = plot_combinations_as_grid(axis, values, num_entries, bounds)
+    plt.colorbar(img)
+    axis.set_xlim(bounds[0])
+    axis.set_ylim(bounds[1])
+    return axis
+
+
+def plot_values_and_policy(value_function, policy, bounds, num_entries):
+    """Plot the value and policy function over a grid.
+
+    Parameters
+    ----------
+    value_function : torch.nn.Module
+    policy : torch.nn.Module
+    bounds : list
+    num_entries : list
+
+    Returns
+    -------
+    ax_value
+    ax_policy
+    """
+    fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True, figsize=(15, 10))
+
+    plt.sca(ax1)
+    plot_on_grid(value_function, bounds=bounds, num_entries=num_entries)
+    plt.title('Learned value function')
+    plt.xlabel('Angle[rad]')
+    plt.ylabel('Angular velocity [rad/s]')
+    plt.axis('tight')
+
+    plt.sca(ax2)
+    plot_on_grid(lambda x: policy(x).mean, bounds=bounds, num_entries=num_entries)
+    plt.title('Learned policy')
+    plt.xlabel('Angle [rad]')
+    plt.ylabel('Angular velocity [rad/s]')
+    plt.axis('tight')
+
+    return ax1, ax2
