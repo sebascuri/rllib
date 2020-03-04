@@ -17,7 +17,7 @@ def test_zero_bias():
     out_dim = 2
     layers = [2, 4, 6, 8, 4, 2]
     n = DeterministicNN(in_dim, out_dim, layers)
-    zero_bias(n.named_parameters())
+    zero_bias(n)
 
     for name, param in n.named_parameters():
         if name.endswith('bias'):
