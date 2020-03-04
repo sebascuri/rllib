@@ -2,9 +2,11 @@
 
 import scipy.signal
 import torch
+import torch.distributions
 import numpy as np
 
-__all__ = ['integrate', 'mellow_max', 'discount_cumsum']
+__all__ = ['integrate', 'mellow_max', 'discount_cumsum', 'moving_average_filter',
+           'separated_kl']
 
 
 def integrate(function, distribution, num_samples=1):
@@ -90,3 +92,61 @@ def discount_cumsum(rewards, gamma=1.0):
         r = reward + gamma * r
         val[-1 - i] = r
     return val
+
+
+def moving_average_filter(x, y, horizon: int):
+    """Apply a moving average filter to data x and y.
+
+    This function truncates the data to match the horizon.
+
+    Parameters
+    ----------
+    x : ndarray
+        The time stamps of the data.
+    y : ndarray
+        The values of the data.
+    horizon : int
+        The horizon over which to apply the filter.
+
+    Returns
+    -------
+    x_smooth : ndarray
+        A shorter array of x positions for smoothed values.
+    y_smooth : ndarray
+        The corresponding smoothed values
+    """
+    horizon = min(horizon, len(y))
+
+    smoothing_weights = np.ones(horizon) / horizon
+    x_smooth = x[horizon // 2: -horizon // 2 + 1]
+    y_smooth = np.convolve(y, smoothing_weights, 'valid')
+    return x_smooth, y_smooth
+
+
+def separated_kl(dist, prior):
+    """Compute the mean and variance components of the average KL divergence.
+
+    Separately computes the mean and variance contributions to the KL divergence
+
+    Parameters
+    ----------
+    dist : torch.distributions.MultivariateNormal
+    prior : torch.distributions.MultivariateNormal
+
+    Returns
+    -------
+    kl_mean : torch.Tensor
+    kl_var : torch.Tensor
+    """
+    prior_mean, prior_scale = prior.loc.detach(), prior.covariance_matrix.detach()
+    prior_scale.clamp_(None, 1.)
+
+    mean, scale = dist.loc, dist.scale_tril
+
+    pi_mean = torch.distributions.MultivariateNormal(mean, prior_scale)
+    pi_var = torch.distributions.MultivariateNormal(prior_mean, scale)
+
+    kl_mean = torch.distributions.kl_divergence(pi_mean, prior).mean()
+    kl_var = torch.distributions.kl_divergence(pi_var, prior).mean()
+
+    return kl_mean, kl_var
