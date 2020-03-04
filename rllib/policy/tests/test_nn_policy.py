@@ -1,4 +1,4 @@
-from rllib.policy import MLPPolicy, FelixPolicy, TabularPolicy
+from rllib.policy import NNPolicy, FelixPolicy, TabularPolicy
 from rllib.util.neural_networks import random_tensor
 import torch
 from torch.distributions import MultivariateNormal, Categorical
@@ -47,9 +47,9 @@ class TestMLPPolicy(object):
             self.num_actions = None
             self.dim_action = dim_action
 
-        self.policy = MLPPolicy(self.dim_state, self.dim_action,
-                                self.num_states, self.num_actions,
-                                layers=[32, 32])
+        self.policy = NNPolicy(self.dim_state, self.dim_action,
+                               self.num_states, self.num_actions,
+                               layers=[32, 32])
 
     def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
                                 dim_action):

@@ -2,7 +2,7 @@ from rllib.agent import ACAgent, AECAgent, A2CAgent, A2ECAgent, EACAgent, EA2CAg
     TDACAgent
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
-from rllib.policy import MLPPolicy
+from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction, NNQFunction
 import torch
 import numpy as np
@@ -46,10 +46,10 @@ def test_ac_agent(environment, agent, num_rollouts, baseline):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    policy = MLPPolicy(environment.dim_state, environment.dim_action,
-                       num_states=environment.num_states,
-                       num_actions=environment.num_actions,
-                       layers=LAYERS)
+    policy = NNPolicy(environment.dim_state, environment.dim_action,
+                      num_states=environment.num_states,
+                      num_actions=environment.num_actions,
+                      layers=LAYERS)
 
     critic = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
@@ -81,10 +81,10 @@ def test_tdac_agent(environment, num_rollouts, baseline):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    policy = MLPPolicy(environment.dim_state, environment.dim_action,
-                       num_states=environment.num_states,
-                       num_actions=environment.num_actions,
-                       layers=LAYERS)
+    policy = NNPolicy(environment.dim_state, environment.dim_action,
+                      num_states=environment.num_states,
+                      num_actions=environment.num_actions,
+                      layers=LAYERS)
 
     critic = NNValueFunction(environment.dim_state,
                              num_states=environment.num_states, layers=LAYERS)
