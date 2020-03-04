@@ -26,7 +26,7 @@ class NNValueFunction(AbstractValueFunction):
     """
 
     def __init__(self, dim_state, num_states=None, layers=None, tau=1.0,
-                 biased_head=True):
+                 biased_head=True, input_transform=None):
         super().__init__(dim_state, num_states, tau=tau)
 
         if self.discrete_state:
@@ -34,12 +34,16 @@ class NNValueFunction(AbstractValueFunction):
         else:
             num_inputs = self.dim_state
 
+        self.input_transform = input_transform
         self.nn = DeterministicNN(num_inputs, 1, layers, biased_head=biased_head)
         self.dimension = self.nn.embedding_dim
 
     def forward(self, *args, **kwargs):
         """Get value of the value-function at a given state."""
         state = args[0]
+        if self.input_transform is not None:
+            state = self.input_transform(state)
+
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
         return self.nn(state).squeeze(-1)
@@ -73,7 +77,7 @@ class NNQFunction(AbstractQFunction):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, tau=1.0, biased_head=True):
+                 layers=None, tau=1.0, biased_head=True, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau)
 
         if not self.discrete_state and not self.discrete_action:
@@ -88,6 +92,7 @@ class NNQFunction(AbstractQFunction):
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
+        self.input_transform = input_transform
         self.nn = DeterministicNN(num_inputs, num_outputs, layers,
                                   biased_head=biased_head)
 
@@ -113,6 +118,9 @@ class NNQFunction(AbstractQFunction):
             action = args[1]
         else:
             action = None
+
+        if self.input_transform is not None:
+            state, action = self.input_transform(state, action)
 
         if action is None:
             if not self.discrete_action:
