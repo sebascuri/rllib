@@ -8,19 +8,18 @@ from rllib.model import LinearModel
 import numpy as np
 import matplotlib.pyplot as plt
 
-import rllib.model.utilities
 from rllib.agent import DDPGAgent
+from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.algorithms.dyna import dyna_estimate
 from tqdm import tqdm
 import torch
 import rllib.util.neural_networks
 import rllib.algorithms.control
 from collections import OrderedDict
 
-
 num_steps = 1
 discount = 1.
 batch_size = 40
-
 
 system = InvertedPendulum(mass=0.1, length=0.5, friction=0.)
 system = system.linearize()
@@ -31,88 +30,38 @@ gamma = 0.99
 K, P = rllib.algorithms.control.dlqr(system.a, system.b, q, r, gamma=gamma)
 K = torch.from_numpy(K.T).float()
 P = torch.from_numpy(P).float()
-q = torch.from_numpy(q).float()
-r = torch.from_numpy(r).float()
 
-
-def reward_function(state, action):
-    state_cost = rllib.util.neural_networks.torch_quadratic(state, q)
-    action_cost = rllib.util.neural_networks.torch_quadratic(action, r)
-    return -(state_cost + action_cost).squeeze()
-
-
+reward_model = QuadraticReward(torch.from_numpy(q).float(), torch.from_numpy(r).float())
 environment = SystemEnvironment(system, initial_state=None, termination=None,
-                                reward=reward_function)
-
-
-# class LinearModel(nn.Module):
-#     """A linear Gaussian state space model."""
-#
-#     def __init__(self, a, b):
-#         self.state_dim, self.action_dim = b.shape
-#         super().__init__()
-#
-#         self.a = a.t()
-#         self.b = b.t()
-#
-#     def forward(self, state, action):
-#         return state @ self.a + action @ self.b
-#
-
+                                reward=lambda x, u: reward_model(x, u).sample())
 model = LinearModel(torch.from_numpy(system.a).float(),
                     torch.from_numpy(system.b).float())
-# rllib.util.neural_networks.freeze_parameters(model)
-model.a.requires_grad = False
-model.b.requires_grad = False
-# for param in model.parameters:
-#     param.requires_grad = False
 
 policy = NNPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
-                   layers=[], biased_head=False, deterministic=True)  # Linear policy.
-policy2 = torch.nn.Linear(2, 1)
-
+                  layers=[], biased_head=False, deterministic=True)  # Linear policy.
 print(f'initial: {policy.nn.head.weight}')
-# print(f'initial: {policy.weight}')
-
 
 value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64],
                                  biased_head=False)
-value_function2 = nn.Sequential(OrderedDict(
-    linear1=nn.Linear(model.dim_state, 64),
-    relu1=nn.ReLU(),
-    linear2=nn.Linear(64, 64),
-    relu2=nn.ReLU(),
-    linear3=nn.Linear(64, 1, bias=False)
-))
-
-# value_function = torch.jit.trace(value_function, torch.empty(25, 2))
-# policy = torch.jit.trace(policy, torch.empty(25, 2))
-
 loss_function = nn.MSELoss()
 value_optimizer = optim.Adam(value_function.parameters(), lr=5e-4)
-policy_optimizer = optim.Adam(policy.parameters(), lr=5e-4)
+policy_optimizer = optim.Adam(policy.parameters(), lr=5e-3)
 
 policy_losses = []
 value_losses = []
-
+torch.autograd.set_detect_anomaly(True)
 for i in tqdm(range(10000)):
     value_optimizer.zero_grad()
     policy_optimizer.zero_grad()
 
     states = 0.5 * torch.randn(batch_size, 2)
     with rllib.util.neural_networks.disable_gradient(value_function):
-        values = rllib.model.utilities.estimate_value(
-            states=states,
-            model=model,
-            policy=policy,
-            reward=reward_function,
-            steps=0,
-            gamma=gamma,
-            bootstrap=value_function,
-            num_samples=1)
+        dyna_return = dyna_estimate(state=states, model=model, policy=policy,
+                                    reward=reward_model, steps=0, gamma=gamma,
+                                    bootstrap=value_function, num_samples=5)
     prediction = value_function(states)
-    value_loss = loss_function(prediction, values)
-    policy_loss = -values.mean()
+    value_loss = loss_function(prediction, dyna_return.q_target.mean(dim=0))
+    policy_loss = -dyna_return.q_target.mean()
 
     loss = policy_loss + value_loss
     loss.backward()
@@ -121,7 +70,6 @@ for i in tqdm(range(10000)):
 
     policy_losses.append(policy_loss.item())
     value_losses.append(value_loss.item())
-
 
 horizon = 20
 smoothing_weights = np.ones(horizon) / horizon
