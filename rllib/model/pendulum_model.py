@@ -20,10 +20,10 @@ class PendulumModel(AbstractModel):
         self.step_size = step_size
         self.noise = noise
 
-    def __call__(self, state, action):
+    def forward(self, state, action):
         """Get next-state distribution."""
         # Physical dynamics
-        action.clamp_(-1., 1.)
+        action = torch.clamp(action, -1., 1.)
         mass = self.mass
         gravity = 9.81
         length = self.length

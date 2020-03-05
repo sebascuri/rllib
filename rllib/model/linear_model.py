@@ -20,7 +20,7 @@ class LinearModel(AbstractModel):
         self.b = b.t()
         self.noise = noise
 
-    def __call__(self, state, action):
+    def forward(self, state, action):
         """Get next state distribution."""
         if not isinstance(state, torch.Tensor):
             state = torch.tensor(state).float()

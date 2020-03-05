@@ -1,9 +1,10 @@
 """Interface for dynamical models."""
 
 from abc import ABCMeta, abstractmethod
+import torch.nn as nn
 
 
-class AbstractModel(object, metaclass=ABCMeta):
+class AbstractModel(nn.Module, metaclass=ABCMeta):
     """Interface for Models of an Environment.
 
     A Model is an approximation of the environment.
@@ -45,6 +46,7 @@ class AbstractModel(object, metaclass=ABCMeta):
 
     def __init__(self, dim_state, dim_action, dim_observation=None, num_states=None,
                  num_actions=None, num_observations=None):
+        super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
         self.dim_observation = dim_observation if dim_observation else dim_state
@@ -52,31 +54,6 @@ class AbstractModel(object, metaclass=ABCMeta):
         self.num_states = num_states
         self.num_actions = num_actions
         self.num_observations = num_observations
-
-    @abstractmethod
-    def __call__(self, state, action):
-        """Get next-state distribution.
-
-        Parameters
-        ----------
-        state: array_like
-        action: array_like
-
-        Returns
-        -------
-        next-state: torch.distributions.Distribution
-
-        """
-        raise NotImplementedError
-
-    @property
-    def parameters(self):
-        """Get model parameters."""
-        return None
-
-    @parameters.setter
-    def parameters(self, new_value):
-        pass
 
     @property
     def discrete_state(self):
