@@ -24,7 +24,7 @@ class Observation(NamedTuple):
     next_state: State = np.nan
     done: Done = True
     next_action: Action = np.nan  # SARSA algorithm.
-    prob_action: Probability = np.nan  # Off-policy algorithms.
+    log_prob_action: Probability = np.nan  # Off-policy algorithms.
 
     @staticmethod
     def _is_equal_nan(x, y):
@@ -44,7 +44,7 @@ class Observation(NamedTuple):
         is_equal &= self._is_equal_nan(self.reward, other.reward)
         is_equal &= self._is_equal_nan(self.next_state, other.next_state)
         is_equal &= self._is_equal_nan(self.next_action, other.next_action)
-        is_equal &= self._is_equal_nan(self.prob_action, other.prob_action)
+        is_equal &= self._is_equal_nan(self.log_prob_action, other.log_prob_action)
         is_equal &= self.done == other.done
         return is_equal
 
