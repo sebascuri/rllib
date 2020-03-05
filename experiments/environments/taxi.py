@@ -1,6 +1,7 @@
 """Python Script Template."""
 import matplotlib.pyplot as plt
-from rllib.agent import GQLearningAgent
+from rllib.agent import QLearningAgent
+from rllib.algorithms import SemiGQLearning
 from rllib.environment import GymEnvironment
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
@@ -32,8 +33,7 @@ q_function = NNQFunction(
     dim_state=environment.dim_state, dim_action=environment.dim_action,
     num_states=environment.num_states, num_actions=environment.num_actions,
     layers=LAYERS, biased_head=False, tau=1)
-q_function.q_function.head.weight.data = torch.ones_like(
-    q_function.q_function.head.weight)
+q_function.nn.head.weight.data = torch.ones_like(q_function.nn.head.weight)
 
 policy = EpsGreedy(q_function, EPSILON)
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
@@ -41,8 +41,8 @@ optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
 criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-agent = GQLearningAgent(q_function, policy, criterion, optimizer, memory,
-                        target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+agent = QLearningAgent(SemiGQLearning, q_function, policy, criterion, optimizer, memory,
+                       target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
               milestones=MILESTONES)
 

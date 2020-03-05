@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent, GQLearningAgent, DQNAgent, DDQNAgent
+from rllib.agent import QLearningAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
 from rllib.environment import GymEnvironment
+from rllib.algorithms.q_learning import QLearning, SemiGQLearning, DDQN, DQN
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
@@ -45,8 +46,8 @@ optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
 criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-agent = DDQNAgent(q_function, policy, criterion, optimizer, memory,
-                  target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+agent = QLearningAgent(DDQN, q_function, policy, criterion, optimizer, memory,
+                       target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
 plt.plot(agent.episodes_cumulative_rewards)

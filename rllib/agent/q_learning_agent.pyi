@@ -1,25 +1,21 @@
-from ..abstract_agent import AbstractAgent
-from abc import abstractmethod
+from .abstract_agent import AbstractAgent
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
 from rllib.dataset import ExperienceReplay
-from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
-from torch import Tensor
+from rllib.dataset.datatypes import Observation
+from rllib.algorithms.q_learning import QLearning
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Tuple, Any
 
 
-class AbstractQLearningAgent(AbstractAgent):
-    q_function: AbstractQFunction
-    q_target: AbstractQFunction
+class QLearningAgent(AbstractAgent):
+    q_learning: QLearning
     policy: AbstractQFunctionPolicy
     memory: ExperienceReplay
-    criterion: _Loss
     optimizer: Optimizer
     target_update_frequency: int
 
-    def __init__(self, q_function: AbstractQFunction,
+    def __init__(self, q_learning:QLearning, q_function: AbstractQFunction,
                  policy: AbstractQFunctionPolicy, criterion: _Loss,
                  optimizer: Optimizer, memory: ExperienceReplay,
                  target_update_frequency: int = 4, gamma: float = 1.0,
@@ -31,8 +27,4 @@ class AbstractQLearningAgent(AbstractAgent):
 
     def end_episode(self) -> None: ...
 
-    def _train(self, batches: int = 1) -> None: ...
-
-    @abstractmethod
-    def _td(self, state: State, action: Action, reward: Reward, next_state: State,
-            done: Done, *args: Any, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...
+    def train(self, batches: int = 1) -> None: ...

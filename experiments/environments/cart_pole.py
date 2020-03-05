@@ -1,6 +1,7 @@
 """Python Script Template."""
 import matplotlib.pyplot as plt
-from rllib.agent import DDQNAgent
+from rllib.agent import QLearningAgent
+from rllib.algorithms import DDQN
 from rllib.environment import GymEnvironment
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
@@ -49,7 +50,7 @@ criterion = torch.nn.MSELoss
 memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 # memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-agent = DDQNAgent(q_function, policy, criterion, optimizer, memory,
+agent = QLearningAgent(DDQN, q_function, policy, criterion, optimizer, memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
               milestones=MILESTONES)

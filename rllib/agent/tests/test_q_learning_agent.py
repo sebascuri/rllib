@@ -1,5 +1,6 @@
 import pytest
-from rllib.agent import DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent
+from rllib.agent import QLearningAgent
+from rllib.algorithms.q_learning import QLearning, SemiGQLearning, DQN, DDQN
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
@@ -28,8 +29,8 @@ def environment(request):
     return request.param
 
 
-@pytest.fixture(params=[DQNAgent, QLearningAgent, GQLearningAgent, DDQNAgent])
-def agent(request):
+@pytest.fixture(params=[QLearning, SemiGQLearning, DQN, DDQN])
+def algorithm(request):
     return request.param
 
 
@@ -38,7 +39,7 @@ def policy(request):
     return request.param
 
 
-def test_nnq_interaction(environment, agent):
+def test_nnq_interaction(environment, algorithm):
     environment = GymEnvironment(environment, SEED)
 
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
@@ -53,10 +54,12 @@ def test_nnq_interaction(environment, agent):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer, memory=memory,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
-                    exploration_steps=2)
+    q_agent = QLearningAgent(q_learning=algorithm,
+                             q_function=q_function, policy=policy,
+                             criterion=criterion, optimizer=optimizer, memory=memory,
+                             target_update_frequency=TARGET_UPDATE_FREQUENCY,
+                             gamma=GAMMA,
+                             exploration_steps=2)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
@@ -76,14 +79,15 @@ def test_policies(environment, policy):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = DDQNAgent(
+    q_agent = QLearningAgent(
+        q_learning=DDQN,
         q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer, memory=memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
-def test_tabular_interaction(agent, policy):
+def test_tabular_interaction(algorithm, policy):
     LEARNING_RATE = 0.1
     environment = EasyGridWorld()
 
@@ -94,9 +98,11 @@ def test_tabular_interaction(agent, policy):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer, memory=memory,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+    q_agent = QLearningAgent(
+        q_learning=algorithm,
+        q_function=q_function, policy=policy,
+        criterion=criterion, optimizer=optimizer, memory=memory,
+        target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
     print(q_function.table)

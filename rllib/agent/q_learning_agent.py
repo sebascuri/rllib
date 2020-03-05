@@ -1,44 +1,64 @@
 """Implementation of QLearning Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
-from abc import abstractmethod
 import torch
 import numpy as np
-import copy
 
 
-class AbstractQLearningAgent(AbstractAgent):
-    """Abstract Implementation of the Q-Learning Algorithm.
+class QLearningAgent(AbstractAgent):
+    """Implementation of a Q-Learning agent.
 
-    The AbstractQLearning algorithm implements the Q-Learning algorithm except for the
+    The Q-Learning algorithm implements the Q-Learning algorithm except for the
     computation of the TD-Error, which leads to different algorithms.
 
     Parameters
     ----------
+    q_learning: QLearning
+        Implementation of Q-Learning algorithm.
     q_function: AbstractQFunction
         q_function that is learned.
     policy: QFunctionPolicy.
         Q-function derived policy.
     criterion: nn.Module
+        Criterion to minimize the TD-error.
     optimizer: nn.optim
+        Optimization algorithm for q_function.
     memory: ExperienceReplay
-        memory where to store the observations.
+        Memory where to store the observations.
+    target_update_frequency: int
+        How often to update the q_function target.
+    gamma: float, optional
+        Discount factor.
+    exploration_steps: int, optional
+        Number of random exploration steps.
+    exploration_episodes: int, optional
+        Number of random exploration steps.
 
     References
     ----------
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
 
+    Sutton, Richard S., et al. "Fast gradient-descent methods for temporal-difference
+    learning with linear function approximation." Proceedings of the 26th Annual
+    International Conference on Machine Learning. ACM, 2009.
+
+    Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning."
+    Nature 518.7540 (2015): 529-533.
+
+    Van Hasselt, Hado, Arthur Guez, and David Silver. "Deep reinforcement learning
+    with double q-learning." Thirtieth AAAI conference on artificial intelligence. 2016.
+
     """
 
-    def __init__(self, q_function, policy, criterion, optimizer, memory,
+    def __init__(self, q_learning, q_function, policy, criterion, optimizer, memory,
                  target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
-        self.q_function = q_function
         self.policy = policy
-        self.q_target = copy.deepcopy(q_function)
-        self.criterion = criterion(reduction='none')
+        self.q_learning = q_learning(q_function, criterion(reduction='none'),
+                                     self.gamma)
+
         self.memory = memory
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
@@ -51,9 +71,9 @@ class AbstractQLearningAgent(AbstractAgent):
         super().observe(observation)
         self.memory.append(observation)
         if self.memory.has_batch:
-            self._train()
+            self.train()
             if self.total_steps % self.target_update_frequency == 0:
-                self.q_target.update_parameters(self.q_function.parameters())
+                self.q_learning.update()
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
@@ -66,7 +86,7 @@ class AbstractQLearningAgent(AbstractAgent):
         if len(aux) > 0:
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
-    def _train(self, batches=1):
+    def train(self, batches=1):
         """Train the DQN for `batches' batches.
 
         Parameters
@@ -80,18 +100,15 @@ class AbstractQLearningAgent(AbstractAgent):
             observation = Observation(*map(lambda x: x.float(), observation))
 
             self.optimizer.zero_grad()
-            pred_q, target_q = self._td(*observation)
+            ans = self.q_learning(
+                observation.state, observation.action, observation.reward,
+                observation.next_state, observation.done)
 
-            td_error = pred_q.detach() - target_q.detach()
-            td_error_mean = td_error.mean().item()
-            self.logs['td_errors'].append(td_error_mean)
-            self.logs['episode_td_errors'][-1].append(td_error_mean)
-            loss = weight * self.criterion(pred_q, target_q)
+            loss = weight * ans.loss
             loss.mean().backward()
 
             self.optimizer.step()
-            self.memory.update(idx, td_error.numpy())
+            self.memory.update(idx, ans.td_error.numpy())
 
-    @abstractmethod
-    def _td(self, state, action, reward, next_state, done, *args):
-        raise NotImplementedError
+            self.logs['td_errors'].append(ans.td_error.mean().item())
+            self.logs['episode_td_errors'][-1].append(ans.td_error.mean().item())
