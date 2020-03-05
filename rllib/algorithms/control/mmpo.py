@@ -5,8 +5,9 @@ import torch.distributions
 import torch.nn as nn
 import copy
 from collections import namedtuple
-from rllib.util.neural_networks import freeze_parameters, repeat_along_dimension
+from rllib.util.neural_networks import freeze_parameters
 from rllib.util.utilities import separated_kl
+from rllib.algorithms.dyna import dyna_estimate
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -116,7 +117,7 @@ class MBMPPO(nn.Module):
     Parameters
     ----------
     model : AbstractModel
-    reward_function : callable
+    reward : callable
     policy : AbstractPolicy
     value_function : AbstractValueFunction
     epsilon : float
@@ -132,7 +133,7 @@ class MBMPPO(nn.Module):
         The discount factor.
     """
 
-    def __init__(self, model, reward_function, policy, value_function,
+    def __init__(self, model, reward, policy, value_function,
                  epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15):
         old_policy = copy.deepcopy(policy)
         freeze_parameters(old_policy)
@@ -140,7 +141,7 @@ class MBMPPO(nn.Module):
         super().__init__()
         self.old_policy = old_policy
         self.model = model
-        self.reward_function = reward_function
+        self.reward = reward
         self.policy = policy
         self.value_function = value_function
         self.gamma = gamma
@@ -183,15 +184,14 @@ class MBMPPO(nn.Module):
         pi_dist_old = self.old_policy(states)
         kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
 
-        actions = pi_dist.sample((self.num_action_samples,))
-        states = repeat_along_dimension(states, self.num_action_samples, dim=0)
-        action_log_probs = pi_dist.log_prob(actions)
-
-        # Compute q-values and values using the model
         with torch.no_grad():
-            next_states = self.model(states, actions).sample()
-            reward = self.reward_function(states, actions).sample()
-            q_values = reward + self.gamma * self.value_function(next_states)
+            dyna_return = dyna_estimate(state=states,
+                                        model=self.model, policy=self.policy,
+                                        reward=self.reward, steps=0, gamma=self.gamma,
+                                        bootstrap=self.value_function,
+                                        num_samples=self.num_action_samples)
+        q_values = dyna_return.q_target
+        action_log_probs = pi_dist.log_prob(dyna_return.trajectory[0].action)
 
         # Since actions come from policy, value is the expected q-value
         value_loss = self.value_loss(value_prediction, q_values.mean(dim=0))

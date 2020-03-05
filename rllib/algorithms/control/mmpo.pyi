@@ -3,10 +3,11 @@
 import torch.nn as nn
 from torch import Tensor
 from typing import NamedTuple
-
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
+from rllib.reward import AbstractReward
+
 
 class MPOLosses(NamedTuple):
     primal_loss: Tensor
@@ -36,7 +37,7 @@ class MPPO(nn.Module):
 
 
 class MBMPPO(nn.Module):
-    def __init__(self, model: AbstractModel, reward_function,
+    def __init__(self, model: AbstractModel, reward: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
                  epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float,
                  num_action_samples: int = 15) -> None: ...
