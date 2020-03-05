@@ -1,23 +1,19 @@
+"""SARSA Algorithm."""
+
 import torch.nn as nn
 from rllib.value_function import AbstractQFunction
-from typing import NamedTuple
+from .q_learning import QLearningLoss
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
 
-class QLearningLoss(NamedTuple):
-    loss: Tensor
-    td_error: Tensor
-
-
-class QLearning(nn.Module):
+class SARSA(nn.Module):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     criterion: _Loss
     gamma: float
 
     def __init__(self, q_function: AbstractQFunction, criterion: _Loss, gamma: float) -> None: ...
-
 
     def forward(self, *args: Tensor, **kwargs) -> QLearningLoss: ...
 
@@ -26,10 +22,16 @@ class QLearning(nn.Module):
     def update(self) -> None: ...
 
 
-class SemiGQLearning(QLearning): ...
+class SemiGSARSA(SARSA): ...
 
 
-class DQN(QLearning): ...
+class DSARSA(SARSA): ...
 
 
-class DDQN(QLearning): ...
+class ExpectedSARSA(SARSA): ...
+
+
+class SemiGExpectedSARSA(SARSA): ...
+
+
+class DExpectedSARSA(SARSA): ...

@@ -1,6 +1,7 @@
 import pytest
-from rllib.agent import SARSAAgent, DSARSAAgent, GSARSAAgent, ExpectedSARSAAgent, \
-    DExpectedSARSAAgent, GExpectedSARSAAgent
+from rllib.agent import SARSAAgent
+from rllib.algorithms.sarsa import SARSA, SemiGSARSA, DSARSA, ExpectedSARSA, \
+    DExpectedSARSA, SemiGExpectedSARSA
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
@@ -28,9 +29,9 @@ def environment(request):
     return request.param
 
 
-@pytest.fixture(params=[SARSAAgent, DSARSAAgent, GSARSAAgent, ExpectedSARSAAgent,
-                        DExpectedSARSAAgent, GExpectedSARSAAgent])
-def agent(request):
+@pytest.fixture(params=[SARSA, SemiGSARSA, DSARSA, ExpectedSARSA, DExpectedSARSA,
+                        SemiGExpectedSARSA])
+def algorithm(request):
     return request.param
 
 
@@ -44,7 +45,7 @@ def batch_size(request):
     return request.param
 
 
-def test_nnq_interaction(environment, agent):
+def test_nnq_interaction(environment, algorithm):
     environment = GymEnvironment(environment, SEED)
 
     q_function = NNQFunction(environment.dim_observation, environment.dim_action,
@@ -57,10 +58,11 @@ def test_nnq_interaction(environment, agent):
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
-                    exploration_episodes=2)
+    q_agent = SARSAAgent(sarsa_algorithm=algorithm,
+                         q_function=q_function, policy=policy,
+                         criterion=criterion, optimizer=optimizer,
+                         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
+                         exploration_episodes=2)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
@@ -78,14 +80,15 @@ def test_policies(environment, policy, batch_size):
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    q_agent = DExpectedSARSAAgent(
-        q_function=q_function, policy=policy,
-        criterion=criterion, optimizer=optimizer, batch_size=batch_size,
-        target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+    q_agent = SARSAAgent(DExpectedSARSA,
+                         q_function=q_function, policy=policy,
+                         criterion=criterion, optimizer=optimizer,
+                         batch_size=batch_size,
+                         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
 
 
-def test_tabular_interaction(agent, policy):
+def test_tabular_interaction(algorithm, policy):
     LEARNING_RATE = 0.1
     environment = EasyGridWorld()
 
@@ -95,9 +98,9 @@ def test_tabular_interaction(agent, policy):
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
 
-    q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+    q_agent = SARSAAgent(algorithm, q_function=q_function, policy=policy,
+                         criterion=criterion, optimizer=optimizer,
+                         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
     print(q_function.table)

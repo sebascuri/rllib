@@ -13,7 +13,7 @@ class QLearningAgent(AbstractAgent):
 
     Parameters
     ----------
-    q_learning: QLearning
+    q_learning_algorithm: QLearning
         Implementation of Q-Learning algorithm.
     q_function: AbstractQFunction
         q_function that is learned.
@@ -50,14 +50,14 @@ class QLearningAgent(AbstractAgent):
 
     """
 
-    def __init__(self, q_learning, q_function, policy, criterion, optimizer, memory,
-                 target_update_frequency=4, gamma=1.0,
+    def __init__(self, q_learning_algorithm, q_function, policy, criterion, optimizer,
+                 memory, target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.policy = policy
-        self.q_learning = q_learning(q_function, criterion(reduction='none'),
-                                     self.gamma)
+        self.q_learning = q_learning_algorithm(q_function, criterion(reduction='none'),
+                                               self.gamma)
 
         self.memory = memory
         self.target_update_frequency = target_update_frequency
@@ -87,7 +87,7 @@ class QLearningAgent(AbstractAgent):
             self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
     def train(self, batches=1):
-        """Train the DQN for `batches' batches.
+        """Train the Q-Learning algorithm for `batches' batches.
 
         Parameters
         ----------

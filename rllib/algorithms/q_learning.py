@@ -10,6 +10,8 @@ QLearningLoss = namedtuple('QLearningLoss', ['loss', 'td_error'])
 class QLearning(nn.Module):
     r"""Implementation of Q-Learning algorithm.
 
+    Q-Learning is an off-policy model-free control algorithm.
+
     The Q-Learning algorithm attempts to find the fixed point of:
     .. math:: Q(s, a) = r(s, a) + \gamma \max_a Q(s', a)
 
@@ -85,7 +87,7 @@ class SemiGQLearning(QLearning):
 
 
 class DQN(QLearning):
-    r"""Implementation of Deep Q Learning algorithm.
+    r"""Implementation of Delayed Q Learning algorithm.
 
     The deep q-learning algorithm has a separate target network for the target value.
 
@@ -111,7 +113,7 @@ class DQN(QLearning):
 
 
 class DDQN(QLearning):
-    r"""Implementation of Double Q Learning algorithm.
+    r"""Implementation of Double Delayed Q Learning algorithm.
 
     The double q-learning algorithm calculates the target value with the action that
     maximizes the primal function to mitigate over-estimation bias.
