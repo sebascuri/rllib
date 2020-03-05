@@ -13,7 +13,7 @@ class DynaReturn(NamedTuple):
     trajectory: List[Observation]
 
 
-def dyna_estimate(state: State, model: AbstractModel, policy: AbstractPolicy,
-                  reward: AbstractReward, steps: int, gamma: float = 0.99,
-                  num_samples: int = 1, bootstrap: AbstractValueFunction = None
-                  ) -> DynaReturn: ...
+def dyna_rollout(state: State, model: AbstractModel, policy: AbstractPolicy,
+                 reward: AbstractReward, steps: int, gamma: float = 0.99,
+                 num_samples: int = 1, bootstrap: AbstractValueFunction = None
+                 ) -> DynaReturn: ...

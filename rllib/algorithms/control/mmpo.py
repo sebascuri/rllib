@@ -7,7 +7,7 @@ import copy
 from collections import namedtuple
 from rllib.util.neural_networks import freeze_parameters
 from rllib.util.utilities import separated_kl
-from rllib.algorithms.dyna import dyna_estimate
+from rllib.algorithms.dyna import dyna_rollout
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -185,11 +185,11 @@ class MBMPPO(nn.Module):
         kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
 
         with torch.no_grad():
-            dyna_return = dyna_estimate(state=states,
-                                        model=self.model, policy=self.policy,
-                                        reward=self.reward, steps=0, gamma=self.gamma,
-                                        bootstrap=self.value_function,
-                                        num_samples=self.num_action_samples)
+            dyna_return = dyna_rollout(state=states,
+                                       model=self.model, policy=self.policy,
+                                       reward=self.reward, steps=0, gamma=self.gamma,
+                                       bootstrap=self.value_function,
+                                       num_samples=self.num_action_samples)
         q_values = dyna_return.q_target
         action_log_probs = pi_dist.log_prob(dyna_return.trajectory[0].action)
 

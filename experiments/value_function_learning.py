@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from rllib.agent import DDPGAgent
 from rllib.reward.quadratic_reward import QuadraticReward
-from rllib.algorithms.dyna import dyna_estimate
+from rllib.algorithms.dyna import dyna_rollout
 from tqdm import tqdm
 import torch
 import rllib.util.neural_networks
@@ -56,9 +56,9 @@ for i in tqdm(range(10000)):
 
     states = 0.5 * torch.randn(batch_size, 2)
     with rllib.util.neural_networks.disable_gradient(value_function):
-        dyna_return = dyna_estimate(state=states, model=model, policy=policy,
-                                    reward=reward_model, steps=0, gamma=gamma,
-                                    bootstrap=value_function, num_samples=5)
+        dyna_return = dyna_rollout(state=states, model=model, policy=policy,
+                                   reward=reward_model, steps=0, gamma=gamma,
+                                   bootstrap=value_function, num_samples=5)
     prediction = value_function(states)
     value_loss = loss_function(prediction, dyna_return.q_target.mean(dim=0))
     policy_loss = -dyna_return.q_target.mean()
