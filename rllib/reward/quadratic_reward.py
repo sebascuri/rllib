@@ -1,19 +1,21 @@
-"""Model for pendulum reward."""
+"""Model for quadratic reward."""
 
 from .abstract_reward import AbstractReward
-from .utilities import tolerance
-import torch
 from gpytorch.distributions import Delta
+from rllib.util.neural_networks import torch_quadratic
 
 
-class PendulumReward(AbstractReward):
-    """Reward for Inverted Pendulum."""
+class QuadraticReward(AbstractReward):
+    """Quadratic Reward Function."""
+
+    def __init__(self, q, r):
+        super().__init__()
+
+        self.q = q
+        self.r = r
 
     def forward(self, state, action):
         """See `abstract_reward.forward'."""
-        cos_angle = torch.cos(state[..., 0])
-        velocity = state[..., 1]
-
-        angle_tolerance = tolerance(cos_angle, lower=0.95, upper=1., margin=0.1)
-        velocity_tolerance = tolerance(velocity, lower=-.5, upper=0.5, margin=0.5)
-        return Delta(angle_tolerance * velocity_tolerance)
+        state_cost = torch_quadratic(state, self.q)
+        action_cost = torch_quadratic(action, self.r)
+        return Delta(-(state_cost + action_cost).squeeze())

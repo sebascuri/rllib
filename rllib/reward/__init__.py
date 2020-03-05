@@ -1,1 +1,1 @@
-"""Python Script Template."""
+from .abstract_reward import AbstractReward
