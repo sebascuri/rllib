@@ -1,58 +1,64 @@
 """Python Script Template."""
 
-from collections import namedtuple
 import torch
 import torch.distributions
 import torch.nn as nn
 import copy
+from collections import namedtuple
 from rllib.util.neural_networks import freeze_parameters, repeat_along_dimension
+from rllib.util.utilities import separated_kl
 
-MPOLosses = namedtuple('MPOLosses', ('value_target', 'policy_loss', 'eta_loss'))
+MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
                                      'kl_div'])
 
 
-class MPOLoss(nn.Module):
-    """Maximum a Posteriori Policy Optimization.
+class MPPO(nn.Module):
+    """Maximum a Posterior Policy Optimization.
 
     This method uses critic values under samples from a policy to construct a
     sample-based representation of the optimal policy. It then fits the parametric
     policy to this representation via supervised learning.
 
-    Reference: https://arxiv.org/abs/1806.06920
-
     Parameters
     ----------
-    epsilon : float
+    epsilon: float
         The average KL-divergence for the E-step, i.e., the KL divergence between
         the sample-based policy and the original policy
-    epsilon_mean : float
+    epsilon_mean: float
         The KL-divergence for the mean component in the M-step (fitting the policy).
-        See `mbrl.control.separated_kl`.
-    epsilon_var : float
+        See `rllib.util.utilities.separated_kl`.
+    epsilon_var: float
         The KL-divergence for the variance component in the M-step (fitting the policy).
-        See `mbrl.control.separated_kl`.
+        See `rllib.util.utilities.separated_kl`.
+
+    References
+    ----------
+    Abdolmaleki, et al. "Maximum a Posteriori Policy Optimisation." (2018). ICLR.
     """
 
     __constants__ = ['epsilon', 'epsilon_mean', 'epsilon_var']
 
-    def __init__(self, epsilon: float, epsilon_mean: float, epsilon_var: float):
+    def __init__(self, epsilon, epsilon_mean, epsilon_var):
         super().__init__()
 
         self.eta = nn.Parameter(torch.tensor(1.), requires_grad=True)
         self.eta_mean = nn.Parameter(torch.tensor(1.), requires_grad=True)
+        self.eta_var = nn.Parameter(torch.tensor(1.), requires_grad=True)
 
-        self.epsilon = epsilon
-        self.epsilon_mean = epsilon_mean
+        self.epsilon = torch.tensor(epsilon)
+        self.epsilon_mean = torch.tensor(epsilon_mean)
+        self.epsilon_var = torch.tensor(epsilon_var)
 
     def project_etas(self):
         """Project the etas to be positive inplace."""
         # Since we divide by eta, make sure it doesn't go to zero.
-        self.eta.data.clamp_(1e-5, None)
-        self.eta_mean.data.clamp_(1e-5, None)
+        self.eta.data.clamp_(min=1e-5)
+        self.eta_mean.data.clamp_(min=1e-5)
+        self.eta_var.data.clamp_(min=1e-5)
 
-    def forward(self, q_values, action_log_probs, kl_div):
-        """Return value targets and loss terms from MPO.
+    def forward(self, q_values, action_log_probs, kl_mean, kl_var):
+        """Return primal and dual loss terms from MMPO.
 
         Parameters
         ----------
@@ -64,49 +70,55 @@ class MPOLoss(nn.Module):
             of the corresponding actions under the policy.
         kl_mean : torch.Tensor
             A float corresponding to the KL divergence.
+        kl_var : torch.Tensor
+            A float corresponding to the KL divergence.
         """
-        # Since actions come from policy, value is the expected q-value
-        value_target = q_values.mean(dim=0)
-
-        # Make sure the lagrange multiplies stays positive
+        # Make sure the lagrange multipliers stay positive.
         self.project_etas()
 
-        # E-step: Created a weighed, sample-based representation of the optimal policy
-        q_values = q_values.detach() * (1. / self.eta)
+        # E-step: Solve Problem (7).
+        # Create a weighed, sample-based representation of the optimal policy q Eq(8).
+        # Compute the dual loss for the constraint KL(q || old_pi) < eps.
+        q_values = q_values.detach() * (torch.tensor(1.) / self.eta)
         normalizer = torch.logsumexp(q_values, dim=0)
         num_actions = torch.tensor(action_log_probs.shape[0]).float()
-        eta_loss = self.eta * (
-                    self.epsilon + torch.mean(normalizer) - torch.log(num_actions))
+
+        dual_loss = self.eta * (
+                self.epsilon + torch.mean(normalizer) - torch.log(num_actions))
+        # non-parametric representation of the optimal policy.
         weights = torch.exp(q_values - normalizer.detach())
 
-        # M-step: Fit the parametric policy to the representation form the E-step
+        # M-step: # E-step: Solve Problem (10).
+        # Fit the parametric policy to the representation form the E-step.
+        # Maximize the log_likelihood of the weighted log probabilities, subject to the
+        # KL divergence between the old_pi and the new_pi to be smaller than epsilon.
+
         weighted_log_prob = torch.sum(weights * action_log_probs, dim=0)
         log_likelihood = torch.mean(weighted_log_prob)
 
-        kl_loss = self.eta_mean.detach() * kl_div  # + self.eta_var.detach() * kl_var
-        policy_loss = -log_likelihood + kl_loss
+        kl_loss = self.eta_mean.detach() * kl_mean + self.eta_var.detach() * kl_var
+        primal_loss = -log_likelihood + kl_loss
 
-        eta_mean_loss = self.eta_mean * (self.epsilon_mean - kl_div.detach())
+        eta_mean_loss = self.eta_mean * (self.epsilon_mean - kl_mean.detach())
+        eta_var_loss = self.eta_var * (self.epsilon_var - kl_var.detach())
 
-        eta_losses = eta_loss + eta_mean_loss
+        dual_loss = dual_loss + eta_mean_loss + eta_var_loss
 
-        return MPOLosses(value_target, policy_loss, eta_losses)
+        return MPOLosses(primal_loss, dual_loss)
 
 
-class ModelBasedMPO(nn.Module):
-    """MPO Algorithm based on a system model.
+class MBMPPO(nn.Module):
+    """MPPO Algorithm based on a system model.
 
-    This method uses the `MPOLoss`, but constructs the Q-function using the value
+    This method uses the `MPPOLoss`, but constructs the Q-function using the value
     function together with the model.
-
-    Reference: https://arxiv.org/abs/1806.06920
 
     Parameters
     ----------
-    model : callable
+    model : AbstractModel
     reward_function : callable
-    policy : nn.Module
-    value_function : nn.Module
+    policy : AbstractPolicy
+    value_function : AbstractValueFunction
     epsilon : float
         The average KL-divergence for the E-step, i.e., the KL divergence between
         the sample-based policy and the original policy
@@ -121,8 +133,7 @@ class ModelBasedMPO(nn.Module):
     """
 
     def __init__(self, model, reward_function, policy, value_function,
-                 epsilon, epsilon_mean, epsilon_var, gamma):
-
+                 epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15):
         old_policy = copy.deepcopy(policy)
         freeze_parameters(old_policy)
 
@@ -134,25 +145,22 @@ class ModelBasedMPO(nn.Module):
         self.value_function = value_function
         self.gamma = gamma
 
-        self.mpo_loss = MPOLoss(epsilon=epsilon,
-                                epsilon_mean=epsilon_mean,
-                                epsilon_var=epsilon_var)
+        self.mppo = MPPO(epsilon, epsilon_mean, epsilon_var)
         self.value_loss = nn.MSELoss(reduction='mean')
+        self.num_action_samples = num_action_samples
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
 
-    def forward(self, states, num_action_samples):
+    def forward(self, states):
         """Compute the losses for one step of MPO.
 
         Parameters
         ----------
         states : torch.Tensor
             The states at which to compute the losses.
-        num_action_samples : int
-            The number of actions to sample.
 
         Returns
         -------
@@ -169,32 +177,32 @@ class ModelBasedMPO(nn.Module):
         kl_var : torch.Tensor
             The average KL divergence of the variance.
         """
-        pi_dist = self.policy(states)
-        pi_dist_old = self.old_policy(states)
         value_prediction = self.value_function(states)
 
-        kl_div = torch.distributions.kl_divergence(pi_dist, pi_dist_old).mean()
+        pi_dist = self.policy(states)
+        pi_dist_old = self.old_policy(states)
+        kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
 
-        # kl_mean, kl_var = separated_kl(dist=pi_dist, prior=pi_dist_old)
-
-        actions = pi_dist.sample((num_action_samples,))
-        states = repeat_along_dimension(states, num_action_samples, dim=0)
+        actions = pi_dist.sample((self.num_action_samples,))
+        states = repeat_along_dimension(states, self.num_action_samples, dim=0)
         action_log_probs = pi_dist.log_prob(actions)
 
         # Compute q-values and values using the model
         with torch.no_grad():
             next_states = self.model(states, actions).sample()
-            reward = self.reward_function(states, actions)
+            reward = self.reward_function(states, actions).sample()
             q_values = reward + self.gamma * self.value_function(next_states)
-        losses = self.mpo_loss(q_values=q_values,
-                               action_log_probs=action_log_probs,
-                               kl_div=kl_div)
 
-        value_loss = self.value_loss(value_prediction, losses.value_target)
-        combined_loss = value_loss + losses.policy_loss.mean() + losses.eta_loss.mean()
+        # Since actions come from policy, value is the expected q-value
+        value_loss = self.value_loss(value_prediction, q_values.mean(dim=0))
+
+        losses = self.mppo(q_values=q_values, action_log_probs=action_log_probs,
+                           kl_mean=kl_mean, kl_var=kl_var)
+
+        combined_loss = value_loss + losses.primal_loss.mean() + losses.dual_loss.mean()
 
         return MPOReturn(loss=combined_loss,
                          value_loss=value_loss,
-                         policy_loss=losses.policy_loss,
-                         eta_loss=losses.eta_loss,
-                         kl_div=kl_div)
+                         policy_loss=losses.primal_loss,
+                         eta_loss=losses.dual_loss,
+                         kl_div=kl_mean + kl_var)
