@@ -123,30 +123,29 @@ def moving_average_filter(x, y, horizon: int):
     return x_smooth, y_smooth
 
 
-def separated_kl(dist, prior):
+def separated_kl(p, q):
     """Compute the mean and variance components of the average KL divergence.
 
     Separately computes the mean and variance contributions to the KL divergence
+    KL(p || q).
 
     Parameters
     ----------
-    dist : torch.distributions.MultivariateNormal
-    prior : torch.distributions.MultivariateNormal
+    p : torch.distributions.MultivariateNormal
+    q : torch.distributions.MultivariateNormal
 
     Returns
     -------
     kl_mean : torch.Tensor
     kl_var : torch.Tensor
     """
-    prior_mean, prior_scale = prior.loc.detach(), prior.covariance_matrix.detach()
-    prior_scale.clamp_(None, 1.)
+    p_mean, p_scale = p.loc, p.covariance_matrix
+    q_mean, q_scale = q.loc, q.covariance_matrix
 
-    mean, scale = dist.loc, dist.scale_tril
+    pi_mean = torch.distributions.MultivariateNormal(p_mean, q_scale)
+    pi_var = torch.distributions.MultivariateNormal(q_mean, p_scale)
 
-    pi_mean = torch.distributions.MultivariateNormal(mean, prior_scale)
-    pi_var = torch.distributions.MultivariateNormal(prior_mean, scale)
-
-    kl_mean = torch.distributions.kl_divergence(pi_mean, prior).mean()
-    kl_var = torch.distributions.kl_divergence(pi_var, prior).mean()
+    kl_mean = torch.distributions.kl_divergence(pi_mean, q).mean()
+    kl_var = torch.distributions.kl_divergence(pi_var, q).mean()
 
     return kl_mean, kl_var
