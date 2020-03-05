@@ -29,6 +29,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     end_interaction:
         End an interaction with an environment.
 
+    TODO: Do logger!
     """
 
     def __init__(self, gamma=1.0, exploration_steps=0, exploration_episodes=0):

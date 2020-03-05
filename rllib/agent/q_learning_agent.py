@@ -65,6 +65,8 @@ class QLearningAgent(AbstractAgent):
 
         self.logs['td_errors'] = []
         self.logs['episode_td_errors'] = []
+        self.logs['losses'] = []
+        self.logs['episode_losses'] = []
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -79,12 +81,14 @@ class QLearningAgent(AbstractAgent):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self.logs['episode_td_errors'].append([])
+        self.logs['episode_losses'].append([])
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        aux = self.logs['episode_td_errors'].pop(-1)
-        if len(aux) > 0:
-            self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
+        for key in ['episode_td_errors', 'episode_losses']:
+            aux = self.logs[key].pop(-1)
+            if len(aux) > 0:
+                self.logs[key].append(np.abs(np.array(aux)).mean())
 
     def train(self, batches=1):
         """Train the Q-Learning algorithm for `batches' batches.
@@ -104,11 +108,14 @@ class QLearningAgent(AbstractAgent):
                 observation.state, observation.action, observation.reward,
                 observation.next_state, observation.done)
 
-            loss = weight * ans.loss
-            loss.mean().backward()
+            loss = (weight * ans.loss).mean()
+            loss.backward()
 
             self.optimizer.step()
             self.memory.update(idx, ans.td_error.numpy())
 
             self.logs['td_errors'].append(ans.td_error.mean().item())
             self.logs['episode_td_errors'][-1].append(ans.td_error.mean().item())
+
+            self.logs['losses'].append(loss.item())
+            self.logs['episode_losses'][-1].append(loss.item())
