@@ -15,5 +15,5 @@ class DynaReturn(NamedTuple):
 
 def dyna_rollout(state: State, model: AbstractModel, policy: AbstractPolicy,
                  reward: AbstractReward, steps: int, gamma: float = 0.99,
-                 num_samples: int = 1, bootstrap: AbstractValueFunction = None
+                 num_samples: int = 1, value_function: AbstractValueFunction = None
                  ) -> DynaReturn: ...

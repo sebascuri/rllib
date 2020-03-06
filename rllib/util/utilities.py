@@ -94,8 +94,21 @@ def discount_cumsum(rewards, gamma=1.0):
     return val
 
 
-def mc_return(trajectory, gamma=1.0, bootstrap=None):
-    """Calculate MC return from the trajectory."""
+def mc_return(trajectory, gamma=1.0, value_function=None):
+    r"""Calculate n-step MC return from the trajectory.
+
+    The N-step return of a trajectory is calculated as:
+    .. math:: V(s) = \sum_{t=0}^T \gamma^t r + \gamma^{T+1} V(s_{T+1})
+
+    Parameters
+    ----------
+    trajectory: List[Observation]
+        List of observations to compute the n-step return.
+    gamma: float, optional.
+        Discount factor.
+    value_function: AbstractValueFunction, optional.
+        value function to bootstrap the value of the final state.
+    """
     if len(trajectory) == 0:
         return 0.
     discount = 1.
@@ -104,10 +117,10 @@ def mc_return(trajectory, gamma=1.0, bootstrap=None):
         value += discount * observation.reward
         discount *= gamma
 
-    if bootstrap is not None:
+    if value_function is not None:
         final_state = trajectory[-1].next_state
         is_terminal = trajectory[-1].done
-        value += discount * bootstrap(final_state) * (1 - is_terminal)
+        value += discount * value_function(final_state) * (1 - is_terminal)
     return value
 
 
