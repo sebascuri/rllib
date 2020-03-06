@@ -2,6 +2,7 @@
 
 from abc import ABCMeta
 import torch
+from rllib.util.logger import Logger
 
 
 class AbstractAgent(object, metaclass=ABCMeta):
@@ -28,17 +29,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
         End an episode.
     end_interaction:
         End an interaction with an environment.
-
-    TODO: Do logger!
     """
 
     def __init__(self, gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        self.logs = {
-            'total_episodes': 0,
-            'total_steps': 0,
-            'episode_steps': [],
-            'rewards': [],
-            'episode_rewards': []}
+        self.logs = {'rewards': Logger('sum')}
+        self.counters = {'total_episodes': 0, 'total_steps': 0}
+        self.episode_steps = []
+
         self.gamma = gamma
         self.exploration_episodes = exploration_episodes
         self.exploration_steps = exploration_steps
@@ -64,21 +61,21 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """
         self.policy.update(observation)  # update policy parameters (eps-greedy.)
 
-        self.logs['total_steps'] += 1
-        self.logs['episode_steps'][-1] += 1
-        self.logs['episode_rewards'][-1] += observation.reward
-        self.logs['rewards'][-1].append(observation.reward)
+        self.counters['total_steps'] += 1
+        self.episode_steps[-1] += 1
+        self.logs['rewards'].append(observation.reward)
 
     def start_episode(self):
         """Start a new episode."""
-        self.logs['total_episodes'] += 1
-        self.logs['episode_steps'].append(0)
-        self.logs['episode_rewards'].append(0)
-        self.logs['rewards'].append([])
+        self.counters['total_episodes'] += 1
+        self.episode_steps.append(0)
+        for log in self.logs.values():
+            log.start_episode()
 
     def end_episode(self):
         """End an episode."""
-        pass
+        for log in self.logs.values():
+            log.end_episode()
 
     def end_interaction(self):
         """End the interaction with the environment."""
@@ -87,32 +84,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
     @property
     def total_episodes(self):
         """Return number of steps in current episode."""
-        return self.logs['total_episodes']
-
-    @property
-    def episodes_steps(self):
-        """Return number of steps in current episode."""
-        return self.logs['episode_steps']
-
-    @property
-    def episodes_rewards(self):
-        """Return rewards in all the episodes seen."""
-        return self.logs['rewards']
-
-    @property
-    def episodes_cumulative_rewards(self):
-        """Return cumulative rewards in each episodes."""
-        return self.logs['episode_rewards']
+        return self.counters['total_episodes']
 
     @property
     def total_steps(self):
         """Return number of steps of interaction with environment."""
-        return self.logs['total_steps']
-
-    @property
-    def episode_steps(self):
-        """Return total steps of interaction with environment in current episode."""
-        return self.logs['episode_steps'][-1]
+        return self.counters['total_steps']
 
     @property
     def name(self):

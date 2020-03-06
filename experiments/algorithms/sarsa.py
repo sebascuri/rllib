@@ -43,7 +43,7 @@ agent = SARSAAgent(DExpectedSARSA, q_function, policy, criterion, optimizer,
                    gamma=GAMMA, batch_size=BATCH_SIZE)
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
-plt.plot(agent.episodes_cumulative_rewards)
+plt.plot(agent.logs['rewards'].episode_log)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))

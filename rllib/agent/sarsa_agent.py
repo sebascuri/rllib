@@ -3,7 +3,7 @@
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-import numpy as np
+from rllib.util.logger import Logger
 
 
 class SARSAAgent(AbstractAgent):
@@ -54,8 +54,8 @@ class SARSAAgent(AbstractAgent):
         self._batch_size = batch_size
         self._trajectory = list()
 
-        self.logs['td_errors'] = []
-        self.logs['episode_td_errors'] = []
+        self.logs['td_errors'] = Logger('abs_mean')
+        self.logs['losses'] = Logger('mean')
 
     def act(self, state):
         """See `AbstractAgent.act'."""
@@ -78,7 +78,6 @@ class SARSAAgent(AbstractAgent):
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
-        self.logs['episode_td_errors'].append([])
         self._last_observation = None
 
     def end_episode(self):
@@ -88,9 +87,7 @@ class SARSAAgent(AbstractAgent):
         self._trajectory.append(self._last_observation._replace(next_action=action))
         self.train(self._trajectory)
 
-        aux = self.logs['episode_td_errors'].pop(-1)
-        if len(aux) > 0:
-            self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
+        super().end_episode()
 
     def train(self, trajectory):
         """Train the SARSA agent using the `trajectory'.
@@ -113,4 +110,4 @@ class SARSAAgent(AbstractAgent):
         self.optimizer.step()
 
         self.logs['td_errors'].append(ans.td_error.mean().item())
-        self.logs['episode_td_errors'][-1].append(ans.td_error.mean().item())
+        self.logs['losses'].append(loss.item())

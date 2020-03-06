@@ -124,7 +124,7 @@ def mc_return(trajectory, gamma=1.0, value_function=None):
     return value
 
 
-def moving_average_filter(x, y, horizon: int):
+def moving_average_filter(x, y, horizon):
     """Apply a moving average filter to data x and y.
 
     This function truncates the data to match the horizon.

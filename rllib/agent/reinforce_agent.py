@@ -6,6 +6,7 @@ import copy
 from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util import discount_cumsum
+from rllib.util.logger import Logger
 
 
 class REINFORCE(AbstractAgent):
@@ -37,6 +38,8 @@ class REINFORCE(AbstractAgent):
         self.num_rollouts = num_rollouts
         self.target_update_freq = target_update_frequency
 
+        self.logs['losses'] = Logger('mean')
+
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
@@ -55,6 +58,8 @@ class REINFORCE(AbstractAgent):
 
         if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
             self.policy_target.update_parameters(self.policy.parameters())
+
+        super().end_episode()
 
     def _train(self):
         trajectories = [Observation(*stack_list_of_tuples(t))

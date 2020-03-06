@@ -63,7 +63,7 @@ rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES
 with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
     pickle.dump(agent, file)
 
-plt.plot(agent.episodes_cumulative_rewards)
+plt.plot(agent.logs['rewards'].episode_log)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.__class__.__name__, ENVIRONMENT))

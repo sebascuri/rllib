@@ -1,13 +1,16 @@
 from abc import ABCMeta
-from typing import List
+from typing import Dict, List
 import numpy as np
 from rllib.dataset.datatypes import Observation, State, Action
 from rllib.policy import AbstractPolicy
+from rllib.util.logger import Logger
 
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
-    logs: dict
+    counters: Dict[str, int]
+    episode_steps: List[int]
+    logs: Dict[str, Logger]
     gamma: float
     exploration_steps: int
     exploration_episodes: int
@@ -26,22 +29,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def end_interaction(self) -> None: ...
 
     @property
-    def episodes_steps(self) -> List[int]: ...
-
-    @property
-    def episodes_rewards(self) -> List[List[float]]: ...
-
-    @property
-    def episodes_cumulative_rewards(self) -> List[float]: ...
-
-    @property
     def total_episodes(self) -> int: ...
 
     @property
     def total_steps(self) -> int: ...
 
-    @property
-    def episode_steps(self) -> int: ...
 
     @property
     def name(self) -> str: ...

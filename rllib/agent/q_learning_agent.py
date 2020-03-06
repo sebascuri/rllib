@@ -1,8 +1,8 @@
 """Implementation of QLearning Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
+from rllib.util.logger import Logger
 import torch
-import numpy as np
 
 
 class QLearningAgent(AbstractAgent):
@@ -63,10 +63,8 @@ class QLearningAgent(AbstractAgent):
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
 
-        self.logs['td_errors'] = []
-        self.logs['episode_td_errors'] = []
-        self.logs['losses'] = []
-        self.logs['episode_losses'] = []
+        self.logs['td_errors'] = Logger('abs_mean')
+        self.logs['losses'] = Logger('mean')
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -76,19 +74,6 @@ class QLearningAgent(AbstractAgent):
             self.train()
             if self.total_steps % self.target_update_frequency == 0:
                 self.q_learning.update()
-
-    def start_episode(self):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode()
-        self.logs['episode_td_errors'].append([])
-        self.logs['episode_losses'].append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        for key in ['episode_td_errors', 'episode_losses']:
-            aux = self.logs[key].pop(-1)
-            if len(aux) > 0:
-                self.logs[key].append(np.abs(np.array(aux)).mean())
 
     def train(self, batches=1):
         """Train the Q-Learning algorithm for `batches' batches.
@@ -115,7 +100,4 @@ class QLearningAgent(AbstractAgent):
             self.memory.update(idx, ans.td_error.numpy())
 
             self.logs['td_errors'].append(ans.td_error.mean().item())
-            self.logs['episode_td_errors'][-1].append(ans.td_error.mean().item())
-
             self.logs['losses'].append(loss.item())
-            self.logs['episode_losses'][-1].append(loss.item())

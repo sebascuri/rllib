@@ -46,7 +46,7 @@ agent = QLearningAgent(SemiGQLearning, q_function, policy, criterion, optimizer,
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
               milestones=MILESTONES)
 
-plt.plot(agent.episodes_cumulative_rewards)
+plt.plot(agent.logs['rewards'].episode_log)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))

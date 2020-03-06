@@ -1,6 +1,7 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
+from rllib.util.logger import Logger
 from abc import abstractmethod
 import torch
 import numpy as np
@@ -61,8 +62,9 @@ class AbstractDPGAgent(AbstractAgent):
         self.policy_noise = policy_noise
         self.noise_clip = noise_clip
 
-        self.logs['td_errors'] = []
-        self.logs['episode_td_errors'] = []
+        self.logs['td_errors'] = Logger('abs_mean')
+        self.logs['critic_losses'] = Logger('mean')
+        self.logs['actor_losses'] = Logger('mean')
 
     def act(self, state):
         """See `AbstractAgent.act'."""
@@ -81,17 +83,6 @@ class AbstractDPGAgent(AbstractAgent):
             if self.total_steps % self.target_update_frequency == 0:
                 self.q_target.update_parameters(self.q_function.parameters())
                 self.policy_target.update_parameters(self.policy.parameters())
-
-    def start_episode(self):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode()
-        self.logs['episode_td_errors'].append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        aux = self.logs['episode_td_errors'].pop(-1)
-        if len(aux) > 0:
-            self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
 
     def _train(self, batches=1, optimize_actor=True):
         """Train the DDPG for `batches' batches.
@@ -132,7 +123,8 @@ class AbstractDPGAgent(AbstractAgent):
 
         td_error_mean = td_error.mean().item()
         self.logs['td_errors'].append(td_error_mean)
-        self.logs['episode_td_errors'][-1].append(td_error_mean)
+        self.logs['critic_losses'].append(loss.item())
+
         return td_error
 
     def _train_actor(self, state, weight):
@@ -144,6 +136,7 @@ class AbstractDPGAgent(AbstractAgent):
         loss = (-weight * q).mean()
         loss.backward()
         self.actor_optimizer.step()
+        self.logs['actor_losses'].append(loss.item())
 
     @abstractmethod
     def _td(self, state, action, reward, next_state, done, *args, **kwargs):

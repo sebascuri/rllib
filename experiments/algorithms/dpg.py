@@ -54,7 +54,7 @@ agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
                   gamma=GAMMA)
 
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
-plt.plot(agent.episodes_cumulative_rewards)
+plt.plot(agent.logs['rewards'].episode_log)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))
