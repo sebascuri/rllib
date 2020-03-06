@@ -1,12 +1,11 @@
 import pytest
-from rllib.agent import DPGAgent, GDPGAgent, DDPGAgent, TD3Agent
+from rllib.agent import DPGAgent, TD3Agent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.dataset import PrioritizedExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
 from rllib.environment import GymEnvironment
-import torch.nn.functional as func
 import torch.optim
 
 NUM_EPISODES = 10
@@ -34,7 +33,7 @@ def environment(request):
     return request.param
 
 
-@pytest.fixture(params=[DPGAgent, GDPGAgent, DDPGAgent, TD3Agent])
+@pytest.fixture(params=[DPGAgent, TD3Agent])
 def agent(request):
     return request.param
 

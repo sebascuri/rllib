@@ -1,9 +1,9 @@
 """Implementation of TD3 Algorithm."""
-from .ddpg_agent import DDPGAgent
+from rllib.agent import DPGAgent
 from rllib.value_function import NNEnsembleQFunction
 
 
-class TD3Agent(DDPGAgent):
+class TD3Agent(DPGAgent):
     """Abstract Implementation of the TD3 Algorithm.
 
     The TD3 algorithm is like the DDPG algorithm but it has an ensamble of Q-functions

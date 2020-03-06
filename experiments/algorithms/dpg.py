@@ -6,7 +6,8 @@ from rllib.policy import FelixPolicy
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
-from rllib.agent import DDPGAgent
+from rllib.agent import DPGAgent, TD3Agent
+
 import torch.nn.functional as func
 import numpy as np
 import torch.optim
@@ -25,7 +26,7 @@ WEIGHT_DECAY = 0
 GAMMA = 0.99
 EPS_START = 1.0
 EPS_END = 0.1
-EPS_DECAY =1e6
+EPS_DECAY = 1e6
 LAYERS = [64, 64]
 SEED = 0
 RENDER = True
@@ -48,10 +49,11 @@ critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_
                                     weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
 
-agent = DDPGAgent(q_function, policy, noise, criterion, critic_optimizer,
-                  actor_optimizer, memory,
-                  target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                  gamma=GAMMA)
+agent = TD3Agent(
+    q_function, policy, noise, criterion, critic_optimizer,
+    actor_optimizer, memory,
+    target_update_frequency=TARGET_UPDATE_FREQUENCY,
+    gamma=GAMMA)
 
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 plt.plot(agent.logs['rewards'].episode_log)

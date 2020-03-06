@@ -145,7 +145,10 @@ class FelixPolicy(AbstractPolicy):
         covariance = torch.nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(mean, covariance)
+        if self.deterministic:
+            return Delta(mean)
+        else:
+            return MultivariateNormal(mean, covariance)
 
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""

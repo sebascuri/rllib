@@ -1,6 +1,8 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
+from rllib.algorithms.dpg import DPG
+from rllib.util.logger import Logger
 import torch
 import numpy as np
 
@@ -32,9 +34,11 @@ class DPGAgent(AbstractAgent):
     References
     ----------
     Silver, David, et al. (2014) "Deterministic policy gradient algorithms." JMLR.
+    Lillicrap et. al. (2016). CONTINUOUS CONTROL WITH DEEP REINFORCEMENT LEARNING. ICLR.
+
     """
 
-    def __init__(self, dpg_algorithm, q_function, policy, exploration, criterion,
+    def __init__(self, q_function, policy, exploration, criterion,
                  critic_optimizer, actor_optimizer, memory, max_action=1,
                  target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1.,
@@ -43,8 +47,9 @@ class DPGAgent(AbstractAgent):
                          exploration_episodes=exploration_episodes)
         assert policy.deterministic, "Policy must be deterministic."
 
-        self.dpg_algorithm = dpg_algorithm(q_function, criterion(reduction='none'),
-                                           policy, gamma, policy_noise, noise_clip)
+        self.dpg_algorithm = DPG(q_function, policy, criterion(reduction='none'), gamma,
+                                 policy_noise, noise_clip)
+
         self.policy = self.dpg_algorithm.policy
 
         self.exploration = exploration
@@ -55,11 +60,15 @@ class DPGAgent(AbstractAgent):
         self.max_action = max_action
         self.policy_update_frequency = policy_update_frequency
 
-        self.logs['td_errors'] = []
-        self.logs['episode_td_errors'] = []
+        self.logs['td_errors'] = Logger('abs_mean')
+        self.logs['critic_losses'] = Logger('mean')
+        self.logs['actor_losses'] = Logger('mean')
 
     def act(self, state):
-        """See `AbstractAgent.act'."""
+        """See `AbstractAgent.act'.
+
+        As the policy is deterministic, some noise must be added to aid exploration.
+        """
         action = super().act(state)
         action += self.exploration()
         return self.max_action * np.clip(action, -1, 1)
@@ -75,24 +84,13 @@ class DPGAgent(AbstractAgent):
             if self.total_steps % self.target_update_frequency == 0:
                 self.dpg_algorithm.update()
 
-    def start_episode(self):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode()
-        self.logs['episode_td_errors'].append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        aux = self.logs['episode_td_errors'].pop(-1)
-        if len(aux) > 0:
-            self.logs['episode_td_errors'].append(np.abs(np.array(aux)).mean())
-
     def train(self, batches=1, optimize_actor=True):
-        """Train the DDPG for `batches' batches.
+        """Train the DPG for `batches' batches.
 
         Parameters
         ----------
         batches: int
-
+        optimize_actor: bool
         """
         for batch in range(batches):
             observation, idx, weight = self.memory.get_batch()
@@ -106,12 +104,12 @@ class DPGAgent(AbstractAgent):
                 observation.state, observation.action, observation.reward,
                 observation.next_state, observation.done)
 
-            # optimize critic
+            # Optimize critic
             critic_loss = (weight * ans.critic_loss).mean()
             critic_loss.backward()
             self.critic_optimizer.step()
 
-            # optimize actor
+            # Optimize actor
             actor_loss = (weight * ans.actor_loss).mean()
             if optimize_actor:
                 actor_loss.backward()
@@ -121,8 +119,6 @@ class DPGAgent(AbstractAgent):
             self.memory.update(idx, ans.td_error.detach().numpy())
 
             # Update logs
+            self.logs['td_errors'].append(ans.td_error.mean().item())
             self.logs['actor_losses'].append(actor_loss.item())
             self.logs['critic_losses'].append(critic_loss.item())
-
-            self.logs['td_errors'].append(ans.td_error.mean().item())
-            self.logs['episode_td_errors'][-1].append(ans.td_error.mean().item())
