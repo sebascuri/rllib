@@ -58,4 +58,5 @@ for name, Policy in {
 plt.xlabel('Episode')
 plt.ylabel('Cumulative Rewards')
 plt.legend(loc='best')
+plt.ion()
 plt.show()

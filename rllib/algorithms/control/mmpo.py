@@ -188,7 +188,7 @@ class MBMPPO(nn.Module):
             dyna_return = dyna_rollout(state=states,
                                        model=self.model, policy=self.policy,
                                        reward=self.reward, steps=0, gamma=self.gamma,
-                                       bootstrap=self.value_function,
+                                       value_function=self.value_function,
                                        num_samples=self.num_action_samples)
         q_values = dyna_return.q_target
         action_log_probs = pi_dist.log_prob(dyna_return.trajectory[0].action)

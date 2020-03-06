@@ -7,19 +7,7 @@ from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.util.gaussian_processes import ExactGPModel, plot_gp
 from rllib.util import rollout_agent
-
-
-def predict(x, model, noise=True):
-    with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        if type(x) is not torch.Tensor:
-            x = torch.tensor(x)
-        if x.ndim == 0:
-            x = x.unsqueeze(0)
-
-        pred = model(x).mean
-        if noise:
-            pred = model.likelihood(pred).sample()
-        return pred.numpy()
+from rllib.reward.gp_reward import GPBanditReward
 
 
 def plot(agent, objective, axis=None, noise=False):
@@ -29,7 +17,7 @@ def plot(agent, objective, axis=None, noise=False):
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         test_x = agent.policy.x
         pred = agent.policy.gp(test_x)
-        true_values = objective(test_x, noise=noise)
+        true_values = objective(None, test_x).mean.numpy()
 
         test_x = test_x.numpy()
         mean = pred.mean.numpy()
@@ -71,16 +59,17 @@ if __name__ == '__main__':
     likelihood.noise_covar.noise = 0.1 ** 2
     objective_function = ExactGPModel(X, Y, likelihood)
     objective_function.eval()
-    objective = lambda x_, noise=True: predict(x_, objective_function, noise)
+    objective = GPBanditReward(objective_function)
 
     plt.plot(X.numpy(), Y.numpy(), '*')
     plot_gp(x, objective_function, num_samples=0)
     plt.xlabel('X')
     plt.ylabel('Y')
+    plt.ion()
     plt.show()
 
     x0 = x[x > 0.2][[0]]
-    y0 = torch.tensor(objective(x0)).float()
+    y0 = objective(None, x0).mean.float()
     model = ExactGPModel(x0, y0, likelihood)
     model.covar_module.base_kernel.lengthscale = 1
     agent = GPUCBAgent(model, x, beta=2.0)
@@ -90,7 +79,8 @@ if __name__ == '__main__':
 
     fig, axes = plt.subplots(5, 2)
     for i in range(STEPS):
-        plot(agent, objective, noise=False, axis=axes[i % 5][i // 5])
+        plot(agent, objective, axis=axes[i % 5][i // 5])
         rollout_agent(environment, agent, num_episodes=1, max_steps=1)
 
+    plt.ioff()
     plt.show()

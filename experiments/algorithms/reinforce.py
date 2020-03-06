@@ -45,6 +45,7 @@ plt.plot(agent.episodes_cumulative_rewards)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))
+plt.ion()
 plt.show()
 
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)

@@ -123,9 +123,11 @@ for i in tqdm(range(100)):
 plt.plot(refresh_interval * np.arange(len(policy_returns)), policy_returns)
 plt.xlabel('Iteration')
 plt.ylabel('Cumulative reward')
+plt.ion()
 plt.show()
 
 plot_learning_losses(policy_losses, value_losses, horizon=20)
+plt.ion()
 plt.show()
 
 # %% Test controller
@@ -158,6 +160,7 @@ plt.sca(ax2)
 plt.plot(rewards)
 plt.xlabel('Time step')
 plt.ylabel('Instantaneous reward')
+plt.ion()
 plt.show()
 print(f'Cumulative reward: {np.sum(rewards)}')
 
@@ -165,4 +168,5 @@ bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
 ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])
 ax_value.plot(states[:, 0], states[:, 1], color='C1')
 ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
+plt.ion()
 plt.show()

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-from rllib.agent.sarsa_agent import *
+from rllib.agent.sarsa_agent import SARSAAgent
+from rllib.algorithms.sarsa import *
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
@@ -37,15 +38,16 @@ policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
 optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
-agent = DExpectedSARSAAgent(q_function, policy, criterion, optimizer,
-                            target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                            gamma=GAMMA, batch_size=BATCH_SIZE)
+agent = SARSAAgent(DExpectedSARSA, q_function, policy, criterion, optimizer,
+                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
+                   gamma=GAMMA, batch_size=BATCH_SIZE)
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
 plt.plot(agent.episodes_cumulative_rewards)
 plt.xlabel('Episode')
 plt.ylabel('Rewards')
 plt.title('{} in {}'.format(agent.name, environment.name))
+plt.ion()
 plt.show()
 
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)

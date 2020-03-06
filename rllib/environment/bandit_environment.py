@@ -41,7 +41,7 @@ class BanditEnvironment(AbstractEnvironment):
     def step(self, action):
         """Get reward of a given action."""
         self.t += 1
-        return self.state, self.reward(action), False, {}
+        return self.state, self.reward(self.state, action).sample().numpy(), False, {}
 
     def reset(self):
         """Reset time counter to zero."""

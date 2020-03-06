@@ -57,7 +57,7 @@ for i in tqdm(range(10000)):
     with rllib.util.neural_networks.disable_gradient(value_function):
         dyna_return = dyna_rollout(state=states, model=model, policy=policy,
                                    reward=reward_model, steps=0, gamma=gamma,
-                                   bootstrap=value_function, num_samples=5)
+                                   value_function=value_function, num_samples=5)
     prediction = value_function(states)
     value_loss = loss_function(prediction, dyna_return.q_target.mean(dim=0))
     policy_loss = -dyna_return.q_target.mean()
@@ -81,6 +81,7 @@ plt.plot(t_smooth, np.convolve(policy_losses, smoothing_weights, 'valid'),
 plt.xlabel('Iteration')
 plt.ylabel('Policy loss')
 plt.legend()
+plt.ion()
 plt.show()
 
 plt.plot(t, value_losses)
@@ -89,6 +90,7 @@ plt.plot(t_smooth, np.convolve(value_losses, smoothing_weights, 'valid'),
 plt.xlabel('Iteration')
 plt.ylabel('Value loss')
 plt.legend()
+plt.ion()
 plt.show()
 
 print(f'optimal: {K}')
@@ -106,6 +108,7 @@ img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
                                            num_entries, bounds)
 plt.colorbar(img)
 plt.title('True value function')
+plt.ion()
 plt.show()
 
 values = value_function(torch.from_numpy(states).float())
@@ -113,4 +116,5 @@ img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
                                            num_entries, bounds)
 plt.colorbar(img)
 plt.title('Learned value function')
+plt.ion()
 plt.show()
