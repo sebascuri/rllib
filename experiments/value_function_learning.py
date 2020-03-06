@@ -15,7 +15,6 @@ from tqdm import tqdm
 import torch
 import rllib.util.neural_networks
 import rllib.algorithms.control
-from collections import OrderedDict
 
 num_steps = 1
 discount = 1.

@@ -94,6 +94,23 @@ def discount_cumsum(rewards, gamma=1.0):
     return val
 
 
+def mc_return(trajectory, gamma=1.0, bootstrap=None):
+    """Calculate MC return from the trajectory."""
+    if len(trajectory) == 0:
+        return 0.
+    discount = 1.
+    value = torch.zeros_like(trajectory[0].reward)
+    for observation in trajectory:
+        value += discount * observation.reward
+        discount *= gamma
+
+    if bootstrap is not None:
+        final_state = trajectory[-1].next_state
+        is_terminal = trajectory[-1].done
+        value += discount * bootstrap(final_state) * (1 - is_terminal)
+    return value
+
+
 def moving_average_filter(x, y, horizon: int):
     """Apply a moving average filter to data x and y.
 

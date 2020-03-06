@@ -4,8 +4,6 @@ import torch
 from rllib.dataset.datatypes import Observation
 import pickle
 
-__all__ = ['rollout_agent', 'rollout_policy', 'rollout_model']
-
 
 def _step(environment, state, action, render):
     try:
@@ -25,15 +23,20 @@ def _step(environment, state, action, render):
 
 def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
                   milestones=None):
-    """Conduct a single rollout of an agent in an environment.
+    """Conduct a rollout of an agent in an environment.
 
     Parameters
     ----------
     environment: AbstractEnvironment
+        Environment with which the abstract interacts.
     agent: AbstractAgent
+        Agent that interacts with the environment.
     num_episodes: int, optional (default=1)
+        Number of episodes.
     max_steps: int.
+        Maximum number of steps per episode.
     render: bool.
+        Flag that indicates whether to render the environment or not.
     milestones: list.
         List with episodes in which to save the agent.
 
@@ -59,19 +62,25 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
 
 
 def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False):
-    """Conduct a single rollout of a policy in an environment.
+    """Conduct a rollout of a policy in an environment.
 
     Parameters
     ----------
-    environment : AbstractEnvironment
-    policy : AbstractPolicy
+    environment: AbstractEnvironment
+        Environment with which the policy interacts.
+    policy: AbstractPolicy
+        Policy that interacts with the environment.
     num_episodes: int, optional (default=1)
-    max_steps: int
-    render: bool
+        Number of episodes.
+    max_steps: int.
+        Maximum number of steps per episode.
+    render: bool.
+        Flag that indicates whether to render the environment or not.
 
     Returns
     -------
-    trajectories: list of list of Observation.
+    trajectories: List[Trajectory]=List[List[Observation]]
+        A list of trajectories.
 
     """
     trajectories = []
@@ -90,33 +99,67 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
     return trajectories
 
 
-def rollout_model(model, policy, initial_states, max_steps=1000, termination=None):
-    """Rollout a system for a number of steps."""
+def rollout_model(dynamical_model, reward_model, policy, initial_state,
+                  termination=None, max_steps=1000):
+    """Conduct a rollout of a policy interacting with a model.
+
+    Parameters
+    ----------
+    dynamical_model: AbstractModel
+        Dynamical Model with which the policy interacts.
+    reward_model: AbstractReward, optional.
+        Reward Model with which the policy interacts.
+    policy: AbstractPolicy
+        Policy that interacts with the environment.
+    initial_state: State
+        Starting states for the interaction.
+    termination: Callable.
+        Termination condition to finish the rollout.
+    max_steps: int.
+        Maximum number of steps per episode.
+
+    Returns
+    -------
+    trajectory: Trajectory=List[Observation]
+        A list of observations.
+
+    Notes
+    -----
+    It will try to do the re-parametrization trick with the policy and models.
+    """
     trajectory = list()
-    states = initial_states
+    state = initial_state
+
     for _ in range(max_steps):
         # Sample actions
-        actions = policy(states)
-        if actions.has_rsample:
-            actions = actions.rsample()
+        action = policy(state)
+        if action.has_rsample:
+            action = action.rsample()
         else:
-            actions = actions.sample()
+            action = action.sample()
+
+        # % Sample a reward
+        reward_distribution = reward_model(state, action)
+        if reward_distribution.has_rsample:
+            reward = reward_distribution.rsample()
+        else:
+            reward = reward_distribution.sample()
 
         # Sample next states
-        next_states = model(states, actions)
-        if next_states.has_rsample:
-            next_states = next_states.rsample()
+        next_state = dynamical_model(state, action)
+        if next_state.has_rsample:
+            next_state = next_state.rsample()
         else:
-            next_states = next_states.sample()
-
-        # Store state, action tuples
-        trajectory.append(Observation(states, actions))
-
-        # Update state
-        states = next_states
+            next_state = next_state.sample()
 
         # Check for termination.
-        if termination is not None and termination(states, actions):
+        if termination is not None and termination(state, action):
+            trajectory.append(Observation(state, action, reward, next_state, True))
             break
+        else:
+            trajectory.append(Observation(state, action, reward, next_state, False))
+
+        # Update state
+        state = next_state
 
     return trajectory

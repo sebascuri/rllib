@@ -75,8 +75,9 @@ for i in tqdm(range(100)):
     if i % refresh_interval == 0:
         with torch.no_grad():
             initial_states = init_distribution.sample((num_trajectories,))
-            trajectory = rollout_model(dynamic_model, policy,
-                                       initial_states=initial_states,
+            trajectory = rollout_model(dynamic_model, reward_model=reward_model,
+                                       policy=policy,
+                                       initial_state=initial_states,
                                        max_steps=num_simulation_steps)
             trajectory = Observation(*stack_list_of_tuples(trajectory))
             states, actions = trajectory.state, trajectory.action
@@ -134,8 +135,9 @@ environment.initial_state = lambda: test_state
 rollout_policy(environment, lambda x: Delta(policy(x).mean), max_steps=400, render=True)
 
 with torch.no_grad():
-    trajectory = rollout_model(dynamic_model, lambda x: Delta(policy(x).mean),
-                               initial_states=torch.tensor(test_state).float(),
+    trajectory = rollout_model(dynamic_model, reward_model,
+                               lambda x: Delta(policy(x).mean),
+                               initial_state=torch.tensor(test_state).float(),
                                max_steps=400)
 
     trajectory = Observation(*stack_list_of_tuples(trajectory))
