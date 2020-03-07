@@ -79,46 +79,38 @@ class DPGAgent(AbstractAgent):
         self.memory.append(observation)
         if self.memory.has_batch and (self.total_steps > self.exploration_steps) and (
                 self.total_episodes > self.exploration_episodes):
-            self.train(
-                optimize_actor=not (self.total_steps % self.policy_update_frequency))
+            self.train()
             if self.total_steps % self.target_update_frequency == 0:
                 self.dpg_algorithm.update()
 
-    def train(self, batches=1, optimize_actor=True):
-        """Train the DPG for `batches' batches.
+    def train(self):
+        """Train the DPG Agent."""
+        observation, idx, weight = self.memory.get_batch()
+        weight = torch.tensor(weight).float()
+        observation = Observation(*map(lambda x: x.float(), observation))
 
-        Parameters
-        ----------
-        batches: int
-        optimize_actor: bool
-        """
-        for batch in range(batches):
-            observation, idx, weight = self.memory.get_batch()
-            weight = torch.tensor(weight).float()
-            observation = Observation(*map(lambda x: x.float(), observation))
+        self.critic_optimizer.zero_grad()
+        self.actor_optimizer.zero_grad()
 
-            self.critic_optimizer.zero_grad()
-            self.actor_optimizer.zero_grad()
+        ans = self.dpg_algorithm(
+            observation.state, observation.action, observation.reward,
+            observation.next_state, observation.done)
 
-            ans = self.dpg_algorithm(
-                observation.state, observation.action, observation.reward,
-                observation.next_state, observation.done)
+        # Optimize critic
+        critic_loss = (weight * ans.critic_loss).mean()
+        critic_loss.backward()
+        self.critic_optimizer.step()
 
-            # Optimize critic
-            critic_loss = (weight * ans.critic_loss).mean()
-            critic_loss.backward()
-            self.critic_optimizer.step()
+        # Optimize actor
+        actor_loss = (weight * ans.actor_loss).mean()
+        if not (self.total_steps % self.policy_update_frequency):
+            actor_loss.backward()
+            self.actor_optimizer.step()
 
-            # Optimize actor
-            actor_loss = (weight * ans.actor_loss).mean()
-            if optimize_actor:
-                actor_loss.backward()
-                self.actor_optimizer.step()
+        # Update memory
+        self.memory.update(idx, ans.td_error.detach().numpy())
 
-            # Update memory
-            self.memory.update(idx, ans.td_error.detach().numpy())
-
-            # Update logs
-            self.logs['td_errors'].append(ans.td_error.mean().item())
-            self.logs['actor_losses'].append(actor_loss.item())
-            self.logs['critic_losses'].append(critic_loss.item())
+        # Update logs
+        self.logs['td_errors'].append(ans.td_error.mean().item())
+        self.logs['actor_losses'].append(actor_loss.item())
+        self.logs['critic_losses'].append(critic_loss.item())

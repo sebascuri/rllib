@@ -57,7 +57,7 @@ class AbstractPolicyGradient(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if self.total_episodes % self.num_rollouts == 0:
-            self._train()
+            self.train()
             self.trajectories = []
 
         if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
@@ -68,7 +68,8 @@ class AbstractPolicyGradient(AbstractAgent):
             if self.baseline:
                 self.baseline_target.update_parameters(self.baseline.parameters())
 
-    def _train(self):
+    def train(self):
+        """Train Policy Gradient Agent."""
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]
 

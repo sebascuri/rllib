@@ -30,3 +30,8 @@ class RandomAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         self.dataset.append(self.trajectory)
+        super().end_episode()
+
+    def train(self):
+        """Train Agent."""
+        pass

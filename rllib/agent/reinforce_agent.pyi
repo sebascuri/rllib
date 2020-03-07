@@ -8,7 +8,7 @@ from torch.optim.optimizer import Optimizer
 from typing import Tuple, List
 
 
-class REINFORCE(AbstractAgent):
+class REINFORCEAgent(AbstractAgent):
     trajectories: List[List[Observation]]
     policy: AbstractPolicy
     policy_target: AbstractPolicy
@@ -25,12 +25,3 @@ class REINFORCE(AbstractAgent):
                  baseline_optimizer: Optimizer = None, critic_optimizer: Optimizer = None,
                  criterion: _Loss = None, num_rollouts: int = 1, target_update_frequency: int = 1,
                  gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
-
-    def _train(self) -> None: ...
-
-    def _train_actor(self, observations: List[Observation], value_estimates: List[Tensor]) -> None: ...
-
-    def _train_baseline(self, observations: List[Observation], value_estimates: List[Tensor]) -> None: ...
-
-    def _value_estimate(self, trajectories: List[Observation]) -> List[Tensor]: ...
-

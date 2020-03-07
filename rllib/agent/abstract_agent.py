@@ -1,6 +1,6 @@
 """Interface for agents."""
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 import torch
 from rllib.util.logger import Logger
 
@@ -80,6 +80,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def end_interaction(self):
         """End the interaction with the environment."""
         pass
+
+    @abstractmethod
+    def train(self):
+        """Train the agent."""
+        raise NotImplementedError
 
     @property
     def total_episodes(self):

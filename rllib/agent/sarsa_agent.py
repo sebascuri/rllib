@@ -50,9 +50,9 @@ class SARSAAgent(AbstractAgent):
         self.policy = policy
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
-        self._last_observation = None
-        self._batch_size = batch_size
-        self._trajectory = list()
+        self.last_observation = None
+        self.batch_size = batch_size
+        self.trajectory = list()
 
         self.logs['td_errors'] = Logger('abs_mean')
         self.logs['losses'] = Logger('mean')
@@ -60,44 +60,38 @@ class SARSAAgent(AbstractAgent):
     def act(self, state):
         """See `AbstractAgent.act'."""
         action = super().act(state)
-        if self._last_observation:
-            self._trajectory.append(self._last_observation._replace(next_action=action))
+        if self.last_observation:
+            self.trajectory.append(self.last_observation._replace(next_action=action))
         return action
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
-        self._last_observation = observation
+        self.last_observation = observation
 
-        if len(self._trajectory) >= self._batch_size:
-            self.train(self._trajectory)
-            self._trajectory = list()
+        if len(self.trajectory) >= self.batch_size:
+            self.train()
+            self.trajectory = list()
         if self.total_steps % self.target_update_frequency == 0:
             self.sarsa_algorithm.update()
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
-        self._last_observation = None
+        self.last_observation = None
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         # The next action is irrelevant as the next value is zero for all actions.
-        action = super().act(self._last_observation.state)
-        self._trajectory.append(self._last_observation._replace(next_action=action))
-        self.train(self._trajectory)
+        action = super().act(self.last_observation.state)
+        self.trajectory.append(self.last_observation._replace(next_action=action))
+        self.train()
 
         super().end_episode()
 
-    def train(self, trajectory):
-        """Train the SARSA agent using the `trajectory'.
-
-        Parameters
-        ----------
-        trajectory: List[Observation]
-
-        """
-        trajectory = Observation(*stack_list_of_tuples(trajectory))
+    def train(self):
+        """Train the SARSA agent."""
+        trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 
         self.optimizer.zero_grad()
         ans = self.sarsa_algorithm(

@@ -74,3 +74,8 @@ class GPUCBAgent(AbstractAgent):
     def __init__(self, gp, x, beta=2.0):
         self.policy = GPUCBPolicy(gp, x, beta)
         super().__init__(gamma=1, exploration_episodes=0, exploration_steps=0)
+
+    def train(self):
+        """Train the GP-UCB algorithm."""
+        # all the training is done when the Policy is updated.
+        pass

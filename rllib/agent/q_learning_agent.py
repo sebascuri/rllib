@@ -75,29 +75,22 @@ class QLearningAgent(AbstractAgent):
             if self.total_steps % self.target_update_frequency == 0:
                 self.q_learning.update()
 
-    def train(self, batches=1):
-        """Train the Q-Learning algorithm for `batches' batches.
+    def train(self):
+        """Train the Q-Learning Agent."""
+        observation, idx, weight = self.memory.get_batch()
+        weight = torch.tensor(weight).float()
+        observation = Observation(*map(lambda x: x.float(), observation))
 
-        Parameters
-        ----------
-        batches: int
+        self.optimizer.zero_grad()
+        ans = self.q_learning(
+            observation.state, observation.action, observation.reward,
+            observation.next_state, observation.done)
 
-        """
-        for batch in range(batches):
-            observation, idx, weight = self.memory.get_batch()
-            weight = torch.tensor(weight).float()
-            observation = Observation(*map(lambda x: x.float(), observation))
+        loss = (weight * ans.loss).mean()
+        loss.backward()
 
-            self.optimizer.zero_grad()
-            ans = self.q_learning(
-                observation.state, observation.action, observation.reward,
-                observation.next_state, observation.done)
+        self.optimizer.step()
+        self.memory.update(idx, ans.td_error.numpy())
 
-            loss = (weight * ans.loss).mean()
-            loss.backward()
-
-            self.optimizer.step()
-            self.memory.update(idx, ans.td_error.numpy())
-
-            self.logs['td_errors'].append(ans.td_error.mean().item())
-            self.logs['losses'].append(loss.item())
+        self.logs['td_errors'].append(ans.td_error.mean().item())
+        self.logs['losses'].append(loss.item())

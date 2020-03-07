@@ -1,4 +1,4 @@
-from rllib.agent import REINFORCE
+from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
 from rllib.policy import NNPolicy
@@ -57,8 +57,8 @@ def test_REINFORCE(environment, num_rollouts, baseline):
 
     criterion = torch.nn.MSELoss
 
-    agent = REINFORCE(policy=policy, policy_optimizer=policy_optimizer,
-                      baseline=value_function, baseline_optimizer=value_optimizer,
-                      criterion=criterion, num_rollouts=num_rollouts, gamma=GAMMA)
+    agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
+                           baseline=value_function, baseline_optimizer=value_optimizer,
+                           criterion=criterion, num_rollouts=num_rollouts, gamma=GAMMA)
 
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
