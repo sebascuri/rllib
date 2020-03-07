@@ -1,14 +1,14 @@
-"""Implementation of SARSA Algorithms."""
+"""Implementation of Expected SARSA Agent."""
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
-from rllib.algorithms.sarsa import SARSA
+from rllib.algorithms.expected_sarsa import ExpectedSARSA
 
 
-class SARSAAgent(AbstractAgent):
-    """Implementation of a SARSA agent.
+class ExpectedSARSAAgent(AbstractAgent):
+    """Implementation of an Expected SARSA agent.
 
     The SARSA agent implements the SARSA algorithm except for the
     computation of the TD-Error, which leads to different algorithms.
@@ -44,47 +44,32 @@ class SARSAAgent(AbstractAgent):
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
-        self.sarsa = SARSA(q_function, criterion(reduction='none'), gamma)
+        self.sarsa = ExpectedSARSA(q_function, criterion(reduction='none'), policy,
+                                   gamma)
         self.policy = policy
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
-        self.last_observation = None
         self.batch_size = batch_size
         self.trajectory = list()
 
         self.logs['td_errors'] = Logger('abs_mean')
         self.logs['losses'] = Logger('mean')
 
-    def act(self, state):
-        """See `AbstractAgent.act'."""
-        action = super().act(state)
-        if self.last_observation:
-            self.trajectory.append(self.last_observation._replace(next_action=action))
-        return action
-
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
-        self.last_observation = observation
-
+        self.trajectory.append(observation)
         if len(self.trajectory) >= self.batch_size:
             self.train()
             self.trajectory = list()
+
         if self.total_steps % self.target_update_frequency == 0:
             self.sarsa.update()
 
-    def start_episode(self):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode()
-        self.last_observation = None
-
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        # The next action is irrelevant as the next value is zero for all actions.
-        action = super().act(self.last_observation.state)
-        self.trajectory.append(self.last_observation._replace(next_action=action))
-        self.train()
-
+        if len(self.trajectory):
+            self.train()
         super().end_episode()
 
     def train(self):
@@ -92,9 +77,8 @@ class SARSAAgent(AbstractAgent):
         trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 
         self.optimizer.zero_grad()
-        ans = self.sarsa(
-            trajectory.state, trajectory.action, trajectory.reward,
-            trajectory.next_state, trajectory.done, trajectory.next_action)
+        ans = self.sarsa(trajectory.state, trajectory.action, trajectory.reward,
+                         trajectory.next_state, trajectory.done)
 
         loss = ans.loss.mean()
         loss.backward()

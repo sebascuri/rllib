@@ -1,5 +1,5 @@
 from .abstract_agent import AbstractAgent
-from rllib.algorithms.sarsa import SARSA
+from rllib.algorithms.expected_sarsa import ExpectedSARSA
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
@@ -8,12 +8,11 @@ from torch.optim.optimizer import Optimizer
 from typing import Union, List
 
 
-class SARSAAgent(AbstractAgent):
-    sarsa: SARSA
+class ExpectedSARSAAgent(AbstractAgent):
+    sarsa: ExpectedSARSA
     policy: AbstractQFunctionPolicy
     optimizer: Optimizer
     target_update_frequency: int
-    last_observation: Union[None, Observation]
     batch_size: int
     trajectory = List[Observation]
 

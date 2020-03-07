@@ -1,19 +1,20 @@
-"""SARSA Algorithm."""
-
 import torch.nn as nn
 from rllib.value_function import AbstractQFunction
+from rllib.policy import AbstractPolicy
 from .q_learning import QLearningLoss
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
 
-class SARSA(nn.Module):
+class ExpectedSARSA(nn.Module)
     q_function: AbstractQFunction
     q_target: AbstractQFunction
+    policy: AbstractPolicy
     criterion: _Loss
     gamma: float
 
-    def __init__(self, q_function: AbstractQFunction, criterion: _Loss, gamma: float) -> None: ...
+    def __init__(self, q_function: AbstractQFunction, criterion: _Loss,
+                 policy: AbstractPolicy, gamma: float) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> QLearningLoss: ...
 
@@ -21,5 +22,4 @@ class SARSA(nn.Module):
 
     def update(self) -> None: ...
 
-
-class GradientSARSA(SARSA): ...
+class GradientExpectedSARSA(ExpectedSARSA): ...

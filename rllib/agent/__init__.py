@@ -1,6 +1,7 @@
 from .abstract_agent import AbstractAgent
 from .random_agent import RandomAgent
 from .q_learning_agent import QLearningAgent
+from .expected_sarsa_agent import ExpectedSARSAAgent
 from .sarsa_agent import SARSAAgent
 from .dpg_agent import DPGAgent
 from .reinforce_agent import REINFORCEAgent
