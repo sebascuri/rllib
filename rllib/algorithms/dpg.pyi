@@ -13,29 +13,6 @@ class DPGLoss(NamedTuple):
 
 
 class DPG(nn.Module):
-    r"""Implementation of DPG algorithm.
-
-    DPG is an off-policy model-free control algorithm.
-
-    The DPG algorithm is an actor-critic algorithm that has a policy that estimates:
-    .. math:: a = \pi(s) = \argmax_a Q(s, a)
-
-
-    Parameters
-    ----------
-    q_function: AbstractQFunction
-        q_function to optimize.
-    criterion: _Loss
-        Criterion to optimize.
-    gamma: float
-        discount factor.
-
-    References
-    ----------
-    Silver, David, et al. (2014) "Deterministic policy gradient algorithms." JMLR.
-    Lillicrap et. al. (2016). CONTINUOUS CONTROL WITH DEEP REINFORCEMENT LEARNING. ICLR.
-    """
-
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     policy: AbstractPolicy

@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from rllib.agent import REINFORCE
+from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
-from rllib.policy import MLPPolicy
+from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction, NNQFunction
 import torch
 import numpy as np
@@ -23,10 +23,10 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-policy = MLPPolicy(environment.dim_state, environment.dim_action,
-                   num_states=environment.num_states,
-                   num_actions=environment.num_actions,
-                   layers=LAYERS)
+policy = NNPolicy(environment.dim_state, environment.dim_action,
+                  num_states=environment.num_states,
+                  num_actions=environment.num_actions,
+                  layers=LAYERS)
 
 value_function = NNValueFunction(environment.dim_state,
                                  num_states=environment.num_states, layers=LAYERS)

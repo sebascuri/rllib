@@ -8,7 +8,6 @@ from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy
 from rllib.util import rollout_agent
 import torch
-import torch.nn.functional as func
 import pickle
 
 ENVIRONMENT = 'Taxi-v2'

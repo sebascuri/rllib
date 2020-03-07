@@ -112,13 +112,13 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         """
         pass
 
-    @property  # type: ignore
+    @property
     @abstractmethod
     def state(self):
         """Return current state of environment."""
         raise NotImplementedError
 
-    @state.setter  # type: ignore
+    @state.setter
     @abstractmethod
     def state(self, value):
         raise NotImplementedError
