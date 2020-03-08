@@ -4,7 +4,7 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
-from rllib.algorithms.expected_sarsa import ExpectedSARSA
+from rllib.algorithms.esarsa import ESARSA
 
 
 class ExpectedSARSAAgent(AbstractAgent):
@@ -44,8 +44,7 @@ class ExpectedSARSAAgent(AbstractAgent):
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
-        self.sarsa = ExpectedSARSA(q_function, criterion(reduction='none'), policy,
-                                   gamma)
+        self.sarsa = ESARSA(q_function, criterion(reduction='none'), policy, gamma)
         self.policy = policy
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer

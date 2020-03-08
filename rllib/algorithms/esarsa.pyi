@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
 
-class ExpectedSARSA(nn.Module)
+class ESARSA(nn.Module):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     policy: AbstractPolicy
@@ -22,4 +22,4 @@ class ExpectedSARSA(nn.Module)
 
     def update(self) -> None: ...
 
-class GradientExpectedSARSA(ExpectedSARSA): ...
+class GradientExpectedSARSA(ESARSA): ...

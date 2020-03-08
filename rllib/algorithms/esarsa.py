@@ -5,9 +5,10 @@ import torch.nn as nn
 from rllib.util.utilities import integrate
 import copy
 from .q_learning import QLearningLoss
+from rllib.value_function import AbstractQFunction
 
 
-class ExpectedSARSA(nn.Module):
+class ESARSA(nn.Module):
     r"""Implementation of Expected SARSA algorithm.
 
     SARSA is an on-policy model-free control algorithm
@@ -19,10 +20,11 @@ class ExpectedSARSA(nn.Module):
     ----------
     TODO: Find.
     """
-    def __init__(self, q_function, criterion, policy, gamma):
+
+    def __init__(self, q_function: AbstractQFunction, criterion, policy, gamma):
         super().__init__()
         self.q_function = q_function
-        self.q_target = copy.deepcopy(q_function)
+        self.q_target = copy.deepcopy(q_function)  # type: AbstractQFunction
         self.policy = policy
         self.criterion = criterion
         self.gamma = gamma
@@ -35,16 +37,18 @@ class ExpectedSARSA(nn.Module):
         """Compute the loss and the td-error."""
         pred_q = self.q_function(state, action)
         with torch.no_grad():
-            next_v = integrate(lambda a: self.q_target(state, a), self.policy(state))
+            next_v = integrate(lambda a: self.q_target(next_state, a),
+                               self.policy(next_state))
             target_q = reward + self.gamma * next_v * (1 - done)
 
         return self._build_return(pred_q, target_q)
 
     def update(self):
+        """Update Q target."""
         self.q_target.update_parameters(self.q_function.parameters())
 
 
-class GradientExpectedSARSA(ExpectedSARSA):
+class GradientESARSA(ESARSA):
     r"""Implementation of Gradient-Expected SARSA algorithm.
 
     The semi-gradient expected SARSA algorithm computes the target by integrating the

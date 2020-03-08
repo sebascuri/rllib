@@ -5,20 +5,15 @@ from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Tuple, List
+from typing import List
 
 
 class REINFORCEAgent(AbstractAgent):
     trajectories: List[List[Observation]]
-    policy: AbstractPolicy
-    policy_target: AbstractPolicy
     policy_optimizer: Optimizer
-    baseline: AbstractValueFunction
     baseline_optimizer: Optimizer
-    criterion: _Loss
-    target_update_freq: int
+    target_update_frequency: int
     num_rollouts: int
-    eps: float = 1e-12
 
     def __init__(self, policy: AbstractPolicy, policy_optimizer: Optimizer,
                  baseline: AbstractValueFunction = None, critic: AbstractQFunction = None,

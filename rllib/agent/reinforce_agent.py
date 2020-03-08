@@ -33,7 +33,7 @@ class REINFORCEAgent(AbstractAgent):
         self.baseline_optimizer = baseline_optimizer
 
         self.num_rollouts = num_rollouts
-        self.target_update_freq = target_update_frequency
+        self.target_update_frequency = target_update_frequency
 
         self.logs['actor_losses'] = Logger('mean')
         self.logs['baseline_losses'] = Logger('mean')
@@ -42,6 +42,8 @@ class REINFORCEAgent(AbstractAgent):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.trajectories[-1].append(observation)
+        if self.total_steps % self.target_update_frequency == 0:
+            self.reinforce.update()
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""

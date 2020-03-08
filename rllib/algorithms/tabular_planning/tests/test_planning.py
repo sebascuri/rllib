@@ -2,7 +2,7 @@ from rllib.environment import EasyGridWorld
 from rllib.environment.gym_environment import GymEnvironment
 
 from rllib.policy import RandomPolicy
-from rllib.algorithms import iterative_policy_evaluation, policy_iteration, \
+from rllib.algorithms.tabular_planning import iterative_policy_evaluation, policy_iteration, \
     value_iteration, linear_system_policy_evaluation
 import torch.testing
 import pytest

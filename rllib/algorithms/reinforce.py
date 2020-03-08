@@ -1,9 +1,10 @@
 """REINFORCE Algorithm."""
 import torch
 import torch.nn as nn
-
-from rllib.util import discount_cumsum
+from .gae import GAE
 from collections import namedtuple
+import copy
+
 
 REINFORCELoss = namedtuple('REINFORCELoss',
                            ['actor_loss', 'baseline_loss'])
@@ -40,17 +41,15 @@ class REINFORCE(nn.Module):
 
     eps = 1e-12
 
-    def __init__(self, policy, baseline, criterion, gamma):
+    def __init__(self, policy, baseline, criterion, gamma, lambda_=1):
         super().__init__()
         # Actor
+        self.gae = GAE(lambda_, gamma, baseline)
         self.policy = policy
-        self.baseline = baseline
+        self.baseline = self.gae.value_function
+        self.baseline_target = copy.deepcopy(self.gae.value_function)
         self.criterion = criterion
         self.gamma = gamma
-
-    def _value_estimate(self, trajectory):
-        val = discount_cumsum(trajectory.reward, self.gamma)
-        return (val - val.mean()) / (val.std() + self.eps)
 
     def forward(self, trajectories):
         """Compute the losses."""
@@ -58,21 +57,29 @@ class REINFORCE(nn.Module):
         baseline_loss = torch.tensor(0.)
 
         for trajectory in trajectories:
-            value_estimate = self._value_estimate(trajectory)
+            state, action, reward, next_state, done, *r = trajectory
 
-            if self.baseline is not None:
-                baseline = self.baseline(trajectory.state)
-            else:
-                baseline = torch.zeros_like(trajectory.reward)
+            # ACTOR LOSS
+            pi = self.policy(state)
+            with torch.no_grad():
+                returns = self.gae(trajectory)  # GAE returns.
+                returns = (returns - returns.mean()) / (returns.std() + self.eps)
 
-            pi = self.policy(trajectory.state)
-            action = trajectory.action
             if self.policy.discrete_action:
-                action = trajectory.action.long()
-            actor_loss += (
-                    - pi.log_prob(action) * (value_estimate - baseline.detach())).sum()
+                action = action.long()
+            actor_loss += (-pi.log_prob(action) * returns.detach()).sum()
 
+            # BASELINE LOSS
             if self.baseline is not None:
-                baseline_loss += self.criterion(baseline, value_estimate).mean()
+                with torch.no_grad():
+                    next_v = self.baseline_target(next_state)
+                    target_v = reward + self.gamma * next_v * (1 - done)
+
+                baseline_loss += self.criterion(self.baseline(state), target_v).mean()
 
         return REINFORCELoss(actor_loss, baseline_loss)
+
+    def update(self):
+        """Update the baseline network."""
+        if self.baseline is not None:
+            self.baseline_target.update_parameters(self.baseline.parameters())

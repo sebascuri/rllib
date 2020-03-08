@@ -1,5 +1,5 @@
 from .abstract_agent import AbstractAgent
-from rllib.algorithms.expected_sarsa import ExpectedSARSA
+from rllib.algorithms.esarsa import ESARSA
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
@@ -9,7 +9,7 @@ from typing import Union, List
 
 
 class ExpectedSARSAAgent(AbstractAgent):
-    sarsa: ExpectedSARSA
+    sarsa: ESARSA
     policy: AbstractQFunctionPolicy
     optimizer: Optimizer
     target_update_frequency: int
