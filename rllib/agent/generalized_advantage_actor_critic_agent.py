@@ -1,6 +1,6 @@
 """Implementation of Advantage-Actor Critic Agent."""
 
-from rllib.algorithms.a2c import A2C
+from rllib.algorithms.gaac import GAAC
 from .actor_critic_agent import ActorCriticAgent
 
 
@@ -16,11 +16,11 @@ class A2CAgent(ActorCriticAgent):
     """
 
     def __init__(self, policy, actor_optimizer, critic, critic_optimizer, criterion,
-                 num_rollouts=1, target_update_frequency=1,
+                 num_rollouts=1, target_update_frequency=1, lambda_=0.97,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
         super().__init__(policy, actor_optimizer, critic, critic_optimizer, criterion,
                          num_rollouts, target_update_frequency, gamma,
                          exploration_steps, exploration_episodes)
-        self.actor_critic = A2C(policy, critic, criterion(reduction='none'),
-                                gamma)
+        self.actor_critic = GAAC(policy, critic, criterion(reduction='none'), lambda_,
+                                 gamma)
         self.policy = self.actor_critic.policy

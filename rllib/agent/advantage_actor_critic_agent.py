@@ -1,87 +1,26 @@
-"""Implementation of Model-Free Policy Gradient Algorithms."""
+"""Implementation of Advantage-Actor Critic Agent."""
 
-from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset import Observation
-from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.algorithms.ac import ActorCritic
-from rllib.util.logger import Logger
+from rllib.algorithms.a2c import A2C
+from .actor_critic_agent import ActorCriticAgent
 
 
-class ActorCriticAgent(AbstractAgent):
-    """Abstract Implementation of the Actor-Critic Agent.
-
-    The AbstractEpisodicPolicyGradient algorithm implements the Actor-Critic algorithms.
+class A2CAgent(ActorCriticAgent):
+    """Implementation of the Advantage-Actor Critic.
 
     TODO: build compatible function approximation.
 
     References
     ----------
-    Sutton, R. S., McAllester, D. A., Singh, S. P., & Mansour, Y. (2000).
-    Policy gradient methods for reinforcement learning with function approximation.NIPS.
-
-    Konda, V. R., & Tsitsiklis, J. N. (2000).
-    Actor-critic algorithms. NIPS.
+    Mnih, V., et al. (2016).
+    Asynchronous methods for deep reinforcement learning. ICML.
     """
-
-    eps = 1e-12
 
     def __init__(self, policy, actor_optimizer, critic, critic_optimizer, criterion,
                  num_rollouts=1, target_update_frequency=1,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
-        self.trajectories = []
-        self.actor_critic = ActorCritic(policy, critic, criterion(reduction='none'),
-                                        gamma)
+        super().__init__(policy, actor_optimizer, critic, critic_optimizer, criterion,
+                         num_rollouts, target_update_frequency, gamma,
+                         exploration_steps, exploration_episodes)
+        self.actor_critic = A2C(policy, critic, criterion(reduction='none'),
+                                gamma)
         self.policy = self.actor_critic.policy
-
-        self.actor_optimizer = actor_optimizer
-        self.critic_optimizer = critic_optimizer
-
-        self.num_rollouts = num_rollouts
-        self.target_update_freq = target_update_frequency
-
-        self.logs['actor_losses'] = Logger('mean')
-        self.logs['critic_losses'] = Logger('mean')
-        self.logs['td_errors'] = Logger('abs_mean')
-
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.trajectories[-1].append(observation)
-
-    def start_episode(self):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode()
-        self.trajectories.append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        if self.total_episodes % self.num_rollouts == 0:
-            self.train()
-            self.trajectories = []
-
-        if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
-            self.actor_critic.update()
-
-        super().end_episode()
-
-    def train(self):
-        """Train Policy Gradient Agent."""
-        trajectories = [Observation(*stack_list_of_tuples(t))
-                        for t in self.trajectories]
-        self.actor_optimizer.zero_grad()
-        self.critic_optimizer.zero_grad()
-
-        losses = self.actor_critic(trajectories)
-
-        losses.actor_loss.backward()
-        self.actor_optimizer.step()
-
-        losses.critic_loss.backward()
-        self.critic_optimizer.step()
-
-        # Update logs
-        self.logs['actor_losses'].append(losses.actor_loss.item())
-        self.logs['critic_losses'].append(losses.critic_loss.item())
-        self.logs['td_errors'].append(losses.td_error.mean().item())

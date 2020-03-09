@@ -77,4 +77,3 @@ class REINFORCEAgent(AbstractAgent):
             losses.baseline_loss.backward()
             self.baseline_optimizer.step()
             self.logs['baseline_losses'].append(losses.baseline_loss.item())
-

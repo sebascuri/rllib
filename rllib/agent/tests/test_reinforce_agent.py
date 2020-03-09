@@ -5,7 +5,6 @@ from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
 import torch
 import numpy as np
-import torch.nn.functional as func
 import pytest
 
 MAX_STEPS = 25

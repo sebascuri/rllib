@@ -6,5 +6,6 @@ from .sarsa_agent import SARSAAgent
 from .dpg_agent import DPGAgent
 from .reinforce_agent import REINFORCEAgent
 from .actor_critic_agent import ActorCriticAgent
+from .advantage_actor_critic_agent import A2CAgent
 from .gp_ucb_agent import GPUCBAgent
 from .td3_agent import TD3Agent
