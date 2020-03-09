@@ -1,4 +1,4 @@
-from rllib.agent import ActorCriticAgent, A2CAgent
+from rllib.agent import ActorCriticAgent, A2CAgent, ExpectedActorCriticAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
 from rllib.value_function import NNQFunction
@@ -10,8 +10,8 @@ import torch.nn.modules.loss as loss
 
 ENVIRONMENT = 'CartPole-v0'
 MAX_STEPS = 200
-NUM_ROLLOUTS = 10
-NUM_EPISODES = 500
+NUM_ROLLOUTS = 1
+NUM_EPISODES = 1000
 TARGET_UPDATE_FREQUENCY = 1
 ACTOR_LEARNING_RATE = 1e-4
 CRITIC_LEARNING_RATE = 1e-3
@@ -36,8 +36,9 @@ actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 critic_optimizer = torch.optim.Adam(critic.parameters(), lr=CRITIC_LEARNING_RATE)
 criterion = loss.MSELoss
 
-agent = A2CAgent(policy=policy, actor_optimizer=actor_optimizer, critic=critic,
-                 critic_optimizer=critic_optimizer, criterion=criterion,
-                 num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+agent = A2CAgent(
+    policy=policy, actor_optimizer=actor_optimizer, critic=critic,
+    critic_optimizer=critic_optimizer, criterion=criterion,
+    num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
 rollout(environment, agent, NUM_EPISODES, MAX_STEPS)

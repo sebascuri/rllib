@@ -8,6 +8,11 @@ import numpy as np
 __all__ = ['integrate', 'mellow_max', 'discount_cumsum', 'moving_average_filter',
            'separated_kl']
 
+def get_backend(array):
+    if type(array) is np.ndarray:
+        return np
+    else:
+        return torch
 
 def integrate(function, distribution, num_samples=1):
     """Integrate a function over a distribution.
@@ -30,13 +35,13 @@ def integrate(function, distribution, num_samples=1):
     if distribution.has_enumerate_support:
         for action in distribution.enumerate_support():
             prob = distribution.probs.gather(-1, action.unsqueeze(-1)).squeeze()
-            q_val = function(action)
-            ans += prob * q_val
+            f_val = function(action)
+            ans += prob.detach() * f_val
 
     else:
         for _ in range(num_samples):
-            q_val = function(distribution.rsample())
-            ans += q_val
+            f_val = function(distribution.rsample())
+            ans += f_val
 
     return ans
 
@@ -92,6 +97,23 @@ def discount_cumsum(rewards, gamma=1.0):
         r = reward + gamma * r
         val[-1 - i] = r
     return val
+
+
+def discount_sum(rewards, gamma=1.0):
+    """Get sum of discounted returns.
+
+    Parameters
+    ----------
+    rewards: Array
+    gamma: float
+
+    Returns
+    -------
+    cum_sum
+    """
+    steps = len(rewards)
+    bk = get_backend(rewards)
+    return (bk.pow(gamma * bk.ones(steps), bk.arange(steps)) * rewards).sum()
 
 
 def mc_return(trajectory, gamma=1.0, value_function=None):

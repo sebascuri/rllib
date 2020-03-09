@@ -75,10 +75,9 @@ class ActorCriticAgent(AbstractAgent):
 
         losses = self.actor_critic(trajectories)
 
-        losses.actor_loss.backward()
+        total_loss = losses.actor_loss + losses.critic_loss
+        total_loss.backward()
         self.actor_optimizer.step()
-
-        losses.critic_loss.backward()
         self.critic_optimizer.step()
 
         # Update logs

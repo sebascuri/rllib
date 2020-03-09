@@ -1,4 +1,4 @@
-from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent
+from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent, ExpectedActorCriticAgent
 from rllib.environment import GymEnvironment
 from rllib.util.rollout import rollout_agent
 from rllib.policy import NNPolicy
@@ -29,7 +29,7 @@ def num_rollouts(request):
     return request.param
 
 
-@pytest.fixture(params=[ActorCriticAgent, A2CAgent])
+@pytest.fixture(params=[ActorCriticAgent, A2CAgent, ExpectedActorCriticAgent])
 def agent(request):
     return request.param
 

@@ -12,6 +12,7 @@ from rllib.value_function import AbstractQFunction, AbstractValueFunction
 class PGLoss(NamedTuple):
     actor_loss: Tensor
     critic_loss: Tensor
+    td_error: Tensor
 
 class ActorCritic(nn.Module):
     policy: AbstractPolicy

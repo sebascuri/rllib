@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import copy
 from collections import namedtuple
-from rllib.util.utilities import integrate
+from rllib.util.utilities import integrate, discount_sum
 
 PGLoss = namedtuple('PolicyGradientLoss',
                     ['actor_loss', 'critic_loss', 'td_error'])
@@ -81,7 +81,7 @@ class ActorCritic(nn.Module):
                 returns = self.returns(trajectory)
                 returns = (returns - returns.mean()) / (returns.std() + self.eps)
 
-            actor_loss += (-pi.log_prob(action) * returns).sum()
+            actor_loss += discount_sum(-pi.log_prob(action) * returns, self.gamma)
 
             # CRITIC LOSS
             with torch.no_grad():
