@@ -44,12 +44,18 @@ class REINFORCE(nn.Module):
     def __init__(self, policy, baseline, criterion, gamma, lambda_=1):
         super().__init__()
         # Actor
-        self.gae = GAE(lambda_, gamma, baseline)
         self.policy = policy
-        self.baseline = self.gae.value_function
-        self.baseline_target = copy.deepcopy(self.gae.value_function)
+        self.baseline = baseline
+        self.baseline_target = copy.deepcopy(baseline)
         self.criterion = criterion
         self.gamma = gamma
+
+        self.gae = GAE(lambda_, self.gamma, self.baseline)
+
+    def returns(self, trajectory):
+        """Estimate the returns of a trajectory."""
+        returns = self.gae(trajectory)  # GAE returns.
+        return (returns - returns.mean()) / (returns.std() + self.eps)
 
     def forward(self, trajectories):
         """Compute the losses."""
@@ -61,12 +67,10 @@ class REINFORCE(nn.Module):
 
             # ACTOR LOSS
             pi = self.policy(state)
-            with torch.no_grad():
-                returns = self.gae(trajectory)  # GAE returns.
-                returns = (returns - returns.mean()) / (returns.std() + self.eps)
-
             if self.policy.discrete_action:
                 action = action.long()
+            with torch.no_grad():
+                returns = self.returns(trajectory)
             actor_loss += (-pi.log_prob(action) * returns.detach()).sum()
 
             # BASELINE LOSS
