@@ -1,12 +1,10 @@
-import matplotlib.pyplot as plt
-from rllib.util import rollout_agent, rollout_policy
-from rllib.environment.systems import InvertedPendulum, GaussianSystem
-from rllib.environment import SystemEnvironment, GymEnvironment
+from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy
-from rllib.value_function import NNQFunction, TabularQFunction
+from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
 from rllib.agent import DPGAgent, TD3Agent
+from .util import rollout
 
 import torch.nn.functional as func
 import numpy as np
@@ -55,16 +53,4 @@ agent = TD3Agent(
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)
 
-rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
-
-for key, log in agent.logs.items():
-    plt.plot(log.episode_log)
-    plt.xlabel('Episode')
-    plt.ylabel(key.capitalize())
-    plt.title('{} in {}'.format(agent.name, environment.name))
-    plt.show()
-
-
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
-
-# rollout_policy(environment, agent.policy, max_steps=100, render=True)
+rollout(environment, agent, NUM_EPISODES, MAX_STEPS)

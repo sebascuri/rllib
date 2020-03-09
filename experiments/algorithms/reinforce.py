@@ -1,9 +1,8 @@
-import matplotlib.pyplot as plt
 from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
-from rllib.util.rollout import rollout_agent
 from rllib.policy import NNPolicy
-from rllib.value_function import NNValueFunction, NNQFunction
+from rllib.value_function import NNValueFunction
+from .util import rollout
 import torch
 import numpy as np
 
@@ -39,14 +38,4 @@ agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
                        baseline=value_function, baseline_optimizer=value_optimizer,
                        criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
-rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
-
-for key, log in agent.logs.items():
-    plt.plot(log.episode_log)
-    plt.xlabel('Episode')
-    plt.ylabel(key.capitalize())
-    plt.title('{} in {}'.format(agent.name, environment.name))
-    plt.show()
-
-
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
+rollout(environment, agent, NUM_EPISODES, MAX_STEPS)

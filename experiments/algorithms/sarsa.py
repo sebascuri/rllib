@@ -1,12 +1,11 @@
-import matplotlib.pyplot as plt
 from rllib.agent import SARSAAgent, ExpectedSARSAAgent
-from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
 from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
+from .util import rollout
 
 ENVIRONMENT = 'CartPole-v0'
 
@@ -40,14 +39,5 @@ criterion = torch.nn.MSELoss
 agent = ExpectedSARSAAgent(q_function, policy, criterion, optimizer,
                            target_update_frequency=TARGET_UPDATE_FREQUENCY,
                            gamma=GAMMA, batch_size=BATCH_SIZE)
-rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
-for key, log in agent.logs.items():
-    plt.plot(log.episode_log)
-    plt.xlabel('Episode')
-    plt.ylabel(key.capitalize())
-    plt.title('{} in {}'.format(agent.name, environment.name))
-    plt.show()
-
-
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
+rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
