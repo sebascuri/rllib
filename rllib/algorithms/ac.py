@@ -42,6 +42,8 @@ class ActorCritic(nn.Module):
     Actor-critic algorithms. NIPS.
     """
 
+    eps = 1e-12
+
     def __init__(self, policy, critic, criterion, gamma):
         super().__init__()
         # Actor
@@ -77,6 +79,8 @@ class ActorCritic(nn.Module):
                 action = action.long()
             with torch.no_grad():
                 returns = self.returns(trajectory)
+                returns = (returns - returns.mean()) / (returns.std() + self.eps)
+
             actor_loss += (-pi.log_prob(action) * returns).sum()
 
             # CRITIC LOSS

@@ -54,8 +54,7 @@ class REINFORCE(nn.Module):
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
-        returns = self.gae(trajectory)  # GAE returns.
-        return (returns - returns.mean()) / (returns.std() + self.eps)
+        return self.gae(trajectory)  # GAE returns.
 
     def forward(self, trajectories):
         """Compute the losses."""
@@ -71,6 +70,8 @@ class REINFORCE(nn.Module):
                 action = action.long()
             with torch.no_grad():
                 returns = self.returns(trajectory)
+                (returns - returns.mean()) / (returns.std() + self.eps)
+
             actor_loss += (-pi.log_prob(action) * returns.detach()).sum()
 
             # BASELINE LOSS

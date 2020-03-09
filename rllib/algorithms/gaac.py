@@ -41,4 +41,4 @@ class GAAC(ActorCritic):
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
-        return self.gae(trajectory)
+        return self.gae(trajectory)  # GAE returns.

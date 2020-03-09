@@ -2,7 +2,6 @@
 import torch
 import torch.nn as nn
 import copy
-from collections import namedtuple
 from rllib.util.utilities import integrate
 from .ac import PGLoss
 

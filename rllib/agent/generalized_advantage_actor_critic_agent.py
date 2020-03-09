@@ -4,7 +4,7 @@ from rllib.algorithms.gaac import GAAC
 from .actor_critic_agent import ActorCriticAgent
 
 
-class A2CAgent(ActorCriticAgent):
+class GAACAgent(ActorCriticAgent):
     """Implementation of the Advantage-Actor Critic.
 
     TODO: build compatible function approximation.

@@ -20,6 +20,7 @@ class ActorCritic(nn.Module):
     critic_target: AbstractValueFunction
     criterion: _Loss
     gamma: float
+    eps: float = 1e-12
 
     def __init__(self, policy: AbstractPolicy, critic: AbstractQFunction,
                  criterion: _Loss, gamma: float) -> None: ...
