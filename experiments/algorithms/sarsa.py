@@ -42,11 +42,12 @@ agent = ExpectedSARSAAgent(q_function, policy, criterion, optimizer,
                            gamma=GAMMA, batch_size=BATCH_SIZE)
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
-plt.plot(agent.logs['rewards'].episode_log)
-plt.xlabel('Episode')
-plt.ylabel('Rewards')
-plt.title('{} in {}'.format(agent.name, environment.name))
-plt.ion()
-plt.show()
+for key, log in agent.logs.items():
+    plt.plot(log.episode_log)
+    plt.xlabel('Episode')
+    plt.ylabel(key.capitalize())
+    plt.title('{} in {}'.format(agent.name, environment.name))
+    plt.show()
+
 
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)

@@ -67,11 +67,14 @@ class REINFORCEAgent(AbstractAgent):
         if self.baseline_optimizer is not None:
             self.baseline_optimizer.zero_grad()
 
-        ans = self.reinforce(trajectories)
+        losses = self.reinforce(trajectories)
 
-        ans.actor_loss.backward()
+        losses.actor_loss.backward()
         self.policy_optimizer.step()
+        self.logs['actor_losses'].append(losses.actor_loss.item())
 
         if self.baseline_optimizer is not None:
-            ans.baseline_loss.backward()
+            losses.baseline_loss.backward()
             self.baseline_optimizer.step()
+            self.logs['baseline_losses'].append(losses.baseline_loss.item())
+

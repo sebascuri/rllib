@@ -1,12 +1,10 @@
-"""Actor-Critic Algorithm."""
+"""Expected Actor-Critic Algorithm."""
 import torch
 import torch.nn as nn
 import copy
 from collections import namedtuple
 from rllib.util.utilities import integrate
-
-PGLoss = namedtuple('PolicyGradientLoss',
-                    ['actor_loss', 'critic_loss', 'td_error'])
+from .ac import PGLoss
 
 
 class ActorCritic(nn.Module):
@@ -55,18 +53,10 @@ class ActorCritic(nn.Module):
         self.criterion = criterion
         self.gamma = gamma
 
-    def returns(self, trajectory):
-        """Estimate the returns of a trajectory."""
-        state, action = trajectory.state, trajectory.action
-        pred_q = self.critic(state, action)
-        returns = pred_q
-        return returns
-
     def forward(self, trajectories):
         """Compute the losses."""
         actor_loss = torch.tensor(0.)
         critic_loss = torch.tensor(0.)
-        td_error = torch.tensor(0.)
 
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory
@@ -75,9 +65,9 @@ class ActorCritic(nn.Module):
             pi = self.policy(state)
             if self.policy.discrete_action:
                 action = action.long()
-            with torch.no_grad():
-                returns = self.returns(trajectory)
-            actor_loss += (-pi.log_prob(action) * returns).sum()
+
+            actor_loss += integrate(lambda a: -pi.log_prob(a) * self.critic(state, a),
+                                    pi).sum()
 
             # CRITIC LOSS
             with torch.no_grad():
@@ -85,13 +75,9 @@ class ActorCritic(nn.Module):
                                    self.policy(next_state))
                 target_q = reward + self.gamma * next_v * (1 - done)
 
-            pred_q = self.critic(state, action)
-            critic_loss += self.criterion(pred_q, target_q).mean()
-            td_error += (pred_q - target_q).detach().mean()
+            critic_loss += self.criterion(self.critic(state, action), target_q)
 
-        num_trajectories = len(trajectories)
-        return PGLoss(actor_loss / num_trajectories, critic_loss / num_trajectories,
-                      td_error / num_trajectories)
+        return PGLoss(actor_loss, critic_loss)
 
     def update(self):
         """Update the baseline network."""

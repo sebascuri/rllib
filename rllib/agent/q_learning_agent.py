@@ -82,15 +82,15 @@ class QLearningAgent(AbstractAgent):
         observation = Observation(*map(lambda x: x.float(), observation))
 
         self.optimizer.zero_grad()
-        ans = self.q_learning(
+        losses = self.q_learning(
             observation.state, observation.action, observation.reward,
             observation.next_state, observation.done)
 
-        loss = (weight * ans.loss).mean()
+        loss = (weight * losses.loss).mean()
         loss.backward()
 
         self.optimizer.step()
-        self.memory.update(idx, ans.td_error.numpy())
+        self.memory.update(idx, losses.td_error.numpy())
 
-        self.logs['td_errors'].append(ans.td_error.mean().item())
+        self.logs['td_errors'].append(losses.td_error.mean().item())
         self.logs['losses'].append(loss.item())

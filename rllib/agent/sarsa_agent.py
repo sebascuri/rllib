@@ -92,14 +92,14 @@ class SARSAAgent(AbstractAgent):
         trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 
         self.optimizer.zero_grad()
-        ans = self.sarsa(
+        losses = self.sarsa(
             trajectory.state, trajectory.action, trajectory.reward,
             trajectory.next_state, trajectory.done, trajectory.next_action)
 
-        loss = ans.loss.mean()
+        loss = losses.loss.mean()
         loss.backward()
 
         self.optimizer.step()
 
-        self.logs['td_errors'].append(ans.td_error.mean().item())
+        self.logs['td_errors'].append(losses.td_error.mean().item())
         self.logs['losses'].append(loss.item())

@@ -8,7 +8,7 @@ import numpy as np
 
 
 class DPGAgent(AbstractAgent):
-    """Abstract Implementation of the Deterministic Policy Gradient Algorithm.
+    """Implementation of the Deterministic Policy Gradient Agent.
 
     The AbstractDDPGAgent algorithm implements the DPG-Learning algorithm except for
     the computation of the TD-Error, which leads to different algorithms.

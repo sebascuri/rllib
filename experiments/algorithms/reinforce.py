@@ -36,16 +36,17 @@ value_optimizer = torch.optim.Adam(value_function.parameters(), lr=CRITIC_LEARNI
 criterion = torch.nn.MSELoss
 
 agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
-                  baseline=value_function, baseline_optimizer=value_optimizer,
-                  criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+                       baseline=value_function, baseline_optimizer=value_optimizer,
+                       criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
 rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
-plt.plot(agent.logs['rewards'].episode_log)
-plt.xlabel('Episode')
-plt.ylabel('Rewards')
-plt.title('{} in {}'.format(agent.name, environment.name))
-plt.ion()
-plt.show()
+for key, log in agent.logs.items():
+    plt.plot(log.episode_log)
+    plt.xlabel('Episode')
+    plt.ylabel(key.capitalize())
+    plt.title('{} in {}'.format(agent.name, environment.name))
+    plt.show()
+
 
 rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
