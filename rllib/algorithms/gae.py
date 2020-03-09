@@ -29,8 +29,8 @@ class GAE(nn.Module):
 
     References
     ----------
-    Schulman, John, et al. (2015)
-    "High-dimensional continuous control using generalized advantage estimation." ICLR.
+    Schulman, J., Moritz, P., Levine, S., Jordan, M., & Abbeel, P. (2015).
+    High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
     def __init__(self, lambda_, gamma, value_function=None):

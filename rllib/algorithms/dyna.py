@@ -21,29 +21,39 @@ def dyna_rollout(state, model, policy, reward, steps, gamma=0.99, value_function
 
     Parameters
     ----------
-    state : torch.Tensor
+    state: torch.Tensor
         Initial state from which planning starts. It accepts a batch of initial states.
-    model :
+    model: AbstractModel
         The model predicts a distribution over next states given states and actions.
-    policy :
+    policy: AbstractPolicy
         The policy predicts a distribution over actions given the state.
-    reward :
+    reward: AbstractReward
         The reward predicts a distribution over floats or ints given states and actions.
-    steps : int
+    steps: int
         Number of steps predicted with the model before (optionally) bootstrapping.
-    gamma : float, optional
+    gamma: float, optional
         Discount factor.
-    value_function : AbstractValueFunction
+    value_function: AbstractValueFunction
         The value function used for bootstrapping, takes states as input.
-    num_samples : int
+    num_samples: int
         If great than 1, the states are repeated `num_repeats` times in order to
         estimate the expected performance by MC sampling.
 
     Returns
     -------
     return : DynaReturn
-        q_target: num_samples of MC estimation of q-function target.
-        trajectory: sample trajectory that MC estimation produces.
+        q_target:
+            Num_samples of MC estimation of q-function target.
+        trajectory:
+            Sample trajectory that MC estimation produces.
+
+    References
+    ----------
+    Sutton, R. S. (1991).
+    Dyna, an integrated architecture for learning, planning, and reacting. ACM.
+
+    Silver, D., Sutton, R. S., & Müller, M. (2008).
+    Sample-based learning and search with permanent and transient memories. ICML.
     """
     # Repeat states to get a better estimate of the expected value
     if num_samples > 1:

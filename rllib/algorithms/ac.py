@@ -25,21 +25,21 @@ class ActorCritic(nn.Module):
     Parameters
     ----------
     policy: AbstractPolicy
-        policy to optimize.
+        Policy to optimize.
     critic: AbstractValueFunction
-        critic that evaluates the current policy.
+        Critic that evaluates the current policy.
     criterion: _Loss
         Criterion to optimize the baseline.
     gamma: float
-        discount factor.
+        Discount factor.
 
     References
     ----------
-    Sutton, Richard S., et al. "Policy gradient methods for reinforcement learning with
-    function approximation." NIPS (2000).
+    Sutton, R. S., McAllester, D. A., Singh, S. P., & Mansour, Y. (2000).
+    Policy gradient methods for reinforcement learning with function approximation.NIPS.
 
-    Konda, V. R., & Tsitsiklis, J. N. Actor-critic algorithms. NIPS (2000).
-
+    Konda, V. R., & Tsitsiklis, J. N. (2000).
+    Actor-critic algorithms. NIPS.
     """
 
     def __init__(self, policy, critic, criterion, gamma):

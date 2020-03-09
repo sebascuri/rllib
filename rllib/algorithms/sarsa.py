@@ -21,15 +21,24 @@ class SARSA(nn.Module):
     Parameters
     ----------
     q_function: AbstractQFunction
-        q_function to optimize.
+        Q_function to optimize.
     criterion: _Loss
         Criterion to optimize.
     gamma: float
-        discount factor.
+        Discount factor.
 
     References
     ----------
-    TODO: Find.
+    Rummery, G. A., & Niranjan, M. (1994).
+    On-line Q-learning using connectionist systems. Cambridge, UK.
+
+    Sutton, R. S. (1996).
+    Generalization in reinforcement learning: Successful examples using sparse coarse
+    coding. NIPS.
+
+    Singh, S., Jaakkola, T., Littman, M. L., & Szepesvári, C. (2000).
+    Convergence results for single-step on-policy reinforcement-learning algorithms.
+    Machine learning
     """
 
     def __init__(self, q_function, criterion, gamma):

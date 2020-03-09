@@ -20,18 +20,19 @@ class A2C(ActorCritic):
 
     Parameters
     ----------
-    policy: AbstractPolicy
-        policy to optimize.
-    critic: AbstractValueFunction
-        critic that evaluates the current policy.
-    criterion: _Loss
+    policy : AbstractPolicy
+        Policy to optimize.
+    critic : AbstractValueFunction
+        Critic that evaluates the current policy.
+    criterion : _Loss
         Criterion to optimize the baseline.
-    gamma: float
-        discount factor.
+    gamma : float
+        Discount factor.
 
     References
     ----------
-    Mnih, V., et al. "Asynchronous methods for deep reinforcement learning". ICLR. 2016.
+    Mnih, V., et al. (2016).
+    Asynchronous methods for deep reinforcement learning. ICML.
     """
 
     def __init__(self, policy, critic, criterion, gamma):

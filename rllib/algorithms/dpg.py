@@ -19,17 +19,18 @@ class DPG(nn.Module):
     Parameters
     ----------
     q_function: AbstractQFunction
-        q_function to optimize.
+        Q_function to optimize.
     criterion: _Loss
         Criterion to optimize.
     gamma: float
-        discount factor.
+        Discount factor.
 
     References
     ----------
-    Silver, David, et al. (2014) "Deterministic policy gradient algorithms." JMLR.
-    Lillicrap et. al. (2016). CONTINUOUS CONTROL WITH DEEP REINFORCEMENT LEARNING. ICLR.
-
+    Silver, David, et al. (2014)
+    Deterministic policy gradient algorithms. JMLR.
+    Lillicrap et. al. (2016).
+    Continuous Control with Deep Reinforcement Learning. ICLR.
     """
 
     def __init__(self, q_function, policy, criterion, gamma, policy_noise, noise_clip):

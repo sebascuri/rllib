@@ -24,19 +24,19 @@ class REINFORCE(nn.Module):
     Parameters
     ----------
     policy: AbstractPolicy
-        policy to optimize.
+        Policy to optimize.
     baseline: AbstractValueFunction
-        baseline to reduce the variance of the gradient.
+        Baseline to reduce the variance of the gradient.
     criterion: _Loss
         Criterion to optimize the baseline.
     gamma: float
-        discount factor.
+        Discount factor.
 
     References
     ----------
-    Williams, Ronald J. "Simple statistical gradient-following algorithms for
-    connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
-
+    Williams, Ronald J. (1992)
+    Simple statistical gradient-following algorithms for connectionist reinforcement
+    learning. Machine learning.
     """
 
     eps = 1e-12

@@ -22,15 +22,14 @@ class GAAC(ActorCritic):
     criterion: _Loss
         Criterion to optimize the baseline.
     lambda_: float
-        Returns estimate parameter.
+        Eligibility trace parameter.
     gamma: float
         Discount factor.
 
     References
     ----------
-    Schulman, John, et al. "High-dimensional continuous control using generalized
-    advantage estimation." ICLR (2015).
-
+    Schulman, J., Moritz, P., Levine, S., Jordan, M., & Abbeel, P. (2015).
+    High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
     def __init__(self, policy, critic, criterion, lambda_, gamma):

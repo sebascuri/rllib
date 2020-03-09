@@ -22,15 +22,28 @@ class QLearning(nn.Module):
     Parameters
     ----------
     q_function: AbstractQFunction
-        q_function to optimize.
+        Q_function to optimize.
     criterion: _Loss
         Criterion to optimize.
     gamma: float
-        discount factor.
+        Discount factor.
 
     References
     ----------
-    Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
+    Watkins, C. J. C. H. (1989).
+    Learning from delayed rewards.
+
+    Watkins, C. J., & Dayan, P. (1992).
+    Q-learning. Machine learning.
+
+    Jaakkola, T., Jordan, M. I., & Singh, S. P. (1994).
+    Convergence of stochastic iterative dynamic programming algorithms. NIPS.
+
+    Tsitsiklis, J. N. (1994). Asynchronous stochastic approximation and Q-learning.
+    Machine learning.
+
+    Mnih, V., et. al. (2013).
+    Playing atari with deep reinforcement learning. NIPS.
     """
 
     def __init__(self, q_function, criterion, gamma):

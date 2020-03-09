@@ -5,7 +5,6 @@ import torch.nn as nn
 from rllib.util.utilities import integrate
 import copy
 from .q_learning import QLearningLoss
-from rllib.value_function import AbstractQFunction
 
 
 class ESARSA(nn.Module):
@@ -16,15 +15,29 @@ class ESARSA(nn.Module):
 
     .. math:: Q_{target} = r(s, a) + \gamma \sum_{a'} \pi(a')  Q(s', a')
 
+    Parameters
+    ----------
+    q_function: AbstractQFunction
+        Q_function to optimize.
+    criterion: _Loss
+        Criterion to optimize.
+    gamma: float
+        Discount factor.
+
     References
     ----------
-    TODO: Find.
+    Van Seijen, H., Van Hasselt, H., Whiteson, S., & Wiering, M. (2009).
+    A theoretical and empirical analysis of Expected Sarsa. IEEE.
+
+    Van Hasselt, H. P. (2011).
+    Insights in reinforcement learning: formal analysis and empirical evaluation of
+    temporal-difference learning algorithms. Utrecht University.
     """
 
-    def __init__(self, q_function: AbstractQFunction, criterion, policy, gamma):
+    def __init__(self, q_function, criterion, policy, gamma):
         super().__init__()
         self.q_function = q_function
-        self.q_target = copy.deepcopy(q_function)  # type: AbstractQFunction
+        self.q_target = copy.deepcopy(q_function)
         self.policy = policy
         self.criterion = criterion
         self.gamma = gamma
