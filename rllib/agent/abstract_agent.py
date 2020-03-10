@@ -2,6 +2,7 @@
 
 from abc import ABCMeta
 import torch
+import numpy as np
 from rllib.util.logger import Logger
 
 
@@ -32,7 +33,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     """
 
     def __init__(self, gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        self.logs = {'rewards': Logger('sum')}
+        self.logs = {'rewards': Logger('sum'), 'policy entropy': Logger('mean')}
         self.counters = {'total_episodes': 0, 'total_steps': 0}
         self.episode_steps = []
 
@@ -40,15 +41,32 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.exploration_episodes = exploration_episodes
         self.exploration_steps = exploration_steps
 
+    def __repr__(self):
+        """String to parse the agent."""
+        opening = "====================================\n"
+        str_ = opening
+        str_ += "Total episodes {}\n".format(self.counters['total_episodes'])
+        str_ += "Total steps {}\n".format(self.counters['total_steps'])
+        rewards = self.logs['rewards'].episode_log
+        entropy = self.logs['policy entropy'].episode_log
+        str_ += "Average reward {:.1f}\n".format(np.mean(rewards))
+        str_ += "10-Episode reward {:.1f}\n".format(np.mean(rewards[-10:]))
+        str_ += "Policy entropy {:.2e}\n".format(np.mean(entropy))
+        str_ += "10-Episode policy entropy {:.2e}\n".format(np.mean(entropy[-10:]))
+        str_ += opening
+        return str_
+
     def act(self, state):
         """Ask the agent for an action to interact with the environment."""
         if self.total_steps < self.exploration_steps or (
                 self.total_episodes < self.exploration_episodes):
-            action = self.policy.random().sample()
+            policy = self.policy.random()
         else:
             state = torch.tensor(state).float()
-            action = self.policy(state).sample()
+            policy = self.policy(state)
 
+        action = policy.sample()
+        self.logs['policy entropy'].append(policy.entropy().detach().numpy())
         return action.detach().numpy()
 
     def observe(self, observation):

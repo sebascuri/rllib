@@ -12,7 +12,7 @@ def rollout(environment, agent, num_episodes, max_steps, test_episodes=1):
         plt.ylabel(' '.join(key.split('_')).capitalize())
         plt.title('{} in {}'.format(agent.name, environment.name))
         plt.show()
-
+    print(repr(agent))
     rollout_agent(environment, agent, max_steps=max_steps, num_episodes=test_episodes,
                   render=True)
     print('Test Rewards:',
