@@ -113,7 +113,10 @@ def discount_sum(rewards, gamma=1.0):
     -------
     cum_sum
     """
-    steps = len(rewards)
+    if len(rewards.shape) == 0:
+        steps = 1
+    else:
+        steps = len(rewards)
     bk = get_backend(rewards)
     return (bk.pow(gamma * bk.ones(steps), bk.arange(steps)) * rewards).sum()
 
