@@ -22,12 +22,16 @@ class MellowMax(AbstractQFunctionPolicy):
     Proceedings of the 34th International Conference on Machine Learning. 2017.
     """
 
+    @property
+    def omega(self):
+        """Return mellow-max parameter."""
+        return self.param()
+
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
         q_value = self.q_function(state)
-        omega = self.param()
 
-        mm = mellow_max(q_value, omega).unsqueeze(-1)
+        mm = mellow_max(q_value, self.omega).unsqueeze(-1)
         adv = q_value - mm
         if adv.dim() < 2:
             adv = adv.unsqueeze(0)

@@ -18,18 +18,23 @@ class EpsGreedy(AbstractQFunctionPolicy):
 
     """
 
+    @property
+    def epsilon(self):
+        """Return epsilon."""
+        return self.param()
+
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
         batch_size = get_batch_size(state, is_discrete=self.discrete_state)
         aux_size = 1 if not batch_size else batch_size
 
         # Epsilon part.
-        epsilon = self.param()
-        probs = epsilon / self.num_actions * torch.ones((aux_size, self.num_actions))
+        probs = self.epsilon / self.num_actions * torch.ones((aux_size,
+                                                              self.num_actions))
 
         # Greedy part.
         a = torch.argmax(self.q_function(state), dim=-1)
-        probs[torch.arange(aux_size), a] += (1 - epsilon)
+        probs[torch.arange(aux_size), a] += (1 - self.epsilon)
 
         if batch_size:
             return Categorical(probs)

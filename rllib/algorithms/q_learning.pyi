@@ -3,6 +3,7 @@ from rllib.value_function import AbstractQFunction
 from typing import NamedTuple
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
+from rllib.policy.q_function_policy import SoftMax
 
 
 class QLearningLoss(NamedTuple):
@@ -26,10 +27,18 @@ class QLearning(nn.Module):
     def update(self) -> None: ...
 
 
-class SemiGQLearning(QLearning): ...
+class GradientQLearning(QLearning): ...
 
 
 class DQN(QLearning): ...
 
 
 class DDQN(QLearning): ...
+
+
+class SoftQLearning(QLearning):
+    policy: SoftMax
+    policy_target: SoftMax
+
+    def __init__(self, q_function: AbstractQFunction, criterion: _Loss,
+                 temperature: float, gamma: float) -> None: ...

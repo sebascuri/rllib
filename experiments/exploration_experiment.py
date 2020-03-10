@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from rllib.agent import QLearningAgent
-from rllib.algorithms import DDQN
+from rllib.algorithms.q_learning import DDQN
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
@@ -26,7 +26,7 @@ LAYERS = [64, 64]
 SEED = 0
 
 for name, Policy in {
-    'eps_greedy': EpsGreedy,
+    # 'eps_greedy': EpsGreedy,
     'softmax': SoftMax
 }.items():
     torch.manual_seed(SEED)

@@ -1,5 +1,6 @@
 """Implementation of QLearning Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.algorithms.q_learning import QLearning
 from rllib.dataset import Observation
 from rllib.util.logger import Logger
 import torch
@@ -13,8 +14,6 @@ class QLearningAgent(AbstractAgent):
 
     Parameters
     ----------
-    q_learning_algorithm: QLearning
-        Implementation of Q-Learning algorithm.
     q_function: AbstractQFunction
         q_function that is learned.
     policy: QFunctionPolicy.
@@ -38,10 +37,6 @@ class QLearningAgent(AbstractAgent):
     ----------
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
 
-    Sutton, Richard S., et al. "Fast gradient-descent methods for temporal-difference
-    learning with linear function approximation." Proceedings of the 26th Annual
-    International Conference on Machine Learning. ACM, 2009.
-
     Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning."
     Nature 518.7540 (2015): 529-533.
 
@@ -50,14 +45,13 @@ class QLearningAgent(AbstractAgent):
 
     """
 
-    def __init__(self, q_learning_algorithm, q_function, policy, criterion, optimizer,
+    def __init__(self, q_function, policy, criterion, optimizer,
                  memory, target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.policy = policy
-        self.q_learning = q_learning_algorithm(q_function, criterion(reduction='none'),
-                                               self.gamma)
+        self.q_learning = QLearning(q_function, criterion(reduction='none'), self.gamma)
 
         self.memory = memory
         self.target_update_frequency = target_update_frequency
