@@ -8,11 +8,13 @@ import numpy as np
 __all__ = ['integrate', 'mellow_max', 'discount_cumsum', 'moving_average_filter',
            'separated_kl']
 
+
 def get_backend(array):
     if type(array) is np.ndarray:
         return np
     else:
         return torch
+
 
 def integrate(function, distribution, num_samples=1):
     """Integrate a function over a distribution.
