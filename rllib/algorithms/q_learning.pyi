@@ -1,10 +1,10 @@
 import torch.nn as nn
 from rllib.value_function import AbstractQFunction
-from typing import NamedTuple
+from typing import NamedTuple, Union
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 from rllib.policy.q_function_policy import SoftMax
-
+from rllib.util.parameter_decay import ParameterDecay
 
 class QLearningLoss(NamedTuple):
     loss: Tensor
@@ -41,4 +41,4 @@ class SoftQLearning(QLearning):
     policy_target: SoftMax
 
     def __init__(self, q_function: AbstractQFunction, criterion: _Loss,
-                 temperature: float, gamma: float) -> None: ...
+                 temperature: Union[float, ParameterDecay], gamma: float) -> None: ...

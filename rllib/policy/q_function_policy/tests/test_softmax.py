@@ -1,5 +1,6 @@
 from rllib.policy import SoftMax
 from rllib.value_function import NNQFunction
+from rllib.util.parameter_decay import Constant
 import torch
 import torch.testing
 import pytest
@@ -16,7 +17,7 @@ def q_function():
 
 
 def test_discrete(t_start, q_function):
-    policy = SoftMax(q_function, start=t_start)
+    policy = SoftMax(q_function, t_start)
     for t in range(100):
         state = torch.randint(4, ())
         logits = q_function(state)

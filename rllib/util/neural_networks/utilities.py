@@ -2,12 +2,7 @@
 
 import torch
 import torch.nn as nn
-
-
-__all__ = ['update_parameters', 'zero_bias', 'inverse_softplus', 'one_hot_encode',
-           'get_batch_size', 'random_tensor', 'repeat_along_dimension',
-           'torch_quadratic', 'freeze_parameters', 'unfreeze_parameters',
-           'disable_gradient']
+import numpy as np
 
 
 def update_parameters(target_params, new_params, tau=1.0):
@@ -33,6 +28,11 @@ def update_parameters(target_params, new_params, tau=1.0):
             new_param_ = ((1.0 - tau) * target_param.data.detach()
                           + tau * new_param.data.detach())
             target_param.data.copy_(new_param_)
+
+
+def count_vars(module):
+    """Count the number of variables in a module."""
+    return sum([np.prod(p.shape) for p in module.parameters()])
 
 
 def zero_bias(module):

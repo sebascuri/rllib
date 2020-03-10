@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent
-from rllib.algorithms.q_learning import DDQN
+from rllib.agent import DDQNAgent
 from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy, SoftMax
 from rllib.environment import GymEnvironment
+from rllib.util.parameter_decay import ExponentialDecay
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
@@ -26,7 +26,7 @@ LAYERS = [64, 64]
 SEED = 0
 
 for name, Policy in {
-    # 'eps_greedy': EpsGreedy,
+    'eps_greedy': EpsGreedy,
     'softmax': SoftMax
 }.items():
     torch.manual_seed(SEED)
@@ -38,7 +38,7 @@ for name, Policy in {
                              num_actions=environment.num_actions,
                              layers=LAYERS
                              )
-    policy = Policy(q_function, start=1., end=0.01, decay=500)
+    policy = Policy(q_function, ExponentialDecay(start=1., end=0.01, decay=500))
     q_target = NNQFunction(environment.dim_observation, environment.dim_action,
                            num_states=environment.num_states,
                            num_actions=environment.num_actions,
@@ -50,8 +50,9 @@ for name, Policy in {
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    agent = QLearningAgent(DDQN, q_function, policy, criterion, optimizer, memory,
-                           target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+    agent = DDQNAgent(
+        q_function, policy, criterion, optimizer, memory,
+        target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
 
     plt.plot(agent.logs['rewards'].episode_log, label=name)

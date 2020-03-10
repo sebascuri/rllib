@@ -32,7 +32,7 @@ class GPUCBPolicy(AbstractPolicy):
 
     def __init__(self, gp, x, beta=2.0):
         super().__init__(dim_state=1, dim_action=x.shape[0],
-                         num_states=1, num_actions=None)
+                         num_states=1, num_actions=None, deterministic=True)
         self.gp = gp
         self.gp.eval()
         self.gp.likelihood.eval()

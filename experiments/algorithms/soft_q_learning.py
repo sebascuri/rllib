@@ -2,6 +2,7 @@ from rllib.agent import SoftQLearningAgent
 from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
+from rllib.util.parameter_decay import Constant
 from util import rollout
 
 import numpy as np
@@ -42,8 +43,8 @@ criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
 agent = SoftQLearningAgent(
-    q_function, criterion, optimizer, memory,
-    target_update_frequency=TARGET_UPDATE_FREQUENCY, temperature=TEMPERATURE,
+    q_function, criterion, optimizer, memory, temperature=TEMPERATURE,
+    target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)
 
 rollout(environment, agent, NUM_EPISODES, MAX_STEPS)

@@ -2,7 +2,7 @@
 
 from abc import ABCMeta
 from ..abstract_policy import AbstractPolicy
-from rllib.util import ExponentialDecay
+from rllib.util.parameter_decay import Constant
 
 
 class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
@@ -11,13 +11,11 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
     Parameters
     ----------
     q_function: q_function to derive policy from.
-    start: starting parameter.
-    end: finishing parameter.
-    decay: decay parameter.
+    param: policy parameter.
 
     """
 
-    def __init__(self, q_function, start, end=None, decay=None):
+    def __init__(self, q_function, param):
         if not q_function.discrete_action:
             raise NotImplementedError
         super().__init__(q_function.dim_state,
@@ -25,7 +23,9 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
                          num_states=q_function.num_states,
                          num_actions=q_function.num_actions)
         self.q_function = q_function
-        self.param = ExponentialDecay(start, end, decay)
+        if type(param) is float:
+            param = Constant(param)
+        self.param = param
 
     def update(self, observation):
         """Update policy parameters."""

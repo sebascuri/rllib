@@ -2,6 +2,7 @@ from rllib.agent import QLearningAgent, DQNAgent, DDQNAgent
 from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
+from rllib.util.parameter_decay import ExponentialDecay
 from rllib.environment import GymEnvironment
 from util import rollout
 
@@ -38,7 +39,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
+policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)

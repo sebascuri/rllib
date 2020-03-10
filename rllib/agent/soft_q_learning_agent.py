@@ -18,10 +18,10 @@ class SoftQLearningAgent(QLearningAgent):
         Optimization algorithm for q_function.
     memory: ExperienceReplay
         Memory where to store the observations.
+    temperature: ParameterDecay.
+        Temperature of Soft Q function.
     target_update_frequency: int
         How often to update the q_function target.
-    temperature: float.
-        Temperature of Soft Q function.
     gamma: float, optional
         Discount factor.
     exploration_steps: int, optional
@@ -36,7 +36,7 @@ class SoftQLearningAgent(QLearningAgent):
     """
 
     def __init__(self, q_function, criterion, optimizer,
-                 memory, target_update_frequency=4, temperature=1.0, gamma=1.0,
+                 memory, temperature, target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(q_function, None, criterion, optimizer, memory,
                          target_update_frequency, gamma,

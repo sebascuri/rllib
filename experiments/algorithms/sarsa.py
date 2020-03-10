@@ -1,6 +1,8 @@
 from rllib.agent import SARSAAgent, ExpectedSARSAAgent
 from rllib.value_function import NNQFunction
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
+from rllib.util.parameter_decay import ExponentialDecay
+
 from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
@@ -32,7 +34,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
+policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 

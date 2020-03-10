@@ -31,6 +31,18 @@ class ParameterDecay(object, metaclass=ABCMeta):
         raise NotImplementedError
 
 
+class Constant(ParameterDecay):
+    """Constant parameter."""
+
+    def __call__(self):
+        """See `ParameterDecay.__call__'."""
+        return self.start
+
+    def update(self):
+        """Update parameter."""
+        pass
+
+
 class ExponentialDecay(ParameterDecay):
     """Exponential decay of parameter."""
 

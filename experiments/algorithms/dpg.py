@@ -4,6 +4,7 @@ from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
 from rllib.agent import DPGAgent, TD3Agent
+from rllib.util.parameter_decay import ExponentialDecay
 from .util import rollout
 
 import torch.nn.functional as func
@@ -34,7 +35,7 @@ np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
 policy = FelixPolicy(environment.dim_state, environment.dim_action, deterministic=True)
-noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
+noise = GaussianNoise(ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions,

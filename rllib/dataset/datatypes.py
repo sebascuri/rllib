@@ -25,6 +25,7 @@ class Observation(NamedTuple):
     done: Done = True
     next_action: Action = np.nan  # SARSA algorithm.
     log_prob_action: Probability = np.nan  # Off-policy algorithms.
+    entropy: Probability = np.nan  # Entropy of current policy.
 
     @staticmethod
     def _is_equal_nan(x, y):

@@ -5,6 +5,7 @@ from rllib.value_function import NNQFunction, TabularQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
 from rllib.environment import GymEnvironment, EasyGridWorld
+from rllib.util.parameter_decay import ExponentialDecay
 import torch.nn.functional as func
 import torch.optim
 
@@ -47,7 +48,7 @@ def test_nnq_interaction(environment, agent):
                              layers=LAYERS,
                              tau=TARGET_UPDATE_TAU,
                              )
-    policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
+    policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss

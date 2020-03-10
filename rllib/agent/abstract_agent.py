@@ -42,7 +42,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.exploration_steps = exploration_steps
 
     def __repr__(self):
-        """String to parse the agent."""
+        """Generate string to parse the agent."""
         opening = "====================================\n"
         str_ = opening
         str_ += "Total episodes {}\n".format(self.counters['total_episodes'])
@@ -51,8 +51,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
         entropy = self.logs['policy entropy'].episode_log
         str_ += "Average reward {:.1f}\n".format(np.mean(rewards))
         str_ += "10-Episode reward {:.1f}\n".format(np.mean(rewards[-10:]))
-        str_ += "Policy entropy {:.2e}\n".format(np.mean(entropy))
-        str_ += "10-Episode policy entropy {:.2e}\n".format(np.mean(entropy[-10:]))
+        if not self.policy.deterministic:
+            str_ += "Policy entropy {:.2e}\n".format(np.mean(entropy))
+            str_ += "10-Episode policy entropy {:.2e}\n".format(np.mean(entropy[-10:]))
         str_ += opening
         return str_
 
@@ -66,7 +67,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
             policy = self.policy(state)
 
         action = policy.sample()
-        self.logs['policy entropy'].append(policy.entropy().detach().numpy())
+        if not self.policy.deterministic:
+            self.logs['policy entropy'].append(policy.entropy().detach().numpy())
         return action.detach().numpy()
 
     def observe(self, observation):

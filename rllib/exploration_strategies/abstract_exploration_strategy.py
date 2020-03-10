@@ -2,7 +2,7 @@
 
 
 from abc import ABCMeta, abstractmethod
-from rllib.util import ExponentialDecay
+from rllib.util.parameter_decay import Constant
 
 
 class AbstractExplorationStrategy(object, metaclass=ABCMeta):
@@ -10,11 +10,9 @@ class AbstractExplorationStrategy(object, metaclass=ABCMeta):
 
     Parameters
     ----------
-    start: float
+    param: ParamDecay
         initial value of exploration parameter.
-    end: float, optional
-        final value of exploration parameter.
-    decay: float, optional
+    dimension: int, optional
         rate of decay of exploration parameter.
 
     Attributes
@@ -24,9 +22,10 @@ class AbstractExplorationStrategy(object, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, start, end=None, decay=None, max_value=1, dimension=1):
-        self.param = ExponentialDecay(start, end, decay)
-        self.max_value = max_value
+    def __init__(self, param, dimension=1):
+        if type(param) is float:
+            param = Constant(param)
+        self.param = param
         self.dimension = dimension
 
     @abstractmethod

@@ -1,14 +1,15 @@
 from torch import Tensor
 import torch.nn as nn
 from torch.nn import Parameter
-from typing import Iterator, Tuple
-
+from typing import Iterator
 
 def update_parameters(target_params: Iterator[Parameter],
                       new_params: Iterator[Parameter], tau: float = 1.0
                       ) -> None: ...
 
-def zero_bias(named_params: nn.Module) -> None: ...
+def count_vars(module: nn.Module) -> int: ...
+
+def zero_bias(module: nn.Module) -> None: ...
 
 
 def inverse_softplus(x: Tensor) -> Tensor: ...
