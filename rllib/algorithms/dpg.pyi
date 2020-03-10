@@ -1,15 +1,10 @@
 from torch import Tensor
 import torch.nn as nn
 from torch.nn.modules.loss import _Loss
-from typing import NamedTuple
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
-
-
-class DPGLoss(NamedTuple):
-    actor_loss: Tensor
-    critic_loss: Tensor
-    td_error: Tensor
+from .q_learning import QLearningLoss
+from .ac import PGLoss
 
 
 class DPG(nn.Module):
@@ -27,8 +22,11 @@ class DPG(nn.Module):
 
     def _add_noise(self, action: Tensor) -> Tensor: ...
 
-    def _actor_loss(self, state: Tensor) -> Tensor: ...
+    def actor_loss(self, state: Tensor) -> Tensor: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> DPGLoss: ...
+    def critic_loss(self, state: Tensor, action: Tensor, reward: Tensor,
+                    next_state: Tensor, done: Tensor) -> QLearningLoss: ...
+
+    def forward(self, *args: Tensor, **kwargs) -> PGLoss: ...
 
     def update(self) -> None: ...

@@ -5,7 +5,7 @@ from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
 from rllib.agent import DPGAgent, TD3Agent
 from rllib.util.parameter_decay import ExponentialDecay
-from .util import rollout
+from util import rollout
 
 import torch.nn.functional as func
 import numpy as np

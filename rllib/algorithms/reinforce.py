@@ -41,7 +41,7 @@ class REINFORCE(nn.Module):
 
     eps = 1e-12
 
-    def __init__(self, policy, baseline, criterion, gamma, lambda_=1):
+    def __init__(self, policy, baseline, criterion, gamma):
         super().__init__()
         # Actor
         self.policy = policy
@@ -50,7 +50,7 @@ class REINFORCE(nn.Module):
         self.criterion = criterion
         self.gamma = gamma
 
-        self.gae = GAE(lambda_, self.gamma, self.baseline)
+        self.gae = GAE(1, self.gamma, self.baseline)
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""

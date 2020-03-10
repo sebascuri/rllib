@@ -2,9 +2,8 @@
 import torch
 import torch.nn as nn
 import copy
-from collections import namedtuple
-
-DPGLoss = namedtuple('DPGLoss', ['actor_loss', 'critic_loss', 'td_error'])
+from .q_learning import QLearningLoss
+from .ac import PGLoss
 
 
 class DPG(nn.Module):
@@ -53,23 +52,27 @@ class DPG(nn.Module):
             -self.noise_clip, self.noise_clip)
         return (action + next_noise).clamp(-1, 1)
 
-    def _actor_loss(self, state):
+    def actor_loss(self, state):
+        """Get Actor Loss."""
         action = self.policy(state).mean.clamp(-1, 1)
-        return -self.q_function(state.float(), action)
+        q = self.q_function(state.float(), action)
+        if type(q) is list:
+            q = q[0]
+        return -q
 
-    def forward(self, state, action, reward, next_state, done):
-        """Compute the losses and the td-error."""
-        # Critic Loss
+    def critic_loss(self, state, action, reward, next_state, done):
+        """Get Critic Loss and td-error."""
         pred_q = self.q_function(state, action)
         if type(pred_q) is not list:
             pred_q = [pred_q]
 
-        # target = r + gamma * Q(x', \pi(x'))
-        next_action = self._add_noise(self.policy_target(next_state).rsample())
-        next_v = self.q_target(next_state, next_action)
-        if type(next_v) is list:
-            next_v = torch.min(*next_v)
-        target_q = reward + self.gamma * next_v * (1 - done)
+        # Target Q-values
+        with torch.no_grad():
+            next_action = self._add_noise(self.policy_target(next_state).sample())
+            next_v = self.q_target(next_state, next_action)
+            if type(next_v) is list:
+                next_v = torch.min(*next_v)
+            target_q = reward + self.gamma * next_v * (1 - done)
 
         critic_loss = torch.zeros_like(target_q)
         td_error = torch.zeros_like(target_q)
@@ -77,15 +80,19 @@ class DPG(nn.Module):
             critic_loss += (self.criterion(q, target_q))
             td_error += q.detach() - target_q.detach()
 
-        # Actor loss
-        action = self.policy(state).mean.clamp(-1, 1)
-        q = self.q_function(state.float(), action)
-        if type(q) is list:
-            q = q[0]
-        actor_loss = -q
+        return QLearningLoss(critic_loss, td_error)
 
-        return DPGLoss(actor_loss=actor_loss, critic_loss=critic_loss,
-                       td_error=td_error)
+    def forward(self, state, action, reward, next_state, done):
+        """Compute the losses and the td-error."""
+        # Critic Loss
+        critic_loss, td_error = self.critic_loss(state, action, reward, next_state,
+                                                 done)
+
+        # Actor loss
+        actor_loss = self.actor_loss(state)
+
+        return PGLoss(actor_loss=actor_loss, critic_loss=critic_loss,
+                      td_error=td_error)
 
     def update(self):
         """Update the target network."""
