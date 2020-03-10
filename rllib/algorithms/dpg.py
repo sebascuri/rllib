@@ -4,6 +4,7 @@ import torch.nn as nn
 import copy
 from .q_learning import QLearningLoss
 from .ac import PGLoss
+from rllib.util.neural_networks.utilities import disable_gradient
 
 
 class DPG(nn.Module):
@@ -55,9 +56,10 @@ class DPG(nn.Module):
     def actor_loss(self, state):
         """Get Actor Loss."""
         action = self.policy(state).mean.clamp(-1, 1)
-        q = self.q_function(state.float(), action)
-        if type(q) is list:
-            q = q[0]
+        with disable_gradient(self.q_function):
+            q = self.q_function(state.float(), action)
+            if type(q) is list:
+                q = q[0]
         return -q
 
     def critic_loss(self, state, action, reward, next_state, done):

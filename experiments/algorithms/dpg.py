@@ -34,7 +34,8 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-policy = FelixPolicy(environment.dim_state, environment.dim_action, deterministic=True)
+policy = FelixPolicy(environment.dim_state, environment.dim_action, deterministic=True,
+                     tau=TARGET_UPDATE_TAU)
 noise = GaussianNoise(ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
