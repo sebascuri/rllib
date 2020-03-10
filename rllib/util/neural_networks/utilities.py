@@ -21,13 +21,14 @@ def update_parameters(target_params, new_params, tau=1.0):
     -------
     None.
     """
-    for target_param, new_param in zip(target_params, new_params):
-        if target_param is new_param:
-            continue
-        else:
-            new_param_ = ((1.0 - tau) * target_param.data.detach()
-                          + tau * new_param.data.detach())
-            target_param.data.copy_(new_param_)
+    with torch.no_grad():
+        for target_param, new_param in zip(target_params, new_params):
+            if target_param is new_param:
+                continue
+            else:
+                # Do in-place for efficiency.
+                target_param.data.mul_(1.0 - tau)
+                target_param.data.add_(tau * new_param.data)
 
 
 def count_vars(module):
@@ -205,7 +206,7 @@ def random_tensor(discrete, dim, batch_size=None):
     """
     if discrete:
         if batch_size:
-            return torch.randint(dim, (batch_size, ))
+            return torch.randint(dim, (batch_size,))
         else:
             return torch.randint(dim, ())
     else:
