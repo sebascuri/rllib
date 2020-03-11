@@ -1,4 +1,4 @@
-from rllib.dataset.transforms.utilities import *
+from rllib.dataset.utilities import get_backend
 from rllib.dataset.transforms.normalizer import Normalizer
 import torch
 import torch.testing

@@ -65,7 +65,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 self.total_episodes < self.exploration_episodes):
             policy = self.policy.random()
         else:
-            state = torch.tensor(state).float()
+            if not isinstance(state, torch.Tensor):
+                state = torch.tensor(state).float()
             policy = self.policy(state)
 
         if self._training:
@@ -88,6 +89,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         observation: Observation
 
         """
+        observation = observation.to_torch()
         self.policy.update(observation)  # update policy parameters (eps-greedy.)
 
         self.counters['total_steps'] += 1

@@ -1,7 +1,7 @@
 """Implementation of REINFORCE Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
 from rllib.algorithms.reinforce import REINFORCE
@@ -40,6 +40,7 @@ class REINFORCEAgent(AbstractAgent):
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
+        observation = observation.to_torch()
         super().observe(observation)
         self.trajectories[-1].append(observation)
         if self.total_steps % self.target_update_frequency == 0:

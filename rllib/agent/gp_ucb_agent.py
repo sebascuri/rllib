@@ -51,8 +51,7 @@ class GPUCBPolicy(AbstractPolicy):
 
     def update(self, observation):
         """Update the GP posterior."""
-        self.gp = self.gp.get_fantasy_model(torch.tensor(observation.action),
-                                            torch.tensor(observation.reward))
+        self.gp = self.gp.get_fantasy_model(observation.action, observation.reward)
 
 
 class GPUCBAgent(AbstractAgent):

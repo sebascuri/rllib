@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation
 
 
 class TestObservation(object):

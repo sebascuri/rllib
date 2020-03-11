@@ -1,6 +1,6 @@
 from numpy import ndarray
-from .. import Observation
-from ..transforms import AbstractTransform
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.transforms import AbstractTransform
 from typing import List, Tuple
 from .experience_replay import ExperienceReplay
 

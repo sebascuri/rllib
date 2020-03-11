@@ -1,11 +1,7 @@
 from rllib.dataset.datatypes import Observation, Distribution, Array, Gaussian
 from rllib.value_function import AbstractValueFunction
-from typing import Callable, Tuple, List, Union
+from typing import Callable, Tuple, List
 from torch import Tensor
-import numpy as np
-import torch
-
-def get_backend(array: Array) -> Union[np, torch]: ...  # type: ignore
 
 def mellow_max(values: Array, omega: float = 1.) -> Array: ...
 

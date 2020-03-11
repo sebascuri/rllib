@@ -3,7 +3,7 @@
 from rllib.agent.abstract_agent import AbstractAgent
 from abc import abstractmethod
 import copy
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 

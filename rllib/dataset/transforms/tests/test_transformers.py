@@ -1,6 +1,6 @@
 from rllib.dataset.transforms import *
-from rllib.dataset import Observation, stack_list_of_tuples
-from rllib.dataset.transforms.utilities import *
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.utilities import stack_list_of_tuples, get_backend
 import pytest
 import numpy as np
 import torch

@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy
-from rllib.dataset import ExperienceReplay, Observation
+from rllib.dataset import ExperienceReplay
+from rllib.dataset.datatypes import Observation
 from rllib.value_function import NNValueFunction
 from torch import Tensor
 from typing import Tuple, List

@@ -1,15 +1,6 @@
 """Utilities for the transformers."""
 
 from rllib.dataset.datatypes import Array
-import numpy as np
-import torch.__spec__ as torch_mod
-from typing import Union
-
-
-Module = Union[np, torch_mod]
-
-def get_backend(array: Array) -> Module: ...
-
 
 def update_mean(old_mean: Array, old_count: int,
                 new_mean: Array, new_count: int) -> Array: ...

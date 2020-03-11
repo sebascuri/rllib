@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from rllib.dataset import Observation
-from rllib.dataset import stack_list_of_tuples
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.utilities import stack_list_of_tuples
 
 
 def get_trajectory():
@@ -15,9 +15,10 @@ def get_trajectory():
     return t
 
 
-def test_sack_list_of_observations():
+def test_stack_list_of_observations():
     trajectory = get_trajectory()
-    stacked_trajectory = stack_list_of_tuples(trajectory, dtype=torch.float)
+    stacked_trajectory = stack_list_of_tuples(trajectory)
+    stacked_trajectory = stacked_trajectory.to_torch()
     assert type(stacked_trajectory) is Observation
     assert stacked_trajectory.state.shape == (3, 4)
     assert stacked_trajectory.state.dtype is torch.float
@@ -31,7 +32,7 @@ def test_sack_list_of_observations():
     assert stacked_trajectory.done.dtype is torch.float
 
 
-def test_sack_list_of_lists():
+def test_stack_list_of_lists():
     trajectory = [[1, 2, 3, 4], [20, 30, 40, 50], [3, 4, 5, 6], [40, 50, 60, 70]]
     stacked_trajectory = stack_list_of_tuples(trajectory)
 

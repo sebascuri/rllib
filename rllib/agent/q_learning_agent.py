@@ -1,7 +1,7 @@
 """Implementation of QLearning Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.q_learning import QLearning
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation
 from rllib.util.logger import Logger
 import torch
 
@@ -62,6 +62,7 @@ class QLearningAgent(AbstractAgent):
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
+        observation = observation.to_torch()
         super().observe(observation)
         self.memory.append(observation)
         if self.memory.has_batch:

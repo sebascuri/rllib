@@ -1,5 +1,5 @@
 from numpy import ndarray
-from .. import Observation
+from rllib.dataset.datatypes import Observation
 from typing import Tuple
 from .exp3_experience_replay import EXP3Sampler
 

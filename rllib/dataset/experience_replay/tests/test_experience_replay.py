@@ -1,8 +1,9 @@
-import numpy as np
 import torch
-from rllib.dataset import Observation, ExperienceReplay
+from rllib.dataset.datatypes import Observation
+from rllib.dataset import ExperienceReplay
 from rllib.dataset.transforms import *
 import pytest
+import numpy as np
 
 
 @pytest.fixture(params=[(10000, 1000), (10000, 100), (100, 101)])

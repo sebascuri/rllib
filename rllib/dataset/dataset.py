@@ -1,7 +1,7 @@
 """Implementation of a Trajectory Dataset."""
 import numpy as np
 from torch.utils import data
-from . import Observation
+from rllib.dataset.datatypes import Observation
 from .utilities import stack_list_of_tuples
 
 
@@ -38,6 +38,7 @@ class TrajectoryDataset(data.Dataset):
         self._sequence_length = sequence_length
         self._trajectories = []
         self._sub_trajectory_indexes = []
+        self._num_points = 0
         self.transformations = transformations if transformations else []
 
     def __getitem__(self, idx):
@@ -99,18 +100,26 @@ class TrajectoryDataset(data.Dataset):
         ValueError
             If the new trajectory is shorter than the sequence length.
         """
-        num_observations = len(trajectory)
         trajectory_index = len(self._trajectories)
+
+        if isinstance(trajectory, Observation):
+            try:
+                num_observations = len(trajectory.reward)
+            except TypeError:
+                num_observations = 1
+        else:
+            # Stack the tuples to one trajectory
+            num_observations = len(trajectory)
+            trajectory = stack_list_of_tuples(trajectory)
 
         if (self._sequence_length is not None
                 and num_observations < self._sequence_length):
             raise ValueError('The sequence is shorter than the sequence length')
 
         # Add trajectory to dataset
-        trajectory = stack_list_of_tuples(trajectory)
-
         self._trajectories.append(trajectory)
 
+        # Update the transformers but do not apply transforms.
         for transformation in self.transformations:
             transformation.update(trajectory)
 
@@ -127,6 +136,14 @@ class TrajectoryDataset(data.Dataset):
             np.random.shuffle(self._trajectories)
         else:
             np.random.shuffle(self._sub_trajectory_indexes)
+
+    @property
+    def all_data(self):
+        """Get all the data."""
+        data = stack_list_of_tuples(self._trajectories)
+        for transformation in self.transformations:
+            data = transformation(data)
+        return data
 
     @property
     def initial_states(self):

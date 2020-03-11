@@ -1,7 +1,7 @@
 from torch.utils import data
 from numpy import ndarray
-from . import Observation
-from typing import List
+from .datatypes import Observation
+from typing import List, Union
 from .transforms import AbstractTransform
 
 
@@ -18,9 +18,12 @@ class TrajectoryDataset(data.Dataset):
 
     def __len__(self) -> int: ...
 
-    def append(self, trajectory: List[Observation]) -> None: ...
+    def append(self, trajectory: Union[Observation, List[Observation]]) -> None: ...
 
     def shuffle(self) -> None: ...
+
+    @property
+    def all_data(self) -> Observation: ...
 
     @property
     def initial_states(self) -> ndarray: ...

@@ -1,10 +1,11 @@
 """Implementation of SARSA Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
 from rllib.algorithms.sarsa import SARSA
+import torch
 
 
 class SARSAAgent(AbstractAgent):
@@ -59,11 +60,13 @@ class SARSAAgent(AbstractAgent):
         """See `AbstractAgent.act'."""
         action = super().act(state)
         if self.last_observation:
-            self.trajectory.append(self.last_observation._replace(next_action=action))
+            self.trajectory.append(
+                self.last_observation._replace(next_action=torch.tensor(action)))
         return action
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
+        observation = observation.to_torch()
         super().observe(observation)
         self.last_observation = observation
 
@@ -83,7 +86,8 @@ class SARSAAgent(AbstractAgent):
         """See `AbstractAgent.end_episode'."""
         # The next action is irrelevant as the next value is zero for all actions.
         action = super().act(self.last_observation.state)
-        self.trajectory.append(self.last_observation._replace(next_action=action))
+        self.trajectory.append(self.last_observation._replace(
+            next_action=torch.tensor(action)))
         if self._training:
             self._train()
 

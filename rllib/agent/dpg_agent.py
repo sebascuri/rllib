@@ -1,6 +1,6 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset import Observation
+from rllib.dataset.datatypes import Observation
 from rllib.algorithms.dpg import DPG
 from rllib.util.logger import Logger
 import torch
@@ -76,6 +76,7 @@ class DPGAgent(AbstractAgent):
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
+        observation = observation.to_torch()
         super().observe(observation)
         self.memory.append(observation)
         if self.memory.has_batch and (self.total_steps > self.exploration_steps) and (

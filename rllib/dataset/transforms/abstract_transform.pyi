@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from .. import Observation
+from rllib.dataset.datatypes import Observation
 
 
 class AbstractTransform(object, metaclass=ABCMeta):

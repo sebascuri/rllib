@@ -4,14 +4,7 @@ import scipy.signal
 import torch
 import torch.distributions
 import numpy as np
-
-
-def get_backend(array):
-    """Get backend of the array."""
-    if type(array) is np.ndarray:
-        return np
-    else:
-        return torch
+from rllib.dataset.utilities import get_backend
 
 
 def integrate(function, distribution, num_samples=1):

@@ -1,5 +1,5 @@
 from .abstract_transform import AbstractTransform
-from .. import Observation, Array
+from rllib.dataset.datatypes import Observation, Array
 
 
 class Clipper(object):

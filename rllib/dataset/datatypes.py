@@ -5,6 +5,7 @@ from typing import NamedTuple, Union
 from torch.distributions import MultivariateNormal, Categorical
 from gpytorch.distributions import Delta
 
+
 Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]
 Action = Union[int, float, Array]
@@ -29,9 +30,10 @@ class Observation(NamedTuple):
 
     @staticmethod
     def _is_equal_nan(x, y):
-        if (x is np.nan) ^ (y is np.nan):  # XOR
+        x, y = np.array(x), np.array(y)
+        if ((np.isnan(x)) ^ (np.isnan(y))).all():  # XOR
             return False
-        elif (x is not np.nan) & (y is not np.nan):
+        elif ((~np.isnan(x)) & (~np.isnan(y))).all():
             return np.allclose(x, y)
         else:
             return True
@@ -52,3 +54,9 @@ class Observation(NamedTuple):
     def __ne__(self, other):
         """Check if two observations are not equal."""
         return not self.__eq__(other)
+
+    def to_torch(self):
+        """Transform to torch."""
+        return Observation(*map(
+            lambda x: x if isinstance(x, torch.Tensor) else torch.tensor(x).float(),
+            self))

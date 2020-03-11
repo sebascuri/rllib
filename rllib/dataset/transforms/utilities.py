@@ -1,16 +1,5 @@
 """Utilities for the transformers."""
-import numpy as np
-import torch
-
-__all__ = ['get_backend', 'update_mean', 'update_var', 'normalize', 'denormalize']
-
-
-def get_backend(array):
-    """Get the backend of a given array."""
-    if isinstance(array, torch.Tensor):
-        return torch
-    else:
-        return np
+from rllib.dataset.utilities import get_backend
 
 
 def update_mean(old_mean, old_count, new_mean, new_count):
