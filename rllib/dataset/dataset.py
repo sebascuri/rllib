@@ -1,8 +1,9 @@
 """Implementation of a Trajectory Dataset."""
 import numpy as np
+import torch
 from torch.utils import data
 from rllib.dataset.datatypes import Observation
-from .utilities import stack_list_of_tuples
+from .utilities import stack_list_of_tuples, map_and_cast
 
 
 class TrajectoryDataset(data.Dataset):
@@ -140,7 +141,7 @@ class TrajectoryDataset(data.Dataset):
     @property
     def all_data(self):
         """Get all the data."""
-        data = stack_list_of_tuples(self._trajectories)
+        data = map_and_cast(torch.cat, self._trajectories)
         for transformation in self.transformations:
             data = transformation(data)
         return data

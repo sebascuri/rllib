@@ -1,35 +1,34 @@
-"""Implementation of Linear Dynamical Models."""
+"""Implementation of Gaussian Processes State-Space Models."""
 from .abstract_model import AbstractModel
 import torch
-from gpytorch.distributions import Delta
-from torch.distributions import MultivariateNormal
+from rllib.util.gaussian_processes.exact_gp import ExactGP, MultitaskExactGP
+import gpytorch
 
 
-class LinearModel(AbstractModel):
-    """A linear Gaussian state space model."""
+class ExactGPModel(AbstractModel):
+    """An Exact GP State Space Model."""
 
-    def __init__(self, a, b, noise: MultivariateNormal = None):
-        if not isinstance(a, torch.Tensor):
-            a = torch.tensor(a).float()
-        if not isinstance(b, torch.Tensor):
-            b = torch.tensor(b).float()
-
-        super().__init__(*b.shape)
-
-        self.a = a.t()
-        self.b = b.t()
-        self.noise = noise
+    def __init__(self, states, actions, next_states,
+                 likelihood=None, mean=None, kernel=None):
+        dim_state = states.shape[-1]
+        dim_action = actions.shape[-1]
+        super().__init__(dim_state, dim_action)
+        state_action = torch.cat((states, actions), dim=-1)
+        if dim_state == 1:
+            if likelihood is None:
+                likelihood = gpytorch.likelihoods.GaussianLikelihood()
+            self.likelihood = likelihood
+            self.gp = ExactGP(state_action, next_states, likelihood, mean, kernel)
+        else:
+            if likelihood is None:
+                likelihood = gpytorch.likelihoods.MultitaskGaussianLikelihood(
+                    num_tasks=dim_state)
+            self.likelihood = likelihood
+            self.gp = MultitaskExactGP(train_x=state_action, train_y=next_states,
+                                       likelihood=likelihood,
+                                       mean=mean, kernel=kernel, num_tasks=dim_state)
 
     def forward(self, state, action):
         """Get next state distribution."""
-        if not isinstance(state, torch.Tensor):
-            state = torch.tensor(state).float()
-        if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action).float()
-
-        next_state = state @ self.a + action @ self.b
-        if self.noise is None:
-            return Delta(next_state)
-        else:
-            return MultivariateNormal(next_state + self.noise.mean,
-                                      self.noise.covariance_matrix)
+        state_action = torch.cat((state, action), dim=-1)
+        return self.likelihood(self.gp(state_action))

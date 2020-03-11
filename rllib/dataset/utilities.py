@@ -27,7 +27,7 @@ def map_and_cast(fun, iter_):
     iter_ : iterable
     """
     generator = map(fun, zip(*iter_))
-    return _cast_to_iter_class(generator, iter_.__class__)
+    return _cast_to_iter_class(generator, iter_[0].__class__)
 
 
 def stack_list_of_tuples(iter_):

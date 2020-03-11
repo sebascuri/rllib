@@ -1,6 +1,8 @@
 """Implementation of a Transformation that offsets the data with a mean function."""
 
 from .abstract_transform import AbstractTransform
+from .utilities import shift_mvn
+from gpytorch.distributions import MultivariateNormal
 
 
 class MeanFunction(AbstractTransform):
@@ -26,4 +28,8 @@ class MeanFunction(AbstractTransform):
     def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         mean_next_state = self.mean_function(observation.state, observation.action)
-        return observation._replace(next_state=observation.next_state + mean_next_state)
+        if isinstance(observation.next_state, MultivariateNormal):
+            next_state = shift_mvn(observation.next_state, mean_next_state)
+        else:
+            next_state = observation.next_state + mean_next_state
+        return observation._replace(next_state=next_state)

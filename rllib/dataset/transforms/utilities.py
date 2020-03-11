@@ -1,5 +1,7 @@
 """Utilities for the transformers."""
 from rllib.dataset.utilities import get_backend
+import torch
+from gpytorch.distributions import MultivariateNormal, MultitaskMultivariateNormal
 
 
 def update_mean(old_mean, old_count, new_mean, new_count):
@@ -92,9 +94,40 @@ def denormalize(array, mean, variance, preserve_origin=False):
     preserve_origin : bool, optional
         Whether to retain the origin (sign) of the data.
     """
+    if isinstance(array, MultitaskMultivariateNormal):
+        return shift_mvn(array, mean, variance)
+
     backend = get_backend(array)
     if preserve_origin:
         scale = backend.sqrt(variance + mean ** 2)
         return array * scale
     else:
         return mean + array * backend.sqrt(variance)
+
+
+def shift_mvn(mvn, mean, variance=None):
+    """Shift a Multivariate Normal with a mean and a variance.
+
+    MVNs from gpytorch do not admit
+    """
+    mu = mvn.mean
+    sigma = mvn.lazy_covariance_matrix
+    if not isinstance(mvn, MultitaskMultivariateNormal):
+        if variance is None:
+            variance = 1.
+        scale = torch.sqrt(variance)
+        return MultivariateNormal(mu * scale + mean,
+                                  covariance_matrix=sigma * scale ** 2)
+    num_points, num_tasks = mvn.mean.shape
+    if variance is None:
+        variance = torch.ones(num_tasks)
+
+    mvns = []
+    for i in range(num_tasks):
+        mean_ = mu[..., i]
+        cov_ = sigma[i * num_points:(i + 1) * num_points,
+                     i * num_points:(i + 1) * num_points]
+        mvns.append(shift_mvn(MultivariateNormal(mean_, cov_),
+                              mean[..., i],
+                              variance[..., i]))
+    return MultitaskMultivariateNormal.from_independent_mvns(mvns)
