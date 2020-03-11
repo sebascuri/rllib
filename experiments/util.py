@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 from rllib.util.rollout import rollout_agent
 
 
@@ -41,3 +42,33 @@ def evaluate(agent, environment, num_episodes, max_steps):
     print('Test Rewards:',
           np.array(agent.logs['rewards'].episode_log[-num_episodes]).mean()
           )
+
+
+def save_agent(agent, file_name):
+    """Save the agent as a pickled file.
+
+    Parameters
+    ----------
+    agent: AbstractAgent.
+    file_name: str.
+
+    """
+    with open(file_name, 'wb') as file:
+        pickle.dump(agent, file)
+
+
+def load_agent(file_name):
+    """Load and return the agent at a given file location.
+
+    Parameters
+    ----------
+    file_name: str.
+
+    Returns
+    -------
+    agent: AbstractAgent.
+    """
+    with open(file_name, 'rb') as f:
+        agent = pickle.load(f)
+
+    return agent
