@@ -2,11 +2,11 @@
 import gpytorch
 
 
-class ExactGPModel(gpytorch.models.ExactGP):
+class ExactGP(gpytorch.models.ExactGP):
     """Exact GP Model."""
 
     def __init__(self, train_x, train_y, likelihood, mean=None, kernel=None):
-        super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
+        super().__init__(train_x, train_y, likelihood)
         if mean is None:
             mean = gpytorch.means.ConstantMean()
         self.mean_module = mean

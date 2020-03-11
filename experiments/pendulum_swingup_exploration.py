@@ -64,11 +64,12 @@ init_distribution = torch.distributions.Uniform(torch.tensor([-np.pi, -0.05]),
 # test_state = torch.tensor([[-np.pi, 0.]])
 
 # %%
-num_trajectories = 20
 num_simulation_steps = 400
-num_subsample = 2
 batch_size = 100
-refresh_interval = num_subsample
+refresh_interval = 2
+num_inner_iterations = 30
+num_trajectories = np.ceil(num_inner_iterations * 100 / num_simulation_steps)
+num_subsample = 1
 
 for i in tqdm(range(100)):
     # Compute the state distribution

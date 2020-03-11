@@ -6,7 +6,7 @@ from gpytorch.means import Mean
 from gpytorch.kernels import Kernel
 from gpytorch.distributions import MultivariateNormal
 
-class ExactGPModel(gpytorch.models.ExactGP):
+class ExactGP(gpytorch.models.ExactGP):
     """Exact GP Model."""
 
     def __init__(self, train_x: Tensor, train_y: Tensor, likelihood: Likelihood,

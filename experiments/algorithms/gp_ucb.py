@@ -5,7 +5,7 @@ import torch
 import matplotlib.pyplot as plt
 from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
-from rllib.util.gaussian_processes import ExactGPModel, plot_gp
+from rllib.util.gaussian_processes import ExactGP, plot_gp
 from rllib.util import rollout_agent
 from rllib.reward.gp_reward import GPBanditReward
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     x = torch.linspace(-1, 6, NUM_POINTS)
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     likelihood.noise_covar.noise = 0.1 ** 2
-    objective_function = ExactGPModel(X, Y, likelihood)
+    objective_function = ExactGP(X, Y, likelihood)
     objective_function.eval()
     objective = GPBanditReward(objective_function)
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     x0 = x[x > 0.2][[0]]
     y0 = objective(None, x0).mean.float()
-    model = ExactGPModel(x0, y0, likelihood)
+    model = ExactGP(x0, y0, likelihood)
     model.covar_module.base_kernel.lengthscale = 1
     agent = GPUCBAgent(model, x, beta=2.0)
     environment = BanditEnvironment(objective,
