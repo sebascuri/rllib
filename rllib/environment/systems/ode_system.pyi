@@ -1,5 +1,7 @@
 from .abstract_system import AbstractSystem
 from rllib.dataset.datatypes import Action, State
+from .linear_system import LinearSystem
+
 from typing import Callable, Type
 from scipy.integrate import OdeSolver, RK45
 
@@ -13,6 +15,8 @@ class ODESystem(AbstractSystem):
                  integrator: Type[OdeSolver] = RK45) -> None: ...
 
     def step(self, action: Action) -> State: ...
+
+    def linearize(self, state: State=None, action: Action=None) -> LinearSystem: ...
 
     def reset(self, state: State = None) -> State: ...
 

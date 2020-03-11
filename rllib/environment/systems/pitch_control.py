@@ -1,8 +1,6 @@
 """Pitch Control Implementation."""
 
 from rllib.environment.systems.ode_system import ODESystem
-from rllib.environment.systems.linear_system import LinearSystem
-from scipy import signal
 import numpy as np
 
 
@@ -43,28 +41,6 @@ class PitchControl(ODESystem):
             dim_action=1,
             dim_state=3)
 
-    def linearize(self):
-        """Return the discretized, scaled, linearized system.
-
-        Returns
-        -------
-        ad : ndarray
-            The discrete-time state matrix.
-        bd : ndarray
-            The discrete-time action matrix.
-
-        """
-        a = np.array([[-self.cld, self.omega, 0],
-                      [-self.cmld, -self.cm, 0],
-                      [0, self.omega, 0]]
-                     )
-
-        b = np.array([self.cw, self.eta * self.cw, 0]).reshape((-1, 2))
-
-        ad, bd, _, _, _ = signal.cont2discrete((a, b, 0, 0), self.step_size,
-                                               method='zoh')
-        return LinearSystem(ad, bd)
-
     def _ode(self, _, state, action):
         """Compute the state time-derivative.
 
@@ -83,10 +59,19 @@ class PitchControl(ODESystem):
         """
         # Physical dynamics
         alpha, q, theta = state
-        u = action
+        u, = action
 
         alpha_dot = -self.cld * alpha + self.omega * q + self.cw * u
         q_dot = -self.cmld * alpha - self.cm * q + self.eta * self.cw * u
         theta_dot = self.omega * q
 
-        return np.array((alpha_dot, q_dot, theta_dot))
+        return np.array([alpha_dot, q_dot, theta_dot])
+
+
+if __name__ == "__main__":
+    sys = PitchControl()
+    f = sys.func(None, np.ones(sys.dim_state), np.ones(sys.dim_action))
+    print(f)
+    sys.linearize()
+    sys.linearize_()
+    sys.linearize(np.ones(sys.dim_state), np.ones(sys.dim_action))

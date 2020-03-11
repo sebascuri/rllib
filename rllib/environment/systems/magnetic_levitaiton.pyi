@@ -4,7 +4,7 @@ from rllib.dataset.datatypes import Action, State
 import numpy as np
 
 
-class PitchControl(ODESystem):
+class MagneticLevitaiton(ODESystem):
     mass: float
     resistance: float
     x_inf: float
@@ -17,8 +17,6 @@ class PitchControl(ODESystem):
                  x_inf: float = 0.007, l_inf: float = 0.80502,
                  ksi: float = 0.001599, max_action: float = 60, gravity: float = 9.81,
                  step_size: float = 0.01) -> None: ...
-
-    def linearize(self) -> LinearSystem: ...
 
     def alpha(self, x1: float, x2: float, x3: float) -> float: ...
 

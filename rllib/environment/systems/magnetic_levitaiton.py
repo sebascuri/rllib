@@ -1,13 +1,11 @@
 """Magnetic Levitation Implementation."""
 
 from rllib.environment.systems.ode_system import ODESystem
-from rllib.environment.systems.linear_system import LinearSystem
-# from scipy import signal
 import numpy as np
 
 
-class PitchControl(ODESystem):
-    """Pitch Control.
+class MagneticLevitaiton(ODESystem):
+    """Magnetic Levitaiton Control.
 
     Parameters
     ----------
@@ -49,21 +47,6 @@ class PitchControl(ODESystem):
             step_size=step_size,
             dim_action=1,
             dim_state=3)
-
-    def linearize(self):
-        """Return the discretized, scaled, linearized system.
-
-        Returns
-        -------
-        ad : ndarray
-            The discrete-time state matrix.
-        bd : ndarray
-            The discrete-time action matrix.
-
-        """
-        a = np.zeros(self.dim_state, self.dim_state)
-        b = np.ones(self.dim_state, self.dim_action)
-        return LinearSystem(a, b)
 
     def alpha(self, x1, x2, x3):
         """Compute alpha coefficient."""
@@ -108,4 +91,12 @@ class PitchControl(ODESystem):
         x2_dot = alpha
         x3_dot = beta + gamma * action
 
-        return np.array((x1_dot, x2_dot, x3_dot))
+        return np.array([x1_dot, x2_dot, x3_dot])
+
+
+if __name__ == "__main__":
+    sys = MagneticLevitaiton()
+    f = sys.func(None, np.ones(sys.dim_state), np.ones(sys.dim_action))
+    print(f)
+    sys.linearize()
+    sys.linearize(np.ones(sys.dim_state), np.ones(sys.dim_action))

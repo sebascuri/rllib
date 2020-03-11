@@ -1,10 +1,8 @@
 """Implementation of InvertedPendulum System."""
 
-
-from .ode_system import ODESystem
+from rllib.environment.systems.ode_system import ODESystem
+from rllib.util.utilities import get_backend
 import numpy as np
-from scipy import signal
-from .linear_system import LinearSystem
 import os
 from gym.envs.classic_control import rendering
 
@@ -42,32 +40,6 @@ class InvertedPendulum(ODESystem):
     def inertia(self):
         """Return the inertia of the pendulum."""
         return self.mass * self.length ** 2
-
-    def linearize(self):
-        """Return the linearized system.
-
-        Returns
-        -------
-        a : ndarray
-            The state matrix.
-        b : ndarray
-            The action matrix.
-
-        """
-        gravity = self.gravity
-        length = self.length
-        friction = self.friction
-        inertia = self.inertia
-
-        a = np.array([[0, 1],
-                      [gravity / length, -friction / inertia]])
-
-        b = np.array([[0],
-                      [1 / inertia]])
-
-        sys = signal.StateSpace(a, b, np.eye(2), np.zeros((2, 1)))
-        sysd = sys.to_discrete(self.step_size)
-        return LinearSystem(sysd.A, sysd.B)
 
     def render(self, mode='human'):
         """Render pendulum."""
@@ -109,6 +81,7 @@ class InvertedPendulum(ODESystem):
 
         """
         # Physical dynamics
+        bk = get_backend(state)
         gravity = self.gravity
         length = self.length
         friction = self.friction
@@ -117,8 +90,16 @@ class InvertedPendulum(ODESystem):
 
         angle, angular_velocity = state
 
-        x_ddot = (gravity / length * np.sin(angle)
+        x_ddot = (gravity / length * bk.sin(angle)
                   + action / inertia
                   - friction / inertia * angular_velocity)
 
         return np.array((angular_velocity, x_ddot))
+
+
+if __name__ == "__main__":
+    sys = InvertedPendulum(1, 1, 0.1)
+    f = sys.func(None, np.ones(sys.dim_state), np.ones(sys.dim_action))
+    print(f)
+    sys.linearize()
+    sys.linearize(np.ones(sys.dim_state), np.ones(sys.dim_action))
