@@ -17,6 +17,20 @@ class Normalizer(object):
     def update(self, array: Array) -> None: ...
 
 
+class StateActionNormalizer(AbstractTransform):
+    _state_normalizer: StateNormalizer
+    _action_normalizer: ActionNormalizer
+
+    def __init__(self, preserve_origin: bool = False) -> None: ...
+
+    def __call__(self, observation: Observation) -> Observation: ...
+
+    def inverse(self, observation: Observation) -> Observation: ...
+
+    def update(self, observation: Observation) -> None: ...
+
+
+
 class StateNormalizer(AbstractTransform):
     _normalizer: Normalizer
 

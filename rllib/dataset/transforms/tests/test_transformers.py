@@ -68,19 +68,6 @@ class TestRewardClipper(object):
     def maximum(self, request):
         return request.param
 
-    def test_assignment(self, minimum, maximum):
-        if minimum is None and maximum is None:
-            transformer = RewardClipper()
-        elif minimum is None and maximum is not None:
-            transformer = RewardClipper(max_reward=maximum)
-        elif minimum is not None and maximum is None:
-            transformer = RewardClipper(min_reward=minimum)
-        else:
-            transformer = RewardClipper(min_reward=minimum, max_reward=maximum)
-
-        assert transformer._min_reward == 0.
-        assert transformer._max_reward == 1.
-
     def test_call(self, trajectory):
         transformer = RewardClipper(min_reward=0., max_reward=1.)
         for observation in trajectory:

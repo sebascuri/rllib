@@ -1,11 +1,9 @@
-"""Implementation of a Transformation that normalizes a vector."""
+"""Implementation of a Transformation that normalizes attributes."""
 
 from .abstract_transform import AbstractTransform
 from rllib.dataset.transforms.utilities import get_backend, normalize, denormalize, \
     update_var, update_mean
 import numpy as np
-
-__all__ = ['StateNormalizer', 'ActionNormalizer']
 
 
 class Normalizer(object):
@@ -46,15 +44,46 @@ class Normalizer(object):
         self._count += new_count
 
 
+class StateActionNormalizer(AbstractTransform):
+    r"""Transformer that normalizes the states, next states, and actions.
+
+    It compounds a StateNormalizer with an ActionNormalizer.
+
+    Parameters
+    ----------
+    preserve_origin: bool, optional (default=False)
+        preserve the origin when rescaling.
+
+    """
+
+    def __init__(self, preserve_origin=False):
+        super().__init__()
+        self._state_normalizer = StateNormalizer(preserve_origin)
+        self._action_normalizer = ActionNormalizer(preserve_origin)
+
+    def __call__(self, observation):
+        """See `AbstractTransform.__call__'."""
+        return self._action_normalizer(self._state_normalizer(observation))
+
+    def inverse(self, observation):
+        """See `AbstractTransform.inverse'."""
+        return self._action_normalizer.inverse(
+            self._state_normalizer.inverse(observation))
+
+    def update(self, observation):
+        """See `AbstractTransform.update'."""
+        self._state_normalizer.update(observation)
+        self._action_normalizer.update(observation)
+
+
 class StateNormalizer(AbstractTransform):
-    """Implementation of a transformer that normalizes the observed (next) states.
+    r"""Implementation of a transformer that normalizes the states and next states.
 
     The state and next state of an observation are shifted by the mean and then are
     re-scaled with the standard deviation as:
-        state = (raw_state - mean) / std_dev
-        next_state = (raw_next_state - mean) / std_dev
+        .. math:: state = (raw_state - mean) / std_dev
 
-    The mean and standard deviation are computed with running statistics of the action.
+    The mean and standard deviation are computed with running statistics of the state.
 
     Parameters
     ----------
@@ -84,11 +113,11 @@ class StateNormalizer(AbstractTransform):
 
 
 class ActionNormalizer(AbstractTransform):
-    """Implementation of a transformer that normalizes the observed action.
+    """Implementation of a transformer that normalizes the action.
 
     The action of an observation is shifted by the mean and then re-scaled with the
     standard deviation as:
-        action = (raw_action - mean) / std_dev
+        .. math:: action = (raw_action - mean) / std_dev
 
     The mean and standard deviation are computed with running statistics of the action.
 
