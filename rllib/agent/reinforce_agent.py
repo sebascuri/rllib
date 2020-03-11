@@ -53,12 +53,13 @@ class REINFORCEAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if self.total_episodes % self.num_rollouts == 0:
-            self.train()
+            if self._training:
+                self._train()
             self.trajectories = list()
 
         super().end_episode()
 
-    def train(self):
+    def _train(self):
         """See `AbstractAgent.train'."""
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]

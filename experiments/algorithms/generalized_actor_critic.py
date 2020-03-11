@@ -2,7 +2,7 @@ from rllib.agent import GAACAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
-from util import rollout
+from experiments.util import train, evaluate
 
 import torch
 import numpy as np
@@ -41,4 +41,5 @@ agent = GAACAgent(policy=policy, actor_optimizer=actor_optimizer, critic=critic,
                   critic_optimizer=critic_optimizer, criterion=criterion,
                   num_rollouts=NUM_ROLLOUTS, lambda_=LAMBDA, gamma=GAMMA)
 
-rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
+train(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate(agent, environment, 1, MAX_STEPS)

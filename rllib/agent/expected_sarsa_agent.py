@@ -59,7 +59,8 @@ class ExpectedSARSAAgent(AbstractAgent):
         super().observe(observation)
         self.trajectory.append(observation)
         if len(self.trajectory) >= self.batch_size:
-            self.train()
+            if self._training:
+                self._train()
             self.trajectory = list()
 
         if self.total_steps % self.target_update_frequency == 0:
@@ -67,11 +68,11 @@ class ExpectedSARSAAgent(AbstractAgent):
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        if len(self.trajectory):
-            self.train()
+        if len(self.trajectory) and self._training:
+            self._train()
         super().end_episode()
 
-    def train(self):
+    def _train(self):
         """Train the SARSA agent."""
         trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 

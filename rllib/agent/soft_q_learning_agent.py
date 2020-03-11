@@ -10,8 +10,6 @@ class SoftQLearningAgent(QLearningAgent):
     ----------
     q_function: AbstractQFunction
         q_function that is learned.
-    policy: QFunctionPolicy.
-        Q-function derived policy.
     criterion: nn.Module
         Criterion to minimize the TD-error.
     optimizer: nn.optim

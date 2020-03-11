@@ -68,7 +68,8 @@ class SARSAAgent(AbstractAgent):
         self.last_observation = observation
 
         if len(self.trajectory) >= self.batch_size:
-            self.train()
+            if self._training:
+                self._train()
             self.trajectory = list()
         if self.total_steps % self.target_update_frequency == 0:
             self.sarsa.update()
@@ -83,11 +84,12 @@ class SARSAAgent(AbstractAgent):
         # The next action is irrelevant as the next value is zero for all actions.
         action = super().act(self.last_observation.state)
         self.trajectory.append(self.last_observation._replace(next_action=action))
-        self.train()
+        if self._training:
+            self._train()
 
         super().end_episode()
 
-    def train(self):
+    def _train(self):
         """Train the SARSA agent."""
         trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 

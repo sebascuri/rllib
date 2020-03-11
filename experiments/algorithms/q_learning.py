@@ -4,7 +4,7 @@ from rllib.dataset import ExperienceReplay
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.environment import GymEnvironment
-from util import rollout
+from experiments.util import train, evaluate
 
 import numpy as np
 import torch.nn.functional as func
@@ -50,4 +50,5 @@ agent = DDQNAgent(
     q_function, policy, criterion, optimizer, memory,
     target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
-rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
+train(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate(agent, environment, 1, MAX_STEPS)

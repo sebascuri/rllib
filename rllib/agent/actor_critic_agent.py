@@ -58,7 +58,8 @@ class ActorCriticAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if self.total_episodes % self.num_rollouts == 0:
-            self.train()
+            if self._training:
+                self._train()
             self.trajectories = []
 
         if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
@@ -66,7 +67,7 @@ class ActorCriticAgent(AbstractAgent):
 
         super().end_episode()
 
-    def train(self):
+    def _train(self):
         """Train Policy Gradient Agent."""
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]

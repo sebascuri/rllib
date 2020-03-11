@@ -41,6 +41,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.exploration_episodes = exploration_episodes
         self.exploration_steps = exploration_steps
 
+        self._training = True
+
     def __repr__(self):
         """Generate string to parse the agent."""
         opening = "====================================\n"
@@ -66,7 +68,14 @@ class AbstractAgent(object, metaclass=ABCMeta):
             state = torch.tensor(state).float()
             policy = self.policy(state)
 
-        action = policy.sample()
+        if self._training:
+            action = policy.sample()
+        else:
+            if policy.has_enumerate_support:
+                action = torch.argmax(policy.probs)
+            else:
+                action = policy.mean
+
         if not self.policy.deterministic:
             self.logs['policy entropy'].append(policy.entropy().detach().numpy())
         return action.detach().numpy()
@@ -101,9 +110,17 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """End the interaction with the environment."""
         pass
 
-    def train(self):
+    def _train(self):
         """Train the agent."""
         pass
+
+    def train(self, val=True):
+        """Set the agent in training mode."""
+        self._training = val
+
+    def eval(self, val=True):
+        """Set the agent in evaluation mode."""
+        self.train(not val)
 
     @property
     def total_episodes(self):

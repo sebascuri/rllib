@@ -2,7 +2,7 @@ from rllib.agent import ActorCriticAgent, A2CAgent, ExpectedActorCriticAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
 from rllib.value_function import NNQFunction
-from util import rollout
+from experiments.util import train, evaluate
 
 import torch
 import numpy as np
@@ -41,4 +41,5 @@ agent = A2CAgent(
     critic_optimizer=critic_optimizer, criterion=criterion,
     num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
-rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
+train(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate(agent, environment, 1, MAX_STEPS)

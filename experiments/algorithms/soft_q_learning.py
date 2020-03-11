@@ -3,7 +3,7 @@ from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.util.parameter_decay import Constant
-from util import rollout
+from experiments.util import train, evaluate
 
 import numpy as np
 import torch.nn.functional as func
@@ -47,4 +47,5 @@ agent = SoftQLearningAgent(
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)
 
-rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
+train(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate(agent, environment, 1, MAX_STEPS)

@@ -1,13 +1,12 @@
-from rllib.agent import SARSAAgent, ExpectedSARSAAgent
+from rllib.agent import ExpectedSARSAAgent
 from rllib.value_function import NNQFunction
-from rllib.policy import EpsGreedy, SoftMax, MellowMax
+from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
-
 from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
-from .util import rollout
+from experiments.util import train, evaluate
 
 ENVIRONMENT = 'CartPole-v0'
 
@@ -42,4 +41,5 @@ agent = ExpectedSARSAAgent(q_function, policy, criterion, optimizer,
                            target_update_frequency=TARGET_UPDATE_FREQUENCY,
                            gamma=GAMMA, batch_size=BATCH_SIZE)
 
-rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
+train(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate(agent, environment, 1, MAX_STEPS)

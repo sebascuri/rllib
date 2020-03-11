@@ -70,7 +70,8 @@ class DPGAgent(AbstractAgent):
         As the policy is deterministic, some noise must be added to aid exploration.
         """
         action = super().act(state)
-        action += self.exploration()
+        if self._training:
+            action += self.exploration()
         return self.max_action * np.clip(action, -1, 1)
 
     def observe(self, observation):
@@ -79,11 +80,12 @@ class DPGAgent(AbstractAgent):
         self.memory.append(observation)
         if self.memory.has_batch and (self.total_steps > self.exploration_steps) and (
                 self.total_episodes > self.exploration_episodes):
-            self.train()
+            if self._training:
+                self._train()
             if self.total_steps % self.target_update_frequency == 0:
                 self.dpg_algorithm.update()
 
-    def train(self):
+    def _train(self):
         """Train the DPG Agent."""
         observation, idx, weight = self.memory.get_batch()
         weight = torch.tensor(weight).float()

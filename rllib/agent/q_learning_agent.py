@@ -65,11 +65,12 @@ class QLearningAgent(AbstractAgent):
         super().observe(observation)
         self.memory.append(observation)
         if self.memory.has_batch:
-            self.train()
+            if self._training:
+                self._train()
             if self.total_steps % self.target_update_frequency == 0:
                 self.q_learning.update()
 
-    def train(self):
+    def _train(self):
         """Train the Q-Learning Agent."""
         observation, idx, weight = self.memory.get_batch()
         weight = torch.tensor(weight).float()

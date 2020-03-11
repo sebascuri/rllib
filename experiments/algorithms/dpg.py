@@ -5,7 +5,7 @@ from rllib.dataset import ExperienceReplay
 from rllib.exploration_strategies import GaussianNoise
 from rllib.agent import DPGAgent, TD3Agent
 from rllib.util.parameter_decay import ExponentialDecay
-from util import rollout
+from experiments.util import train, evaluate
 
 import torch.nn.functional as func
 import numpy as np
@@ -55,4 +55,5 @@ agent = TD3Agent(
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)
 
-rollout(environment, agent, NUM_EPISODES, MAX_STEPS)
+train(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate(agent, environment, 1, MAX_STEPS)
