@@ -7,6 +7,9 @@ from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
 from rllib.reward import AbstractReward
+from typing import List, Tuple
+from torch.optim.optimizer import Optimizer
+from torch.distributions import Distribution
 
 
 class MPOLosses(NamedTuple):
@@ -37,7 +40,18 @@ class MPPO(nn.Module):
 
 
 class MBMPPO(nn.Module):
-    def __init__(self, model: AbstractModel, reward: AbstractReward,
+    dynamical_model: AbstractModel
+    reward_model: AbstractReward
+    policy: AbstractPolicy
+    value_function: AbstractValueFunction
+
+    gamma: float
+
+    mppo: MPPO
+    value_loss: nn.modules.loss._Loss
+    num_action_samples: int
+
+    def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
                  epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float,
                  num_action_samples: int = 15) -> None: ...
@@ -45,3 +59,9 @@ class MBMPPO(nn.Module):
     def reset(self) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> MPOReturn: ...
+
+
+def train_mppo(mppo: MBMPPO, initial_distribution: Distribution, optimizer: Optimizer,
+               num_iter: int, num_trajectories: int, num_simulation_steps: int,
+               refresh_interval: int,
+               batch_size: int, num_subsample: int) -> Tuple[List, List, List, List]: ...

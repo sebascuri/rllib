@@ -2,8 +2,8 @@
 import numpy as np
 import torch
 from typing import NamedTuple, Union
-from torch.distributions import MultivariateNormal, Categorical
-from gpytorch.distributions import Delta
+from torch.distributions import Categorical
+from gpytorch.distributions import Delta, MultivariateNormal
 
 
 Array = Union[np.ndarray, torch.Tensor]

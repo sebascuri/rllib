@@ -8,6 +8,12 @@ from collections import namedtuple
 from rllib.util.neural_networks import freeze_parameters
 from rllib.util.utilities import separated_kl
 from rllib.algorithms.dyna import dyna_rollout
+from tqdm import tqdm
+import numpy as np
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util.rollout import rollout_model
+
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -133,15 +139,15 @@ class MBMPPO(nn.Module):
         The discount factor.
     """
 
-    def __init__(self, model, reward, policy, value_function,
+    def __init__(self, dynamical_model, reward_model, policy, value_function,
                  epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15):
         old_policy = copy.deepcopy(policy)
         freeze_parameters(old_policy)
 
         super().__init__()
         self.old_policy = old_policy
-        self.model = model
-        self.reward = reward
+        self.dynamical_model = dynamical_model
+        self.reward_model = reward_model
         self.policy = policy
         self.value_function = value_function
         self.gamma = gamma
@@ -186,8 +192,9 @@ class MBMPPO(nn.Module):
 
         with torch.no_grad():
             dyna_return = dyna_rollout(state=states,
-                                       model=self.model, policy=self.policy,
-                                       reward=self.reward, steps=0, gamma=self.gamma,
+                                       model=self.dynamical_model, policy=self.policy,
+                                       reward=self.reward_model, steps=0,
+                                       gamma=self.gamma,
                                        value_function=self.value_function,
                                        num_samples=self.num_action_samples)
         q_values = dyna_return.q_target
@@ -206,3 +213,59 @@ class MBMPPO(nn.Module):
                          policy_loss=losses.primal_loss,
                          eta_loss=losses.dual_loss,
                          kl_div=kl_mean + kl_var)
+
+
+def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
+               num_iter, num_trajectories, num_simulation_steps, refresh_interval,
+               batch_size, num_subsample):
+    """Train MPPO policy."""
+    value_losses = []
+    eta_parameters = []
+    policy_losses = []
+    policy_returns = []
+    for i in tqdm(range(num_iter)):
+        # Compute the state distribution
+        if i % refresh_interval == 0:
+            with torch.no_grad():
+                initial_states = initial_distribution.sample((num_trajectories,))
+                trajectory = rollout_model(mppo.dynamical_model,
+                                           reward_model=mppo.reward_model,
+                                           policy=mppo.policy,
+                                           initial_state=initial_states,
+                                           max_steps=num_simulation_steps)
+                trajectory = Observation(*stack_list_of_tuples(trajectory)).to_torch()
+                policy_returns.append(trajectory.reward.sum(dim=0).mean().item())
+
+        if np.mean(policy_returns[-5:]) >= 200:
+            break
+
+        # Shuffle to get a state distribution
+        states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
+        np.random.shuffle(states.numpy())
+
+        policy_episode_loss = 0.
+        value_episode_loss = 0.
+
+        # Copy over old policy for KL divergence
+        mppo.reset()
+
+        # Iterate over state batches in the state distribution
+        state_batches = torch.split(states, batch_size)[::num_subsample]
+        for states in state_batches:
+            optimizer.zero_grad()
+            losses = mppo(states)
+            losses.loss.backward()
+            optimizer.step()
+
+            # Track statistics
+            value_episode_loss += losses.value_loss.detach().numpy()
+            policy_episode_loss += losses.policy_loss.detach().numpy()
+
+        value_losses.append(value_episode_loss / len(state_batches))
+        policy_losses.append(policy_episode_loss / len(state_batches))
+        eta_parameters.append(
+            [eta.detach().numpy() for name, eta in mppo.named_parameters() if
+             'eta' in name]
+        )
+
+    return value_losses, policy_losses, policy_returns, eta_parameters
