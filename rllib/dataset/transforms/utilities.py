@@ -111,22 +111,29 @@ def shift_mvn(mvn, mean, variance=None):
     MVNs from gpytorch do not admit
     """
     mu = mvn.mean
-    sigma = mvn.lazy_covariance_matrix
+    sigma = mvn.covariance_matrix
     if not isinstance(mvn, MultitaskMultivariateNormal):
         if variance is None:
             variance = 1.
         scale = torch.sqrt(variance)
         return MultivariateNormal(mu * scale + mean,
                                   covariance_matrix=sigma * scale ** 2)
-    num_points, num_tasks = mvn.mean.shape
+    if mvn.mean.dim() == 2:
+        batch_size = None
+        num_points, num_tasks = mvn.mean.shape
+    else:
+        batch_size, num_points, num_tasks = mvn.mean.shape
+
     if variance is None:
         variance = torch.ones(num_tasks)
 
     mvns = []
     for i in range(num_tasks):
         mean_ = mu[..., i]
-        cov_ = sigma[i * num_points:(i + 1) * num_points,
+        cov_ = sigma[...,
+                     i * num_points:(i + 1) * num_points,
                      i * num_points:(i + 1) * num_points]
+
         mvns.append(shift_mvn(MultivariateNormal(mean_, cov_),
                               mean[..., i],
                               variance[..., i]))
