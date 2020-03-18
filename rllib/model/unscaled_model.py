@@ -1,6 +1,8 @@
 """Implementation of an Unscaled Model."""
 from .abstract_model import AbstractModel
 from rllib.dataset.datatypes import Observation
+import gpytorch
+import torch
 
 
 class UnscaledModel(AbstractModel):
@@ -23,7 +25,8 @@ class UnscaledModel(AbstractModel):
             state, action, *_ = transformation(Observation(state, action))
 
         # Predict next-state
-        next_state = self.base_model(state, action)
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+            next_state = self.base_model(state, action)
 
         # Back-transform
         for transformation in reversed(self.transformations):
