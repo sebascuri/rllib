@@ -123,8 +123,8 @@ class MBMPPO(nn.Module):
 
     Parameters
     ----------
-    model : AbstractModel
-    reward : callable
+    dynamical_model : AbstractModel
+    reward_model : AbstractReward
     policy : AbstractPolicy
     value_function : AbstractValueFunction
     epsilon : float
@@ -236,9 +236,9 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
                                            max_steps=num_simulation_steps)
                 trajectory = Observation(*stack_list_of_tuples(trajectory)).to_torch()
                 policy_returns.append(trajectory.reward.sum(dim=0).mean().item())
-
-        if np.mean(policy_returns[-5:]) >= 200:
-            break
+        #
+        # if np.all(np.array(policy_returns[-5:]) >= 200):
+        #     break
 
         # Shuffle to get a state distribution
         states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
