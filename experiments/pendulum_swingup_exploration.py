@@ -19,6 +19,7 @@ import math
 import matplotlib.pyplot as plt
 
 torch.manual_seed(0)
+np.random.seed(0)
 
 # %% Reward Function
 reward_model = PendulumReward()
@@ -83,12 +84,11 @@ plt.ion()
 plt.show()
 
 # %% Test controller on Model.
-test_state = np.array([np.pi, 0.])
-
+test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 with torch.no_grad():
     trajectory = rollout_model(mppo.dynamical_model, mppo.reward_model,
                                lambda x: Delta(policy(x).mean),
-                               initial_state=torch.tensor(test_state).float(),
+                               initial_state=test_state,
                                max_steps=400)
 
     trajectory = Observation(*stack_list_of_tuples(trajectory))
@@ -121,7 +121,7 @@ plt.show()
 # %% Test controller on Environment.
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
                                                  step_size=1 / 80))
-environment.state = test_state
-environment.initial_state = lambda: test_state
+environment.state = test_state.numpy()
+environment.initial_state = lambda: test_state.numpy()
 rollout_policy(environment, lambda x: Delta(policy(x).mean), max_steps=400, render=True
                )

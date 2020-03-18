@@ -22,10 +22,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from rllib.util.plotting import plot_learning_losses, plot_values_and_policy
 torch.manual_seed(0)
+np.random.seed(0)
 
 
 # %% Collect Data.
-num_data = 200
+num_data = 100
 reward_model = PendulumReward()
 dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005)
 
@@ -37,8 +38,9 @@ next_states = dynamic_model(states, actions).sample()
 rewards = reward_model(states, actions).mean
 
 transformations = [
-    ActionClipper(-1, 1), MeanFunction(lambda s, a: s),
-    # StateActionNormalizer()
+    ActionClipper(-1, 1),
+    MeanFunction(lambda s, a: s),
+    StateActionNormalizer()
 ]
 
 trajectory = []
@@ -51,7 +53,7 @@ dataset.append(trajectory)
 data = dataset.all_data
 
 # %% Train GP Model
-num_iter = 50
+num_iter = 100
 
 model = ExactGPModel(data.state, data.action, data.next_state)
 model.eval()
@@ -128,17 +130,17 @@ plt.show()
 
 
 # %% Test controller on Model.
-test_state = np.array([np.pi, 0.])
+test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 
 with torch.no_grad():
     trajectory = rollout_model(mppo.dynamical_model, mppo.reward_model,
                                lambda x: Delta(policy(x).mean),
-                               initial_state=torch.tensor(test_state).float(),
+                               initial_state=test_state.unsqueeze(0),
                                max_steps=400)
 
     trajectory = Observation(*stack_list_of_tuples(trajectory))
 
-states = trajectory.state
+states = trajectory.state[0]
 rewards = trajectory.reward
 fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
 
@@ -166,7 +168,7 @@ plt.show()
 # %% Test controller on Environment.
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
                                                  step_size=1 / 80))
-environment.state = test_state
-environment.initial_state = lambda: test_state
+environment.state = test_state.numpy()
+environment.initial_state = lambda: test_state.numpy()
 rollout_policy(environment, lambda x: Delta(policy(x).mean), max_steps=400, render=True
                )

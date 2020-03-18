@@ -8,7 +8,6 @@ from rllib.model import LinearModel
 import numpy as np
 import matplotlib.pyplot as plt
 
-from rllib.agent import DDPGAgent
 from rllib.reward.quadratic_reward import QuadraticReward
 from rllib.algorithms.dyna import dyna_rollout
 from tqdm import tqdm
@@ -27,14 +26,15 @@ r = 0.01 * np.eye(1)
 gamma = 0.99
 
 K, P = rllib.algorithms.control.dlqr(system.a, system.b, q, r, gamma=gamma)
-K = torch.from_numpy(K.T).float()
-P = torch.from_numpy(P).float()
+K = torch.from_numpy(K.T).type(torch.get_default_dtype())
+P = torch.from_numpy(P).type(torch.get_default_dtype())
 
-reward_model = QuadraticReward(torch.from_numpy(q).float(), torch.from_numpy(r).float())
+reward_model = QuadraticReward(torch.from_numpy(q).type(torch.get_default_dtype()),
+                               torch.from_numpy(r).type(torch.get_default_dtype()))
 environment = SystemEnvironment(system, initial_state=None, termination=None,
                                 reward=lambda x, u: reward_model(x, u).sample())
-model = LinearModel(torch.from_numpy(system.a).float(),
-                    torch.from_numpy(system.b).float())
+
+model = LinearModel(system.a, system.b)
 
 policy = NNPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
                   layers=[], biased_head=False, deterministic=True)  # Linear policy.
@@ -103,7 +103,7 @@ optimal_value = lambda x: rllib.util.neural_networks.torch_quadratic(x, matrix=-
 
 states = rllib.util.linearly_spaced_combinations(bounds, num_entries)
 
-values = optimal_value(torch.from_numpy(states).float())
+values = optimal_value(torch.from_numpy(states).type(torch.get_default_dtype()))
 img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
                                            num_entries, bounds)
 plt.colorbar(img)
@@ -111,7 +111,7 @@ plt.title('True value function')
 plt.ion()
 plt.show()
 
-values = value_function(torch.from_numpy(states).float())
+values = value_function(torch.from_numpy(states).type(torch.get_default_dtype()))
 img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
                                            num_entries, bounds)
 plt.colorbar(img)

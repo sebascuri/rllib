@@ -69,7 +69,7 @@ if __name__ == '__main__':
     plt.show()
 
     x0 = x[x > 0.2][[0]]
-    y0 = objective(None, x0).mean.float()
+    y0 = objective(None, x0).mean.type(torch.get_default_dtype())
     model = ExactGP(x0, y0, likelihood)
     model.covar_module.base_kernel.lengthscale = 1
     agent = GPUCBAgent(model, x, beta=2.0)
