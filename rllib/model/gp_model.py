@@ -31,4 +31,7 @@ class ExactGPModel(AbstractModel):
     def forward(self, state, action):
         """Get next state distribution."""
         state_action = torch.cat((state, action), dim=-1)
+        if state_action.dim() < 2:
+            state_action = state_action.unsqueeze(0)
+
         return self.likelihood(self.gp(state_action))
