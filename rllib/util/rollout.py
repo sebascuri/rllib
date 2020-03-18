@@ -90,7 +90,8 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         trajectory = []
         with torch.no_grad():
             while not done:
-                action = policy(torch.tensor(state).float()).sample().numpy()
+                action = policy(torch.tensor(state, dtype=torch.get_default_dtype())
+                                ).sample().numpy()
                 observation, state, done = _step(environment, state, action, render)
                 trajectory.append(observation)
                 if max_steps <= environment.time:

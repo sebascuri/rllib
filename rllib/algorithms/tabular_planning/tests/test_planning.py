@@ -2,7 +2,8 @@ from rllib.environment import EasyGridWorld
 from rllib.environment.gym_environment import GymEnvironment
 
 from rllib.policy import RandomPolicy
-from rllib.algorithms.tabular_planning import iterative_policy_evaluation, policy_iteration, \
+from rllib.algorithms.tabular_planning import iterative_policy_evaluation, \
+    policy_iteration, \
     value_iteration, linear_system_policy_evaluation
 import torch.testing
 import pytest
@@ -57,12 +58,19 @@ def test_policy_iteration():
                                                 16.0, 17.8, 16.0, 14.4, 13.0,
                                                 14.4, 16.0, 14.4, 13.0, 11.7]),
                                   atol=0.05, rtol=EPS)
-    torch.testing.assert_allclose(policy.table.argmax(dim=0),
-                                  torch.tensor([2, 3, 3, 3, 3,
-                                                2, 1, 3, 3, 3,
-                                                2, 1, 3, 3, 3,
-                                                2, 1, 3, 3, 3,
-                                                2, 1, 3, 3, 3]))
+    op = [2, 3, 3, 3, 3, 2, 1, 3, 3, 3, 2, 1, 3, 3, 3, 2, 1, 3, 3, 3, 2, 1, 3, 1, 3]
+    opt = policy.table.argmax(dim=0)
+
+    for state in range(environment.num_states):
+        environment.state = state
+        ns, r, done, info = environment.step(op[state])
+        nv = r + GAMMA * value_function.table[:, ns]
+
+        environment.state = state
+        ns, r, done, info = environment.step(opt[state])
+        nv2 = r + GAMMA * value_function.table[:, ns]
+
+        torch.testing.assert_allclose(nv, nv2)
 
     environment = EasyGridWorld(terminal_states=[22])
     GAMMA = 0.9
@@ -76,12 +84,19 @@ def test_policy_iteration():
                                                 16.0, 17.8, 16.0, 14.4, 13.0,
                                                 14.4, 16.0, 0.0, 13.0, 11.7]),
                                   atol=0.05, rtol=EPS)
-    torch.testing.assert_allclose(policy.table.argmax(dim=0),
-                                  torch.tensor([2, 3, 3, 3, 3,
-                                                2, 1, 3, 3, 3,
-                                                2, 1, 3, 3, 3,
-                                                2, 1, 3, 3, 3,
-                                                2, 1, 3, 1, 3]))
+
+    op = [2, 3, 3, 3, 3, 2, 1, 1, 3, 3, 2, 1, 1, 3, 3, 2, 1, 1, 1, 1, 2, 1, 3, 1, 1]
+    opt = policy.table.argmax(dim=0)
+    for state in range(environment.num_states):  # Test optimality by value.
+        environment.state = state
+        ns, r, done, info = environment.step(op[state])
+        nv = r + GAMMA * value_function.table[:, ns]
+
+        environment.state = state
+        ns, r, done, info = environment.step(opt[state])
+        nv2 = r + GAMMA * value_function.table[:, ns]
+
+        torch.testing.assert_allclose(nv, nv2)
 
 
 def test_value_iteration():

@@ -57,7 +57,7 @@ def mellow_max(values, omega=1.):
     "An alternative softmax operator for reinforcement learning."
     Proceedings of the 34th International Conference on Machine Learning. 2017.
     """
-    n = torch.tensor(values.shape[-1]).float()
+    n = torch.tensor(values.shape[-1], dtype=torch.get_default_dtype())
     return (torch.logsumexp(omega * values, dim=-1) - torch.log(n)) / omega
 
 

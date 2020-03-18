@@ -169,7 +169,7 @@ class TestRandomTensor(object):
 
     def test_continuous(self, batch_size, dim):
         tensor = random_tensor(False, dim, batch_size)
-        assert tensor.dtype is torch.float
+        assert tensor.dtype is torch.get_default_dtype()
         if batch_size:
             assert tensor.dim() == 2
             assert tensor.shape == (batch_size, dim,)

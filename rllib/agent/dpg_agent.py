@@ -1,6 +1,5 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset.datatypes import Observation
 from rllib.algorithms.dpg import DPG
 from rllib.util.logger import Logger
 import torch
@@ -89,8 +88,7 @@ class DPGAgent(AbstractAgent):
     def _train(self):
         """Train the DPG Agent."""
         observation, idx, weight = self.memory.get_batch()
-        weight = torch.tensor(weight).float()
-        observation = Observation(*map(lambda x: x.float(), observation))
+        weight = torch.tensor(weight)
 
         self.critic_optimizer.zero_grad()
         self.actor_optimizer.zero_grad()

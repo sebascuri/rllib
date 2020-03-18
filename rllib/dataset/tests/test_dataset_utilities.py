@@ -21,15 +21,12 @@ def test_stack_list_of_observations():
     stacked_trajectory = stacked_trajectory.to_torch()
     assert type(stacked_trajectory) is Observation
     assert stacked_trajectory.state.shape == (3, 4)
-    assert stacked_trajectory.state.dtype is torch.float
     assert stacked_trajectory.action.shape == (3, 2)
-    assert stacked_trajectory.action.dtype is torch.float
     assert stacked_trajectory.next_state.shape == (3, 4)
-    assert stacked_trajectory.next_state.dtype is torch.float
     assert stacked_trajectory.reward.shape == (3, )
-    assert stacked_trajectory.reward.dtype is torch.float
     assert stacked_trajectory.done.shape == (3, )
-    assert stacked_trajectory.done.dtype is torch.float
+    for val in stacked_trajectory:
+        assert val.dtype is torch.get_default_dtype()
 
 
 def test_stack_list_of_lists():

@@ -58,5 +58,6 @@ class Observation(NamedTuple):
     def to_torch(self):
         """Transform to torch."""
         return Observation(*map(
-            lambda x: x if isinstance(x, torch.Tensor) else torch.tensor(x).float(),
+            lambda x: x if isinstance(x, torch.Tensor) else
+            torch.tensor(x, dtype=torch.get_default_dtype()),
             self))

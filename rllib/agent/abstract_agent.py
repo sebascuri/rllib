@@ -66,7 +66,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
             policy = self.policy.random()
         else:
             if not isinstance(state, torch.Tensor):
-                state = torch.tensor(state).float()
+                state = torch.tensor(state, dtype=torch.get_default_dtype())
             policy = self.policy(state)
 
         if self._training:

@@ -35,7 +35,7 @@ def tolerance(x, lower, upper, margin=None):
     """
     if margin is None or margin == 0.:
         in_bounds = (lower <= x) & (x <= upper)
-        return in_bounds.float()
+        return in_bounds.type(torch.get_default_dtype())
     else:
         assert margin > 0
         diff = 0.5 * (upper - lower)

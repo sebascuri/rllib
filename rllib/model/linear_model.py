@@ -10,9 +10,9 @@ class LinearModel(AbstractModel):
 
     def __init__(self, a, b, noise: MultivariateNormal = None):
         if not isinstance(a, torch.Tensor):
-            a = torch.tensor(a).float()
+            a = torch.tensor(a, dtype=torch.get_default_dtype())
         if not isinstance(b, torch.Tensor):
-            b = torch.tensor(b).float()
+            b = torch.tensor(b, dtype=torch.get_default_dtype())
 
         super().__init__(*b.shape)
 
@@ -23,9 +23,9 @@ class LinearModel(AbstractModel):
     def forward(self, state, action):
         """Get next state distribution."""
         if not isinstance(state, torch.Tensor):
-            state = torch.tensor(state).float()
+            state = torch.tensor(state, dtype=torch.get_default_dtype())
         if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action).float()
+            action = torch.tensor(action, dtype=torch.get_default_dtype())
 
         next_state = state @ self.a + action @ self.b
         if self.noise is None:

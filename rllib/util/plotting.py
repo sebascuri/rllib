@@ -126,7 +126,7 @@ def plot_on_grid(function, bounds, num_entries):
     """
     axis = plt.gca()
     states = linearly_spaced_combinations(bounds, num_entries)
-    values = function(torch.from_numpy(states).float())
+    values = function(torch.tensor(states, dtype=torch.get_default_dtype()))
     values = values.detach().numpy()
 
     img = plot_combinations_as_grid(axis, values, num_entries, bounds)

@@ -57,7 +57,7 @@ class DPG(nn.Module):
         """Get Actor Loss."""
         action = self.policy(state).mean.clamp(-1, 1)
         with disable_gradient(self.q_function):
-            q = self.q_function(state.float(), action)
+            q = self.q_function(state, action)
             if type(q) is list:
                 q = q[0]
         return -q

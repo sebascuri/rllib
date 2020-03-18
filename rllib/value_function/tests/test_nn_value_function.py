@@ -60,7 +60,7 @@ class TestNNValueFunction(object):
         value = self.value_function(state)
 
         assert value.shape == torch.Size([batch_size] if batch_size else [])
-        assert value.dtype is torch.float
+        assert value.dtype is torch.get_default_dtype()
 
     def test_parameters(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
@@ -121,7 +121,7 @@ class TestNNQFunction(object):
 
             value = self.q_function(state, action)
             assert value.shape == torch.Size([batch_size] if batch_size else [])
-            assert value.dtype is torch.float
+            assert value.dtype is torch.get_default_dtype()
 
     def test_parameters(self, discrete_state, discrete_action, dim_state, dim_action):
         if not (discrete_state and not discrete_action):
@@ -142,7 +142,7 @@ class TestNNQFunction(object):
                 assert action_value.shape == torch.Size(
                     [batch_size, self.num_actions] if batch_size else [self.num_actions]
                 )
-                assert action_value.dtype is torch.float
+                assert action_value.dtype is torch.get_default_dtype()
 
 
 class TestTabularValueFunction(object):

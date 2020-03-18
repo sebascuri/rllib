@@ -26,15 +26,16 @@ class TestDiscountedCumSum(object):
                        ]
         scipy.allclose(cum_rewards, discount_cumsum(np.array(rewards), gamma))
 
-        torch.testing.assert_allclose(cum_rewards, discount_cumsum(torch.tensor(rewards),
-                                                                   gamma))
+        torch.testing.assert_allclose(cum_rewards,
+                                      discount_cumsum(torch.tensor(rewards), gamma))
 
     def test_shape_and_type(self, rewards, gamma):
         np_returns = discount_cumsum(np.array(rewards), gamma)
         assert np_returns.shape == (len(rewards),)
         assert type(np_returns) is np.ndarray
 
-        t_returns = discount_cumsum(torch.tensor(rewards).float(), gamma)
+        t_returns = discount_cumsum(
+            torch.tensor(rewards, dtype=torch.get_default_dtype()), gamma)
         assert t_returns.shape == torch.Size((len(rewards),))
         assert type(t_returns) is torch.Tensor
 
@@ -78,6 +79,3 @@ class TestSeparatedKL(object):
         torch.testing.assert_allclose(
             kl_divergence(q, p).mean(), sum(separated_kl(q, p))
         )
-
-
-

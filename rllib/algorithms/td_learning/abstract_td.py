@@ -39,7 +39,7 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
         action = self.policy(state).sample()
         next_state, reward, done, _ = self.environment.step(action)
         next_state = torch.tensor(next_state)
-        reward = torch.tensor(reward).float()
+        reward = torch.tensor(reward, dtype=torch.get_default_dtype())
         return next_state, reward, done
 
     def simulate(self, observation):

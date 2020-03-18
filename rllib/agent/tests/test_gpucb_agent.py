@@ -29,7 +29,7 @@ def test_GPUCB(reward):
     torch.manual_seed(SEED)
     x = torch.linspace(-1, 6, NUM_POINTS)
     x0 = x[x > 0.2][[0]]
-    y0 = reward(None, x0).sample().float()
+    y0 = reward(None, x0).sample()
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     likelihood.noise_covar.noise = 0.1 ** 2
     model = ExactGP(x0, y0, likelihood)

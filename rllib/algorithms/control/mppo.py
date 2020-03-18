@@ -88,7 +88,8 @@ class MPPO(nn.Module):
         # Compute the dual loss for the constraint KL(q || old_pi) < eps.
         q_values = q_values.detach() * (torch.tensor(1.) / self.eta)
         normalizer = torch.logsumexp(q_values, dim=0)
-        num_actions = torch.tensor(action_log_probs.shape[0]).float()
+        num_actions_ = action_log_probs.shape[0]
+        num_actions = torch.tensor(num_actions_, dtype=torch.get_default_dtype())
 
         dual_loss = self.eta * (
                 self.epsilon + torch.mean(normalizer) - torch.log(num_actions))
