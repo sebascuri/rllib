@@ -1,7 +1,6 @@
 """Implementation of GP-UCB algorithm."""
 
 import gpytorch
-from gpytorch.distributions import Delta
 import torch
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
@@ -47,7 +46,7 @@ class GPUCBPolicy(AbstractPolicy):
 
             max_id = torch.argmax(ucb)
             next_point = self.x[[[max_id]]]
-            return Delta(next_point)
+            return next_point, torch.zeros(1)
 
     def update(self, observation):
         """Update the GP posterior."""

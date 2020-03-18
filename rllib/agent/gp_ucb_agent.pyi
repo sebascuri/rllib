@@ -1,9 +1,8 @@
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
-from rllib.dataset.datatypes import Observation, Distribution
+from rllib.dataset.datatypes import Observation, TupleDistribution
 from rllib.util.gaussian_processes import ExactGP
 from torch import Tensor
-from typing import Iterator
 
 
 class GPUCBPolicy(AbstractPolicy):
@@ -13,7 +12,7 @@ class GPUCBPolicy(AbstractPolicy):
 
     def __init__(self, gp: ExactGP, x: Tensor, beta: float = 2.0) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> Distribution: ...
+    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 
     def update(self, observation: Observation) -> None: ...
 

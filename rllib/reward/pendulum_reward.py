@@ -3,7 +3,6 @@
 from .abstract_reward import AbstractReward
 from .utilities import tolerance
 import torch
-from gpytorch.distributions import Delta
 
 
 class PendulumReward(AbstractReward):
@@ -16,4 +15,4 @@ class PendulumReward(AbstractReward):
 
         angle_tolerance = tolerance(cos_angle, lower=0.95, upper=1., margin=0.1)
         velocity_tolerance = tolerance(velocity, lower=-.5, upper=0.5, margin=0.5)
-        return Delta(angle_tolerance * velocity_tolerance)
+        return angle_tolerance * velocity_tolerance, torch.zeros(1)

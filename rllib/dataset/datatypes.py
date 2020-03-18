@@ -1,7 +1,8 @@
 """Project Data-types."""
 import numpy as np
 import torch
-from typing import NamedTuple, Union
+from torch import Tensor
+from typing import NamedTuple, Union, Tuple
 from torch.distributions import Categorical
 from gpytorch.distributions import Delta, MultivariateNormal
 
@@ -14,6 +15,7 @@ Probability = Union[int, float, Array]
 Done = Union[bool, Array]
 Gaussian = Union[MultivariateNormal, Delta]
 Distribution = Union[MultivariateNormal, Delta, Categorical]
+TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
 
 class Observation(NamedTuple):

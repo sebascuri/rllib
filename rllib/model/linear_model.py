@@ -1,7 +1,6 @@
 """Implementation of Linear Dynamical Models."""
 from .abstract_model import AbstractModel
 import torch
-from gpytorch.distributions import Delta
 from torch.distributions import MultivariateNormal
 
 
@@ -14,7 +13,7 @@ class LinearModel(AbstractModel):
         if not isinstance(b, torch.Tensor):
             b = torch.tensor(b, dtype=torch.get_default_dtype())
 
-        super().__init__(*b.shape)
+        super().__init__(dim_state=b.shape[0], dim_action=b.shape[1])
 
         self.a = a.t()
         self.b = b.t()
@@ -29,7 +28,6 @@ class LinearModel(AbstractModel):
 
         next_state = state @ self.a + action @ self.b
         if self.noise is None:
-            return Delta(next_state)
+            return next_state, torch.zeros(1)
         else:
-            return MultivariateNormal(next_state + self.noise.mean,
-                                      self.noise.covariance_matrix)
+            return next_state + self.noise.mean, self.noise.covariance_matrix

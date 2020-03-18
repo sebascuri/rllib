@@ -1,5 +1,6 @@
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function import NNQFunction
 from rllib.dataset.datatypes import Observation
 import torch
@@ -39,4 +40,4 @@ def test_discrete(eps_start, q_function):
         probs = eps_start / 2 * torch.ones(2)
         probs[action] += (1 - eps_start)
 
-        assert (policy(state).probs == probs).all()
+        assert (tensor_to_distribution(policy(state)).probs == probs).all()

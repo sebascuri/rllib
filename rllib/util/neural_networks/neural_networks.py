@@ -3,7 +3,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
-from torch.distributions import MultivariateNormal, Categorical
 from .utilities import inverse_softplus
 
 __all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',
@@ -129,7 +128,7 @@ class HeteroGaussianNN(ProbabilisticNN):
         covariance = nn.functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(mean, covariance)
+        return mean, covariance
 
 
 class HomoGaussianNN(ProbabilisticNN):
@@ -164,7 +163,7 @@ class HomoGaussianNN(ProbabilisticNN):
         covariance = functional.softplus(self._covariance)
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(mean, covariance)
+        return mean, covariance
 
 
 class CategoricalNN(ProbabilisticNN):
@@ -188,7 +187,7 @@ class CategoricalNN(ProbabilisticNN):
             covariance of size [batch_size x out_dim x out_dim].
         """
         output = self.head(self.hidden_layers(x))
-        return Categorical(logits=output)
+        return output
 
 
 class EnsembleNN(ProbabilisticNN):
@@ -238,7 +237,7 @@ class EnsembleNN(ProbabilisticNN):
         mean = torch.mean(out, dim=-1)
         covariance = torch.diag_embed(torch.var(out, dim=-1))
 
-        return MultivariateNormal(mean, covariance)
+        return mean, covariance
 
 
 class FelixNet(nn.Module):
@@ -269,4 +268,4 @@ class FelixNet(nn.Module):
         covariance = functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 
-        return MultivariateNormal(mean, covariance)
+        return mean, covariance

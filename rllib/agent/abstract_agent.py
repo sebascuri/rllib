@@ -4,6 +4,7 @@ from abc import ABCMeta
 import torch
 import numpy as np
 from rllib.util.logger import Logger
+from rllib.util.utilities import tensor_to_distribution
 
 
 class AbstractAgent(object, metaclass=ABCMeta):
@@ -69,6 +70,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
             policy = self.policy(state)
 
+        policy = tensor_to_distribution(policy)
         if self._training:
             action = policy.sample()
         else:

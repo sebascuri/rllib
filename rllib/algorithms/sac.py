@@ -4,6 +4,7 @@ import torch.nn as nn
 import copy
 from .ac import PGLoss
 from .q_learning import QLearningLoss
+from rllib.util.utilities import tensor_to_distribution
 
 
 class SoftActorCritic(nn.Module):
@@ -31,7 +32,7 @@ class SoftActorCritic(nn.Module):
 
     def actor_loss(self, state):
         """Get Actor Loss."""
-        pi = self.policy(state)
+        pi = tensor_to_distribution(self.policy(state))
         if pi.has_rsample():
             action = pi.rsample()  # re-parametrization trick.
         else:

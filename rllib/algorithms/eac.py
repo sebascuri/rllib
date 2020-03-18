@@ -1,6 +1,6 @@
 """Expected Actor-Critic Algorithm."""
 import torch
-from rllib.util.utilities import integrate, discount_sum
+from rllib.util.utilities import integrate, discount_sum, tensor_to_distribution
 from .ac import PGLoss, ActorCritic
 
 
@@ -36,13 +36,13 @@ class ExpectedActorCritic(ActorCritic):
             state, action, reward, next_state, done, *r = trajectory
 
             # ACTOR LOSS
-            pi = self.policy(state)
+            pi = tensor_to_distribution(self.policy(state))
             if self.policy.discrete_action:
                 action = action.long()
 
             def iq(a):
                 return self.critic(state, a) - integrate(
-                    lambda a_: self.critic(state, a_), self.policy(state))
+                    lambda a_: self.critic(state, a_), pi)
 
             actor_loss += discount_sum(integrate(
                 lambda a: -pi.log_prob(a) * iq(a).detach(), pi
@@ -50,8 +50,8 @@ class ExpectedActorCritic(ActorCritic):
 
             # CRITIC LOSS
             with torch.no_grad():
-                next_v = integrate(lambda a: self.critic_target(next_state, a),
-                                   self.policy(next_state))
+                next_pi = tensor_to_distribution(self.policy(next_state))
+                next_v = integrate(lambda a: self.critic_target(next_state, a), next_pi)
                 target_q = reward + self.gamma * next_v * (1 - done)
 
             pred_q = self.critic(state, action)

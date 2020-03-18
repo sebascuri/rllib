@@ -1,5 +1,5 @@
 from .abstract_policy import AbstractPolicy
-from rllib.dataset.datatypes import Distribution
+from rllib.dataset.datatypes import TupleDistribution
 from torch import Tensor
 
 
@@ -8,4 +8,4 @@ class RandomPolicy(AbstractPolicy):
                  num_states: int = None, num_actions: int = None) -> None: ...
 
 
-    def forward(self, *args: Tensor, **kwargs) -> Distribution: ...
+    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...

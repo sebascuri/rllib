@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from .gae import GAE
 from collections import namedtuple
+from rllib.util.utilities import tensor_to_distribution
 import copy
 
 
@@ -65,7 +66,7 @@ class REINFORCE(nn.Module):
             state, action, reward, next_state, done, *r = trajectory
 
             # ACTOR LOSS
-            pi = self.policy(state)
+            pi = tensor_to_distribution(self.policy(state))
             if self.policy.discrete_action:
                 action = action.long()
             with torch.no_grad():

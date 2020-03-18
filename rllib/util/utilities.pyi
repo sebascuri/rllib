@@ -1,4 +1,4 @@
-from rllib.dataset.datatypes import Observation, Distribution, Array, Gaussian
+from rllib.dataset.datatypes import Observation, Distribution, Array, Gaussian, TupleDistribution
 from rllib.value_function import AbstractValueFunction
 from typing import Callable, Tuple, List
 from torch import Tensor
@@ -22,6 +22,9 @@ def mc_return(trajectory: List[Observation], gamma: float = 1.0,
 
 
 def moving_average_filter(x: Array, y: Array, horizon: int) -> Array: ...
+
+
+def tensor_to_distribution(args: TupleDistribution) -> Distribution: ...
 
 
 def separated_kl(p: Gaussian, q: Gaussian) -> Tuple[Tensor, Tensor]: ...

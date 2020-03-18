@@ -3,7 +3,6 @@
 from abc import ABCMeta
 import torch
 import torch.nn as nn
-from torch.distributions import MultivariateNormal, Categorical
 from rllib.util.neural_networks import update_parameters
 
 
@@ -56,6 +55,8 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self.num_states = num_states
         self.num_actions = num_actions
         self.deterministic = deterministic
+        self.discrete_state = self.num_states is not None
+        self.discrete_action = self.num_actions is not None
         self.tau = tau
 
     def random(self, batch_size=None):
@@ -71,16 +72,18 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
         """
         if self.discrete_action:  # Categorical
-            distribution = Categorical(torch.ones(self.num_actions))
+            # distribution = Categorical(torch.ones(self.num_actions))
+            if batch_size is None:
+                return torch.ones(self.num_actions)
+            else:
+                return torch.ones(batch_size, self.num_actions)
         else:
-            distribution = MultivariateNormal(
-                loc=torch.zeros(self.dim_action),
-                covariance_matrix=torch.eye(self.dim_action))
-
-        if batch_size is not None:
-            return distribution.expand(batch_shape=torch.Size((batch_size,)))
-        else:
-            return distribution
+            cov = torch.eye(self.dim_action)
+            if batch_size is None:
+                return torch.zeros(self.dim_action), cov
+            else:
+                return torch.zeros(batch_size, self.dim_action), \
+                       cov.expand(batch_size, self.dim_action, self.dim_action)
 
     def update(self, observation):
         """Update policy parameters."""
@@ -89,27 +92,3 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     def update_parameters(self, new_parameters):
         """Update policy parameters."""
         update_parameters(self.parameters(), new_parameters, tau=self.tau)
-
-    @property
-    def discrete_state(self):
-        """Flag that indicates if states are discrete.
-
-        Returns
-        -------
-        flag: bool
-            whether the state space is discrete.
-
-        """
-        return self.num_states is not None
-
-    @property
-    def discrete_action(self):
-        """Flag that indicates if actions are discrete.
-
-        Returns
-        -------
-        flag: bool
-            whether the actions space is discrete.
-
-        """
-        return self.num_actions is not None

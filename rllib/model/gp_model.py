@@ -34,4 +34,5 @@ class ExactGPModel(AbstractModel):
         if state_action.dim() < 2:
             state_action = state_action.unsqueeze(0)
 
-        return self.likelihood(self.gp(state_action))
+        out = self.likelihood(self.gp(state_action))
+        return out.mean, out.covariance_matrix

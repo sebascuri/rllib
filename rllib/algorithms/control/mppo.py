@@ -13,7 +13,7 @@ import numpy as np
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.rollout import rollout_model
-
+from rllib.util.utilities import tensor_to_distribution
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -187,8 +187,8 @@ class MBMPPO(nn.Module):
         """
         value_prediction = self.value_function(states)
 
-        pi_dist = self.policy(states)
-        pi_dist_old = self.old_policy(states)
+        pi_dist = tensor_to_distribution(self.policy(states))
+        pi_dist_old = tensor_to_distribution(self.old_policy(states))
         kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
 
         with torch.no_grad():

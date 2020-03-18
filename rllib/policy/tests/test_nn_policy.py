@@ -1,5 +1,6 @@
 from rllib.policy import NNPolicy, FelixPolicy, TabularPolicy
 from rllib.util.neural_networks import random_tensor
+from rllib.util.utilities import tensor_to_distribution
 import torch
 from torch.distributions import MultivariateNormal, Categorical
 import pytest
@@ -69,7 +70,7 @@ class TestMLPPolicy(object):
                            dim_action):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
 
-        distribution = self.policy.random()
+        distribution = tensor_to_distribution(self.policy.random())
         sample = distribution.sample()
 
         if distribution.has_enumerate_support:  # Discrete
@@ -84,11 +85,11 @@ class TestMLPPolicy(object):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
         state = random_tensor(discrete_state, dim_state, batch_size)
 
-        distribution = self.policy(state)
+        distribution = tensor_to_distribution(self.policy(state))
         sample = distribution.sample()
 
         if distribution.has_enumerate_support:  # Discrete
-            assert type(distribution) is Categorical
+            assert isinstance(distribution, Categorical)
             if batch_size:
                 assert distribution.logits.shape == (batch_size, self.num_actions,)
                 assert sample.shape == (batch_size,)
@@ -96,7 +97,7 @@ class TestMLPPolicy(object):
                 assert distribution.logits.shape == (self.num_actions,)
                 assert sample.shape == ()
         else:  # Continuous
-            assert type(distribution) is MultivariateNormal
+            assert isinstance(distribution, MultivariateNormal)
             if batch_size:
                 assert distribution.mean.shape == (batch_size, self.dim_action,)
                 assert distribution.covariance_matrix.shape == (batch_size,
@@ -139,7 +140,7 @@ class TestFelixNet(object):
     def test_random_action(self, dim_state, dim_action):
         self.init(dim_state, dim_action)
 
-        distribution = self.policy.random()
+        distribution = tensor_to_distribution(self.policy.random())
         sample = distribution.sample()
 
         assert distribution.mean.shape == (dim_action,)
@@ -149,10 +150,10 @@ class TestFelixNet(object):
         self.init(dim_state, dim_action)
         state = random_tensor(False, dim_state, batch_size)
 
-        distribution = self.policy(state)
+        distribution = tensor_to_distribution(self.policy(state))
         sample = distribution.sample()
 
-        assert type(distribution) is MultivariateNormal
+        assert isinstance(distribution, MultivariateNormal)
         if batch_size:
             assert distribution.mean.shape == (batch_size, dim_action,)
             assert distribution.covariance_matrix.shape == (batch_size,

@@ -1,6 +1,6 @@
 """Advantage Actor Critic Algorithm."""
 from .ac import ActorCritic
-from rllib.util.utilities import integrate
+from rllib.util.utilities import integrate, tensor_to_distribution
 
 
 class A2C(ActorCritic):
@@ -42,6 +42,6 @@ class A2C(ActorCritic):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
         pred_q = self.critic(state, action)
-        returns = pred_q - integrate(lambda a: self.critic(state, a),
-                                     self.policy(state))
+        pi = tensor_to_distribution(self.policy(state))
+        returns = pred_q - integrate(lambda a: self.critic(state, a), pi)
         return returns

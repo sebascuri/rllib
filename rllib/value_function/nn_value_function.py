@@ -38,19 +38,19 @@ class NNValueFunction(AbstractValueFunction):
         self.nn = DeterministicNN(num_inputs, 1, layers, biased_head=biased_head)
         self.dimension = self.nn.embedding_dim
 
-    def forward(self, state, action=None):
+    def forward(self, state, action=torch.empty(1)):
         """Get value of the value-function at a given state."""
         if self.input_transform is not None:
             state = self.input_transform(state)
 
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+        if isinstance(self.num_states, int):
+            state = one_hot_encode(state.long(), torch.tensor(self.num_states))
         return self.nn(state).squeeze(-1)
 
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+        if isinstance(self.num_states, int):
+            state = one_hot_encode(state.long(), torch.tensor(self.num_states))
         return self.value_function.last_layer_embeddings(state).squeeze()
 
 
@@ -108,8 +108,8 @@ class NNQFunction(AbstractQFunction):
         value: torch.Tensor
 
         """
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+        if isinstance(self.num_states, int):
+            state = one_hot_encode(state.long(), torch.tensor(self.num_states))
 
         if self.input_transform is not None:
             state, action = self.input_transform(state, action)

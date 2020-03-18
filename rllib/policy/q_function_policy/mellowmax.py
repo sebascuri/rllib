@@ -1,7 +1,6 @@
 """Mellow Policy."""
 
 from .abstract_q_function_policy import AbstractQFunctionPolicy
-from torch.distributions import Categorical
 import torch
 import scipy.optimize
 from rllib.util.utilities import mellow_max
@@ -47,4 +46,4 @@ class MellowMax(AbstractQFunctionPolicy):
             except ValueError:
                 pass
 
-        return Categorical(torch.softmax(beta * q_value, dim=-1))
+        return torch.softmax(beta * q_value, dim=-1)

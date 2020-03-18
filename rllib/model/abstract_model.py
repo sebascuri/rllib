@@ -55,17 +55,5 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         self.num_actions = num_actions
         self.num_observations = num_observations
 
-    @property
-    def discrete_state(self):
-        """Check if state space is discrete."""
-        return self.num_states is None
-
-    @property
-    def discrete_action(self):
-        """Check if action space is discrete."""
-        return self.num_actions is None
-
-    @property
-    def discrete_observation(self):
-        """Check if observation space is discrete."""
-        return self.num_observations is None
+        self.discrete_state = self.num_states is not None
+        self.discrete_action = self.num_actions is not None

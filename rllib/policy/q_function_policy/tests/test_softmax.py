@@ -1,6 +1,6 @@
 from rllib.policy import SoftMax
 from rllib.value_function import NNQFunction
-from rllib.util.parameter_decay import Constant
+from rllib.util.utilities import tensor_to_distribution
 import torch
 import torch.testing
 import pytest
@@ -24,4 +24,4 @@ def test_discrete(t_start, q_function):
         probs = torch.softmax(logits / t_start, dim=0)
         print(probs)
         torch.testing.assert_allclose(
-            policy(state).probs, probs)
+            tensor_to_distribution(policy(state)).probs, probs)

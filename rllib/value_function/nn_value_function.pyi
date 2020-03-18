@@ -1,31 +1,32 @@
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from torch import Tensor
-from typing import List, Union, Callable
+import torch.nn
+from typing import List, Union
 from rllib.util.neural_networks import DeterministicNN
 
 
 class NNValueFunction(AbstractValueFunction):
-    input_transform: Callable[[Tensor], Tensor]
+    input_transform: torch.nn.Module
     dimension: int
     nn: DeterministicNN
 
     def __init__(self, dim_state: int, num_states: int = None, layers: List[int] = None,
                  tau: float = 1.0, biased_head: bool=True,
-                 input_transform: Callable[[Tensor], Tensor] = None) -> None: ...
+                 input_transform: torch.nn.Module = None) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
 
     def embeddings(self, state: Tensor) -> Tensor: ...
 
 class NNQFunction(AbstractQFunction):
-    input_transform: Callable[[Tensor, Tensor], Tensor]
+    input_transform: torch.nn.Module
     nn: DeterministicNN
     tau: float
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = None, num_actions: int = None,
                  layers: List[int] = None,  tau: float = 1.0, biased_head: bool=True,
-                 input_transform: Callable[[Tensor, Tensor], Tensor] = None
+                 input_transform: torch.nn.Module = None
                  ) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...

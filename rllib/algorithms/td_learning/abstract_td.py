@@ -3,6 +3,7 @@
 from abc import ABCMeta, abstractmethod
 import torch
 import torch.testing
+from rllib.util.utilities import tensor_to_distribution
 
 
 class AbstractTDLearning(object, metaclass=ABCMeta):
@@ -36,7 +37,7 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
         except ValueError:
             self.environment.state = state.numpy()
 
-        action = self.policy(state).sample()
+        action = tensor_to_distribution(self.policy(state)).sample()
         next_state, reward, done, _ = self.environment.step(action)
         next_state = torch.tensor(next_state)
         reward = torch.tensor(reward, dtype=torch.get_default_dtype())

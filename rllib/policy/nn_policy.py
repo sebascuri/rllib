@@ -3,11 +3,9 @@
 from .abstract_policy import AbstractPolicy
 from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN
 from rllib.util.neural_networks import one_hot_encode
-from gpytorch.distributions import Delta
 import torch
 import torch.nn as nn
 import torch.nn.functional
-from torch.distributions import MultivariateNormal
 
 
 class NNPolicy(AbstractPolicy):
@@ -54,12 +52,14 @@ class NNPolicy(AbstractPolicy):
         if self.input_transform is not None:
             state = self.input_transform(state)
 
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
-        action = self.nn(state)
+        if isinstance(self.num_states, int):
+            state = one_hot_encode(state.long(), torch.tensor(self.num_states))
+        out = self.nn(state)
+
         if self.deterministic:
-            return Delta(action.mean)
-        return action
+            return out[0], torch.zeros(1)
+        else:
+            return out
 
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
@@ -146,9 +146,9 @@ class FelixPolicy(AbstractPolicy):
         covariance = torch.diag_embed(covariance)
 
         if self.deterministic:
-            return Delta(mean)
+            return mean, torch.zeros(1)
         else:
-            return MultivariateNormal(mean, covariance)
+            return mean, covariance
 
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""

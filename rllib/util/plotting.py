@@ -161,7 +161,7 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries):
     plt.axis('tight')
 
     plt.sca(ax2)
-    plot_on_grid(lambda x: policy(x).mean, bounds=bounds, num_entries=num_entries)
+    plot_on_grid(lambda x: policy(x)[0], bounds=bounds, num_entries=num_entries)
     plt.title('Learned policy')
     plt.xlabel('Angle [rad]')
     plt.ylabel('Angular velocity [rad/s]')

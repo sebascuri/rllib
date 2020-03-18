@@ -1,6 +1,5 @@
 """Interface for value and q-functions."""
 
-
 from abc import ABCMeta
 from rllib.util.utilities import integrate
 from rllib.util.neural_networks import update_parameters
@@ -48,16 +47,7 @@ class AbstractValueFunction(nn.Module, metaclass=ABCMeta):
         self.dim_state = dim_state
         self.num_states = num_states
         self.tau = tau
-
-    @property
-    def discrete_state(self):
-        """Flag that indicates if states are discrete.
-
-        Returns
-        -------
-        bool
-        """
-        return self.num_states is not None
+        self.discrete_state = self.num_states is not None
 
     def update_parameters(self, new_parameters):
         """Update policy parameters."""
@@ -110,6 +100,7 @@ class AbstractQFunction(AbstractValueFunction):
         super().__init__(dim_state=dim_state, num_states=num_states, tau=tau)
         self.dim_action = dim_action
         self.num_actions = num_actions
+        self.discrete_action = self.num_actions is not None
 
     def value(self, state, policy, num_samples=1):
         """Return the value of the state given a policy.
@@ -128,13 +119,3 @@ class AbstractQFunction(AbstractValueFunction):
         tensor
         """
         return integrate(lambda action: self(state, action), policy(state), num_samples)
-
-    @property
-    def discrete_action(self):
-        """Flag that indicates if actions are discrete.
-
-        Returns
-        -------
-        bool
-        """
-        return self.num_actions is not None

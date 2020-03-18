@@ -32,7 +32,7 @@ P = torch.from_numpy(P).type(torch.get_default_dtype())
 reward_model = QuadraticReward(torch.from_numpy(q).type(torch.get_default_dtype()),
                                torch.from_numpy(r).type(torch.get_default_dtype()))
 environment = SystemEnvironment(system, initial_state=None, termination=None,
-                                reward=lambda x, u: reward_model(x, u).sample())
+                                reward=lambda x, u: reward_model(x, u)[0])
 
 model = LinearModel(system.a, system.b)
 

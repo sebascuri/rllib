@@ -2,7 +2,7 @@
 
 import torch
 import torch.nn as nn
-from rllib.util.utilities import integrate
+from rllib.util.utilities import integrate, tensor_to_distribution
 import copy
 from .q_learning import QLearningLoss
 
@@ -50,8 +50,8 @@ class ESARSA(nn.Module):
         """Compute the loss and the td-error."""
         pred_q = self.q_function(state, action)
         with torch.no_grad():
-            next_v = integrate(lambda a: self.q_target(next_state, a),
-                               self.policy(next_state))
+            pi = tensor_to_distribution(self.policy(state))
+            next_v = integrate(lambda a: self.q_target(next_state, a), pi)
             target_q = reward + self.gamma * next_v * (1 - done)
 
         return self._build_return(pred_q, target_q)
@@ -77,7 +77,8 @@ class GradientESARSA(ESARSA):
     def forward(self, state, action, reward, next_state, done):
         """Compute the loss and the td-error."""
         pred_q = self.q_function(state, action)
-        next_v = integrate(lambda a: self.q_function(state, a), self.policy(state))
+        pi = tensor_to_distribution(self.policy(state))
+        next_v = integrate(lambda a: self.q_function(state, a), pi)
         target_q = reward + self.gamma * next_v * (1 - done)
 
         return self._build_return(pred_q, target_q)

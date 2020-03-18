@@ -3,6 +3,8 @@
 import scipy.signal
 import torch
 import torch.distributions
+from torch.distributions import Categorical
+from gpytorch.distributions import Delta, MultivariateNormal
 import numpy as np
 from rllib.dataset.utilities import get_backend
 
@@ -169,6 +171,22 @@ def moving_average_filter(x, y, horizon):
     x_smooth = x[horizon // 2: -horizon // 2 + 1]
     y_smooth = np.convolve(y, smoothing_weights, 'valid')
     return x_smooth, y_smooth
+
+
+def tensor_to_distribution(args):
+    """Convert tensors to a distribution.
+
+    Parameters
+    ----------
+    args: Union[Tuple[Tensor], Tensor].
+        Tensors with the parameters of a distribution.
+    """
+    if not isinstance(args, tuple):
+        return Categorical(logits=args)
+    elif torch.all(args[1] == 0):
+        return Delta(args[0])
+    else:
+        return MultivariateNormal(args[0], args[1])
 
 
 def separated_kl(p, q):

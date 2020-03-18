@@ -1,7 +1,6 @@
 """Epsilon Greedy Policy."""
 
 from .abstract_q_function_policy import AbstractQFunctionPolicy
-from torch.distributions import Categorical
 import torch
 from rllib.util.neural_networks import get_batch_size
 
@@ -36,7 +35,6 @@ class EpsGreedy(AbstractQFunctionPolicy):
         a = torch.argmax(self.q_function(state), dim=-1)
         probs[torch.arange(aux_size), a] += (1 - self.epsilon)
 
-        if batch_size:
-            return Categorical(probs)
-        else:
-            return Categorical(probs.squeeze(0))
+        if not batch_size:
+            probs = probs.squeeze(0)
+        return torch.log(probs)

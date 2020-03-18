@@ -46,8 +46,7 @@ def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None)
         policy_stable = True
         for state in range(model.num_states):
             state = torch.tensor(state).long()
-            old_action = policy(state).probs
-
+            old_action = policy(state)
             value_ = torch.zeros(model.num_actions)
             for action in range(model.num_actions):
                 value_estimate = 0
@@ -63,7 +62,7 @@ def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None)
             action = torch.argmax(value_)
             policy.set_value(state, action)
 
-            policy_stable &= (policy(state).probs == old_action).all().item()
+            policy_stable &= (policy(state) == old_action).all().item()
 
         if policy_stable:
             break

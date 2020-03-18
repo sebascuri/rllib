@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import copy
 from collections import namedtuple
-from rllib.util.utilities import integrate, discount_sum
+from rllib.util.utilities import integrate, discount_sum, tensor_to_distribution
 
 PGLoss = namedtuple('PolicyGradientLoss',
                     ['actor_loss', 'critic_loss', 'td_error'])
@@ -74,7 +74,7 @@ class ActorCritic(nn.Module):
             state, action, reward, next_state, done, *r = trajectory
 
             # ACTOR LOSS
-            pi = self.policy(state)
+            pi = tensor_to_distribution(self.policy(state))
             if self.policy.discrete_action:
                 action = action.long()
             with torch.no_grad():
@@ -85,8 +85,8 @@ class ActorCritic(nn.Module):
 
             # CRITIC LOSS
             with torch.no_grad():
-                next_v = integrate(lambda a: self.critic_target(next_state, a),
-                                   self.policy(next_state))
+                next_pi = tensor_to_distribution(self.policy(next_state))
+                next_v = integrate(lambda a: self.critic_target(next_state, a), next_pi)
                 target_q = reward + self.gamma * next_v * (1 - done)
 
             pred_q = self.critic(state, action)

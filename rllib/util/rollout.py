@@ -2,6 +2,7 @@
 
 import torch
 from rllib.dataset.datatypes import Observation
+from rllib.util.utilities import tensor_to_distribution
 import pickle
 
 
@@ -90,8 +91,8 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         trajectory = []
         with torch.no_grad():
             while not done:
-                action = policy(torch.tensor(state, dtype=torch.get_default_dtype())
-                                ).sample().numpy()
+                pi = policy(torch.tensor(state, dtype=torch.get_default_dtype()))
+                action = tensor_to_distribution(pi).sample().numpy()
                 observation, state, done = _step(environment, state, action, render)
                 trajectory.append(observation)
                 if max_steps <= environment.time:
@@ -133,21 +134,21 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
 
     for _ in range(max_steps):
         # Sample actions
-        action = policy(state)
+        action = tensor_to_distribution(policy(state))
         if action.has_rsample:
             action = action.rsample()
         else:
             action = action.sample()
 
         # % Sample a reward
-        reward_distribution = reward_model(state, action)
+        reward_distribution = tensor_to_distribution(reward_model(state, action))
         if reward_distribution.has_rsample:
             reward = reward_distribution.rsample()
         else:
             reward = reward_distribution.sample()
 
         # Sample next states
-        next_state = dynamical_model(state, action)
+        next_state = tensor_to_distribution(dynamical_model(state, action))
         if next_state.has_rsample:
             next_state = next_state.rsample()
         else:

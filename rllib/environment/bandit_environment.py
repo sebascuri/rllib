@@ -1,6 +1,7 @@
 """Bandit Environment."""
 
 from .abstract_environment import AbstractEnvironment
+from rllib.util.utilities import tensor_to_distribution
 from gym import spaces
 import numpy as np
 
@@ -41,7 +42,8 @@ class BanditEnvironment(AbstractEnvironment):
     def step(self, action):
         """Get reward of a given action."""
         self.t += 1
-        return self.state, self.reward(self.state, action).sample().numpy(), False, {}
+        reward_distribution = tensor_to_distribution(self.reward(self.state, action))
+        return self.state, reward_distribution.sample().numpy(), False, {}
 
     def reset(self):
         """Reset time counter to zero."""

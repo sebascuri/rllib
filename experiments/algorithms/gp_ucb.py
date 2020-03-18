@@ -7,6 +7,7 @@ from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.util.gaussian_processes import ExactGP, plot_gp
 from rllib.util import rollout_agent
+from rllib.util.utilities import tensor_to_distribution
 from rllib.reward.gp_reward import GPBanditReward
 
 
@@ -17,7 +18,7 @@ def plot(agent, objective, axis=None, noise=False):
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         test_x = agent.policy.x
         pred = agent.policy.gp(test_x)
-        true_values = objective(None, test_x).mean.numpy()
+        true_values = objective(None, test_x)[0].numpy()
 
         test_x = test_x.numpy()
         mean = pred.mean.numpy()
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     plt.show()
 
     x0 = x[x > 0.2][[0]]
-    y0 = objective(None, x0).mean.type(torch.get_default_dtype())
+    y0 = objective(None, x0)[0].type(torch.get_default_dtype())
     model = ExactGP(x0, y0, likelihood)
     model.covar_module.base_kernel.lengthscale = 1
     agent = GPUCBAgent(model, x, beta=2.0)

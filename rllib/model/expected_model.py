@@ -1,7 +1,8 @@
 """Optimistic Model Implementation."""
 
 from .abstract_model import AbstractModel
-from gpytorch.distributions import Delta
+import torch
+import gpytorch
 
 
 class ExpectedModel(AbstractModel):
@@ -22,9 +23,12 @@ class ExpectedModel(AbstractModel):
                          dim_action=base_model.dim_action,
                          num_states=base_model.num_states,
                          num_actions=base_model.num_actions)
-        self.model = base_model
+        self.base_model = base_model
 
     def forward(self, states, actions):
         """Get next state distribution."""
-        prediction = self.model(states, actions)
-        return Delta(prediction.mean)
+        self.base_model.eval()
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+            prediction = self.base_model(states, actions)
+
+        return prediction.mean, torch.zeros(1)

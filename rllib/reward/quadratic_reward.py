@@ -1,8 +1,8 @@
 """Model for quadratic reward."""
 
 from .abstract_reward import AbstractReward
-from gpytorch.distributions import Delta
 from rllib.util.neural_networks import torch_quadratic
+import torch
 
 
 class QuadraticReward(AbstractReward):
@@ -18,4 +18,4 @@ class QuadraticReward(AbstractReward):
         """See `abstract_reward.forward'."""
         state_cost = torch_quadratic(state, self.q)
         action_cost = torch_quadratic(action, self.r)
-        return Delta(-(state_cost + action_cost).squeeze())
+        return -(state_cost + action_cost).squeeze(), torch.zeros(1)

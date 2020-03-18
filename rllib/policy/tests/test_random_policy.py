@@ -1,6 +1,6 @@
 from rllib.policy import RandomPolicy
 from rllib.util.neural_networks import random_tensor
-import torch
+from rllib.util.utilities import tensor_to_distribution
 from torch.distributions import MultivariateNormal, Categorical
 import pytest
 
@@ -68,7 +68,7 @@ class TestRandomPolicy(object):
                            dim_action):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
 
-        distribution = self.policy.random()
+        distribution = tensor_to_distribution(self.policy.random())
         sample = distribution.sample()
 
         if distribution.has_enumerate_support:  # Discrete
@@ -82,11 +82,11 @@ class TestRandomPolicy(object):
                   batch_size):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
         state = random_tensor(discrete_state, dim_state, batch_size)
-        distribution = self.policy(state)
+        distribution = tensor_to_distribution(self.policy(state))
         sample = distribution.sample()
 
         if distribution.has_enumerate_support:  # Discrete
-            assert type(distribution) is Categorical
+            assert isinstance(distribution, Categorical)
             if batch_size:
                 assert distribution.logits.shape == (batch_size, self.num_actions,)
                 assert sample.shape == (batch_size,)
@@ -94,7 +94,7 @@ class TestRandomPolicy(object):
                 assert distribution.logits.shape == (self.num_actions,)
                 assert sample.shape == ()
         else:  # Continuous
-            assert type(distribution) is MultivariateNormal
+            assert isinstance(distribution, MultivariateNormal)
             if batch_size:
                 assert distribution.mean.shape == (batch_size, self.dim_action,)
                 assert distribution.covariance_matrix.shape == (batch_size,

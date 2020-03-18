@@ -21,4 +21,9 @@ class GPBanditReward(AbstractReward):
                 action = action.unsqueeze(0)
 
             pred = self.model(action).mean
-            return self.model.likelihood(pred)
+            out = self.model.likelihood(pred)
+
+        if isinstance(out, gpytorch.distributions.MultivariateNormal):
+            return out.mean, out.lazy_covariance_matrix
+        else:
+            return out.mean, out.variance.unsqueeze(0)

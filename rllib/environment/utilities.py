@@ -4,6 +4,7 @@ from .mdp import MDP
 import numpy as np
 import torch
 from itertools import product
+from rllib.util.utilities import tensor_to_distribution
 
 
 def gym2mdp(environment):
@@ -68,7 +69,7 @@ def mdp2mrp(environment, policy):
             continue
 
         state = torch.tensor(state).long()
-        policy_ = policy(state)
+        policy_ = tensor_to_distribution(policy(state))
 
         for a, p_action in enumerate(policy_.probs):
             mrp_reward[state, 0] += p_action * environment.reward[state, a]

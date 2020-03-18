@@ -2,7 +2,6 @@
 from .abstract_model import AbstractModel
 from rllib.util.neural_networks import CategoricalNN, HeteroGaussianNN, one_hot_encode
 import torch
-from gpytorch.distributions import Delta
 
 
 class NNPolicy(AbstractModel):
@@ -53,5 +52,5 @@ class NNPolicy(AbstractModel):
         state_action = torch.cat((state, action), dim=-1)
         next_state = self.nn(state_action)
         if self.deterministic:
-            return Delta(next_state.mean)
+            return next_state[0], torch.zeros(1)
         return next_state

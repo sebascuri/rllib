@@ -5,6 +5,7 @@ import copy
 from .q_learning import QLearningLoss
 from .ac import PGLoss
 from rllib.util.neural_networks.utilities import disable_gradient
+from rllib.util.utilities import tensor_to_distribution
 
 
 class DPG(nn.Module):
@@ -55,7 +56,7 @@ class DPG(nn.Module):
 
     def actor_loss(self, state):
         """Get Actor Loss."""
-        action = self.policy(state).mean.clamp(-1, 1)
+        action = tensor_to_distribution(self.policy(state)).mean.clamp(-1, 1)
         with disable_gradient(self.q_function):
             q = self.q_function(state, action)
             if type(q) is list:
@@ -70,7 +71,8 @@ class DPG(nn.Module):
 
         # Target Q-values
         with torch.no_grad():
-            next_action = self._add_noise(self.policy_target(next_state).sample())
+            next_action = self._add_noise(
+                tensor_to_distribution(self.policy_target(next_state)).sample())
             next_v = self.q_target(next_state, next_action)
             if type(next_v) is list:
                 next_v = torch.min(*next_v)

@@ -1,7 +1,6 @@
 """Implementation of a Pendulum Model."""
 from .abstract_model import AbstractModel
 import torch
-from gpytorch.distributions import Delta
 from torch.distributions import MultivariateNormal
 
 
@@ -47,7 +46,6 @@ class PendulumModel(AbstractModel):
         # torch.cat((torch.cos(angle), torch.sin(angle), angular_velocity), dim=-1))
 
         if self.noise is None:
-            return Delta(next_state)
+            return next_state, torch.zeros(1)
         else:
-            return MultivariateNormal(next_state + self.noise.mean,
-                                      self.noise.covariance_matrix)
+            return next_state + self.noise.mean, self.noise.covariance_matrix

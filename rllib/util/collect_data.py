@@ -1,6 +1,7 @@
 """Utilities to collect data."""
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
+from rllib.util.utilities import tensor_to_distribution
 
 
 def collect_environment_transitions(state_dist, policy, environment, num_samples):
@@ -27,7 +28,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
     for i in range(num_samples):
         state = state_dist.sample()
         if isinstance(policy, AbstractPolicy):
-            action_dist = policy(state)
+            action_dist = tensor_to_distribution(policy(state))
         else:
             action_dist = policy  # random action_distribution
         action = action_dist.sample()
@@ -67,13 +68,13 @@ def collect_model_transitions(state_dist, policy, dynamic_model, reward_model,
     """
     states = state_dist.sample((num_samples,))
     if isinstance(policy, AbstractPolicy):
-        action_dist = policy(states)
+        action_dist = tensor_to_distribution(policy(states))
     else:
         action_dist = policy  # random action_distribution
     actions = action_dist.sample()
 
-    next_states = dynamic_model(states, actions).sample()
-    rewards = reward_model(states, actions).sample()
+    next_states = tensor_to_distribution(dynamic_model(states, actions)).sample()
+    rewards = tensor_to_distribution(reward_model(states, actions)).sample()
 
     transitions = []
     for state, action, reward, next_state in zip(states, actions, rewards, next_states):
