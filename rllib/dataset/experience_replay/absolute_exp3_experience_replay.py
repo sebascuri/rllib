@@ -1,8 +1,9 @@
 """Implementation of an absolute EXP3 Experience Replay Buffer."""
 
 import numpy as np
-from .exp3_experience_replay import EXP3Sampler
 from torch.utils.data._utils.collate import default_collate
+
+from .exp3_experience_replay import EXP3Sampler
 
 
 class AEXP3Sampler(EXP3Sampler):

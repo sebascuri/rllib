@@ -1,7 +1,9 @@
 """Implementation of a Logger class."""
 
-import numpy as np
 from typing import List, Union
+
+import numpy as np
+
 Values = Union[float, int, np.ndarray]
 
 

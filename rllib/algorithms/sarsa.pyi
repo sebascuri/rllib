@@ -1,10 +1,11 @@
 """SARSA Algorithm."""
 
 import torch.nn as nn
-from rllib.value_function import AbstractQFunction
-from .q_learning import QLearningLoss
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
+
+from rllib.value_function import AbstractQFunction
+from .q_learning import QLearningLoss
 
 
 class SARSA(nn.Module):

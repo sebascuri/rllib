@@ -1,10 +1,11 @@
-import pytest
-from rllib.util.utilities import discount_cumsum, separated_kl
 import numpy as np
+import pytest
 import scipy
 import torch
-from torch.distributions import kl_divergence, MultivariateNormal
 import torch.testing
+from torch.distributions import kl_divergence, MultivariateNormal
+
+from rllib.util.utilities import discount_cumsum, separated_kl
 
 
 class TestDiscountedCumSum(object):

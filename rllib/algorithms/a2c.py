@@ -1,6 +1,6 @@
 """Advantage Actor Critic Algorithm."""
-from .ac import ActorCritic
 from rllib.util.utilities import integrate, tensor_to_distribution
+from .ac import ActorCritic
 
 
 class A2C(ActorCritic):

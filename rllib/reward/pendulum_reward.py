@@ -1,8 +1,9 @@
 """Model for pendulum reward."""
 
+import torch
+
 from .abstract_reward import AbstractReward
 from .utilities import tolerance
-import torch
 
 
 class PendulumReward(AbstractReward):

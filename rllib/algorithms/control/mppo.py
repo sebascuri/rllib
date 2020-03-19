@@ -1,18 +1,20 @@
 """Python Script Template."""
 
+import copy
+from collections import namedtuple
+
+import numpy as np
 import torch
 import torch.distributions
 import torch.nn as nn
-import copy
-from collections import namedtuple
-from rllib.util.neural_networks import freeze_parameters
-from rllib.util.utilities import separated_kl
-from rllib.algorithms.dyna import dyna_rollout
 from tqdm import tqdm
-import numpy as np
+
+from rllib.algorithms.dyna import dyna_rollout
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util.neural_networks import freeze_parameters
 from rllib.util.rollout import rollout_model
+from rllib.util.utilities import separated_kl
 from rllib.util.utilities import tensor_to_distribution
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])

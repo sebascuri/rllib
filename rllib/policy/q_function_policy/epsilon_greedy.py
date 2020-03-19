@@ -1,8 +1,9 @@
 """Epsilon Greedy Policy."""
 
-from .abstract_q_function_policy import AbstractQFunctionPolicy
 import torch
+
 from rllib.util.neural_networks import get_batch_size
+from .abstract_q_function_policy import AbstractQFunctionPolicy
 
 
 class EpsGreedy(AbstractQFunctionPolicy):

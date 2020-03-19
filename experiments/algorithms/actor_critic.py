@@ -1,12 +1,12 @@
-from rllib.agent import ActorCriticAgent, A2CAgent, ExpectedActorCriticAgent
+import numpy as np
+import torch
+import torch.nn.modules.loss as loss
+
+from experiments.util import train, evaluate
+from rllib.agent import A2CAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
 from rllib.value_function import NNQFunction
-from experiments.util import train, evaluate
-
-import torch
-import numpy as np
-import torch.nn.modules.loss as loss
 
 ENVIRONMENT = 'CartPole-v0'
 MAX_STEPS = 200

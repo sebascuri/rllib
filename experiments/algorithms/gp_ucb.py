@@ -1,14 +1,14 @@
 """Python Script Template."""
 
 import gpytorch
-import torch
 import matplotlib.pyplot as plt
+import torch
+
 from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
-from rllib.util.gaussian_processes import ExactGP, plot_gp
-from rllib.util import rollout_agent
-from rllib.util.utilities import tensor_to_distribution
 from rllib.reward.gp_reward import GPBanditReward
+from rllib.util import rollout_agent
+from rllib.util.gaussian_processes import ExactGP, plot_gp
 
 
 def plot(agent, objective, axis=None, noise=False):

@@ -1,10 +1,13 @@
-import torch.nn as nn
-from rllib.value_function import AbstractQFunction
 from typing import NamedTuple, Union
+
+import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
+
 from rllib.policy.q_function_policy import SoftMax
 from rllib.util.parameter_decay import ParameterDecay
+from rllib.value_function import AbstractQFunction
+
 
 class QLearningLoss(NamedTuple):
     loss: Tensor

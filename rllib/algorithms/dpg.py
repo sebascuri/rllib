@@ -1,11 +1,13 @@
 """Deterministic Policy Gradient Algorithm."""
+import copy
+
 import torch
 import torch.nn as nn
-import copy
-from .q_learning import QLearningLoss
-from .ac import PGLoss
+
 from rllib.util.neural_networks.utilities import disable_gradient
 from rllib.util.utilities import tensor_to_distribution
+from .ac import PGLoss
+from .q_learning import QLearningLoss
 
 
 class DPG(nn.Module):

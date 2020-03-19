@@ -1,7 +1,6 @@
-from .experience_replay import ExperienceReplay
-from rllib.environment import AbstractEnvironment
 from rllib.agent import AbstractAgent
-import numpy as np
+from rllib.environment import AbstractEnvironment
+from .experience_replay import ExperienceReplay
 
 
 def init_er_from_er(target_er: ExperienceReplay,

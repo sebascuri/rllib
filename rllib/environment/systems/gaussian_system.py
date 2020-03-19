@@ -1,7 +1,8 @@
 """Implementation of a System with Gaussian transition and measurement noise."""
 
-from .abstract_system import AbstractSystem
 import numpy as np
+
+from .abstract_system import AbstractSystem
 
 
 class GaussianSystem(AbstractSystem):

@@ -1,8 +1,10 @@
+from typing import List
+
+import torch.nn as nn
+from torch import Tensor
+
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from .nn_value_function import NNValueFunction, NNQFunction
-from typing import List
-from torch import Tensor
-import torch.nn as nn
 
 
 class NNEnsembleValueFunction(AbstractValueFunction):

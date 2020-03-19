@@ -1,11 +1,13 @@
+from typing import List, Union, Tuple, Callable
+
+from numpy import ndarray
+
 from rllib.agent import AbstractAgent
-from rllib.policy import AbstractPolicy
+from rllib.dataset.datatypes import Observation, State, Action
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
+from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
-from typing import List, Union, Tuple, Callable
-from rllib.dataset.datatypes import Observation, State, Action
-from numpy import ndarray
 
 
 def _step(environment: AbstractEnvironment, state: Union[int, ndarray],

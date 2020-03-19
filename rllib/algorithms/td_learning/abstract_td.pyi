@@ -1,11 +1,13 @@
 from abc import ABCMeta, abstractmethod
-from rllib.environment import AbstractEnvironment
-from rllib.policy import AbstractPolicy
+from typing import Tuple, List
+
+from torch import Tensor
+
 from rllib.dataset import ExperienceReplay
 from rllib.dataset.datatypes import Observation
+from rllib.environment import AbstractEnvironment
+from rllib.policy import AbstractPolicy
 from rllib.value_function import NNValueFunction
-from torch import Tensor
-from typing import Tuple, List
 
 
 class AbstractTDLearning(object, metaclass=ABCMeta):

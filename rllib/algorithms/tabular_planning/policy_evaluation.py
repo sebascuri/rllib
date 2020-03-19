@@ -1,10 +1,11 @@
 """Policy Evaluation Algorithms."""
 
-from .utilities import init_value_function
+import numpy as np
+import torch
+
 from rllib.environment import mdp2mrp
 from rllib.util.utilities import tensor_to_distribution
-import torch
-import numpy as np
+from .utilities import init_value_function
 
 
 def linear_system_policy_evaluation(policy, model, gamma, value_function=None):
@@ -36,7 +37,7 @@ def iterative_policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
     Parameters
     ----------
     policy: AbstractPolicy
-        policy to evaluate.
+        policy to evaluate_agent.
     model: AbstractModel
         a model of the environment. (also an MDP environment can be used).
     gamma: float

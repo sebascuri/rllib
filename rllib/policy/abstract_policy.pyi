@@ -1,8 +1,10 @@
 from abc import ABCMeta
-from torch import Tensor
-import torch.nn as nn
-from torch.nn import Parameter
 from typing import Iterator
+
+import torch.nn as nn
+from torch import Tensor
+from torch.nn import Parameter
+
 from rllib.dataset.datatypes import Observation, TupleDistribution
 
 

@@ -1,8 +1,9 @@
 """Implementation of Gaussian Processes State-Space Models."""
-from .abstract_model import AbstractModel
-import torch
-from rllib.util.gaussian_processes.exact_gp import ExactGP, MultitaskExactGP
 import gpytorch
+import torch
+
+from rllib.util.gaussian_processes.exact_gp import ExactGP, MultitaskExactGP
+from .abstract_model import AbstractModel
 
 
 class ExactGPModel(AbstractModel):

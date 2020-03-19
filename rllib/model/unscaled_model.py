@@ -1,8 +1,9 @@
 """Implementation of an Unscaled Model."""
-from .abstract_model import AbstractModel
-from rllib.dataset.datatypes import Observation
 import gpytorch
 import torch
+
+from rllib.dataset.datatypes import Observation
+from .abstract_model import AbstractModel
 
 
 class UnscaledModel(AbstractModel):

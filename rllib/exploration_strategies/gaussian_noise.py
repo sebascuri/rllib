@@ -1,7 +1,8 @@
 """Additive Gaussian Noise Exploration Strategy."""
 
-from .abstract_exploration_strategy import AbstractExplorationStrategy
 import numpy as np
+
+from .abstract_exploration_strategy import AbstractExplorationStrategy
 
 
 class GaussianNoise(AbstractExplorationStrategy):

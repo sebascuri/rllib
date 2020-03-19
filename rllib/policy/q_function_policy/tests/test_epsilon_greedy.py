@@ -1,12 +1,13 @@
+import numpy as np
+import pytest
+import torch
+import torch.testing
+
+from rllib.dataset.datatypes import Observation
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function import NNQFunction
-from rllib.dataset.datatypes import Observation
-import torch
-import torch.testing
-import pytest
-import numpy as np
 
 
 @pytest.fixture(params=[0.0, 0.9])

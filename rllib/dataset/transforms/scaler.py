@@ -1,7 +1,8 @@
 """Implementation of a Transformation that scales attributes."""
 
-from .abstract_transform import AbstractTransform
 import torch.nn as nn
+
+from .abstract_transform import AbstractTransform
 
 
 class Scaler(nn.Module):

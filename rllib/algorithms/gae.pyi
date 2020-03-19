@@ -1,7 +1,9 @@
+from typing import Union
+
 import torch.nn as nn
 from torch import Tensor
+
 from rllib.value_function import AbstractValueFunction
-from typing import Union
 
 
 class GAE(nn.Module):

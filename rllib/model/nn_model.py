@@ -1,7 +1,8 @@
 """Model implemented by a Neural Network."""
-from .abstract_model import AbstractModel
-from rllib.util.neural_networks import CategoricalNN, HeteroGaussianNN, one_hot_encode
 import torch
+
+from rllib.util.neural_networks import CategoricalNN, HeteroGaussianNN, one_hot_encode
+from .abstract_model import AbstractModel
 
 
 class NNPolicy(AbstractModel):

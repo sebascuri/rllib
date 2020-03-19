@@ -1,8 +1,9 @@
 """Interface for physical systems."""
 
 from abc import ABCMeta, abstractmethod
-from gym import spaces
+
 import numpy as np
+from gym import spaces
 
 
 class AbstractSystem(object, metaclass=ABCMeta):

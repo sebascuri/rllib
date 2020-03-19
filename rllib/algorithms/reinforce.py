@@ -1,11 +1,12 @@
 """REINFORCE Algorithm."""
+import copy
+from collections import namedtuple
+
 import torch
 import torch.nn as nn
-from .gae import GAE
-from collections import namedtuple
-from rllib.util.utilities import tensor_to_distribution
-import copy
 
+from rllib.util.utilities import tensor_to_distribution
+from .gae import GAE
 
 REINFORCELoss = namedtuple('REINFORCELoss',
                            ['actor_loss', 'baseline_loss'])

@@ -1,10 +1,12 @@
 """Implementation of InvertedPendulum System."""
 
+import os
+
+import numpy as np
+from gym.envs.classic_control import rendering
+
 from rllib.environment.systems.ode_system import ODESystem
 from rllib.util.utilities import get_backend
-import numpy as np
-import os
-from gym.envs.classic_control import rendering
 
 
 class InvertedPendulum(ODESystem):

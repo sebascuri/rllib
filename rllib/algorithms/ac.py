@@ -1,8 +1,10 @@
 """Actor-Critic Algorithm."""
-import torch
-import torch.nn as nn
 import copy
 from collections import namedtuple
+
+import torch
+import torch.nn as nn
+
 from rllib.util.utilities import integrate, discount_sum, tensor_to_distribution
 
 PGLoss = namedtuple('PolicyGradientLoss',

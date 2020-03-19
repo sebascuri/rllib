@@ -1,9 +1,10 @@
-from rllib.dataset.transforms import *
-from rllib.dataset.datatypes import Observation
-from rllib.dataset.utilities import stack_list_of_tuples
 import pytest
 import torch
 import torch.testing
+
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.transforms import *
+from rllib.dataset.utilities import stack_list_of_tuples
 
 
 def get_observation(reward=None):

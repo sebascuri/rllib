@@ -1,10 +1,11 @@
 from abc import ABCMeta
-from rllib.policy import AbstractPolicy
-from torch import Tensor
-import torch.nn as nn
-import torch.jit
-from torch.nn import Parameter
 from typing import Iterator
+
+import torch.nn as nn
+from torch import Tensor
+from torch.nn import Parameter
+
+from rllib.policy import AbstractPolicy
 
 
 class AbstractValueFunction(nn.Module, metaclass=ABCMeta):

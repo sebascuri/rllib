@@ -1,9 +1,10 @@
 """Implementation of Dyna algorithm."""
 
+from collections import namedtuple
+
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import mc_return
-from collections import namedtuple
 
 DynaReturn = namedtuple('DynaReturn', ['q_target', 'trajectory'])
 

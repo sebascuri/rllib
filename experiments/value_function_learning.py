@@ -1,19 +1,19 @@
-from rllib.environment.systems import InvertedPendulum
-from rllib.environment import SystemEnvironment
-from rllib.policy import NNPolicy
-from rllib.value_function import NNValueFunction
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
-from rllib.model import LinearModel
-import numpy as np
-import matplotlib.pyplot as plt
-
-from rllib.reward.quadratic_reward import QuadraticReward
-from rllib.algorithms.dyna import dyna_rollout
 from tqdm import tqdm
-import torch
-import rllib.util.neural_networks
+
 import rllib.algorithms.control
+import rllib.util.neural_networks
+from rllib.algorithms.dyna import dyna_rollout
+from rllib.environment import SystemEnvironment
+from rllib.environment.systems import InvertedPendulum
+from rllib.model import LinearModel
+from rllib.policy import NNPolicy
+from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.value_function import NNValueFunction
 
 num_steps = 1
 discount = 1.

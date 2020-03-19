@@ -1,8 +1,9 @@
-from rllib.dataset.utilities import get_backend
-from rllib.dataset.transforms.normalizer import Normalizer
+import pytest
 import torch
 import torch.testing
-import pytest
+
+from rllib.dataset.transforms.normalizer import Normalizer
+from rllib.dataset.utilities import get_backend
 
 
 @pytest.fixture(params=[True, False])

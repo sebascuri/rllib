@@ -1,10 +1,11 @@
 """Implementation of a Class that constructs an dynamic system from an ode."""
 
-from .abstract_system import AbstractSystem
-from .linear_system import LinearSystem
-from scipy import integrate, signal
 import numpy as np
 import torch
+from scipy import integrate, signal
+
+from .abstract_system import AbstractSystem
+from .linear_system import LinearSystem
 
 
 class ODESystem(AbstractSystem):

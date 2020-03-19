@@ -1,10 +1,12 @@
 """Soft Actor-Critic Algorithm."""
+import copy
+
 import torch
 import torch.nn as nn
-import copy
+
+from rllib.util.utilities import tensor_to_distribution
 from .ac import PGLoss
 from .q_learning import QLearningLoss
-from rllib.util.utilities import tensor_to_distribution
 
 
 class SoftActorCritic(nn.Module):

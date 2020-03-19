@@ -1,6 +1,8 @@
-from abc import ABCMeta, abstractmethod
-from rllib.dataset.datatypes import Observation
+from abc import ABCMeta
+
 import torch.nn as nn
+
+from rllib.dataset.datatypes import Observation
 
 
 class AbstractTransform(nn.Module, metaclass=ABCMeta):

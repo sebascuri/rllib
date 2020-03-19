@@ -2,8 +2,9 @@
 
 
 from abc import ABCMeta
-import torch.nn as nn
+
 import torch.jit
+import torch.nn as nn
 
 
 class AbstractTransform(nn.Module, metaclass=ABCMeta):

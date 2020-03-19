@@ -1,9 +1,10 @@
 """Actor-Critic Algorithm."""
-from torch import Tensor
+from typing import NamedTuple, List
+
 import torch.nn as nn
+from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from typing import NamedTuple, List
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction, AbstractValueFunction

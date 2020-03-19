@@ -1,11 +1,13 @@
+from typing import NamedTuple, List
+
+from torch import Tensor
+
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.datatypes import State
 from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
 from rllib.policy import AbstractPolicy
+from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
-from rllib.dataset.datatypes import Observation
-from torch import Tensor
-from typing import NamedTuple, List
 
 
 class DynaReturn(NamedTuple):

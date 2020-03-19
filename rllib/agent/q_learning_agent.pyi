@@ -1,10 +1,11 @@
-from .abstract_agent import AbstractAgent
-from rllib.policy import AbstractQFunctionPolicy
-from rllib.value_function import AbstractQFunction
-from rllib.dataset import ExperienceReplay
-from rllib.algorithms.q_learning import QLearning
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
+
+from rllib.algorithms.q_learning import QLearning
+from rllib.dataset import ExperienceReplay
+from rllib.policy import AbstractQFunctionPolicy
+from rllib.value_function import AbstractQFunction
+from .abstract_agent import AbstractAgent
 
 
 class QLearningAgent(AbstractAgent):

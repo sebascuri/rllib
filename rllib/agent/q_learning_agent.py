@@ -1,8 +1,9 @@
 """Implementation of QLearning Algorithms."""
+import torch
+
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.q_learning import QLearning
 from rllib.util.logger import Logger
-import torch
 
 
 class QLearningAgent(AbstractAgent):

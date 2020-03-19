@@ -1,9 +1,11 @@
-import torch
-from rllib.dataset.datatypes import Observation
-from rllib.dataset import TrajectoryDataset
-from rllib.dataset.transforms import *
-import pytest
 import numpy as np
+import pytest
+import torch
+
+from rllib.dataset import TrajectoryDataset
+from rllib.dataset.datatypes import Observation
+from rllib.dataset.transforms import *
+
 
 @pytest.fixture(params=[(10, 200, 3, 2, 4, 2), (10, 200, 3, 2, 4, 8),
                         (10, 200, 3, 2, 4, None)])

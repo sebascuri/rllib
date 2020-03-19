@@ -1,11 +1,12 @@
 """Policies parametrized with Neural Networks."""
 
-from .abstract_policy import AbstractPolicy
-from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN
-from rllib.util.neural_networks import one_hot_encode
 import torch
 import torch.nn as nn
 import torch.nn.functional
+
+from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN
+from rllib.util.neural_networks import one_hot_encode
+from .abstract_policy import AbstractPolicy
 
 
 class NNPolicy(AbstractPolicy):

@@ -1,9 +1,9 @@
 """Implementation of Model-Free Policy Gradient Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.algorithms.ac import ActorCritic
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.algorithms.ac import ActorCritic
 from rllib.util.logger import Logger
 
 

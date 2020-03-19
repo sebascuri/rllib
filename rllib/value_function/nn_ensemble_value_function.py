@@ -1,8 +1,9 @@
 """Value and Q-Functions parametrized with ensembles of Neural Networks."""
 
+import torch.nn as nn
+
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from .nn_value_function import NNValueFunction, NNQFunction
-import torch.nn as nn
 
 
 class NNEnsembleValueFunction(AbstractValueFunction):

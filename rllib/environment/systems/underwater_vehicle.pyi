@@ -1,7 +1,5 @@
+from rllib.dataset.datatypes import Action, State
 from .ode_system import ODESystem
-from rllib.dataset.datatypes import Action, State, Array
-import numpy as np
-
 
 
 class UnderwaterVehicle(ODESystem):

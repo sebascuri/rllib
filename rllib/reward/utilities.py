@@ -8,7 +8,7 @@ def gaussian(x, value_at_1):
 
     Parameters
     ----------
-    x : The points at which to evaluate the Gaussian
+    x : The points at which to evaluate_agent the Gaussian
     value_at_1: The reward magnitude when x=1. Needs to be 0 < value_at_1 < 1.
     """
     if type(value_at_1) is not torch.Tensor:
@@ -27,7 +27,7 @@ def tolerance(x, lower, upper, margin=None):
 
     Parameters
     ----------
-    x : the value at which to evaluate the sparse reward.
+    x : the value at which to evaluate_agent the sparse reward.
     lower: The lower bound of the tolerance function.
     upper: The upper bound of the tolerance function.
     margin: A margin over which to smooth out the box-reward.

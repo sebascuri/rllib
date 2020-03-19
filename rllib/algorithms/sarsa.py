@@ -1,7 +1,9 @@
 """SARSA Algorithm."""
+import copy
+
 import torch
 import torch.nn as nn
-import copy
+
 from .q_learning import QLearningLoss
 
 

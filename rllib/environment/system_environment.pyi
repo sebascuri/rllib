@@ -1,7 +1,9 @@
-from .abstract_environment import AbstractEnvironment
-from rllib.dataset.datatypes import State, Action, Reward, Done
 from typing import Tuple, Callable, Union
+
+from rllib.dataset.datatypes import State, Action, Reward, Done
+from .abstract_environment import AbstractEnvironment
 from .systems.abstract_system import AbstractSystem
+
 
 class SystemEnvironment(AbstractEnvironment):
     reward: Callable[..., Reward]

@@ -1,8 +1,9 @@
-from rllib.agent import AbstractAgent
-from rllib.policy import AbstractPolicy
-from rllib.dataset.datatypes import Observation, TupleDistribution
-from rllib.util.gaussian_processes import ExactGP
 from torch import Tensor
+
+from rllib.agent import AbstractAgent
+from rllib.dataset.datatypes import Observation, TupleDistribution
+from rllib.policy import AbstractPolicy
+from rllib.util.gaussian_processes import ExactGP
 
 
 class GPUCBPolicy(AbstractPolicy):

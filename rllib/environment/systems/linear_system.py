@@ -2,6 +2,7 @@
 
 
 import numpy as np
+
 from .abstract_system import AbstractSystem
 
 

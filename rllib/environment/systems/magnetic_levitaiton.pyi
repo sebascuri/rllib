@@ -1,7 +1,5 @@
-from .ode_system import ODESystem
-from .linear_system import LinearSystem
 from rllib.dataset.datatypes import Action, State
-import numpy as np
+from .ode_system import ODESystem
 
 
 class MagneticLevitaiton(ODESystem):

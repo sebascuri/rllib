@@ -1,7 +1,7 @@
-from .abstract_environment import AbstractEnvironment
-import numpy as np
 from typing import List, Union, Callable, Tuple
+
 from rllib.dataset.datatypes import Action, Array
+from .abstract_environment import AbstractEnvironment
 
 
 class MDP(AbstractEnvironment):

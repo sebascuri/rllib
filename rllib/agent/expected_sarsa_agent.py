@@ -1,10 +1,10 @@
 """Implementation of Expected SARSA Agent."""
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.algorithms.esarsa import ESARSA
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
-from rllib.algorithms.esarsa import ESARSA
 
 
 class ExpectedSARSAAgent(AbstractAgent):

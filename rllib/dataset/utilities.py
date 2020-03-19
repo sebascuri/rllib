@@ -1,6 +1,6 @@
 """Utilities for dataset submodule."""
-import torch
 import numpy as np
+import torch
 
 
 def get_backend(array):

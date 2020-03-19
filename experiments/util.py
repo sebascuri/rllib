@@ -1,6 +1,8 @@
+import pickle
+
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
+
 from rllib.util.rollout import rollout_agent
 
 

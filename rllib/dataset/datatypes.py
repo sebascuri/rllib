@@ -1,11 +1,11 @@
 """Project Data-types."""
+from typing import NamedTuple, Union, Tuple
+
 import numpy as np
 import torch
-from torch import Tensor
-from typing import NamedTuple, Union, Tuple
-from torch.distributions import Categorical
 from gpytorch.distributions import Delta, MultivariateNormal
-
+from torch import Tensor
+from torch.distributions import Categorical
 
 Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]

@@ -1,8 +1,8 @@
-from .ode_system import ODESystem
 import numpy as np
-from rllib.dataset.datatypes import Action, State
-from .linear_system import LinearSystem
 from gym.envs.classic_control.rendering import Viewer
+
+from rllib.dataset.datatypes import Action, State
+from .ode_system import ODESystem
 
 
 class InvertedPendulum(ODESystem):

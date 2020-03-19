@@ -1,9 +1,10 @@
 """Bandit Environment."""
 
-from .abstract_environment import AbstractEnvironment
-from rllib.util.utilities import tensor_to_distribution
-from gym import spaces
 import numpy as np
+from gym import spaces
+
+from rllib.util.utilities import tensor_to_distribution
+from .abstract_environment import AbstractEnvironment
 
 
 class BanditEnvironment(AbstractEnvironment):

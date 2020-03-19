@@ -1,5 +1,5 @@
 """Implementation of DQNAgent Algorithms."""
-from rllib.agent import QLearningAgent
+from rllib.agent.q_learning_agent import QLearningAgent
 from rllib.algorithms.q_learning import DQN
 
 

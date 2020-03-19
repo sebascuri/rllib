@@ -1,8 +1,8 @@
 """Utilities for neural networks."""
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 def update_parameters(target_params, new_params, tau=1.0):

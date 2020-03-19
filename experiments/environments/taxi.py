@@ -1,14 +1,16 @@
 """Python Script Template."""
+import pickle
+
 import matplotlib.pyplot as plt
+import torch
+
 from rllib.agent import QLearningAgent
 from rllib.algorithms import SemiGQLearning
-from rllib.environment import GymEnvironment
-from rllib.value_function import NNQFunction
 from rllib.dataset import ExperienceReplay
+from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
 from rllib.util import rollout_agent
-import torch
-import pickle
+from rllib.value_function import NNQFunction
 
 ENVIRONMENT = 'Taxi-v2'
 NUM_EPISODES = 200

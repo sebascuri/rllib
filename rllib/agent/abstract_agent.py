@@ -1,8 +1,10 @@
 """Interface for agents."""
 
 from abc import ABCMeta
-import torch
+
 import numpy as np
+import torch
+
 from rllib.util.logger import Logger
 from rllib.util.utilities import tensor_to_distribution
 

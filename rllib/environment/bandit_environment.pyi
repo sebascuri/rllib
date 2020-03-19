@@ -1,8 +1,10 @@
-from .abstract_environment import AbstractEnvironment
-from rllib.reward import AbstractReward
+from typing import Tuple
+
 import numpy as np
-from typing import Callable, Tuple
+
 from rllib.dataset.datatypes import State, Action, Reward, Done
+from rllib.reward import AbstractReward
+from .abstract_environment import AbstractEnvironment
 
 
 class BanditEnvironment(AbstractEnvironment):

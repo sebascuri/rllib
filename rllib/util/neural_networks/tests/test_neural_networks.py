@@ -1,7 +1,8 @@
+import pytest
 import torch
 import torch.distributions
 import torch.testing
-import pytest
+
 from rllib.util.neural_networks import *
 from rllib.util.utilities import tensor_to_distribution
 

@@ -1,8 +1,9 @@
 """TD-L1 Learning algorithm."""
 
-from .abstract_td import AbstractTDLearning
 import torch
 from torch.distributions import Bernoulli
+
+from .abstract_td import AbstractTDLearning
 
 
 class TDL1(AbstractTDLearning):

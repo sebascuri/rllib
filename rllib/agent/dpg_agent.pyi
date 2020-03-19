@@ -1,11 +1,12 @@
-from .abstract_agent import AbstractAgent
-from rllib.value_function import AbstractQFunction
-from rllib.policy import AbstractPolicy
-from rllib.exploration_strategies import AbstractExplorationStrategy
-from rllib.dataset import ExperienceReplay
-from rllib.algorithms.dpg import DPG
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
+
+from rllib.algorithms.dpg import DPG
+from rllib.dataset import ExperienceReplay
+from rllib.exploration_strategies import AbstractExplorationStrategy
+from rllib.policy import AbstractPolicy
+from rllib.value_function import AbstractQFunction
+from .abstract_agent import AbstractAgent
 
 
 class DPGAgent(AbstractAgent):

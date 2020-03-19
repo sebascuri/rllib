@@ -1,8 +1,10 @@
-from .abstract_value_function import AbstractValueFunction, AbstractQFunction
-from torch import Tensor
-import torch.nn
 from typing import List, Union
+
+import torch.nn
+from torch import Tensor
+
 from rllib.util.neural_networks import DeterministicNN
+from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 
 
 class NNValueFunction(AbstractValueFunction):

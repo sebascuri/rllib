@@ -1,9 +1,10 @@
 """Implementation of a Transformation that clips attributes."""
 
-from .abstract_transform import AbstractTransform
 import numpy as np
 import torch
 import torch.nn as nn
+
+from .abstract_transform import AbstractTransform
 
 
 class Clipper(nn.Module):

@@ -1,6 +1,5 @@
-from .ode_system import ODESystem
-from .linear_system import LinearSystem
 from rllib.dataset.datatypes import Action, State
+from .ode_system import ODESystem
 
 
 class CartPole(ODESystem):

@@ -1,8 +1,8 @@
 """Implementation of a random agent."""
 
-from .abstract_agent import AbstractAgent
 from rllib.dataset import TrajectoryDataset
 from rllib.policy import RandomPolicy
+from .abstract_agent import AbstractAgent
 
 
 class RandomAgent(AbstractAgent):

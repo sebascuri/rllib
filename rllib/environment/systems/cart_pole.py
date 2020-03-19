@@ -1,8 +1,9 @@
 """Implementation of CarPole System."""
 
+import numpy as np
+
 from rllib.environment.systems.ode_system import ODESystem
 from rllib.util.utilities import get_backend
-import numpy as np
 
 
 class CartPole(ODESystem):

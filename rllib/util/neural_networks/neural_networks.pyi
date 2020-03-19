@@ -1,8 +1,10 @@
 """Implementation of different Neural Networks with pytorch."""
 
+from typing import List
+
 import torch.nn as nn
 from torch import Tensor
-from typing import List
+
 from rllib.dataset.datatypes import TupleDistribution
 
 

@@ -1,10 +1,13 @@
-from torch import Tensor
-import torch.nn as nn
-from torch.nn.modules.loss import _Loss
 from typing import NamedTuple, List
+
+import torch.nn as nn
+from torch import Tensor
+from torch.nn.modules.loss import _Loss
+
+from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
-from rllib.dataset.datatypes import Observation
+
 
 class REINFORCELoss(NamedTuple):
     actor_loss: Tensor

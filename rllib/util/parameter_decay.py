@@ -1,7 +1,8 @@
 """Implementation of a Parameter decay class."""
 
-import numpy as np
 from abc import ABCMeta, abstractmethod
+
+import numpy as np
 
 
 class ParameterDecay(object, metaclass=ABCMeta):

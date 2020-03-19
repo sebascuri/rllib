@@ -1,7 +1,8 @@
 """Wrapper for OpenAI-Gym Environments."""
 
-from .abstract_environment import AbstractEnvironment
 import gym
+
+from .abstract_environment import AbstractEnvironment
 
 
 class GymEnvironment(AbstractEnvironment):

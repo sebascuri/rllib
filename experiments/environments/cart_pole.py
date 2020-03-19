@@ -1,18 +1,17 @@
 """Python Script Template."""
-import matplotlib.pyplot as plt
-from rllib.agent import QLearningAgent
-from rllib.algorithms import DDQN
-from rllib.environment import GymEnvironment
-from rllib.value_function import NNQFunction
-from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
-from rllib.policy import EpsGreedy
-from rllib.util import rollout_agent
 import pickle
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn.functional as func
 
+from rllib.agent import QLearningAgent
+from rllib.algorithms import DDQN
+from rllib.dataset import PrioritizedExperienceReplay
+from rllib.environment import GymEnvironment
+from rllib.policy import EpsGreedy
+from rllib.util import rollout_agent
+from rllib.value_function import NNQFunction
 
 ENVIRONMENT = 'CartPole-v0'
 NUM_EPISODES = 50

@@ -1,9 +1,11 @@
 """Helper functions to conduct a rollout with policies or agents."""
 
+import pickle
+
 import torch
+
 from rllib.dataset.datatypes import Observation
 from rllib.util.utilities import tensor_to_distribution
-import pickle
 
 
 def _step(environment, state, action, render):

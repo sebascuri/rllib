@@ -1,10 +1,11 @@
+import numpy as np
+import torch
+
+from experiments.util import train, evaluate
 from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
-from experiments.util import train, evaluate
-import torch
-import numpy as np
 
 ENVIRONMENT = 'CartPole-v0'
 MAX_STEPS = 200

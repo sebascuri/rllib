@@ -1,6 +1,7 @@
-from .abstract_transform import AbstractTransform
-from rllib.dataset.datatypes import Observation
 import torch.nn as nn
+
+from rllib.dataset.datatypes import Observation
+from .abstract_transform import AbstractTransform
 
 
 class MeanFunction(AbstractTransform):

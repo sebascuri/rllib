@@ -1,11 +1,12 @@
 """Utilities for the rllib library."""
 
+import numpy as np
 import scipy.signal
 import torch
 import torch.distributions
-from torch.distributions import Categorical
 from gpytorch.distributions import Delta, MultivariateNormal
-import numpy as np
+from torch.distributions import Categorical
+
 from rllib.dataset.utilities import get_backend
 
 

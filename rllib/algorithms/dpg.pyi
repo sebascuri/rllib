@@ -1,10 +1,11 @@
-from torch import Tensor
 import torch.nn as nn
+from torch import Tensor
 from torch.nn.modules.loss import _Loss
+
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
-from .q_learning import QLearningLoss
 from .ac import PGLoss
+from .q_learning import QLearningLoss
 
 
 class DPG(nn.Module):

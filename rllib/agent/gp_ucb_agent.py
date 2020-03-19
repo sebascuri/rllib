@@ -2,6 +2,7 @@
 
 import gpytorch
 import torch
+
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
 

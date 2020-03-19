@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
+
 from .utilities import inverse_softplus
 
 __all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',

@@ -1,7 +1,9 @@
-from torch import Tensor
-import torch.nn as nn
-from torch.nn import Parameter
 from typing import Iterator
+
+import torch.nn as nn
+from torch import Tensor
+from torch.nn import Parameter
+
 
 def update_parameters(target_params: Iterator[Parameter],
                       new_params: Iterator[Parameter], tau: float = 1.0

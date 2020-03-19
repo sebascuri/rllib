@@ -1,12 +1,13 @@
-from rllib.agent import ExpectedSARSAAgent
-from rllib.value_function import NNQFunction
-from rllib.policy import EpsGreedy
-from rllib.util.parameter_decay import ExponentialDecay
-from rllib.environment import GymEnvironment
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
+
 from experiments.util import train, evaluate
+from rllib.agent import ExpectedSARSAAgent
+from rllib.environment import GymEnvironment
+from rllib.policy import EpsGreedy
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.value_function import NNQFunction
 
 ENVIRONMENT = 'CartPole-v0'
 

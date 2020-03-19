@@ -1,7 +1,7 @@
-from rllib.environment import EasyGridWorld
-from rllib.policy import RandomPolicy
 from rllib.algorithms import iterative_policy_evaluation, policy_iteration, \
     value_iteration, linear_system_policy_evaluation
+from rllib.environment import EasyGridWorld
+from rllib.policy import RandomPolicy
 
 environment = EasyGridWorld()
 GAMMA = 0.9

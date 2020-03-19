@@ -1,12 +1,13 @@
-from .abstract_agent import AbstractAgent
-from rllib.value_function import AbstractValueFunction
-from rllib.policy import AbstractPolicy
-from rllib.dataset.datatypes import Observation
-from rllib.algorithms.ac import ActorCritic
+from typing import List
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import List
+
+from rllib.algorithms.ac import ActorCritic
+from rllib.dataset.datatypes import Observation
+from rllib.policy import AbstractPolicy
+from rllib.value_function import AbstractValueFunction
+from .abstract_agent import AbstractAgent
 
 
 class ActorCriticAgent(AbstractAgent):

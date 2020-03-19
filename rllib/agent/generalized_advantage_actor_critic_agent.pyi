@@ -1,9 +1,10 @@
-from rllib.algorithms.gaac import GAAC
-from .actor_critic_agent import ActorCriticAgent
-from rllib.value_function import AbstractValueFunction
-from rllib.policy import AbstractPolicy
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
+
+from rllib.algorithms.gaac import GAAC
+from rllib.policy import AbstractPolicy
+from rllib.value_function import AbstractValueFunction
+from .actor_critic_agent import ActorCriticAgent
 
 
 class GAACAgent(ActorCriticAgent):

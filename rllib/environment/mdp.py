@@ -1,10 +1,11 @@
 """Interface for Markov Decision Processes."""
 
 
-from rllib.environment.abstract_environment import AbstractEnvironment
-from gym import spaces
 import torch
+from gym import spaces
 from torch.distributions import Categorical
+
+from rllib.environment.abstract_environment import AbstractEnvironment
 
 
 class MDP(AbstractEnvironment):

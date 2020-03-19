@@ -1,9 +1,11 @@
 """Python Script Template."""
+import itertools
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import itertools
-import matplotlib.pyplot as plt
-from rllib.util import moving_average_filter
+
+from rllib.util.utilities import moving_average_filter
 
 __all__ = ['combinations', 'linearly_spaced_combinations', 'plot_combinations_as_grid',
            'plot_learning_losses', 'plot_on_grid', 'plot_values_and_policy']

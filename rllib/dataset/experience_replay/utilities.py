@@ -1,7 +1,8 @@
 """Utilities for experience replay submodule."""
 
-from ..datatypes import Observation
 import torch
+
+from ..datatypes import Observation
 
 
 def init_er_from_er(target_er, source_er):

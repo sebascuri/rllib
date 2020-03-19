@@ -1,8 +1,9 @@
-import numpy as np
-import torch
 from typing import List, TypeVar, Union, Callable
-from .datatypes import Array
+
+import numpy as np
 import torch.__spec__ as torch_mod
+
+from .datatypes import Array
 
 T = TypeVar('T')
 

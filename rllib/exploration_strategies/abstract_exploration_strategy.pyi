@@ -1,8 +1,10 @@
 from abc import ABCMeta, abstractmethod
-import numpy as np
-from rllib.util import ParameterDecay
-from rllib.dataset.datatypes import State
 from typing import Union
+
+import numpy as np
+
+from rllib.dataset.datatypes import State
+from rllib.util import ParameterDecay
 
 
 class AbstractExplorationStrategy(object, metaclass=ABCMeta):

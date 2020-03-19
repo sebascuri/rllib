@@ -1,7 +1,10 @@
-from rllib.dataset.datatypes import Observation, Distribution, Array, Gaussian, TupleDistribution
-from rllib.value_function import AbstractValueFunction
 from typing import Callable, Tuple, List
+
 from torch import Tensor
+
+from rllib.dataset.datatypes import Observation, Distribution, Array, Gaussian, \
+    TupleDistribution
+from rllib.value_function import AbstractValueFunction
 
 
 def mellow_max(values: Array, omega: float = 1.) -> Array: ...

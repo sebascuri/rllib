@@ -1,8 +1,10 @@
+from typing import List, Tuple
+
 from numpy import ndarray
+from torch.utils import data
+
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import AbstractTransform
-from typing import List, Tuple
-from torch.utils import data
 
 
 class ExperienceReplay(data.Dataset):

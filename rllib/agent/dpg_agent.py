@@ -1,9 +1,10 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
+import numpy as np
+import torch
+
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.dpg import DPG
 from rllib.util.logger import Logger
-import torch
-import numpy as np
 
 
 class DPGAgent(AbstractAgent):

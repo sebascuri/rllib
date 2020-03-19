@@ -1,9 +1,10 @@
 """Value Iteration Algorithm."""
 
-from .utilities import init_value_function
-from rllib.policy import TabularPolicy
-import torch
 import numpy as np
+import torch
+
+from rllib.policy import TabularPolicy
+from .utilities import init_value_function
 
 
 def value_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):

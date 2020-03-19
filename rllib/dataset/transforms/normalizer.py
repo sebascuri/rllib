@@ -1,10 +1,11 @@
 """Implementation of a Transformation that normalizes attributes."""
 
-from .abstract_transform import AbstractTransform
-from rllib.dataset.transforms.utilities import normalize, denormalize, \
-    update_var, update_mean
 import torch
 import torch.nn as nn
+
+from rllib.dataset.transforms.utilities import normalize, denormalize, \
+    update_var, update_mean
+from .abstract_transform import AbstractTransform
 
 
 class Normalizer(nn.Module):

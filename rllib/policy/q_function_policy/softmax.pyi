@@ -1,7 +1,7 @@
+from rllib.util import ParameterDecay
+from rllib.value_function import AbstractQFunction
 from .abstract_q_function_policy import AbstractQFunctionPolicy
 from ..abstract_policy import AbstractPolicy
-from rllib.value_function import AbstractQFunction
-from rllib.util import ParameterDecay
 
 
 class SoftMax(AbstractQFunctionPolicy):

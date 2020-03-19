@@ -1,9 +1,10 @@
 """SoftMax Policy."""
 
+import torch
+
+from rllib.util.utilities import tensor_to_distribution
 from .abstract_q_function_policy import AbstractQFunctionPolicy
 from ..random_policy import RandomPolicy
-from rllib.util.utilities import tensor_to_distribution
-import torch
 
 
 class SoftMax(AbstractQFunctionPolicy):

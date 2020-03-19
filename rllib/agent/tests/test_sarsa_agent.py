@@ -1,11 +1,12 @@
 import pytest
-from rllib.agent import SARSAAgent, ExpectedSARSAAgent
-from rllib.util import rollout_agent
-from rllib.value_function import NNQFunction, TabularQFunction
-from rllib.policy import EpsGreedy, SoftMax, MellowMax
-from rllib.util.parameter_decay import ExponentialDecay
-from rllib.environment import GymEnvironment, EasyGridWorld
 import torch.optim
+
+from rllib.agent import SARSAAgent, ExpectedSARSAAgent
+from rllib.environment import GymEnvironment, EasyGridWorld
+from rllib.policy import EpsGreedy, SoftMax, MellowMax
+from rllib.util import rollout_agent
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.value_function import NNQFunction, TabularQFunction
 
 NUM_EPISODES = 10
 MAX_STEPS = 25

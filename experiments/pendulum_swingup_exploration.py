@@ -1,24 +1,25 @@
-from rllib.util.rollout import rollout_model, rollout_policy
-from rllib.util.plotting import plot_on_grid, plot_learning_losses, \
-    plot_values_and_policy
-from rllib.value_function import NNValueFunction
-from rllib.policy import NNPolicy
-from rllib.model.pendulum_model import PendulumModel
-from rllib.reward.pendulum_reward import PendulumReward
-from rllib.environment.system_environment import SystemEnvironment
-from rllib.environment.systems import InvertedPendulum
+import math
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.distributions
+import torch.jit
+import torch.nn as nn
+import torch.optim as optim
+
+from rllib.algorithms.control.mppo import MBMPPO, train_mppo
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.algorithms.control.mppo import MBMPPO, train_mppo
-from gpytorch.distributions import Delta
-import torch
-import torch.nn as nn
-import torch.jit
-import torch.distributions
-import torch.optim as optim
-import numpy as np
-import math
-import matplotlib.pyplot as plt
+from rllib.environment.system_environment import SystemEnvironment
+from rllib.environment.systems import InvertedPendulum
+from rllib.model.pendulum_model import PendulumModel
+from rllib.policy import NNPolicy
+from rllib.reward.pendulum_reward import PendulumReward
+from rllib.util.plotting import plot_on_grid, plot_learning_losses, \
+    plot_values_and_policy
+from rllib.util.rollout import rollout_model, rollout_policy
+from rllib.value_function import NNValueFunction
 
 torch.manual_seed(0)
 np.random.seed(0)

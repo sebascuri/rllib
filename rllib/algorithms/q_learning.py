@@ -1,11 +1,12 @@
 """Q Learning Algorithm."""
 
-import torch
-import torch.nn as nn
 import copy
 from collections import namedtuple
-from rllib.policy.q_function_policy import SoftMax
 
+import torch
+import torch.nn as nn
+
+from rllib.policy.q_function_policy import SoftMax
 
 QLearningLoss = namedtuple('QLearningLoss', ['loss', 'td_error'])
 

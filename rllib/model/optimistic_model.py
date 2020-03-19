@@ -1,8 +1,9 @@
 """Optimistic Model Implementation."""
 
-from .abstract_model import AbstractModel
-import torch
 import gpytorch
+import torch
+
+from .abstract_model import AbstractModel
 
 
 class OptimisticModel(AbstractModel):

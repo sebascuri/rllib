@@ -1,10 +1,10 @@
 """Exact GP Model."""
 import gpytorch
-from torch import Tensor
-from gpytorch.likelihoods import Likelihood
-from gpytorch.means import Mean
-from gpytorch.kernels import Kernel
 from gpytorch.distributions import MultivariateNormal
+from gpytorch.kernels import Kernel
+from gpytorch.means import Mean
+from torch import Tensor
+
 
 class ApproximateGPModel(gpytorch.models.ApproximateGP):
     """Exact GP Model."""

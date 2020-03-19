@@ -1,8 +1,9 @@
 """Interface for reward models."""
 
-from .abstract_reward import AbstractReward
-import torch
 import gpytorch
+import torch
+
+from .abstract_reward import AbstractReward
 
 
 class GPBanditReward(AbstractReward):

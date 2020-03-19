@@ -1,15 +1,17 @@
 """Python Script Template."""
 
+from typing import List, Tuple
+from typing import NamedTuple
+
 import torch.nn as nn
 from torch import Tensor
-from typing import NamedTuple
+from torch.distributions import Distribution
+from torch.optim.optimizer import Optimizer
+
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.value_function import AbstractValueFunction
 from rllib.reward import AbstractReward
-from typing import List, Tuple
-from torch.optim.optimizer import Optimizer
-from torch.distributions import Distribution
+from rllib.value_function import AbstractValueFunction
 
 
 class MPOLosses(NamedTuple):

@@ -1,9 +1,10 @@
-from .abstract_system import AbstractSystem
-from rllib.dataset.datatypes import Action, State
-from .linear_system import LinearSystem
-
 from typing import Callable, Type
+
 from scipy.integrate import OdeSolver, RK45
+
+from rllib.dataset.datatypes import Action, State
+from .abstract_system import AbstractSystem
+from .linear_system import LinearSystem
 
 
 class ODESystem(AbstractSystem):

@@ -1,8 +1,9 @@
+import pytest
+from torch.distributions import MultivariateNormal, Categorical
+
 from rllib.policy import RandomPolicy
 from rllib.util.neural_networks import random_tensor
 from rllib.util.utilities import tensor_to_distribution
-from torch.distributions import MultivariateNormal, Categorical
-import pytest
 
 
 @pytest.fixture(params=[True, False])

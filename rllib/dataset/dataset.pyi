@@ -1,7 +1,9 @@
-from torch.utils import data
-from numpy import ndarray
-from .datatypes import Observation
 from typing import List, Union
+
+from numpy import ndarray
+from torch.utils import data
+
+from .datatypes import Observation
 from .transforms import AbstractTransform
 
 

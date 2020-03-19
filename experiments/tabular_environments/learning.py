@@ -1,14 +1,13 @@
-from rllib.environment import EasyGridWorld
-from rllib.policy import RandomPolicy
-from rllib.value_function import TabularValueFunction
-from rllib.agent import TDAgent, MCAgent, OnLineTDLearning
-from rllib.algorithms import iterative_policy_evaluation
-from rllib.util import rollout_agent
-
-import torch
+import matplotlib.pyplot as plt
 import torch.nn.functional
 import torch.optim
-import matplotlib.pyplot as plt
+
+from rllib.agent import TDAgent, MCAgent, OnLineTDLearning
+from rllib.algorithms import iterative_policy_evaluation
+from rllib.environment import EasyGridWorld
+from rllib.policy import RandomPolicy
+from rllib.util import rollout_agent
+from rllib.value_function import TabularValueFunction
 
 
 def evaluate_episode(values, logs, true_values):

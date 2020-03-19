@@ -1,7 +1,8 @@
 """Pitch Control Implementation."""
 
-from rllib.environment.systems.ode_system import ODESystem
 import numpy as np
+
+from rllib.environment.systems.ode_system import ODESystem
 
 
 class PitchControl(ODESystem):

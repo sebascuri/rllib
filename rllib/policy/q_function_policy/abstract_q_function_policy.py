@@ -1,8 +1,9 @@
 """Interface for Q-Function derived policies."""
 
 from abc import ABCMeta
-from ..abstract_policy import AbstractPolicy
+
 from rllib.util.parameter_decay import Constant
+from ..abstract_policy import AbstractPolicy
 
 
 class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):

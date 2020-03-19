@@ -1,9 +1,11 @@
 """Generalized Actor-Critic Algorithm."""
+from torch.nn.modules.loss import _Loss
+
+from rllib.policy import AbstractPolicy
+from rllib.value_function import AbstractValueFunction
 from .ac import ActorCritic
 from .gae import GAE
-from rllib.value_function import AbstractValueFunction
-from rllib.policy import AbstractPolicy
-from torch.nn.modules.loss import _Loss
+
 
 class GAAC(ActorCritic):
     gae: GAE

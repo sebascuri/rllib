@@ -1,9 +1,10 @@
 """Implementation of an Experience Replay Buffer."""
 
 import numpy as np
-from rllib.dataset.datatypes import Observation
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
+
+from rllib.dataset.datatypes import Observation
 
 
 class ExperienceReplay(data.Dataset):

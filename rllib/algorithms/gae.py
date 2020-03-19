@@ -1,6 +1,7 @@
 """Generalized Advantage Estimation Algorithm."""
 
 import torch.nn as nn
+
 from rllib.util import discount_cumsum
 
 
@@ -21,7 +22,7 @@ class GAE(nn.Module):
     Parameters
     ----------
     value_function: AbstractValueFunction
-        value function to reduce evaluate variance the gradient.
+        value function to reduce evaluate_agent variance the gradient.
     lambda_: float
         Eligibility trace parameter.
     gamma: float

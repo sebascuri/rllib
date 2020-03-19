@@ -2,6 +2,7 @@
 import numpy as np
 import torch
 from torch.utils import data
+
 from rllib.dataset.datatypes import Observation
 from .utilities import stack_list_of_tuples, map_and_cast
 

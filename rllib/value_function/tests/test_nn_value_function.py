@@ -1,9 +1,10 @@
 import pytest
 import torch
 import torch.testing
+
+from rllib.util.neural_networks import random_tensor
 from rllib.value_function import NNValueFunction, NNQFunction
 from rllib.value_function import TabularValueFunction, TabularQFunction
-from rllib.util.neural_networks import random_tensor
 
 
 @pytest.fixture(params=[False, True])

@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from typing import Dict, List
-import numpy as np
+
 from rllib.dataset.datatypes import Observation, State, Action
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger

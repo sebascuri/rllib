@@ -1,10 +1,10 @@
 """Implementation of REINFORCE Algorithms."""
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.algorithms.reinforce import REINFORCE
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
-from rllib.algorithms.reinforce import REINFORCE
 
 
 class REINFORCEAgent(AbstractAgent):
@@ -60,7 +60,7 @@ class REINFORCEAgent(AbstractAgent):
         super().end_episode()
 
     def _train(self):
-        """See `AbstractAgent.train'."""
+        """See `AbstractAgent.train_agent'."""
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]
 

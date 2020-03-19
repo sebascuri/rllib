@@ -1,13 +1,14 @@
 import pytest
+import torch.optim
+
 from rllib.agent import DPGAgent, TD3Agent
-from rllib.util import rollout_agent
-from rllib.value_function import NNQFunction
 from rllib.dataset import PrioritizedExperienceReplay
+from rllib.environment import GymEnvironment
 from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
-from rllib.environment import GymEnvironment
+from rllib.util import rollout_agent
 from rllib.util.parameter_decay import ExponentialDecay
-import torch.optim
+from rllib.value_function import NNQFunction
 
 NUM_EPISODES = 10
 MAX_STEPS = 25

@@ -1,11 +1,12 @@
 """Implementation of SARSA Algorithms."""
 
+import torch
+
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.algorithms.sarsa import SARSA
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.logger import Logger
-from rllib.algorithms.sarsa import SARSA
-import torch
 
 
 class SARSAAgent(AbstractAgent):

@@ -1,8 +1,9 @@
 """Model for quadratic reward."""
 
-from .abstract_reward import AbstractReward
-from rllib.util.neural_networks import torch_quadratic
 import torch
+
+from rllib.util.neural_networks import torch_quadratic
+from .abstract_reward import AbstractReward
 
 
 class QuadraticReward(AbstractReward):

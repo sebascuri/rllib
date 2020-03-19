@@ -1,7 +1,8 @@
 """Interface for Grid World."""
 
-from .mdp import MDP
 import numpy as np
+
+from .mdp import MDP
 
 
 class EasyGridWorld(MDP):

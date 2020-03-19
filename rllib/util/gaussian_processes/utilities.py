@@ -1,8 +1,8 @@
 """Utilities for GP models."""
 
-import torch
 import gpytorch
 import matplotlib.pyplot as plt
+import torch
 
 
 def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> None:

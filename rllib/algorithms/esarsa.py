@@ -1,9 +1,11 @@
 """Expected SARSA Algorithm."""
 
+import copy
+
 import torch
 import torch.nn as nn
+
 from rllib.util.utilities import integrate, tensor_to_distribution
-import copy
 from .q_learning import QLearningLoss
 
 

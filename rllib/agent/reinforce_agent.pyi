@@ -1,11 +1,12 @@
-from .abstract_agent import AbstractAgent
-from rllib.value_function import AbstractQFunction, AbstractValueFunction
-from rllib.policy import AbstractPolicy
-from rllib.dataset.datatypes import Observation, State, Action, Reward, Done
-from torch import Tensor
+from typing import List
+
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import List
+
+from rllib.dataset.datatypes import Observation
+from rllib.policy import AbstractPolicy
+from rllib.value_function import AbstractQFunction, AbstractValueFunction
+from .abstract_agent import AbstractAgent
 
 
 class REINFORCEAgent(AbstractAgent):

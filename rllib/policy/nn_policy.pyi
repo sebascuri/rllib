@@ -1,8 +1,11 @@
-from .abstract_policy import AbstractPolicy
-from rllib.dataset.datatypes import TupleDistribution
 from typing import List, Union
-from torch import Tensor
+
 import torch
+from torch import Tensor
+
+from rllib.dataset.datatypes import TupleDistribution
+from .abstract_policy import AbstractPolicy
+
 
 class NNPolicy(AbstractPolicy):
     input_transform: torch.nn.Module

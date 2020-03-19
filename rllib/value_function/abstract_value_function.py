@@ -1,9 +1,11 @@
 """Interface for value and q-functions."""
 
 from abc import ABCMeta
-from rllib.util.utilities import integrate
-from rllib.util.neural_networks import update_parameters
+
 import torch.nn as nn
+
+from rllib.util.neural_networks import update_parameters
+from rllib.util.utilities import integrate
 
 __all__ = ['AbstractValueFunction', 'AbstractQFunction']
 

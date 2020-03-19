@@ -1,7 +1,9 @@
-from .abstract_environment import AbstractEnvironment
-import gym
 from typing import Tuple
+
+import gym
+
 from rllib.dataset.datatypes import State, Action
+from .abstract_environment import AbstractEnvironment
 
 
 class GymEnvironment(AbstractEnvironment):

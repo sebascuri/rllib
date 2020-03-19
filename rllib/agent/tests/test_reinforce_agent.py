@@ -1,11 +1,12 @@
-from rllib.agent import REINFORCEAgent
-from rllib.environment import GymEnvironment
-from rllib.util.rollout import rollout_agent
-from rllib.policy import NNPolicy
-from rllib.value_function import NNValueFunction
-import torch
 import numpy as np
 import pytest
+import torch
+
+from rllib.agent import REINFORCEAgent
+from rllib.environment import GymEnvironment
+from rllib.policy import NNPolicy
+from rllib.util.rollout import rollout_agent
+from rllib.value_function import NNValueFunction
 
 MAX_STEPS = 25
 NUM_EPISODES = 25

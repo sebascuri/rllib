@@ -1,10 +1,12 @@
 """Utilities for environment module."""
 
-from .mdp import MDP
+from itertools import product
+
 import numpy as np
 import torch
-from itertools import product
+
 from rllib.util.utilities import tensor_to_distribution
+from .mdp import MDP
 
 
 def gym2mdp(environment):

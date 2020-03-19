@@ -1,7 +1,7 @@
-from .abstract_transform import AbstractTransform
-from rllib.dataset.datatypes import Observation, Array
-import numpy as np
 import torch.nn as nn
+
+from rllib.dataset.datatypes import Observation, Array
+from .abstract_transform import AbstractTransform
 
 
 class Scaler(nn.Module):

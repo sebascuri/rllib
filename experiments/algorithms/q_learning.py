@@ -1,15 +1,14 @@
-from rllib.agent import QLearningAgent, DQNAgent, DDQNAgent
-from rllib.value_function import NNQFunction, TabularQFunction
-from rllib.dataset import ExperienceReplay
-from rllib.policy import EpsGreedy, SoftMax, MellowMax
-from rllib.util.parameter_decay import ExponentialDecay
-from rllib.environment import GymEnvironment
-from experiments.util import train, evaluate
-
 import numpy as np
 import torch.nn.functional as func
 import torch.optim
-import pickle
+
+from experiments.util import train, evaluate
+from rllib.agent import DDQNAgent
+from rllib.dataset import ExperienceReplay
+from rllib.environment import GymEnvironment
+from rllib.policy import EpsGreedy
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.value_function import NNQFunction
 
 # ENVIRONMENT = 'NChain-v0'
 ENVIRONMENT = 'CartPole-v0'

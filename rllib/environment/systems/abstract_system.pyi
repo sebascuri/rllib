@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
+
 from gym import spaces
-import numpy as np
+
 from rllib.dataset.datatypes import State, Action
 
 

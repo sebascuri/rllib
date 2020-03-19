@@ -1,11 +1,12 @@
-from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent, ExpectedActorCriticAgent
-from rllib.environment import GymEnvironment
-from rllib.util.rollout import rollout_agent
-from rllib.policy import NNPolicy
-from rllib.value_function import NNValueFunction, NNQFunction
-import torch
 import numpy as np
 import pytest
+import torch
+
+from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent, ExpectedActorCriticAgent
+from rllib.environment import GymEnvironment
+from rllib.policy import NNPolicy
+from rllib.util.rollout import rollout_agent
+from rllib.value_function import NNValueFunction, NNQFunction
 
 MAX_STEPS = 25
 NUM_EPISODES = 25

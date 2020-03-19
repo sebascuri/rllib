@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
-from gym.spaces import Space
 from typing import Tuple
-import numpy as np
+
+from gym.spaces import Space
+
 from rllib.dataset.datatypes import State, Action, Reward, Done
 
 

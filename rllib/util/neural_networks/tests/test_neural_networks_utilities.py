@@ -1,10 +1,10 @@
-import torch
-import torch.testing
-import torch.functional
-import torch.nn as nn
 import pytest
-from rllib.util.neural_networks.utilities import *
+import torch
+import torch.functional
+import torch.testing
+
 from rllib.util.neural_networks import DeterministicNN
+from rllib.util.neural_networks.utilities import *
 
 
 def test_inverse_softplus():

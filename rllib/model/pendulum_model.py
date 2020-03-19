@@ -1,7 +1,8 @@
 """Implementation of a Pendulum Model."""
-from .abstract_model import AbstractModel
 import torch
 from torch.distributions import MultivariateNormal
+
+from .abstract_model import AbstractModel
 
 
 class PendulumModel(AbstractModel):

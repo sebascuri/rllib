@@ -1,16 +1,11 @@
-from rllib.algorithms.td_learning import TD, TDC, GTD, GTD2, TDL1, TDLinf
-from rllib.value_function import NNValueFunction
-from rllib.exploration_strategies import EpsGreedy
-from rllib.environment import GymEnvironment
-from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay, L1Sampler, \
-    LinfSampler, init_er_from_er, init_er_from_environment, init_er_from_rollout
-
-import torch
-import torch.nn.functional as func
 import pickle
-import matplotlib.pyplot as plt
-import copy
 
+import matplotlib.pyplot as plt
+
+from rllib.algorithms.td_learning import GTD2
+from rllib.dataset import ExperienceReplay, init_er_from_rollout
+from rllib.environment import GymEnvironment
+from rllib.value_function import NNValueFunction
 
 FILE = '../environments/TaxiEnv_GQLearningAgent_199.pkl'
 ENVIRONMENT = 'Taxi-v2'

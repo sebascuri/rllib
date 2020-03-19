@@ -1,11 +1,12 @@
 """Policy iteration algorithm."""
 
-from rllib.policy import TabularPolicy
-import torch
 import numpy as np
+import torch
 import torch.testing
-from .utilities import init_value_function
+
+from rllib.policy import TabularPolicy
 from .policy_evaluation import iterative_policy_evaluation
+from .utilities import init_value_function
 
 
 def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):

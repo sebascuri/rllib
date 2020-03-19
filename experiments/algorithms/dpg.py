@@ -1,16 +1,15 @@
-from rllib.environment import GymEnvironment
-from rllib.policy import FelixPolicy
-from rllib.value_function import NNQFunction
-from rllib.dataset import ExperienceReplay
-from rllib.exploration_strategies import GaussianNoise
-from rllib.agent import DPGAgent, TD3Agent
-from rllib.util.parameter_decay import ExponentialDecay
-from experiments.util import train, evaluate
-
-import torch.nn.functional as func
 import numpy as np
+import torch.nn.functional as func
 import torch.optim
-import pickle
+
+from experiments.util import train, evaluate
+from rllib.agent import TD3Agent
+from rllib.dataset import ExperienceReplay
+from rllib.environment import GymEnvironment
+from rllib.exploration_strategies import GaussianNoise
+from rllib.policy import FelixPolicy
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.value_function import NNQFunction
 
 ENVIRONMENT = ['MountainCarContinuous-v0', 'Pendulum-v0'][0]
 NUM_EPISODES = 25

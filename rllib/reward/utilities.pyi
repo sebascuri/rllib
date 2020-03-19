@@ -1,5 +1,6 @@
-from torch import Tensor
 from typing import Union
+
+from torch import Tensor
 
 Input = Union[float, Tensor]
 

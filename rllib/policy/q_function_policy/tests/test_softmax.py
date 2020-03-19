@@ -1,9 +1,10 @@
-from rllib.policy import SoftMax
-from rllib.value_function import NNQFunction
-from rllib.util.utilities import tensor_to_distribution
+import pytest
 import torch
 import torch.testing
-import pytest
+
+from rllib.policy import SoftMax
+from rllib.util.utilities import tensor_to_distribution
+from rllib.value_function import NNQFunction
 
 
 @pytest.fixture(params=[0.1, 1.0])

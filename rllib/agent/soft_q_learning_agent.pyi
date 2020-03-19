@@ -1,13 +1,15 @@
 """Implementation of DQNAgent Algorithms."""
-from rllib.agent import QLearningAgent
-from rllib.algorithms.q_learning import SoftQLearning
-from rllib.policy import SoftMax
-from rllib.value_function import AbstractQFunction
-from rllib.dataset import ExperienceReplay
-from rllib.util.parameter_decay import ParameterDecay
+from typing import Union
+
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
-from typing import Union
+
+from rllib.agent import QLearningAgent
+from rllib.algorithms.q_learning import SoftQLearning
+from rllib.dataset import ExperienceReplay
+from rllib.policy import SoftMax
+from rllib.util.parameter_decay import ParameterDecay
+from rllib.value_function import AbstractQFunction
 
 
 class SoftQLearningAgent(QLearningAgent):

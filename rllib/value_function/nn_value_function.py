@@ -2,9 +2,10 @@
 
 import torch
 import torch.nn as nn
-from .abstract_value_function import AbstractValueFunction, AbstractQFunction
+
 from rllib.util.neural_networks import DeterministicNN
 from rllib.util.neural_networks import one_hot_encode
+from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 
 
 class NNValueFunction(AbstractValueFunction):

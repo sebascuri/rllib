@@ -1,7 +1,7 @@
 """Random policy implementation."""
 
-from .abstract_policy import AbstractPolicy
 from rllib.util.neural_networks import get_batch_size
+from .abstract_policy import AbstractPolicy
 
 
 class RandomPolicy(AbstractPolicy):

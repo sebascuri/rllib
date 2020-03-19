@@ -1,16 +1,18 @@
 """Mountain Car Solution."""
-import matplotlib.pyplot as plt
-from rllib.util import rollout_agent
-from rllib.environment import GymEnvironment
-from rllib.policy import FelixPolicy
-from rllib.value_function import NNQFunction
-from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
-from rllib.exploration_strategies import GaussianNoise
-from rllib.agent import TD3Agent
-import torch.nn.functional as func
-import numpy as np
-import torch.optim
 import pickle
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch.nn.functional as func
+import torch.optim
+
+from rllib.agent import TD3Agent
+from rllib.dataset import PrioritizedExperienceReplay
+from rllib.environment import GymEnvironment
+from rllib.exploration_strategies import GaussianNoise
+from rllib.policy import FelixPolicy
+from rllib.util import rollout_agent
+from rllib.value_function import NNQFunction
 
 ENVIRONMENT = 'MountainCarContinuous-v0'
 NUM_EPISODES = 25
