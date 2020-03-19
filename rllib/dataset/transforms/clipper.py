@@ -3,9 +3,10 @@
 from .abstract_transform import AbstractTransform
 import numpy as np
 import torch
+import torch.nn as nn
 
 
-class Clipper(object):
+class Clipper(nn.Module):
     """Clipper Class."""
 
     def __init__(self, min_val, max_val):
@@ -13,9 +14,9 @@ class Clipper(object):
         self._min = min_val
         self._max = max_val
 
-    def __call__(self, array):
+    def forward(self, array):
         """See `AbstractTransform.__call__'."""
-        if type(array) is torch.Tensor:
+        if isinstance(array, torch.Tensor):
             return torch.clamp(array, self._min, self._max)
         else:
             return np.clip(array, self._min, self._max)
@@ -48,7 +49,7 @@ class RewardClipper(AbstractTransform):
         super().__init__()
         self._clipper = Clipper(min_reward, max_reward)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation._replace(reward=self._clipper(observation.reward))
 
@@ -80,7 +81,7 @@ class ActionClipper(AbstractTransform):
         super().__init__()
         self._clipper = Clipper(min_action, max_action)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation._replace(action=self._clipper(observation.action))
 

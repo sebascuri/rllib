@@ -1,13 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from rllib.dataset.datatypes import Observation
+import torch.nn as nn
 
 
-class AbstractTransform(object, metaclass=ABCMeta):
+class AbstractTransform(nn.Module, metaclass=ABCMeta):
 
-    @abstractmethod
-    def __call__(self, observation: Observation) -> Observation: ...
+    def forward(self, *observation: Observation, **kwargs) -> Observation: ...
 
-    @abstractmethod
     def inverse(self, observation: Observation) -> Observation: ...
 
     def update(self, observation: Observation) -> None: ...

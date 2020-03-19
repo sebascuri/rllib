@@ -1,58 +1,53 @@
 from rllib.dataset.transforms import *
 from rllib.dataset.datatypes import Observation
-from rllib.dataset.utilities import stack_list_of_tuples, get_backend
+from rllib.dataset.utilities import stack_list_of_tuples
 import pytest
-import numpy as np
 import torch
+import torch.testing
 
 
-def _trajectory(backend):
+def get_observation(reward=None):
+    return Observation(state=torch.randn(4),
+                       action=torch.randn(4),
+                       reward=reward if reward else torch.randn(1),
+                       next_state=torch.randn(4),
+                       done=False).to_torch()
+
+
+@pytest.fixture
+def trajectory():
     t = []
     for reward in [3., -2., 0.5]:
-        t.append(get_observation(backend, reward))
+        t.append(get_observation(reward))
     return t
 
 
-def get_observation(backend, reward=None):
-    if backend is np:
-        rand = np.random.randn
-    else:
-        rand = torch.randn
-
-    return Observation(state=rand(4),
-                       action=rand(4),
-                       reward=reward if reward else rand(1),
-                       next_state=rand(4),
-                       done=False)
-
-
-@pytest.fixture(params=[np, torch])
-def trajectory(request):
-    return _trajectory(request.param)
+class MeanModel(torch.nn.Module):
+    def forward(self, state, action):
+        return 2 * state + action
 
 
 class TestMeanFunction(object):
     def test_call(self, trajectory):
-        transformer = MeanFunction(lambda state, action: 2 * state + action)
+        transformer = MeanFunction(MeanModel())
         for observation in trajectory:
-            backend = get_backend(observation.state)
             transformed_observation = transformer(observation)
-            backend.testing.assert_allclose(transformed_observation.state,
+            torch.testing.assert_allclose(transformed_observation.state,
                                             observation.state)
-            backend.testing.assert_allclose(transformed_observation.action,
+            torch.testing.assert_allclose(transformed_observation.action,
                                             observation.action)
-            backend.testing.assert_allclose(transformed_observation.reward,
+            torch.testing.assert_allclose(transformed_observation.reward,
                                             observation.reward)
             assert transformed_observation.done == observation.done
 
             mean = 2 * observation.state + observation.action
-            backend.testing.assert_allclose(transformed_observation.next_state,
+            torch.testing.assert_allclose(transformed_observation.next_state,
                                             observation.next_state - mean)
 
         transformer.update(trajectory)
 
     def test_inverse(self, trajectory):
-        transformer = MeanFunction(lambda state, action: 2 * state + action)
+        transformer = MeanFunction(MeanModel())
         for observation in trajectory:
             inverse_observation = transformer.inverse(transformer(observation))
             assert observation == inverse_observation
@@ -74,12 +69,11 @@ class TestRewardClipper(object):
             transformed_observation = transformer(observation)
             assert transformed_observation.reward >= 0.
             assert transformed_observation.reward <= 1.
-            backend = get_backend(observation.state)
-            backend.testing.assert_allclose(transformed_observation.state,
+            torch.testing.assert_allclose(transformed_observation.state,
                                             observation.state)
-            backend.testing.assert_allclose(transformed_observation.action,
+            torch.testing.assert_allclose(transformed_observation.action,
                                             observation.action)
-            backend.testing.assert_allclose(transformed_observation.next_state,
+            torch.testing.assert_allclose(transformed_observation.next_state,
                                             observation.next_state)
             assert transformed_observation.done == observation.done
 
@@ -96,15 +90,14 @@ class TestRewardClipper(object):
             transformed_observation = transformer(observation)
             inverse_observation = transformer.inverse(transformed_observation)
 
-            backend = get_backend(observation.state)
-            backend.testing.assert_allclose(transformed_observation.state,
+            torch.testing.assert_allclose(transformed_observation.state,
                                             observation.state)
-            backend.testing.assert_allclose(transformed_observation.action,
+            torch.testing.assert_allclose(transformed_observation.action,
                                             observation.action)
-            backend.testing.assert_allclose(transformed_observation.next_state,
+            torch.testing.assert_allclose(transformed_observation.next_state,
                                             observation.next_state)
             assert transformed_observation.done == observation.done
-            backend.testing.assert_allclose(inverse_observation.reward,
+            torch.testing.assert_allclose(inverse_observation.reward,
                                             transformed_observation.reward)
 
 
@@ -118,48 +111,43 @@ class TestActionNormalize(object):
 
         trajectory = stack_list_of_tuples(trajectory)
 
-        backend = get_backend(trajectory.state)
-
-        mean = backend.mean(trajectory.action, 0)
-        var = backend.var(trajectory.action, 0)
+        mean = torch.mean(trajectory.action, 0)
+        var = torch.var(trajectory.action, 0)
 
         transformer.update(trajectory)
-        backend.testing.assert_allclose(transformer._normalizer._mean, mean)
-        backend.testing.assert_allclose(transformer._normalizer._variance, var)
+        torch.testing.assert_allclose(transformer._normalizer._mean, mean)
+        torch.testing.assert_allclose(transformer._normalizer._variance, var)
 
     def test_call(self, trajectory, preserve_origin):
         transformer = ActionNormalizer(preserve_origin)
 
         trajectory = stack_list_of_tuples(trajectory)
         transformer.update(trajectory)
-        backend = get_backend(trajectory.state)
-        observation = get_observation(backend)
+        observation = get_observation()
         transformed = transformer(observation)
 
         if preserve_origin:
             mean = 0
-            scale = backend.sqrt(transformer._normalizer._variance
-                                 + transformer._normalizer._mean ** 2)
+            scale = torch.sqrt(transformer._normalizer._variance
+                               + transformer._normalizer._mean ** 2)
         else:
             mean = transformer._normalizer._mean
-            scale = backend.sqrt(transformer._normalizer._variance)
-        backend.testing.assert_allclose(transformed.action,
-                                        (observation.action - mean) / scale)
+            scale = torch.sqrt(transformer._normalizer._variance)
+        torch.testing.assert_allclose(transformed.action,
+                                      (observation.action - mean) / scale)
 
-        backend.testing.assert_allclose(transformed.state, observation.state)
-        backend.testing.assert_allclose(transformed.reward, observation.reward)
-        backend.testing.assert_allclose(transformed.next_state, observation.next_state)
+        torch.testing.assert_allclose(transformed.state, observation.state)
+        torch.testing.assert_allclose(transformed.reward, observation.reward)
+        torch.testing.assert_allclose(transformed.next_state, observation.next_state)
         assert transformed.done == observation.done
 
     def test_inverse(self, trajectory, preserve_origin):
 
         transformer = ActionNormalizer(preserve_origin)
         trajectory = stack_list_of_tuples(trajectory)
-        backend = get_backend(trajectory.state)
-
         transformer.update(trajectory)
 
-        observation = get_observation(backend)
+        observation = get_observation()
         inverse_observation = transformer.inverse(transformer(observation))
         assert observation == inverse_observation
         assert observation is not inverse_observation
@@ -175,37 +163,35 @@ class TestStateNormalize(object):
 
         trajectory = stack_list_of_tuples(trajectory)
 
-        backend = get_backend(trajectory.state)
-        mean = backend.mean(trajectory.state, 0)
-        var = backend.var(trajectory.state, 0)
+        mean = torch.mean(trajectory.state, 0)
+        var = torch.var(trajectory.state, 0)
 
         transformer.update(trajectory)
-        backend.testing.assert_allclose(transformer._normalizer._mean, mean)
-        backend.testing.assert_allclose(transformer._normalizer._variance, var)
+        torch.testing.assert_allclose(transformer._normalizer._mean, mean)
+        torch.testing.assert_allclose(transformer._normalizer._variance, var)
 
     def test_call(self, trajectory, preserve_origin):
         transformer = StateNormalizer(preserve_origin)
         trajectory = stack_list_of_tuples(trajectory)
-        backend = get_backend(trajectory.state)
 
         transformer.update(trajectory)
-        observation = get_observation(backend)
+        observation = get_observation()
         transformed = transformer(observation)
 
         if preserve_origin:
             mean = 0
-            scale = backend.sqrt(transformer._normalizer._variance
+            scale = torch.sqrt(transformer._normalizer._variance
                                  + transformer._normalizer._mean ** 2)
         else:
             mean = transformer._normalizer._mean
-            scale = backend.sqrt(transformer._normalizer._variance)
-        backend.testing.assert_allclose(transformed.state,
+            scale = torch.sqrt(transformer._normalizer._variance)
+        torch.testing.assert_allclose(transformed.state,
                                         (observation.state - mean) / scale)
-        backend.testing.assert_allclose(transformed.next_state,
+        torch.testing.assert_allclose(transformed.next_state,
                                         (observation.next_state - mean) / scale)
 
-        backend.testing.assert_allclose(transformed.action, observation.action)
-        backend.testing.assert_allclose(transformed.reward, observation.reward)
+        torch.testing.assert_allclose(transformed.action, observation.action)
+        torch.testing.assert_allclose(transformed.reward, observation.reward)
         assert transformed.done == observation.done
 
     def test_inverse(self, trajectory, preserve_origin):
@@ -213,10 +199,9 @@ class TestStateNormalize(object):
 
         trajectory = stack_list_of_tuples(trajectory)
 
-        backend = get_backend(trajectory.state)
         transformer.update(trajectory)
 
-        observation = get_observation(backend)
+        observation = get_observation()
         inverse_observation = transformer.inverse(transformer(observation))
         assert observation == inverse_observation
         assert observation is not inverse_observation

@@ -29,7 +29,7 @@ def dataset(request):
                             action=np.random.randn(action_dim),
                             reward=np.random.randn(),
                             next_state=np.random.randn(state_dim),
-                            done=i == (episode_length - 1))
+                            done=i == (episode_length - 1)).to_torch()
             )
 
         dataset.append(trajectory)
@@ -61,7 +61,7 @@ def test_shuffle(dataset):
 def test_append_error(dataset):
     dataset = TrajectoryDataset(sequence_length=10)
     trajectory = [Observation(np.random.randn(4), np.random.randn(2), 1,
-                              np.random.randn(4), True)]
+                              np.random.randn(4), True).to_torch()]
     with pytest.raises(ValueError):
         dataset.append(trajectory)
 

@@ -22,7 +22,7 @@ def memory(request):
                                    action=np.random.randn(action_dim),
                                    reward=np.random.randn(),
                                    next_state=np.random.randn(state_dim),
-                                   done=False)
+                                   done=False).to_torch()
                        )
     return memory_, max_len, number_of_samples
 
@@ -43,7 +43,7 @@ def experience_replay():
                                    action=np.random.randn(action_dim),
                                    reward=np.random.randn(),
                                    next_state=np.random.randn(state_dim),
-                                   done=False)
+                                   done=False).to_torch()
                        )
     return memory_
 

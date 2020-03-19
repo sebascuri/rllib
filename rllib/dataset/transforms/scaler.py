@@ -1,9 +1,10 @@
 """Implementation of a Transformation that scales attributes."""
 
 from .abstract_transform import AbstractTransform
+import torch.nn as nn
 
 
-class Scaler(object):
+class Scaler(nn.Module):
     """Scaler Class."""
 
     def __init__(self, scale):
@@ -11,7 +12,7 @@ class Scaler(object):
         self._scale = scale
         assert self._scale > 0, "Scale must be positive."
 
-    def __call__(self, array):
+    def forward(self, array):
         """See `AbstractTransform.__call__'."""
         return array / self._scale
 
@@ -34,7 +35,7 @@ class RewardScaler(AbstractTransform):
         super().__init__()
         self._scaler = Scaler(scale)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation._replace(reward=self._scaler(observation.reward))
 
@@ -58,7 +59,7 @@ class ActionScaler(AbstractTransform):
         super().__init__()
         self._scaler = Scaler(scale)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation._replace(action=self._scaler(observation.action))
 

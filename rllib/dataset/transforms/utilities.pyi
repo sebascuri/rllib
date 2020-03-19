@@ -8,7 +8,7 @@ def update_mean(old_mean: Array, old_count: int,
 
 def update_var(old_mean: Array, old_var: Array, old_count: int,
                new_mean: Array, new_var: Array, new_count: int,
-               biased: bool = True) -> Array: ...
+               biased: bool = False) -> Array: ...
 
 
 def normalize(array: Array, mean: Array, variance: Array,

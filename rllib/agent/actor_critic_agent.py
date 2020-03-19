@@ -47,7 +47,6 @@ class ActorCriticAgent(AbstractAgent):
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
-        observation = observation.to_torch()
         super().observe(observation)
         self.trajectories[-1].append(observation)
 

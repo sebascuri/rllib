@@ -2,7 +2,6 @@ from rllib.dataset.utilities import get_backend
 from rllib.dataset.transforms.normalizer import Normalizer
 import torch
 import torch.testing
-import numpy as np
 import pytest
 
 
@@ -11,27 +10,17 @@ def preserve_origin(request):
     return request.param
 
 
-@pytest.fixture(params=[torch, np])
+@pytest.fixture(params=[torch])
 def backend(request):
     return request.param
 
 
-def get_rand_module(backend):
-    if backend == torch:
-        rand = torch.randn
-    else:
-        rand = np.random.randn
-    return rand
-
-
 def test_backend(backend):
-    rand = get_rand_module(backend)
-    assert backend == get_backend(rand(4))
+    assert backend == get_backend(torch.randn(4))
 
 
 def test_update(backend, preserve_origin):
-    rand = get_rand_module(backend)
-    array = rand(32, 4)
+    array = torch.randn(32, 4)
     transformer = Normalizer(preserve_origin)
     transformer.update(array)
     backend.testing.assert_allclose(transformer._mean, backend.mean(array, 0))
@@ -39,9 +28,8 @@ def test_update(backend, preserve_origin):
 
 
 def test_normalize(backend, preserve_origin):
-    rand = get_rand_module(backend)
-    array = rand(32, 4)
-    new_array = rand(4)
+    array = torch.randn(32, 4)
+    new_array = torch.randn(4)
     transformer = Normalizer(preserve_origin)
     transformer.update(array)
     transformed_array = transformer(new_array)
@@ -56,9 +44,8 @@ def test_normalize(backend, preserve_origin):
 
 
 def test_unnormalize(backend):
-    rand = get_rand_module(backend)
-    array = rand(32, 4)
-    new_array = rand(4)
+    array = torch.randn(32, 4)
+    new_array = torch.randn(4)
     transformer = Normalizer(preserve_origin)
     transformer.update(array)
     transformed_array = transformer(new_array)
@@ -68,13 +55,12 @@ def test_unnormalize(backend):
 
 
 def test_double_update(backend):
-    rand = get_rand_module(backend)
-    array1 = rand(32, 4)
+    array1 = torch.randn(32, 4)
 
     transformer = Normalizer()
     transformer.update(array1)
 
-    array2 = rand(16, 4)
+    array2 = torch.randn(16, 4)
     transformer.update(array2)
 
     array = backend.stack((*array1, *array2))

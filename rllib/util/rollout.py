@@ -15,7 +15,7 @@ def _step(environment, state, action, render):
                               action=action,
                               reward=reward,
                               next_state=next_state,
-                              done=done)
+                              done=done).to_torch()
     state = next_state
     if render:
         environment.render()
@@ -156,10 +156,12 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
 
         # Check for termination.
         if termination is not None and termination(state, action):
-            trajectory.append(Observation(state, action, reward, next_state, True))
+            trajectory.append(
+                Observation(state, action, reward, next_state, True).to_torch())
             break
         else:
-            trajectory.append(Observation(state, action, reward, next_state, False))
+            trajectory.append(
+                Observation(state, action, reward, next_state, False).to_torch())
 
         # Update state
         state = next_state

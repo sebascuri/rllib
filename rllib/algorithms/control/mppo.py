@@ -234,7 +234,7 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
                                            policy=mppo.policy,
                                            initial_state=initial_states,
                                            max_steps=num_simulation_steps)
-                trajectory = Observation(*stack_list_of_tuples(trajectory)).to_torch()
+                trajectory = Observation(*stack_list_of_tuples(trajectory))
                 policy_returns.append(trajectory.reward.sum(dim=0).mean().item())
         #
         # if np.all(np.array(policy_returns[-5:]) >= 200):

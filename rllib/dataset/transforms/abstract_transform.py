@@ -1,10 +1,12 @@
 """Interface for Transformers of a dataset."""
 
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+import torch.nn as nn
+import torch.jit
 
 
-class AbstractTransform(object, metaclass=ABCMeta):
+class AbstractTransform(nn.Module, metaclass=ABCMeta):
     """Abstract transform to apply on a dataset.
 
     Methods
@@ -18,40 +20,39 @@ class AbstractTransform(object, metaclass=ABCMeta):
 
     """
 
-    @abstractmethod
-    def __call__(self, observation):
-        """Apply the transformation.
+    def forward(self, observation):
+        """Apply transformation to observation tuple.
 
         Parameters
         ----------
         observation: Observation
-            raw observation.
+            Raw observation.
 
         Returns
         -------
         observation: Observation
-            transformed observation.
-
+            Transformed observation.
         """
         raise NotImplementedError
 
-    @abstractmethod
+    @torch.jit.export
     def inverse(self, observation):
-        """Apply the inverse transformation.
+        """Apply the inverse transformation to observation tuple..
 
         Parameters
         ----------
         observation: Observation
-            transformed observation.
+            Transformed observation.
 
         Returns
         -------
         observation: Observation
-            un-transformed observation.
+            Inverse-transformed observation.
 
         """
-        raise NotImplementedError
+        return observation
 
+    @torch.jit.export
     def update(self, observation):
         """Update parameters of transformer.
 

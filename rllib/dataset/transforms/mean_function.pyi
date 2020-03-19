@@ -1,13 +1,13 @@
 from .abstract_transform import AbstractTransform
-from rllib.dataset.datatypes import Observation, State, Action
-from typing import Callable
+from rllib.dataset.datatypes import Observation
+import torch.nn as nn
 
 
 class MeanFunction(AbstractTransform):
-    mean_function: Callable[[State, Action], State]
+    mean_function: nn.Module
 
-    def __init__(self, mean_function: Callable[[State, Action], State]) -> None: ...
+    def __init__(self, mean_function: nn.Module) -> None: ...
 
-    def __call__(self, observation: Observation) -> Observation: ...
+    def forward(self, *observation: Observation, **kwargs) -> Observation: ...
 
     def inverse(self, observation: Observation) -> Observation: ...

@@ -1,5 +1,4 @@
 """Utilities for the transformers."""
-from rllib.dataset.utilities import get_backend
 import torch
 from gpytorch.distributions import MultivariateNormal, MultitaskMultivariateNormal
 
@@ -25,7 +24,8 @@ def update_mean(old_mean, old_count, new_mean, new_count):
     return mean
 
 
-def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count, biased=True):
+def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count,
+               biased=False):
     """Update mean and variance statistics based on a new batch of data.
 
     Parameters
@@ -75,12 +75,11 @@ def normalize(array, mean, variance, preserve_origin=False):
     preserve_origin : bool, optional
         Whether to retain the origin (sign) of the data.
     """
-    backend = get_backend(array)
     if preserve_origin:
-        scale = backend.sqrt(variance + mean ** 2)
+        scale = torch.sqrt(variance + mean ** 2)
         return array / scale
     else:
-        return (array - mean) / backend.sqrt(variance)
+        return (array - mean) / torch.sqrt(variance)
 
 
 def denormalize(array, mean, variance, preserve_origin=False):
@@ -97,12 +96,11 @@ def denormalize(array, mean, variance, preserve_origin=False):
     if isinstance(array, MultitaskMultivariateNormal):
         return shift_mvn(array, mean, variance)
 
-    backend = get_backend(array)
     if preserve_origin:
-        scale = backend.sqrt(variance + mean ** 2)
+        scale = torch.sqrt(variance + mean ** 2)
         return array * scale
     else:
-        return mean + array * backend.sqrt(variance)
+        return mean + array * torch.sqrt(variance)
 
 
 def shift_mvn(mvn, mean, variance=None):

@@ -66,7 +66,6 @@ class SARSAAgent(AbstractAgent):
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
-        observation = observation.to_torch()
         super().observe(observation)
         self.last_observation = observation
 

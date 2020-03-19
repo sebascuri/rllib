@@ -17,18 +17,20 @@ Gaussian = Union[MultivariateNormal, Delta]
 Distribution = Union[MultivariateNormal, Delta, Categorical]
 TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
+NaN = float('nan')
+
 
 class Observation(NamedTuple):
     """Observation datatype."""
 
     state: State
     action: Action
-    reward: Reward = np.nan
-    next_state: State = np.nan
-    done: Done = True
-    next_action: Action = np.nan  # SARSA algorithm.
-    log_prob_action: Probability = np.nan  # Off-policy algorithms.
-    entropy: Probability = np.nan  # Entropy of current policy.
+    reward: Reward = torch.tensor(NaN)
+    next_state: State = torch.tensor(NaN)
+    done: Done = torch.tensor(False)
+    next_action: Action = torch.tensor(NaN)  # SARSA algorithm.
+    log_prob_action: Probability = torch.tensor(NaN)  # Off-policy algorithms.
+    entropy: Probability = torch.tensor(NaN)  # Entropy of current policy.
 
     @staticmethod
     def _is_equal_nan(x, y):
@@ -50,7 +52,7 @@ class Observation(NamedTuple):
         is_equal &= self._is_equal_nan(self.next_state, other.next_state)
         is_equal &= self._is_equal_nan(self.next_action, other.next_action)
         is_equal &= self._is_equal_nan(self.log_prob_action, other.log_prob_action)
-        is_equal &= self.done == other.done
+        is_equal &= self._is_equal_nan(self.done, other.done)
         return is_equal
 
     def __ne__(self, other):

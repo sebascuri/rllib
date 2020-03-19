@@ -91,7 +91,6 @@ class AbstractAgent(object, metaclass=ABCMeta):
         observation: Observation
 
         """
-        observation = observation.to_torch()
         self.policy.update(observation)  # update policy parameters (eps-greedy.)
 
         self.counters['total_steps'] += 1

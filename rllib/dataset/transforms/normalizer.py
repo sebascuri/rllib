@@ -1,22 +1,23 @@
 """Implementation of a Transformation that normalizes attributes."""
 
 from .abstract_transform import AbstractTransform
-from rllib.dataset.transforms.utilities import get_backend, normalize, denormalize, \
+from rllib.dataset.transforms.utilities import normalize, denormalize, \
     update_var, update_mean
-import numpy as np
+import torch
+import torch.nn as nn
 
 
-class Normalizer(object):
+class Normalizer(nn.Module):
     """Normalizer Class."""
 
     def __init__(self, preserve_origin=False):
         super().__init__()
-        self._mean = None
-        self._variance = None
+        self._mean = torch.zeros(1)
+        self._variance = torch.ones(1)
         self._count = 0
         self._preserve_origin = preserve_origin
 
-    def __call__(self, array):
+    def forward(self, array):
         """See `AbstractTransform.__call__'."""
         return normalize(array, self._mean, self._variance, self._preserve_origin)
 
@@ -26,19 +27,12 @@ class Normalizer(object):
 
     def update(self, array):
         """See `AbstractTransform.update'."""
-        backend = get_backend(array)
-        if self._mean is None:
-            self._mean = backend.zeros(1)
-        if self._variance is None:
-            self._variance = backend.ones(1)
-
-        new_mean = backend.mean(array, 0)
-        new_var = backend.var(array, 0)
+        new_mean = torch.mean(array, 0)
+        new_var = torch.var(array, 0)
         new_count = len(array)
 
         self._variance = update_var(self._mean, self._variance, self._count,
-                                    new_mean, new_var, new_count,
-                                    backend is np)
+                                    new_mean, new_var, new_count)
         self._mean = update_mean(self._mean, self._count, new_mean, new_count)
 
         self._count += new_count
@@ -61,7 +55,7 @@ class StateActionNormalizer(AbstractTransform):
         self._state_normalizer = StateNormalizer(preserve_origin)
         self._action_normalizer = ActionNormalizer(preserve_origin)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return self._action_normalizer(self._state_normalizer(observation))
 
@@ -96,7 +90,7 @@ class StateNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation._replace(state=self._normalizer(observation.state),
                                     next_state=self._normalizer(observation.next_state))
@@ -132,7 +126,7 @@ class ActionNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def __call__(self, observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation._replace(action=self._normalizer(observation.action))
 
