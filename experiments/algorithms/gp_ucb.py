@@ -66,7 +66,6 @@ if __name__ == '__main__':
     plot_gp(x, objective_function, num_samples=0)
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.ion()
     plt.show()
 
     x0 = x[x > 0.2][[0]]
@@ -83,5 +82,4 @@ if __name__ == '__main__':
         plot(agent, objective, axis=axes[i % 5][i // 5])
         rollout_agent(environment, agent, num_episodes=1, max_steps=1)
 
-    plt.ioff()
     plt.show()

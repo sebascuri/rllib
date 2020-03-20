@@ -2,7 +2,7 @@ import numpy as np
 import torch.nn.functional as func
 import torch.optim
 
-from experiments.util import train, evaluate
+from experiments.util import train_agent, evaluate_agent
 from rllib.agent import SoftQLearningAgent
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
@@ -45,5 +45,5 @@ agent = SoftQLearningAgent(
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)
 
-train(agent, environment, NUM_EPISODES, MAX_STEPS)
-evaluate(agent, environment, 1, MAX_STEPS)
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate_agent(agent, environment, 1, MAX_STEPS)

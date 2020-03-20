@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.modules.loss as loss
 
-from experiments.util import train, evaluate
+from experiments.util import train_agent, evaluate_agent
 from rllib.agent import GAACAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
@@ -41,5 +41,5 @@ agent = GAACAgent(policy=policy, actor_optimizer=actor_optimizer, critic=critic,
                   critic_optimizer=critic_optimizer, criterion=criterion,
                   num_rollouts=NUM_ROLLOUTS, lambda_=LAMBDA, gamma=GAMMA)
 
-train(agent, environment, NUM_EPISODES, MAX_STEPS)
-evaluate(agent, environment, 1, MAX_STEPS)
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate_agent(agent, environment, 1, MAX_STEPS)

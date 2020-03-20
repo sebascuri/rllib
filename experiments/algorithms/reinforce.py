@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from experiments.util import train, evaluate
+from experiments.util import train_agent, evaluate_agent
 from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
@@ -39,5 +39,5 @@ agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
                        baseline=value_function, baseline_optimizer=value_optimizer,
                        criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
-train(agent, environment, NUM_EPISODES, MAX_STEPS)
-evaluate(agent, environment, 1, MAX_STEPS)
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate_agent(agent, environment, 1, MAX_STEPS)
