@@ -36,6 +36,9 @@ class NNValueFunction(AbstractValueFunction):
             num_inputs = self.dim_state
 
         self.input_transform = input_transform
+        if hasattr(input_transform, 'extra_dim'):
+            num_inputs += getattr(input_transform, 'extra_dim')
+
         self.nn = DeterministicNN(num_inputs, 1, layers, biased_head=biased_head)
         self.dimension = self.nn.embedding_dim
 
@@ -93,6 +96,9 @@ class NNQFunction(AbstractQFunction):
             raise NotImplementedError("If states are discrete, so should be actions.")
 
         self.input_transform = input_transform
+        if hasattr(input_transform, 'extra_dim'):
+            num_inputs += getattr(input_transform, 'extra_dim')
+
         self.nn = DeterministicNN(num_inputs, num_outputs, layers,
                                   biased_head=biased_head)
 

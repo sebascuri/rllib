@@ -78,7 +78,6 @@ def plot_combinations_as_grid(axis, values, num_entries, bounds=None, **kwargs):
     kwargs['origin'] = 'lower'
     if bounds is not None:
         kwargs['extent'] = list(itertools.chain(*bounds))
-    plt.ion()
     return axis.imshow(values.reshape(*num_entries).T, **kwargs)
 
 

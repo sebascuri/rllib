@@ -46,7 +46,7 @@ class SystemEnvironment(AbstractEnvironment):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         state = self.system.state  # this might be noisy.
-        reward = None
+        reward = float('nan')
         if self.reward is not None:
             reward = self.reward(state, action)
 

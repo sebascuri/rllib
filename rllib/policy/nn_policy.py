@@ -40,6 +40,9 @@ class NNPolicy(AbstractPolicy):
             in_dim = self.dim_state
 
         self.input_transform = input_transform
+        if hasattr(input_transform, 'extra_dim'):
+            in_dim += getattr(input_transform, 'extra_dim')
+
         if self.discrete_action:
             self.nn = CategoricalNN(in_dim, self.num_actions, layers,
                                     biased_head=biased_head)

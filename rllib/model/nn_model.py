@@ -5,8 +5,8 @@ from rllib.util.neural_networks import CategoricalNN, HeteroGaussianNN, one_hot_
 from .abstract_model import AbstractModel
 
 
-class NNPolicy(AbstractModel):
-    """Implementation of a Policy implemented with a Neural Network.
+class NNModel(AbstractModel):
+    """Implementation of a Dynamical implemented with a Neural Network.
 
     Parameters
     ----------
@@ -26,22 +26,30 @@ class NNPolicy(AbstractModel):
     """
 
     def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, biased_head=True, deterministic=False):
-        super().__init__(dim_state, dim_action, num_states, num_actions, deterministic)
+                 layers=None, biased_head=True, input_transform=None, deterministic=False):
+        super().__init__(dim_state, dim_action, num_states=num_states,
+                         num_actions=num_actions)
+        self.input_transform = input_transform
+
         if self.discrete_state:
             out_dim = self.num_states
         else:
             out_dim = self.dim_state
 
         if self.discrete_action:
-            in_dim = out_dim + self.num_states
+            in_dim = out_dim + self.num_actions
         else:
             in_dim = out_dim + self.dim_action
+
+        if hasattr(input_transform, 'extra_dim'):
+            in_dim += getattr(input_transform, 'extra_dim')
 
         if self.discrete_action:
             self.nn = CategoricalNN(in_dim, out_dim, layers, biased_head=biased_head)
         else:
             self.nn = HeteroGaussianNN(in_dim, out_dim, layers, biased_head=biased_head)
+
+        self.deterministic = deterministic
 
     def forward(self, state, action):
         """Get Next-State distribution."""
@@ -50,8 +58,15 @@ class NNPolicy(AbstractModel):
         if self.discrete_action:
             action = one_hot_encode(action.long(), self.num_actions)
 
-        state_action = torch.cat((state, action), dim=-1)
+        if self.input_transform is not None:
+            expanded_state = self.input_transform(state)
+        else:
+            expanded_state = state
+
+        state_action = torch.cat((expanded_state, action), dim=-1)
         next_state = self.nn(state_action)
+        next_state = state + next_state[0], next_state[1]
+
         if self.deterministic:
             return next_state[0], torch.zeros(1)
         return next_state

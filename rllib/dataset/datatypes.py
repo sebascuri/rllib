@@ -1,11 +1,11 @@
 """Project Data-types."""
-from typing import NamedTuple, Union, Tuple
+from typing import NamedTuple, Union, Tuple, List
 
 import numpy as np
 import torch
 from gpytorch.distributions import Delta, MultivariateNormal
 from torch import Tensor
-from torch.distributions import Categorical
+from torch.distributions import Categorical, Uniform
 
 Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]
@@ -14,7 +14,7 @@ Reward = Union[int, float, Array]
 Probability = Union[int, float, Array]
 Done = Union[bool, Array]
 Gaussian = Union[MultivariateNormal, Delta]
-Distribution = Union[MultivariateNormal, Delta, Categorical]
+Distribution = Union[MultivariateNormal, Delta, Categorical, Uniform]
 TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
 NaN = float('nan')
@@ -65,3 +65,6 @@ class Observation(NamedTuple):
             lambda x: x if isinstance(x, torch.Tensor) else
             torch.tensor(x, dtype=torch.get_default_dtype()),
             self))
+
+
+Trajectory = List[Observation]
