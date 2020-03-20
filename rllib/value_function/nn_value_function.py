@@ -39,16 +39,16 @@ class NNValueFunction(AbstractValueFunction):
         if hasattr(input_transform, 'extra_dim'):
             num_inputs += getattr(input_transform, 'extra_dim')
 
-        self.nn = DeterministicNN(num_inputs, 1, layers=layers,
+        self.nn = DeterministicNN(num_inputs, 1, layers=layers, squashed_output=False,
                                   non_linearity=non_linearity, biased_head=biased_head)
         self.dimension = self.nn.embedding_dim
 
     @classmethod
-    def from_other(cls, other):
+    def from_other(cls, other, copy=True):
         """Create new Value Function from another Value Function."""
         new = cls(dim_state=other.dim_state, num_states=other.num_states,
                   tau=other.tau, input_transform=other.input_transform)
-        new.nn = other.nn
+        new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
         return new
 
     @classmethod
@@ -120,7 +120,8 @@ class NNQFunction(AbstractQFunction):
             num_inputs += getattr(input_transform, 'extra_dim')
 
         self.nn = DeterministicNN(num_inputs, num_outputs, layers=layers,
-                                  non_linearity=non_linearity, biased_head=biased_head)
+                                  non_linearity=non_linearity, biased_head=biased_head,
+                                  squashed_output=False)
 
     @classmethod
     def from_other(cls, other, copy=True):
@@ -128,14 +129,15 @@ class NNQFunction(AbstractQFunction):
         new = cls(dim_state=other.dim_state, dim_action=other.dim_action,
                   num_states=other.num_states, num_actions=other.num_actions,
                   tau=other.tau, input_transform=other.input_transform)
-        if copy:
-            new.nn = other.nn.__class__.from_other_with_copy
+        new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
         return new
 
     @classmethod
-    def from_nn(cls, module, dim_state, num_states=-1, tau=1.0, input_transform=None):
+    def from_nn(cls, module, dim_state, dim_action, num_states=-1, num_actions=-1,
+                tau=1.0, input_transform=None):
         """Create new Value Function from a Neural Network Implementation."""
-        new = cls(dim_state=dim_state, num_states=num_states, tau=tau,
+        new = cls(dim_state=dim_state, dim_action=dim_action,
+                  num_states=num_states, num_actions=num_actions, tau=tau,
                   input_transform=input_transform)
         new.nn = module
         return new

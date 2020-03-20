@@ -1,40 +1,42 @@
-from typing import List
+from typing import List, Type, TypeVar
 
-import torch.nn as nn
+import torch.nn
 from torch import Tensor
 
-from .abstract_value_function import AbstractValueFunction, AbstractQFunction
+from .abstract_value_function import AbstractValueFunction
 from .nn_value_function import NNValueFunction, NNQFunction
 
+T = TypeVar('T', bound='AbstractValueFunction')
 
-class NNEnsembleValueFunction(AbstractValueFunction):
-    dimension: int
-    ensemble: nn.ModuleList
 
-    def __init__(self, value_function: NNValueFunction = None,
-                 dim_state: int = 1, num_states: int = -1, layers: List[int] = None,
-                 tau: float = 1.0, biased_head: bool=True, num_heads: int = 1) -> None: ...
+class NNEnsembleValueFunction(NNValueFunction):
+    nn: torch.nn.ModuleList
 
-    def __len__(self) -> int: ...
+    def __init__(self, dim_state: int,  num_heads: int, num_states: int = -1,
+                 layers: List[int] = None,
+                 biased_head: bool=True, non_linearity: str = 'ReLU', tau: float = 1.0,
+                 input_transform: torch.nn.Module = None) -> None: ...
 
-    def __getitem__(self, item: int) -> NNValueFunction: ...
+    @classmethod
+    def from_value_function(cls: Type[T], value_function: NNValueFunction, num_heads: int) -> T: ...
+
 
     def forward(self, *args:Tensor, **kwargs) -> Tensor: ...
 
-    def embeddings(self, state: Tensor) -> Tensor: ...
 
+class NNEnsembleQFunction(NNQFunction):
+    nn: torch.nn.ModuleList
+    num_heads: int
 
-class NNEnsembleQFunction(AbstractQFunction):
-    ensemble: nn.ModuleList
-
-    def __init__(self, q_function: NNQFunction = None,
-                 dim_state: int = 1, dim_action: int = 1,
+    def __init__(self, dim_state: int, dim_action: int, num_heads: int,
                  num_states: int = -1, num_actions: int = -1,
-                 layers: List[int] = None,  tau: float = 1.0, biased_head: bool = True,
-                 num_heads: int = 1) -> None: ...
+                 layers: List[int] = None, biased_head: bool=True,
+                 non_linearity: str = 'ReLU',  tau: float = 1.0,
+                 input_transform: torch.nn.Module = None
+                 ) -> None: ...
 
-    def __len__(self) -> int: ...
+    @classmethod
+    def from_q_function(cls: Type[T], q_function: NNQFunction, num_heads: int) -> T: ...
 
-    def __getitem__(self, item: int) -> NNValueFunction: ...
 
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...

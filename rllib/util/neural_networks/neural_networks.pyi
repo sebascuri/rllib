@@ -11,7 +11,7 @@ class FeedForwardNN(nn.Module):
     kwargs: Dict
     embedding_dim: int
     hidden_layers: nn.Sequential
-    head: nn.Linear
+    head: nn.Module
     squashed_output: bool
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
@@ -63,6 +63,25 @@ class DeterministicEnsemble(FeedForwardNN):
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
     def select_head(self, new_head: int) -> None: ...
+
+
+
+class MultiHeadNN(FeedForwardNN):
+    heads: nn.ModuleList
+    num_heads: int
+    head_ptr: int
+
+    def __init__(self, in_dim: int, out_dim: int, num_heads: int, layers: List[int] = None,
+                 non_linearity: str = 'ReLU', biased_head: bool = True,
+                 squashed_output: bool = False) -> None: ...
+
+    @classmethod
+    def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int) -> T: ...
+
+    def forward(self, *x: Tensor, **kwargs) -> Tensor: ...
+
+    def select_head(self, new_head: int) -> None: ...
+
 
 
 class FelixNet(nn.Module):

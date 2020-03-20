@@ -7,34 +7,34 @@ import torch
 from rllib.util.rollout import rollout_agent
 
 
+def _model_loss(model, state, action, next_state):
+    mean, cov = model(state, action)
+    y_pred = mean
+    y = next_state
+    if torch.all(cov == 0):
+        loss = torch.mean((y_pred - y) ** 2)
+    else:
+        loss = ((mean - y) @ torch.inverse(cov) @ (mean - y).T).mean()
+        loss += torch.mean(torch.logdet(cov))
+    return loss
+
+
 def train_model(model, data, num_iter, optimizer):
     num_data = data.state.shape[0]
     for _ in range(num_iter):
         optimizer.zero_grad()
 
-        mean, cov = model(data.state[num_data // 2:], data.action[num_data // 2:])
-        y_pred = mean
-        y = data.next_state[num_data // 2:]
-        if torch.all(cov == 0):
-            loss = torch.mean((y_pred - y) ** 2)
-        else:
-            loss = ((mean - y) @ torch.inverse(cov) @ (mean-y).T).mean()
-            loss += torch.mean(torch.logdet(cov))
-
+        loss = _model_loss(model, data.state[num_data // 2:],
+                           data.action[num_data // 2:],
+                           data.next_state[num_data // 2:])
         loss.backward()
         optimizer.step()
         print('train:', loss.item())
 
         with torch.no_grad():
-            mean, cov = model(data.state[:num_data // 2], data.action[:num_data // 2])
-            y_pred = mean
-            y = data.next_state[:num_data // 2]
-
-            if torch.all(cov == 0):
-                loss = torch.mean((y_pred - y) ** 2)
-            else:
-                loss = torch.mean((mean - y) @ torch.inverse(cov) @ (mean-y).T)
-                loss += torch.mean(torch.logdet(cov))
+            loss = _model_loss(model, data.state[:num_data // 2],
+                               data.action[:num_data // 2],
+                               data.next_state[:num_data // 2])
             print('test:', loss.item())
 
 

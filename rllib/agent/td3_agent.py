@@ -38,7 +38,8 @@ class TD3Agent(DPGAgent):
                  policy_noise=0., noise_clip=1.,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
 
-        q_function = NNEnsembleQFunction(q_function=q_function, num_heads=2)
+        q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
+                                                         num_heads=2)
         critic_optimizer = type(critic_optimizer)(q_function.parameters(),
                                                   **critic_optimizer.defaults)
         super().__init__(q_function, policy, exploration, criterion, critic_optimizer,

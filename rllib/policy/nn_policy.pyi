@@ -1,4 +1,4 @@
-from typing import List, Union, Type, TypeVar
+from typing import List, Type, TypeVar
 
 import torch
 from torch import Tensor

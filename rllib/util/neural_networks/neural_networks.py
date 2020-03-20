@@ -94,7 +94,7 @@ class HeteroGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
     def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=True):
+                 biased_head=True, squashed_output=False):
         super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
                          biased_head=biased_head, squashed_output=squashed_output)
         in_dim = self.head.in_features
@@ -129,7 +129,7 @@ class HomoGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
     def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=True):
+                 biased_head=True, squashed_output=False):
         super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
                          biased_head=biased_head, squashed_output=squashed_output)
         initial_scale = inverse_softplus(torch.rand(out_dim))
@@ -192,7 +192,7 @@ class DeterministicEnsemble(FeedForwardNN):
     """
 
     def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=True, unfolded=False):
+                 biased_head=True, squashed_output=False):
         super().__init__(in_dim, out_dim * num_heads, layers=layers,
                          non_linearity=non_linearity, biased_head=biased_head,
                          squashed_output=squashed_output)
@@ -262,6 +262,44 @@ class ProbabilisticEnsemble(FeedForwardNN):
 
     def __init__(self):
         pass
+
+
+class MultiHeadNN(FeedForwardNN):
+    """Multi-Head deterministic NN."""
+
+    def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
+                 biased_head=True, squashed_output=False):
+        super().__init__(in_dim, out_dim, layers=layers,
+                         non_linearity=non_linearity, biased_head=biased_head,
+                         squashed_output=squashed_output)
+
+        self.kwargs.update(num_heads=num_heads)
+        self.head = nn.ModuleList(
+            [nn.Linear(self.head.in_features, self.head.out_features)
+             for _ in range(num_heads)])
+        self.num_heads = num_heads
+
+    @classmethod
+    def from_feedforward(cls, other, num_heads):
+        """Initialize from a feed-forward network."""
+        return cls(**other.kwargs, num_heads=num_heads)
+
+    def forward(self, x, i: int):
+        """Execute forward computation of the Neural Network.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        out: torch.distributions.MultivariateNormal
+            Multivariate distribution with mean of size [batch_size x out_dim] and
+            covariance of size [batch_size x out_dim x out_dim].
+        """
+        x = self.hidden_layers(x)
+        return self.heads[i](x)
 
 
 class FelixNet(FeedForwardNN):

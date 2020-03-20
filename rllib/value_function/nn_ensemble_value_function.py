@@ -1,12 +1,12 @@
 """Value and Q-Functions parametrized with ensembles of Neural Networks."""
 
+import torch
 import torch.nn as nn
 
-from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 from .nn_value_function import NNValueFunction, NNQFunction
 
 
-class NNEnsembleValueFunction(AbstractValueFunction):
+class NNEnsembleValueFunction(NNValueFunction):
     """Implementation of a Value Function implemented with a Neural Network.
 
     Parameters
@@ -24,41 +24,39 @@ class NNEnsembleValueFunction(AbstractValueFunction):
 
     """
 
-    def __init__(self, value_function=None, dim_state=1, num_states=-1, layers=None,
-                 tau=1.0, biased_head=True, num_heads=1):
+    def __init__(self, dim_state, num_heads, num_states=-1, layers=None,
+                 biased_head=True, non_linearity='ReLU', tau=1.0, input_transform=None):
         assert num_heads > 0
-        # Initialize from value-function.
-        if value_function is not None:
-            dim_state = value_function.dim_state
-            num_states = value_function.num_states
+        self.num_heads = num_heads
 
         super().__init__(dim_state, num_states)
-        if value_function is not None:
-            layers = value_function.nn.kwargs['layers']
-            tau = value_function.tau
-            biased_head = value_function.nn.head.bias is not None
+        self.nn = nn.ModuleList(
+            [NNValueFunction(dim_state=dim_state, num_states=num_states,
+                             layers=layers, biased_head=biased_head,
+                             non_linearity=non_linearity, tau=tau,
+                             input_transform=input_transform)
+             for _ in range(num_heads)])
 
-        self.ensemble = nn.ModuleList(
-            [NNValueFunction(dim_state=dim_state,
-                             num_states=num_states, layers=layers, tau=tau,
-                             biased_head=biased_head) for _ in range(num_heads)])
+    @classmethod
+    def from_q_function(cls, value_function, num_heads: int):
+        """Create ensemble form q-funciton."""
+        out = cls(dim_state=value_function.dim_state,
+                  num_heads=num_heads, num_states=value_function.num_states,
+                  tau=value_function.tau,
+                  input_transform=value_function.input_transform
+                  )
 
-        self.dimension = self.ensemble[0].dimension
+        out.nn = nn.ModuleList([
+            value_function.__class__.from_other(value_function, copy=False)
+            for _ in range(num_heads)])
+        return out
 
-    def __len__(self):
-        """Get length of ensemble."""
-        return len(self.ensemble)
-
-    def __getitem__(self, item):
-        """Get ensemble item."""
-        return self.ensemble[item]
-
-    def __call__(self, state, action=None):
+    def forward(self, state, action=torch.tensor(float('nan'))):
         """Get value of the value-function at a given state."""
-        return [value_function(state, action) for value_function in self.ensemble]
+        return [value_function(state, action) for value_function in self.nn]
 
 
-class NNEnsembleQFunction(AbstractQFunction):
+class NNEnsembleQFunction(NNQFunction):
     """Implementation of a Q-Function implemented with a Neural Network.
 
     Parameters
@@ -79,41 +77,36 @@ class NNEnsembleQFunction(AbstractQFunction):
         flag that indicates if head of NN has a bias term or not.
     """
 
-    def __init__(self, q_function=None, dim_state=1, dim_action=1,
-                 num_states=-1, num_actions=-1,
-                 layers=None, tau=1.0, biased_head=True, num_heads=1):
-
+    def __init__(self, dim_state, dim_action, num_heads, num_states=-1, num_actions=-1,
+                 layers=None, biased_head=True, non_linearity='ReLU',
+                 tau=1.0, input_transform=None):
+        self.num_heads = num_heads
         assert num_heads > 0
         # Initialize from q-function.
-        if q_function is not None:
-            dim_state = q_function.dim_state
-            num_states = q_function.num_states
 
-        super().__init__(dim_state, num_states)
-        if q_function is not None:
-            layers = q_function.nn.kwargs['layers']
-            tau = q_function.tau
-            biased_head = q_function.nn.head.bias is not None
+        super().__init__(dim_state, dim_action, num_states, num_actions)
 
-        self.ensemble = nn.ModuleList(
+        self.nn = nn.ModuleList(
             [NNQFunction(dim_state=dim_state, dim_action=dim_action,
                          num_states=num_states, num_actions=num_actions, layers=layers,
-                         biased_head=biased_head, tau=tau) for _ in range(num_heads)]
+                         biased_head=biased_head, non_linearity=non_linearity, tau=tau,
+                         input_transform=input_transform)
+             for _ in range(self.num_heads)]
         )
 
-    def __len__(self):
-        """Get size of ensemble."""
-        return len(self.ensemble)
+    @classmethod
+    def from_q_function(cls, q_function, num_heads: int):
+        """Create ensemble form q-funciton."""
+        out = cls(dim_state=q_function.dim_state, dim_action=q_function.dim_action,
+                  num_heads=num_heads, num_states=q_function.num_states,
+                  num_actions=q_function.num_actions,
+                  tau=q_function.tau, input_transform=q_function.input_transform)
 
-    def __getitem__(self, item):
-        """Get ensemble item."""
-        return self.ensemble[item]
+        out.nn = nn.ModuleList([
+            q_function.__class__.from_other(q_function, copy=False)
+            for _ in range(num_heads)])
+        return out
 
-    def forward(self, state, action=None):
+    def forward(self, state, action=torch.tensor(float('nan'))):
         """Get value of the q-function at a given state-action pair."""
-        return [q_function(state, action) for q_function in self.ensemble]
-
-    def value(self, state, policy, num_samples=0):
-        """See `AbstractQFunction.value'."""
-        return [q_function.value(state, policy, num_samples)
-                for q_function in self.ensemble]
+        return [q_function(state, action) for q_function in self.nn]
