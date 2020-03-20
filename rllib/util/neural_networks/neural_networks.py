@@ -80,7 +80,10 @@ class FeedForwardNN(nn.Module):
         """
         out = self.hidden_layers(x)
         if self.head.bias is not None:
-            out = torch.cat((out, torch.ones(out.shape[0], 1)), dim=1)
+            print(out.shape)
+            out = torch.cat((out, torch.ones(out.shape[:-1] + (1, ))), dim=-1)
+            print(out.shape)
+
         return out
 
 

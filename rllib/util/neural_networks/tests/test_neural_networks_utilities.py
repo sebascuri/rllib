@@ -92,10 +92,6 @@ class TestOneHoteEncode(object):
         out_tensor = one_hot_encode(tensor, num_classes)
         assert out_tensor.dim() == 2 if batch_size else 1
 
-    def test_error(self, batch_size):
-        with pytest.raises(TypeError):
-            one_hot_encode(torch.randn(4), 4)
-
     def test_correctness(self):
         tensor = torch.tensor([2])
         out_tensor = one_hot_encode(tensor, 4)

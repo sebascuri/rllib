@@ -187,9 +187,6 @@ def one_hot_encode(tensor, num_classes: int):
         if tensor not of dtype long.
 
     """
-    if tensor.dtype is not torch.long:
-        raise TypeError("tensor should be of type torch.long. Please call .long().")
-
     if tensor.dim() == 0:
         return torch.scatter(torch.zeros(num_classes), -1, tensor, 1)
     else:

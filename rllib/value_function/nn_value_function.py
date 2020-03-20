@@ -73,7 +73,7 @@ class NNValueFunction(AbstractValueFunction):
         """Get embeddings of the value-function at a given state."""
         if self.discrete_state:
             state = one_hot_encode(state.long(), self.num_states)
-        return self.nn.last_layer_embeddings(state).squeeze()
+        return self.nn.last_layer_embeddings(state).squeeze(-1)
 
 
 class NNQFunction(AbstractQFunction):
@@ -159,7 +159,7 @@ class NNQFunction(AbstractQFunction):
             state = one_hot_encode(state.long(), self.num_states)
 
         if self.input_transform is not None:
-            state, action = self.input_transform(state, action)
+            state = self.input_transform(state)
 
         if torch.isnan(action).all():
             if not self.discrete_action:
@@ -170,7 +170,7 @@ class NNQFunction(AbstractQFunction):
         if self.discrete_action:
             action = action.unsqueeze(-1).long()
 
-        if action.ndim < state.ndim:
+        if action.dim() < state.dim():
             resqueeze = True
             action = action.unsqueeze(0)
         else:
