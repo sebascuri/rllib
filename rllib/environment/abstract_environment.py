@@ -31,21 +31,25 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     """
 
     def __init__(self, dim_state, dim_action, observation_space, action_space,
-                 dim_observation=None, num_states=None, num_actions=None,
-                 num_observations=None):
+                 dim_observation=-1, num_states=-1, num_actions=-1,
+                 num_observations=-1):
         super().__init__()
         self.dim_action = dim_action
         self.dim_state = dim_state
-        self.num_actions = num_actions
-        self.num_observations = num_observations
-        self.num_states = num_states
+        self.num_actions = num_actions if num_actions is not None else -1
+        self.num_observations = num_observations if num_observations is not None else -1
+        self.num_states = num_states if num_states is not None else -1
 
-        if dim_observation is None:
+        if dim_observation == -1:
             dim_observation = dim_state
         self.dim_observation = dim_observation
 
         self.action_space = action_space
         self.observation_space = observation_space
+
+        self.discrete_state = self.num_states >= 0
+        self.discrete_action = self.num_actions >= 0
+        self.discrete_observation = self.num_observations >= 0
 
     @abstractmethod
     def step(self, action):
@@ -128,21 +132,6 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     def time(self):
         """Return current time of environment."""
         raise NotImplementedError
-
-    @property
-    def discrete_state(self):
-        """Check if state space is discrete."""
-        return self.num_states is not None
-
-    @property
-    def discrete_action(self):
-        """Check if action space is discrete."""
-        return self.num_actions is not None
-
-    @property
-    def discrete_observation(self):
-        """Check if observation space is discrete."""
-        return self.num_observations is not None
 
     @property
     def name(self):

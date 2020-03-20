@@ -3,9 +3,8 @@ from typing import Iterator
 
 import torch.nn as nn
 from torch import Tensor
-from torch.nn import Parameter
 
-from rllib.dataset.datatypes import Observation, TupleDistribution
+from rllib.dataset.datatypes import TupleDistribution
 
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
@@ -19,14 +18,12 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     discrete_action: bool
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None, tau: float = 1.0,
+                 num_states: int = -1, num_actions: int = -1, tau: float = 1.0,
                  deterministic: bool = False) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 
     def random(self, batch_size: int = None) -> TupleDistribution: ...
 
-    def update(self, observation: Observation) -> None: ...
-
-    def update_parameters(self, new_parameters: Iterator[Parameter]) -> None: ...
+    def update(self) -> None: ...
 

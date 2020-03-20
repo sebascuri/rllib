@@ -4,11 +4,6 @@ from abc import ABCMeta
 
 import torch.nn as nn
 
-from rllib.util.neural_networks import update_parameters
-from rllib.util.utilities import integrate
-
-__all__ = ['AbstractValueFunction', 'AbstractQFunction']
-
 
 class AbstractValueFunction(nn.Module, metaclass=ABCMeta):
     """Interface for Value Functions that describe the policy on an environment.
@@ -44,16 +39,12 @@ class AbstractValueFunction(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, dim_state, num_states=None, tau=1.0):
+    def __init__(self, dim_state, num_states=-1, tau=1.0):
         super().__init__()
         self.dim_state = dim_state
-        self.num_states = num_states
+        self.num_states = num_states if num_states is not None else -1
         self.tau = tau
-        self.discrete_state = self.num_states is not None
-
-    def update_parameters(self, new_parameters):
-        """Update policy parameters."""
-        update_parameters(self.parameters(), new_parameters, tau=self.tau)
+        self.discrete_state = self.num_states >= 0
 
 
 class AbstractQFunction(AbstractValueFunction):
@@ -97,27 +88,9 @@ class AbstractQFunction(AbstractValueFunction):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
+    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
                  tau=1.):
         super().__init__(dim_state=dim_state, num_states=num_states, tau=tau)
         self.dim_action = dim_action
-        self.num_actions = num_actions
-        self.discrete_action = self.num_actions is not None
-
-    def value(self, state, policy, num_samples=1):
-        """Return the value of the state given a policy.
-
-        Integrate Q(s, a) by sampling a from the policy.
-
-        Parameters
-        ----------
-        state: tensor
-        policy: AbstractPolicy
-        num_samples: int, optional.
-            number of samples when closed-form integration is not possible.
-
-        Returns
-        -------
-        tensor
-        """
-        return integrate(lambda action: self(state, action), policy(state), num_samples)
+        self.num_actions = num_actions if num_actions is not None else -1
+        self.discrete_action = self.num_actions >= 0

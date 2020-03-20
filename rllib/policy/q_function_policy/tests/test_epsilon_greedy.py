@@ -1,9 +1,7 @@
-import numpy as np
 import pytest
 import torch
 import torch.testing
 
-from rllib.dataset.datatypes import Observation
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.util.utilities import tensor_to_distribution
@@ -24,13 +22,13 @@ def test_epsilon(eps_start, q_function):
     policy = EpsGreedy(q_function, ExponentialDecay(eps_start))
     for t in range(100):
         assert policy.param() == eps_start
-        policy.update(Observation(1, 2, 3, 4, True))
+        policy.update()
 
     policy = EpsGreedy(q_function,
                        ExponentialDecay(start=eps_start, end=0.1, decay=100))
     for t in range(100):
-        assert policy.param() == 0.1 + (eps_start - 0.1) * np.exp(-t / 100)
-        policy.update(Observation(1, 2, 3, 4, True))
+        assert policy.param() == 0.1 + (eps_start - 0.1) * torch.exp(-torch.tensor(t / 100))
+        policy.update()
 
 
 def test_discrete(eps_start, q_function):

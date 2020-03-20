@@ -1,8 +1,9 @@
 """Implementation of Gaussian Processes State-Space Models."""
 import gpytorch
 import torch
+import torch.nn
 
-from rllib.util.gaussian_processes.exact_gp import ExactGP, MultitaskExactGP
+from rllib.util.gaussian_processes.exact_gp import ExactGP  # , MultitaskExactGP
 from .abstract_model import AbstractModel
 
 
@@ -15,19 +16,15 @@ class ExactGPModel(AbstractModel):
         dim_action = actions.shape[-1]
         super().__init__(dim_state, dim_action)
         state_action = torch.cat((states, actions), dim=-1)
-        if dim_state == 1:
-            if likelihood is None:
-                likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            self.likelihood = likelihood
-            self.gp = ExactGP(state_action, next_states, likelihood, mean, kernel)
-        else:
-            if likelihood is None:
-                likelihood = gpytorch.likelihoods.MultitaskGaussianLikelihood(
-                    num_tasks=dim_state)
-            self.likelihood = likelihood
-            self.gp = MultitaskExactGP(train_x=state_action, train_y=next_states,
-                                       likelihood=likelihood,
-                                       mean=mean, kernel=kernel, num_tasks=dim_state)
+        # if dim_state == 1:
+        likelihoods = tuple(gpytorch.likelihoods.GaussianLikelihood()
+                            for _ in range(dim_state))
+        gps = tuple(ExactGP(state_action, next_states[..., i:(i + 1)].transpose(-1, -2),
+                            likelihoods[i],
+                            mean, kernel) for i in range(dim_state))
+
+        self.likelihood = torch.nn.ModuleList(likelihoods)
+        self.gp = torch.nn.ModuleList(gps)
 
     def forward(self, state, action):
         """Get next state distribution."""
@@ -35,5 +32,11 @@ class ExactGPModel(AbstractModel):
         if state_action.dim() < 2:
             state_action = state_action.unsqueeze(0)
 
-        out = self.likelihood(self.gp(state_action))
-        return out.mean, out.covariance_matrix
+        # for gp, likelihood in zip(self.gp, self.likelihood):
+        out = [likelihood(gp(state_action))
+               for gp, likelihood in zip(self.gp, self.likelihood)]
+        # out = self.likelihood(*self.gp()))
+        mean = torch.stack(tuple(o.mean for o in out), dim=0)
+        cov = torch.stack(tuple(o.covariance_matrix for o in out), dim=0)
+
+        return mean, cov

@@ -141,9 +141,9 @@ def test_value_iteration():
 
 def test_not_implemented():
     environment = GymEnvironment('CartPole-v0')
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
         iterative_policy_evaluation(0, environment, 0.9)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
         value_iteration(environment, 0.9)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(AttributeError):
         policy_iteration(environment, 0.9)

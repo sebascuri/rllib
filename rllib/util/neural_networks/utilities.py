@@ -1,8 +1,21 @@
 """Utilities for neural networks."""
+import copy
+import os
 
 import numpy as np
 import torch
+import torch.jit
 import torch.nn as nn
+
+
+def deep_copy_module(module):
+    """Deep copy a module."""
+    if isinstance(module, torch.jit.ScriptModule):
+        module.save(module.original_name)
+        out = torch.jit.load(module.original_name)
+        os.system(f'rm {module.original_name}')
+        return out
+    return copy.deepcopy(module)
 
 
 def parse_nonlinearity(non_linearity):
@@ -153,12 +166,13 @@ def inverse_softplus(x):
     return torch.log(torch.exp(x) - 1.)
 
 
-def one_hot_encode(tensor, num_classes):
+def one_hot_encode(tensor, num_classes: int):
     """Encode a tensor using one hot encoding.
 
     Parameters
     ----------
     tensor: torch.Tensor of dtype torch.long
+
     num_classes: int
         number of classes to encode.
 
@@ -173,7 +187,7 @@ def one_hot_encode(tensor, num_classes):
         if tensor not of dtype long.
 
     """
-    if not isinstance(tensor, torch.LongTensor):
+    if tensor.dtype is not torch.long:
         raise TypeError("tensor should be of type torch.long. Please call .long().")
 
     if tensor.dim() == 0:
@@ -186,28 +200,23 @@ def one_hot_encode(tensor, num_classes):
         return torch.scatter(torch.zeros(batch_size, num_classes), -1, tensor, 1)
 
 
-def get_batch_size(tensor, is_discrete=None):
+def get_batch_size(tensor):
     """Get the batch size of a tensor if it is a discrete or continuous tensor.
 
     Parameters
     ----------
     tensor: torch.tensor
         tensor to identify batch size
-    is_discrete: bool
-        flag that indicates if it is a discrete 1-hot vector or a continuous vector.
 
     Returns
     -------
     batch_size: int or None
 
     """
-    if is_discrete is None:
-        is_discrete = isinstance(tensor, torch.LongTensor)
-
     if tensor.dim() == 0:
         return None
     elif tensor.dim() == 1:
-        if is_discrete:
+        if tensor.dtype is torch.long:
             return len(tensor)
         else:
             return None

@@ -1,4 +1,5 @@
 import numpy as np
+import torch.jit
 import torch.nn.functional as func
 import torch.optim
 
@@ -39,6 +40,9 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
 policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
+
+q_function = torch.jit.script(q_function)
+policy = torch.jit.script(policy)
 
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)

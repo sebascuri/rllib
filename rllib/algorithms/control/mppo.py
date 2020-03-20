@@ -1,6 +1,5 @@
 """Python Script Template."""
 
-import copy
 from collections import namedtuple
 
 import numpy as np
@@ -14,8 +13,8 @@ from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import freeze_parameters
 from rllib.util.rollout import rollout_model
-from rllib.util.utilities import separated_kl
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import separated_kl, tensor_to_distribution
+from rllib.util.neural_networks import deep_copy_module
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -144,7 +143,7 @@ class MBMPPO(nn.Module):
 
     def __init__(self, dynamical_model, reward_model, policy, value_function,
                  epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15):
-        old_policy = copy.deepcopy(policy)
+        old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
         super().__init__()

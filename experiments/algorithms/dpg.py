@@ -42,6 +42,10 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+
+policy = torch.jit.script(policy)
+# q_function = torch.jit.script(q_function)
+
 actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
                                    weight_decay=WEIGHT_DECAY)
 critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_RATE,

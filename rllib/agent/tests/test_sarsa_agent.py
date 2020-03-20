@@ -100,4 +100,3 @@ def test_tabular_interaction(agent, policy):
                     target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
     rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
-    print(q_function.table)

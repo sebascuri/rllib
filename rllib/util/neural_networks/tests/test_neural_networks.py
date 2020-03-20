@@ -32,13 +32,13 @@ def out_dim(request):
     return request.param
 
 
-@pytest.fixture(params=[2, 5, 32])
+@pytest.fixture(params=[5, 32])
 def num_heads(request):
     return request.param
 
 
 def _test_from_other(object_, class_):
-    other = class_.from_other(object_)
+    other = class_.from_other(object_, copy=False)
 
     assert isinstance(other, class_)
     assert other is not object_
@@ -49,7 +49,7 @@ def _test_from_other(object_, class_):
 
 
 def _test_from_other_with_copy(object_, class_):
-    other = class_.from_other_with_copy(object_)
+    other = class_.from_other(object_, copy=True)
 
     assert isinstance(other, class_)
     assert other is not object_

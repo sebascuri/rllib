@@ -22,14 +22,14 @@ class GymEnvironment(AbstractEnvironment):
         self.env.seed(seed)
         try:
             dim_action = self.env.action_space.shape[0]
-            num_actions = None
+            num_actions = -1
         except IndexError:
             dim_action = 1
             num_actions = self.env.action_space.n
 
         try:
             dim_state = self.env.observation_space.shape[0]
-            num_states = None
+            num_states = -1
         except IndexError:
             dim_state = 1
             # Add an extra final state as terminal state.
@@ -50,7 +50,7 @@ class GymEnvironment(AbstractEnvironment):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         next_state, reward, done, info = self.env.step(action)
-        if done and self.num_states is not None:
+        if done and self.num_states > 0:
             next_state = self.num_states - 1
         return next_state, reward, done, info
 

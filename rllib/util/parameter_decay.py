@@ -1,14 +1,16 @@
 """Implementation of a Parameter decay class."""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
-import numpy as np
+import torch.jit
+import torch.nn as nn
 
 
-class ParameterDecay(object, metaclass=ABCMeta):
+class ParameterDecay(nn.Module, metaclass=ABCMeta):
     """Abstract class that implements the decay of a parameter."""
 
     def __init__(self, start, end=None, decay=None):
+        super().__init__()
         self.start = start
 
         if end is None:
@@ -21,21 +23,16 @@ class ParameterDecay(object, metaclass=ABCMeta):
 
         self.step = 0
 
-    @abstractmethod
-    def __call__(self):
-        """Call parameter value at a given number of steps."""
-        raise NotImplementedError
-
-    @abstractmethod
+    @torch.jit.export
     def update(self):
         """Update parameter."""
-        raise NotImplementedError
+        pass
 
 
 class Constant(ParameterDecay):
     """Constant parameter."""
 
-    def __call__(self):
+    def forward(self):
         """See `ParameterDecay.__call__'."""
         return self.start
 
@@ -47,10 +44,10 @@ class Constant(ParameterDecay):
 class ExponentialDecay(ParameterDecay):
     """Exponential decay of parameter."""
 
-    def __call__(self):
+    def forward(self):
         """See `ParameterDecay.__call__'."""
-        decay = (self.start - self.end) * np.exp(-self.step / self.decay)
-        return self.end + decay
+        decay = torch.exp(-torch.tensor(self.step / self.decay))
+        return self.end + (self.start - self.end) * decay
 
     def update(self):
         """Update parameter."""
@@ -60,7 +57,7 @@ class ExponentialDecay(ParameterDecay):
 class LinearDecay(ParameterDecay):
     """Linear decay of parameter."""
 
-    def __call__(self):
+    def forward(self):
         """See `ParameterDecay.__call__'."""
         return self.start
 

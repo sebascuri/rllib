@@ -45,16 +45,16 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, dim_state, dim_action, dim_observation=None, num_states=None,
-                 num_actions=None, num_observations=None):
+    def __init__(self, dim_state, dim_action, dim_observation=-1, num_states=-1,
+                 num_actions=-1, num_observations=-1):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
         self.dim_observation = dim_observation if dim_observation else dim_state
 
-        self.num_states = num_states
-        self.num_actions = num_actions
-        self.num_observations = num_observations
+        self.num_states = num_states if num_states is not None else -1
+        self.num_actions = num_actions if num_actions is not None else -1
+        self.num_observations = num_observations if num_observations is not None else -1
 
-        self.discrete_state = self.num_states is not None
-        self.discrete_action = self.num_actions is not None
+        self.discrete_state = self.num_states >= 0
+        self.discrete_action = self.num_actions >= 0

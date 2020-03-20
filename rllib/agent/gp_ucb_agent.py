@@ -32,7 +32,7 @@ class GPUCBPolicy(AbstractPolicy):
 
     def __init__(self, gp, x, beta=2.0):
         super().__init__(dim_state=1, dim_action=x.shape[0],
-                         num_states=1, num_actions=None, deterministic=True)
+                         num_states=1, num_actions=-1, deterministic=True)
         self.gp = gp
         self.gp.eval()
         self.gp.likelihood.eval()
@@ -48,10 +48,6 @@ class GPUCBPolicy(AbstractPolicy):
             max_id = torch.argmax(ucb)
             next_point = self.x[[[max_id]]]
             return next_point, torch.zeros(1)
-
-    def update(self, observation):
-        """Update the GP posterior."""
-        self.gp = self.gp.get_fantasy_model(observation.action, observation.reward)
 
 
 class GPUCBAgent(AbstractAgent):
@@ -73,3 +69,9 @@ class GPUCBAgent(AbstractAgent):
     def __init__(self, gp, x, beta=2.0):
         self.policy = GPUCBPolicy(gp, x, beta)
         super().__init__(gamma=1, exploration_episodes=0, exploration_steps=0)
+
+    def observe(self, observation) -> None:
+        """Observe and update GP."""
+        super().observe(observation)
+        self.policy.gp = self.policy.gp.get_fantasy_model(observation.action,
+                                                          observation.reward)

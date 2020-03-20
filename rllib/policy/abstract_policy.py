@@ -3,9 +3,8 @@
 from abc import ABCMeta
 
 import torch
+import torch.jit
 import torch.nn as nn
-
-from rllib.util.neural_networks import update_parameters
 
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
@@ -49,16 +48,16 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         Flag that indicates if action space is discrete.
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
+    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
                  tau=1.0, deterministic=False):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
-        self.num_states = num_states
-        self.num_actions = num_actions
+        self.num_states = num_states if num_states is not None else -1
+        self.num_actions = num_actions if num_actions is not None else -1
         self.deterministic = deterministic
-        self.discrete_state = self.num_states is not None
-        self.discrete_action = self.num_actions is not None
+        self.discrete_state = self.num_states >= 0
+        self.discrete_action = self.num_actions >= 0
         self.tau = tau
 
     def random(self, batch_size=None):
@@ -87,10 +86,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
                 return torch.zeros(batch_size, self.dim_action), \
                        cov.expand(batch_size, self.dim_action, self.dim_action)
 
-    def update(self, observation):
+    @torch.jit.export
+    def update(self):
         """Update policy parameters."""
         pass
-
-    def update_parameters(self, new_parameters):
-        """Update policy parameters."""
-        update_parameters(self.parameters(), new_parameters, tau=self.tau)

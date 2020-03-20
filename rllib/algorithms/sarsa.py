@@ -4,6 +4,7 @@ import copy
 import torch
 import torch.nn as nn
 
+from rllib.util.neural_networks import update_parameters
 from .q_learning import QLearningLoss
 
 
@@ -66,7 +67,8 @@ class SARSA(nn.Module):
 
     def update(self):
         """Update the target network."""
-        self.q_target.update_parameters(self.q_function.parameters())
+        update_parameters(self.q_target.parameters(), self.q_function.parameters(),
+                          tau=self.q_function.tau)
 
 
 class GradientSARSA(SARSA):

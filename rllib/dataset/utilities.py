@@ -49,3 +49,17 @@ def stack_list_of_tuples(iter_):
     except TypeError:
         generator = map(np.stack, zip(*iter_))
         return _cast_to_iter_class(generator, iter_[0].__class__)
+
+
+def bootstrap_trajectory(trajectory, bootstraps):
+    """Bootstrap a trajectory into `bootstrap' different i.i.d. trajectories."""
+    num_points = len(trajectory)
+    new_trajectories = []
+    for _ in range(bootstraps):
+        idx = np.random.choice(num_points, num_points, replace=True)
+        t = []
+        for i in idx:
+            t.append(trajectory[i])
+        new_trajectories.append(t)
+
+    return new_trajectories

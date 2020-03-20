@@ -3,6 +3,7 @@
 import pickle
 
 import torch
+from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
 from rllib.util.utilities import tensor_to_distribution
@@ -13,6 +14,7 @@ def _step(environment, state, action, render):
         next_state, reward, done, _ = environment.step(action)
     except TypeError:
         next_state, reward, done, _ = environment.step(action.item())
+
     observation = Observation(state=state,
                               action=action,
                               reward=reward,
@@ -45,7 +47,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
 
     """
     milestones = list() if milestones is None else milestones
-    for episode in range(num_episodes):
+    for episode in tqdm(range(num_episodes)):
         state = environment.reset()
         agent.start_episode()
         done = False
@@ -87,7 +89,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
 
     """
     trajectories = []
-    for _ in range(num_episodes):
+    for _ in tqdm(range(num_episodes)):
         state = environment.reset()
         done = False
         trajectory = []

@@ -1,6 +1,8 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
-class ParameterDecay(object, metaclass=ABCMeta):
+import torch.nn as nn
+
+class ParameterDecay(nn.Module, metaclass=ABCMeta):
     start: float
     end: float
     decay: float
@@ -9,25 +11,13 @@ class ParameterDecay(object, metaclass=ABCMeta):
     def __init__(self, start: float, end: float = None, decay: float = None
                  ) -> None: ...
 
-    @abstractmethod
-    def __call__(self) -> float: ...
-
     def update(self) -> None: ...
 
 
-class Constant(ParameterDecay):
-    def __call__(self) -> float: ...
-
-    def update(self) -> None: ...
+class Constant(ParameterDecay): ...
 
 
-class ExponentialDecay(ParameterDecay):
-    def __call__(self) -> float: ...
-
-    def update(self) -> None: ...
+class ExponentialDecay(ParameterDecay): ...
 
 
-class LinearDecay(ParameterDecay):
-    def __call__(self) -> float: ...
-
-    def update(self) -> None: ...
+class LinearDecay(ParameterDecay): ...

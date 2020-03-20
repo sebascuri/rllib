@@ -13,6 +13,6 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     discrete_state: bool
     discrete_action: bool
 
-    def __init__(self, dim_state: int, dim_action: int, dim_observation: int = None,
-                 num_states: int = None, num_actions: int = None,
-                 num_observations: int = None) -> None: ...
+    def __init__(self, dim_state: int, dim_action: int, dim_observation: int = -1,
+                 num_states: int = -1, num_actions: int = -1,
+                 num_observations: int = -1) -> None: ...

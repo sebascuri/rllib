@@ -1,11 +1,10 @@
 """Expected SARSA Algorithm."""
 
-import copy
-
 import torch
 import torch.nn as nn
 
 from rllib.util.utilities import integrate, tensor_to_distribution
+from rllib.util.neural_networks import deep_copy_module, update_parameters
 from .q_learning import QLearningLoss
 
 
@@ -39,7 +38,7 @@ class ESARSA(nn.Module):
     def __init__(self, q_function, criterion, policy, gamma):
         super().__init__()
         self.q_function = q_function
-        self.q_target = copy.deepcopy(q_function)
+        self.q_target = deep_copy_module(q_function)
         self.policy = policy
         self.criterion = criterion
         self.gamma = gamma
@@ -60,7 +59,8 @@ class ESARSA(nn.Module):
 
     def update(self):
         """Update Q target."""
-        self.q_target.update_parameters(self.q_function.parameters())
+        update_parameters(self.q_target.parameters(), self.q_function.parameters(),
+                          tau=self.q_function.tau)
 
 
 class GradientESARSA(ESARSA):

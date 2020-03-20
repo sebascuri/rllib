@@ -15,8 +15,6 @@ class GPUCBPolicy(AbstractPolicy):
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 
-    def update(self, observation: Observation) -> None: ...
-
 
 class GPUCBAgent(AbstractAgent):
     policy: GPUCBPolicy

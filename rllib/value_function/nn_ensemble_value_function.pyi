@@ -12,7 +12,7 @@ class NNEnsembleValueFunction(AbstractValueFunction):
     ensemble: nn.ModuleList
 
     def __init__(self, value_function: NNValueFunction = None,
-                 dim_state: int = 1, num_states: int = None, layers: List[int] = None,
+                 dim_state: int = 1, num_states: int = -1, layers: List[int] = None,
                  tau: float = 1.0, biased_head: bool=True, num_heads: int = 1) -> None: ...
 
     def __len__(self) -> int: ...
@@ -29,7 +29,7 @@ class NNEnsembleQFunction(AbstractQFunction):
 
     def __init__(self, q_function: NNQFunction = None,
                  dim_state: int = 1, dim_action: int = 1,
-                 num_states: int = None, num_actions: int = None,
+                 num_states: int = -1, num_actions: int = -1,
                  layers: List[int] = None,  tau: float = 1.0, biased_head: bool = True,
                  num_heads: int = 1) -> None: ...
 

@@ -27,7 +27,7 @@ np.random.seed(0)
 # %% Reward Function
 reward_model = PendulumReward()
 bounds = [(-np.pi, np.pi), (-2, 2)]
-plot_on_grid(lambda x: reward_model(x, action=None), bounds,
+plot_on_grid(lambda x: reward_model(x, action=None)[0], bounds,
              num_entries=[100, 100])
 plt.title('Reward function')
 plt.xlabel('Angle')
@@ -39,6 +39,8 @@ plt.show()
 
 
 class StateTransform(nn.Module):
+    extra_dim = 1
+
     def forward(self, states_):
         """Transform state before applying function approximation."""
         angle, angular_velocity = torch.split(states_, 1, dim=-1)
@@ -47,21 +49,21 @@ class StateTransform(nn.Module):
         return states_
 
 
-value_function = NNValueFunction(dim_state=3, layers=[64, 64], biased_head=False,
+value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
                                  input_transform=StateTransform())
 
-policy = NNPolicy(dim_state=3, dim_action=1, layers=[64, 64], biased_head=False,
+policy = NNPolicy(dim_state=2, dim_action=1, layers=[64, 64], biased_head=False,
                   squashed_output=True, input_transform=StateTransform())
 
 dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005)
 init_distribution = torch.distributions.Uniform(torch.tensor([-np.pi, -0.05]),
                                                 torch.tensor([np.pi, 0.05]))
 
-states = torch.randn(5, 20, 2)
-actions = torch.randn(5, 20, 1)
-value_function = torch.jit.script(value_function) #, (states,))
-# policy = torch.jit.script(policy) #, (states,))
-dynamic_model = torch.jit.script(dynamic_model) #, (states, actions))
+# states = torch.randn(5, 20, 2)
+# actions = torch.randn(5, 20, 1)
+value_function = torch.jit.script(value_function)
+policy = torch.jit.script(policy) #, (states,))
+dynamic_model = torch.jit.script(dynamic_model)
 
 # Initialize MPPO and optimizer.
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
@@ -116,7 +118,7 @@ plt.plot(rewards)
 plt.xlabel('Time step')
 plt.ylabel('Instantaneous reward')
 plt.show()
-print(f'Cumulative reward: {np.sum(rewards)}')
+print(f'Cumulative reward: {torch.sum(rewards):.2f}')
 
 bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
 ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])

@@ -1,11 +1,13 @@
 """Actor-Critic Algorithm."""
-import copy
+
 from collections import namedtuple
 
 import torch
 import torch.nn as nn
 
 from rllib.util.utilities import integrate, discount_sum, tensor_to_distribution
+from rllib.util.neural_networks import deep_copy_module, update_parameters
+
 
 PGLoss = namedtuple('PolicyGradientLoss',
                     ['actor_loss', 'critic_loss', 'td_error'])
@@ -50,11 +52,11 @@ class ActorCritic(nn.Module):
         super().__init__()
         # Actor
         self.policy = policy
-        self.policy_target = copy.deepcopy(policy)
+        self.policy_target = deep_copy_module(policy)
 
         # Critic
         self.critic = critic
-        self.critic_target = copy.deepcopy(critic)
+        self.critic_target = deep_copy_module(critic)
 
         self.criterion = criterion
         self.gamma = gamma
@@ -101,5 +103,7 @@ class ActorCritic(nn.Module):
 
     def update(self):
         """Update the baseline network."""
-        self.policy_target.update_parameters(self.policy.parameters())
-        self.critic_target.update_parameters(self.critic.parameters())
+        update_parameters(self.policy_target.parameters(), self.policy.parameters(),
+                          tau=self.policy.tau)
+        update_parameters(self.critic_target.parameters(), self.critic.parameters(),
+                          tau=self.critic.tau)

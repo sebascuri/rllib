@@ -1,11 +1,12 @@
 """REINFORCE Algorithm."""
-import copy
+
 from collections import namedtuple
 
 import torch
 import torch.nn as nn
 
 from rllib.util.utilities import tensor_to_distribution
+from rllib.util.neural_networks import deep_copy_module, update_parameters
 from .gae import GAE
 
 REINFORCELoss = namedtuple('REINFORCELoss',
@@ -48,7 +49,7 @@ class REINFORCE(nn.Module):
         # Actor
         self.policy = policy
         self.baseline = baseline
-        self.baseline_target = copy.deepcopy(baseline)
+        self.baseline_target = deep_copy_module(baseline)
         self.criterion = criterion
         self.gamma = gamma
 
@@ -89,4 +90,6 @@ class REINFORCE(nn.Module):
     def update(self):
         """Update the baseline network."""
         if self.baseline is not None:
-            self.baseline_target.update_parameters(self.baseline.parameters())
+            update_parameters(self.baseline_target.parameters(),
+                              self.baseline.parameters(),
+                              self.baseline.tau)

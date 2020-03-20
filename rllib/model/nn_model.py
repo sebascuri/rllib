@@ -25,8 +25,9 @@ class NNModel(AbstractModel):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, biased_head=True, input_transform=None, deterministic=False):
+    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
+                 layers=None, biased_head=True, input_transform=None,
+                 deterministic=False):
         super().__init__(dim_state, dim_action, num_states=num_states,
                          num_actions=num_actions)
         self.input_transform = input_transform
@@ -54,9 +55,9 @@ class NNModel(AbstractModel):
     def forward(self, state, action):
         """Get Next-State distribution."""
         if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+            state = one_hot_encode(state.long(), num_classes=self.num_states)
         if self.discrete_action:
-            action = one_hot_encode(action.long(), self.num_actions)
+            action = one_hot_encode(action.long(), num_classes=self.num_actions)
 
         if self.input_transform is not None:
             expanded_state = self.input_transform(state)

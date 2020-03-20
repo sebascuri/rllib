@@ -28,6 +28,6 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
             param = Constant(param)
         self.param = param
 
-    def update(self, observation):
+    def update(self):
         """Update policy parameters."""
         self.param.update()

@@ -1,12 +1,12 @@
 """Q Learning Algorithm."""
 
-import copy
 from collections import namedtuple
 
 import torch
 import torch.nn as nn
 
 from rllib.policy.q_function_policy import SoftMax
+from rllib.util.neural_networks import deep_copy_module, update_parameters
 
 QLearningLoss = namedtuple('QLearningLoss', ['loss', 'td_error'])
 
@@ -53,7 +53,7 @@ class QLearning(nn.Module):
     def __init__(self, q_function, criterion, gamma):
         super().__init__()
         self.q_function = q_function
-        self.q_target = copy.deepcopy(q_function)
+        self.q_target = deep_copy_module(q_function)
         self.criterion = criterion
         self.gamma = gamma
 
@@ -73,7 +73,8 @@ class QLearning(nn.Module):
 
     def update(self):
         """Update the target network."""
-        self.q_target.update_parameters(self.q_function.parameters())
+        update_parameters(self.q_target.parameters(), self.q_function.parameters(),
+                          tau=self.q_function.tau)
 
 
 class GradientQLearning(QLearning):

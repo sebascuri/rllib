@@ -1,6 +1,6 @@
 """Additive Gaussian Noise Exploration Strategy."""
 
-import numpy as np
+import torch
 
 from .abstract_exploration_strategy import AbstractExplorationStrategy
 
@@ -10,5 +10,5 @@ class GaussianNoise(AbstractExplorationStrategy):
 
     def __call__(self, state=None):
         """See `AbstractExplorationStrategy.__call__'."""
-        noise = self.param() * np.random.randn(self.dimension)
+        noise = self.param() * torch.randn(self.dimension)
         return noise

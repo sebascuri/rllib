@@ -13,6 +13,6 @@ class RandomAgent(AbstractAgent):
     dataset: TrajectoryDataset
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None,
+                 num_states: int = -1, num_actions: int = -1,
                  gamma: float = None,
                  exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...

@@ -93,7 +93,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         observation: Observation
 
         """
-        self.policy.update(observation)  # update policy parameters (eps-greedy.)
+        self.policy.update()  # update policy parameters (eps-greedy.)
 
         self.counters['total_steps'] += 1
         self.episode_steps[-1] += 1

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -6,38 +6,36 @@ from torch import Tensor
 from rllib.dataset.datatypes import TupleDistribution
 from .abstract_policy import AbstractPolicy
 
+T = TypeVar('T', bound='NNPolicy')
+
 
 class NNPolicy(AbstractPolicy):
     input_transform: torch.nn.Module
     nn: torch.nn.Module
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None,
+                 num_states: int = -1, num_actions: int = -1,
                  layers: List[int] = None, biased_head: bool = True,
+                 non_linearity: str = 'ReLU', squashed_output: bool = True,
                  tau: float = 1., deterministic: bool = False,
-                 squashed_output: bool = True,
                  input_transform: torch.nn.Module = None) -> None: ...
+
+    @classmethod
+    def from_other(cls: Type[T], other: T) -> T: ...
+
+    @classmethod
+    def from_nn(cls: Type[T], module: torch.nn.Module, dim_state: int, dim_action: int,
+                num_states: int = -1, num_actions: int = -1,
+                tau: float = 1.0, deterministic: bool = False,
+                input_transform: torch.nn.Module = None): ...
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 
     def embeddings(self, state: Tensor, action: Tensor = None) -> Tensor: ...
 
 
-class TabularPolicy(NNPolicy):
-    def __init__(self, num_states: int, num_actions: int) -> None: ...
-
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
-
-    @property
-    def table(self) -> Tensor: ...
-
-    def set_value(self, state: Tensor, new_value: Union[Tensor, float]) -> None: ...
-
-
 class FelixPolicy(AbstractPolicy):
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = None, num_actions: int = None,
+                 num_states: int = -1, num_actions: int = -1,
                  tau: float = 1., deterministic: bool = False) -> None: ...
-
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...

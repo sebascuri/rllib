@@ -24,7 +24,7 @@ class NNEnsembleValueFunction(AbstractValueFunction):
 
     """
 
-    def __init__(self, value_function=None, dim_state=1, num_states=None, layers=None,
+    def __init__(self, value_function=None, dim_state=1, num_states=-1, layers=None,
                  tau=1.0, biased_head=True, num_heads=1):
         assert num_heads > 0
         # Initialize from value-function.
@@ -34,13 +34,14 @@ class NNEnsembleValueFunction(AbstractValueFunction):
 
         super().__init__(dim_state, num_states)
         if value_function is not None:
-            layers = value_function.nn.layers
+            layers = value_function.nn.kwargs['layers']
             tau = value_function.tau
             biased_head = value_function.nn.head.bias is not None
 
         self.ensemble = nn.ModuleList(
-            [NNValueFunction(dim_state, num_states, layers, tau, biased_head
-                             ) for _ in range(num_heads)])
+            [NNValueFunction(dim_state=dim_state,
+                             num_states=num_states, layers=layers, tau=tau,
+                             biased_head=biased_head) for _ in range(num_heads)])
 
         self.dimension = self.ensemble[0].dimension
 
@@ -79,7 +80,7 @@ class NNEnsembleQFunction(AbstractQFunction):
     """
 
     def __init__(self, q_function=None, dim_state=1, dim_action=1,
-                 num_states=None, num_actions=None,
+                 num_states=-1, num_actions=-1,
                  layers=None, tau=1.0, biased_head=True, num_heads=1):
 
         assert num_heads > 0
@@ -90,13 +91,15 @@ class NNEnsembleQFunction(AbstractQFunction):
 
         super().__init__(dim_state, num_states)
         if q_function is not None:
-            layers = q_function.nn.layers
+            layers = q_function.nn.kwargs['layers']
             tau = q_function.tau
             biased_head = q_function.nn.head.bias is not None
 
         self.ensemble = nn.ModuleList(
-            [NNQFunction(dim_state, dim_action, num_states, num_actions, layers, tau,
-                         biased_head) for _ in range(num_heads)])
+            [NNQFunction(dim_state=dim_state, dim_action=dim_action,
+                         num_states=num_states, num_actions=num_actions, layers=layers,
+                         biased_head=biased_head, tau=tau) for _ in range(num_heads)]
+        )
 
     def __len__(self):
         """Get size of ensemble."""

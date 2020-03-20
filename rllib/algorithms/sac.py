@@ -1,10 +1,10 @@
 """Soft Actor-Critic Algorithm."""
-import copy
 
 import torch
 import torch.nn as nn
 
 from rllib.util.utilities import tensor_to_distribution
+from rllib.util.neural_networks import deep_copy_module
 from .ac import PGLoss
 from .q_learning import QLearningLoss
 
@@ -21,11 +21,11 @@ class SoftActorCritic(nn.Module):
         super().__init__()
         # Actor
         self.policy = policy
-        self.policy_target = copy.deepcopy(policy)
+        self.policy_target = deep_copy_module(policy)
 
         # Critic
         self.critic = critic
-        self.critic_target = copy.deepcopy(critic)
+        self.critic_target = deep_copy_module(critic)
 
         self.temperature = temperature
 

@@ -1,10 +1,9 @@
 """Policies parametrized with Neural Networks."""
 
 import torch
-import torch.nn as nn
 import torch.nn.functional
 
-from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN
+from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN, FelixNet
 from rllib.util.neural_networks import one_hot_encode
 from .abstract_policy import AbstractPolicy
 
@@ -29,9 +28,10 @@ class NNPolicy(AbstractPolicy):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 layers=None, biased_head=True, tau=1.0, deterministic=False,
-                 squashed_output=True, input_transform=None):
+    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
+                 layers=None, biased_head=True, non_linearity='ReLU',
+                 squashed_output=True,
+                 tau=1.0, deterministic=False, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau,
                          deterministic)
         if self.discrete_state:
@@ -44,20 +44,44 @@ class NNPolicy(AbstractPolicy):
             in_dim += getattr(input_transform, 'extra_dim')
 
         if self.discrete_action:
-            self.nn = CategoricalNN(in_dim, self.num_actions, layers,
+            self.nn = CategoricalNN(in_dim, self.num_actions, layers=layers,
+                                    non_linearity=non_linearity,
                                     biased_head=biased_head)
         else:
-            self.nn = HeteroGaussianNN(in_dim, self.dim_action, layers,
+            self.nn = HeteroGaussianNN(in_dim, self.dim_action, layers=layers,
+                                       non_linearity=non_linearity,
                                        biased_head=biased_head,
                                        squashed_output=squashed_output)
+
+    @classmethod
+    def from_other(cls, other, copy=True):
+        """Create new NN Policy from another policy."""
+        new = cls(dim_state=other.dim_state, dim_action=other.dim_action,
+                  num_states=other.num_states, num_actions=other.num_actions,
+                  tau=other.tau, deterministic=other.deterministic,
+                  input_transform=other.input_transform)
+        new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
+        return new
+
+    @classmethod
+    def from_nn(cls, module, dim_state, dim_action, num_states=-1, num_actions=-1,
+                tau=1.0, deterministic=False, input_transform=None):
+        """Create new NN Policy from a Neural Network Implementation."""
+        new = cls(dim_state=dim_state, dim_action=dim_action,
+                  num_states=num_states, num_actions=num_actions,
+                  tau=tau, deterministic=deterministic,
+                  input_transform=input_transform)
+        new.nn = module
+        return new
 
     def forward(self, state):
         """Get distribution over actions."""
         if self.input_transform is not None:
             state = self.input_transform(state)
 
-        if isinstance(self.num_states, int):
-            state = one_hot_encode(state.long(), torch.tensor(self.num_states))
+        if self.discrete_state:
+            state = one_hot_encode(state.long(), num_classes=self.num_states)
+
         out = self.nn(state)
 
         if self.deterministic:
@@ -65,41 +89,17 @@ class NNPolicy(AbstractPolicy):
         else:
             return out
 
+    @torch.jit.export
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
         if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+            state = one_hot_encode(state.long(), num_classes=self.num_states)
 
         features = self.nn.last_layer_embeddings(state)
         return features.squeeze()
 
 
-class TabularPolicy(NNPolicy):
-    """Implement tabular policy."""
-
-    def __init__(self, num_states, num_actions):
-        super().__init__(dim_state=1, dim_action=1,
-                         num_states=num_states, num_actions=num_actions,
-                         biased_head=False)
-        nn.init.ones_(self.nn.head.weight)
-
-    @property
-    def table(self):
-        """Get table representation of policy."""
-        return self.nn.head.weight
-
-    def set_value(self, state, new_value):
-        """Set value to value function at a given state."""
-        try:
-            new_value = torch.log(
-                one_hot_encode(new_value, num_classes=self.num_actions) + 1e-12
-            )
-        except TypeError:
-            pass
-        self.nn.head.weight[:, state] = new_value
-
-
-class FelixPolicy(AbstractPolicy):
+class FelixPolicy(NNPolicy):
     """Implementation of a NN Policy using FelixNet (designed by Felix Berkenkamp).
 
     Parameters
@@ -119,47 +119,10 @@ class FelixPolicy(AbstractPolicy):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=None, num_actions=None,
-                 tau=1.0, deterministic=False):
+    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
+                 tau=1.0, deterministic=False, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau=tau,
-                         deterministic=deterministic)
-        self.layers = [64, 64]
-
-        self.linear1 = nn.Linear(dim_state, 64, bias=True)
-        nn.init.zeros_(self.linear1.bias)
-
-        self.linear2 = nn.Linear(64, 64, bias=True)
-        nn.init.zeros_(self.linear2.bias)
-
-        self._mean = nn.Linear(64, dim_action, bias=False)
-        # torch.nn.init.uniform_(self._mean.weight, -0.1, 0.1)
-
-        self._covariance = nn.Linear(64, dim_action, bias=False)
-        # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
-
+                         deterministic=deterministic, input_transform=input_transform)
+        self.nn = FelixNet(self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'])
         if self.discrete_state or self.discrete_action:
-            raise ValueError("Felix Policy is for Continuous Problems")
-
-    def forward(self, state):
-        """Execute felix network."""
-        x = torch.relu(self.linear1(state))
-        x = torch.relu(self.linear2(x))
-
-        mean = torch.tanh(self._mean(x))
-        covariance = torch.nn.functional.softplus(self._covariance(x))
-        covariance = torch.diag_embed(covariance)
-
-        if self.deterministic:
-            return mean, torch.zeros(1)
-        else:
-            return mean, covariance
-
-    def embeddings(self, state):
-        """Get embeddings of the value-function at a given state."""
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
-
-        x = torch.relu(self.linear1(state))
-        x = torch.relu(self.linear2(x))
-
-        return x.squeeze()
+            raise ValueError(f"num_states and num_actions have to be set to -1.")

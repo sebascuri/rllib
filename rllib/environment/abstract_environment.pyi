@@ -13,6 +13,9 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     num_actions: int
     num_states: int
     num_observations: int
+    discrete_state: bool
+    discrete_action: bool
+    discrete_observation: bool
     action_space: Space
     observation_space: Space
 
@@ -37,15 +40,6 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     @property
     @abstractmethod
     def time(self) -> float: ...
-
-    @property
-    def discrete_state(self) -> bool: ...
-
-    @property
-    def discrete_action(self) -> bool: ...
-
-    @property
-    def discrete_observation(self) -> bool: ...
 
     @property
     def name(self) -> str: ...

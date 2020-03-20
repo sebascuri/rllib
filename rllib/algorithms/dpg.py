@@ -1,10 +1,10 @@
 """Deterministic Policy Gradient Algorithm."""
-import copy
 
 import torch
 import torch.nn as nn
 
-from rllib.util.neural_networks.utilities import disable_gradient
+from rllib.util.neural_networks.utilities import disable_gradient, deep_copy_module, \
+    update_parameters
 from rllib.util.utilities import tensor_to_distribution
 from .ac import PGLoss
 from .q_learning import QLearningLoss
@@ -40,12 +40,12 @@ class DPG(nn.Module):
         super().__init__()
         # Critic
         self.q_function = q_function
-        self.q_target = copy.deepcopy(q_function)
+        self.q_target = deep_copy_module(q_function)
         self.criterion = criterion
 
         # Actor
         self.policy = policy
-        self.policy_target = copy.deepcopy(policy)
+        self.policy_target = deep_copy_module(policy)
 
         self.gamma = gamma
         self.policy_noise = policy_noise
@@ -102,5 +102,7 @@ class DPG(nn.Module):
 
     def update(self):
         """Update the target network."""
-        self.q_target.update_parameters(self.q_function.parameters())
-        self.policy_target.update_parameters(self.policy.parameters())
+        update_parameters(self.policy_target.parameters(), self.policy.parameters(),
+                          tau=self.policy.tau)
+        update_parameters(self.q_target.parameters(), self.q_function.parameters(),
+                          tau=self.q_function.tau)

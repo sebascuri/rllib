@@ -42,6 +42,11 @@ print(f'initial: {policy.nn.head.weight}')
 
 value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64],
                                  biased_head=False)
+
+policy = torch.jit.script(policy)
+model = torch.jit.script(model)
+value_function = torch.jit.script(value_function)
+
 loss_function = nn.MSELoss()
 value_optimizer = optim.Adam(value_function.parameters(), lr=5e-4)
 policy_optimizer = optim.Adam(policy.parameters(), lr=5e-3)
@@ -81,7 +86,6 @@ plt.plot(t_smooth, np.convolve(policy_losses, smoothing_weights, 'valid'),
 plt.xlabel('Iteration')
 plt.ylabel('Policy loss')
 plt.legend()
-plt.ion()
 plt.show()
 
 plt.plot(t, value_losses)
@@ -90,7 +94,6 @@ plt.plot(t_smooth, np.convolve(value_losses, smoothing_weights, 'valid'),
 plt.xlabel('Iteration')
 plt.ylabel('Value loss')
 plt.legend()
-plt.ion()
 plt.show()
 
 print(f'optimal: {K}')
@@ -108,7 +111,6 @@ img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
                                            num_entries, bounds)
 plt.colorbar(img)
 plt.title('True value function')
-plt.ion()
 plt.show()
 
 values = value_function(torch.from_numpy(states).type(torch.get_default_dtype()))
@@ -116,5 +118,4 @@ img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
                                            num_entries, bounds)
 plt.colorbar(img)
 plt.title('Learned value function')
-plt.ion()
 plt.show()

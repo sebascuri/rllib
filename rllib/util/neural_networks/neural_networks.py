@@ -38,15 +38,12 @@ class FeedForwardNN(nn.Module):
         self.squashed_output = squashed_output
 
     @classmethod
-    def from_other(cls, other):
-        """Initialize Feedforward NN from other without copying parameters."""
-        return cls(**other.kwargs)
-
-    @classmethod
-    def from_other_with_copy(cls, other):
-        """Initialize Feedforward NN from other copying parameters."""
+    def from_other(cls, other, copy=True):
+        """Initialize Feedforward NN from other NN Network."""
         out = cls(**other.kwargs)
-        update_parameters(target_params=out.parameters(), new_params=other.parameters())
+        if copy:
+            update_parameters(target_params=out.parameters(),
+                              new_params=other.parameters())
         return out
 
     def forward(self, x):
@@ -195,7 +192,7 @@ class DeterministicEnsemble(FeedForwardNN):
     """
 
     def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=True):
+                 biased_head=True, squashed_output=True, unfolded=False):
         super().__init__(in_dim, out_dim * num_heads, layers=layers,
                          non_linearity=non_linearity, biased_head=biased_head,
                          squashed_output=squashed_output)
@@ -230,8 +227,8 @@ class DeterministicEnsemble(FeedForwardNN):
 
         if self.head_ptr == self.num_heads:
             mean = torch.mean(out, dim=-1, keepdim=True)
-            covariance = torch.diag_embed(torch.var(out, dim=-1))
-            # sigma = (mean - out) @ (mean - out).transpose(-2, -1)
+            sigma = (mean - out) @ (mean - out).transpose(-2, -1)
+            covariance = sigma / self.num_heads
             mean = mean.squeeze(-1)
 
         else:

@@ -71,7 +71,7 @@ class DPGAgent(AbstractAgent):
         """
         action = super().act(state)
         if self._training:
-            action += self.exploration()
+            action += self.exploration().numpy()
         return self.max_action * np.clip(action, -1, 1)
 
     def observe(self, observation):
