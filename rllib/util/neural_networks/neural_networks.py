@@ -3,15 +3,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
+import torch.jit
 
-from .utilities import inverse_softplus
-
-__all__ = ['DeterministicNN', 'ProbabilisticNN', 'HeteroGaussianNN', 'HomoGaussianNN',
-           'CategoricalNN', 'EnsembleNN', 'FelixNet']
+from .utilities import inverse_softplus, parse_layers, update_parameters
 
 
-class DeterministicNN(nn.Module):
-    """Deterministic Neural Network Implementation.
+class FeedForwardNN(nn.Module):
+    """Feed-Forward Neural Network Implementation.
 
     Parameters
     ----------
@@ -27,20 +25,29 @@ class DeterministicNN(nn.Module):
 
     """
 
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
+    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
+                 biased_head=True, squashed_output=False):
         super().__init__()
-        self.layers = layers or list()
+        self.kwargs = {'in_dim': in_dim, 'out_dim': out_dim, 'layers': layers,
+                       'non_linearity': non_linearity, 'biased_head': biased_head,
+                       'squashed_output': squashed_output}
 
-        layers_ = []
-
-        for layer in self.layers:
-            layers_.append(nn.Linear(in_dim, layer))
-            layers_.append(nn.ReLU())
-            in_dim = layer
-
-        self.hidden_layers = nn.Sequential(*layers_)
+        self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
         self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
+        self.squashed_output = squashed_output
+
+    @classmethod
+    def from_other(cls, other):
+        """Initialize Feedforward NN from other without copying parameters."""
+        return cls(**other.kwargs)
+
+    @classmethod
+    def from_other_with_copy(cls, other):
+        """Initialize Feedforward NN from other copying parameters."""
+        out = cls(**other.kwargs)
+        update_parameters(target_params=out.parameters(), new_params=other.parameters())
+        return out
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -55,8 +62,12 @@ class DeterministicNN(nn.Module):
         out: torch.Tensor
             Tensor of size [batch_size x out_dim].
         """
-        return self.head(self.hidden_layers(x))
+        out = self.head(self.hidden_layers(x))
+        if self.squashed_output:
+            return torch.tanh(out)
+        return out
 
+    @torch.jit.export
     def last_layer_embeddings(self, x):
         """Get last layer embeddings of the Neural Network.
 
@@ -76,36 +87,21 @@ class DeterministicNN(nn.Module):
         return out
 
 
-class ProbabilisticNN(DeterministicNN):
-    """A Module that parametrizes a torch.distributions.Distribution distribution.
+class DeterministicNN(FeedForwardNN):
+    """Declaration of a Deterministic Neural Network."""
 
-    Parameters
-    ----------
-    in_dim: int
-        input dimension of neural network.
-    out_dim: int
-        output dimension of neural network.
-    layers: list of int
-        list of width of neural network layers, each separated with a ReLU
-        non-linearity.
-    biased_head: bool, optional
-        flag that indicates if head of NN has a bias term or not.
-
-    """
-
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
-        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
+    pass
 
 
-class HeteroGaussianNN(ProbabilisticNN):
+class HeteroGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True,
-                 squashed_output=True):
-        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
+    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
+                 biased_head=True, squashed_output=True):
+        super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
+                         biased_head=biased_head, squashed_output=squashed_output)
         in_dim = self.head.in_features
         self._covariance = nn.Linear(in_dim, out_dim, bias=biased_head)
-        self.squashed_output = squashed_output
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -132,15 +128,15 @@ class HeteroGaussianNN(ProbabilisticNN):
         return mean, covariance
 
 
-class HomoGaussianNN(ProbabilisticNN):
+class HomoGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True,
-                 squashed_output=True):
-        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
-        initial_scale = inverse_softplus(torch.ones(out_dim))
+    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
+                 biased_head=True, squashed_output=True):
+        super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
+                         biased_head=biased_head, squashed_output=squashed_output)
+        initial_scale = inverse_softplus(torch.rand(out_dim))
         self._covariance = nn.Parameter(initial_scale, requires_grad=True)
-        self.squashed_output = squashed_output
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -167,32 +163,18 @@ class HomoGaussianNN(ProbabilisticNN):
         return mean, covariance
 
 
-class CategoricalNN(ProbabilisticNN):
+class CategoricalNN(FeedForwardNN):
     """A Module that parametrizes a Categorical distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, biased_head=True):
-        super().__init__(in_dim, out_dim, layers=layers, biased_head=biased_head)
-
-    def forward(self, x):
-        """Execute forward computation of the Neural Network.
-
-        Parameters
-        ----------
-        x: torch.Tensor
-            Tensor of size [batch_size x in_dim] where the NN is evaluated.
-
-        Returns
-        -------
-        out: torch.distributions.MultivariateNormal
-            Multivariate distribution with mean of size [batch_size x out_dim] and
-            covariance of size [batch_size x out_dim x out_dim].
-        """
-        output = self.head(self.hidden_layers(x))
-        return output
+    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
+                 biased_head=True):
+        super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
+                         biased_head=biased_head, squashed_output=False)
+        self.kwargs.pop('squashed_output')
 
 
-class EnsembleNN(ProbabilisticNN):
-    """Implementation of an Ensemble of Neural Networks.
+class DeterministicEnsemble(FeedForwardNN):
+    """Ensemble of Deterministic Neural Networks.
 
     The Ensemble shares the inner layers and then has `num_heads' different heads.
     Using these heads, it returns a Multivariate distribution parametrized by the
@@ -204,17 +186,28 @@ class EnsembleNN(ProbabilisticNN):
         input dimension of neural network.
     out_dim: int
         output dimension of neural network.
+    num_heads: int
+        number of heads of ensemble
     layers: list of int
         list of width of neural network layers, each separated with a ReLU
         non-linearity.
-    num_heads: int
-        number of heads of ensemble
 
     """
 
-    def __init__(self, in_dim, out_dim, layers=None, num_heads=5):
+    def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
+                 biased_head=True, squashed_output=True):
+        super().__init__(in_dim, out_dim * num_heads, layers=layers,
+                         non_linearity=non_linearity, biased_head=biased_head,
+                         squashed_output=squashed_output)
+
+        self.kwargs.update(out_dim=out_dim, num_heads=num_heads)
         self.num_heads = num_heads
-        super().__init__(in_dim, out_dim * num_heads, layers)
+        self.head_ptr = num_heads
+
+    @classmethod
+    def from_feedforward(cls, other, num_heads):
+        """Initialize from a feed-forward network."""
+        return cls(**other.kwargs, num_heads=num_heads)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -235,37 +228,65 @@ class EnsembleNN(ProbabilisticNN):
 
         out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))
 
-        mean = torch.mean(out, dim=-1)
-        covariance = torch.diag_embed(torch.var(out, dim=-1))
+        if self.head_ptr == self.num_heads:
+            mean = torch.mean(out, dim=-1, keepdim=True)
+            covariance = torch.diag_embed(torch.var(out, dim=-1))
+            # sigma = (mean - out) @ (mean - out).transpose(-2, -1)
+            mean = mean.squeeze(-1)
+
+        else:
+            mean = out[..., self.head_ptr]
+            covariance = torch.zeros(1)
 
         return mean, covariance
 
+    @torch.jit.export
+    def select_head(self, new_head: int):
+        """Select the Ensemble head.
 
-class FelixNet(nn.Module):
+        Parameters
+        ----------
+        new_head: int
+            If new_head == num_heads, then forward returns the average of all heads.
+            If new_head < num_heads, then forward returns the output of `new_head' head.
+
+        Raises
+        ------
+        ValueError: If new_head > num_heads.
+        """
+        self.head_ptr = new_head
+        if new_head > self.num_heads:
+            raise ValueError(
+                f"{new_head} has to be smaller or equal to {self.num_heads}.")
+
+
+class ProbabilisticEnsemble(FeedForwardNN):
+    """Ensemble of Probabilistic Neural Networks."""
+
+    def __init__(self):
+        pass
+
+
+class FelixNet(FeedForwardNN):
     """A Module that implements FelixNet."""
 
     def __init__(self, in_dim, out_dim):
-        super().__init__()
-        self.layers = [64, 64]
+        super().__init__(in_dim, out_dim, layers=[64, 64], non_linearity='ReLU',
+                         squashed_output=True, biased_head=False)
+        self.kwargs = {'in_dim': in_dim, 'out_dim': out_dim}
 
-        self.linear1 = nn.Linear(in_dim, 64, bias=True)
-        torch.nn.init.zeros_(self.linear1.bias)
-
-        self.linear2 = nn.Linear(64, 64, bias=True)
-        torch.nn.init.zeros_(self.linear2.bias)
-
-        self._mean = nn.Linear(64, out_dim, bias=False)
-        # torch.nn.init.uniform_(self._mean.weight, -0.1, 0.1)
+        torch.nn.init.zeros_(self.hidden_layers[0].bias)
+        torch.nn.init.zeros_(self.hidden_layers[2].bias)
+        # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
 
         self._covariance = nn.Linear(64, out_dim, bias=False)
         # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
 
     def forward(self, x):
         """Execute felix network."""
-        x = torch.relu(self.linear1(x))
-        x = torch.relu(self.linear2(x))
+        x = self.hidden_layers(x)
 
-        mean = torch.tanh(self._mean(x))
+        mean = torch.tanh(self.head(x))
         covariance = functional.softplus(self._covariance(x))
         covariance = torch.diag_embed(covariance)
 

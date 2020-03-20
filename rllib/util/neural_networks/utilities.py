@@ -5,6 +5,34 @@ import torch
 import torch.nn as nn
 
 
+def parse_nonlinearity(non_linearity):
+    """Parse non-linearity."""
+    if hasattr(nn, non_linearity):
+        return getattr(nn, non_linearity)
+    elif hasattr(nn, non_linearity.capitalize()):
+        return getattr(nn, non_linearity.capitalize())
+    elif hasattr(nn, non_linearity.upper()):
+        return getattr(nn, non_linearity.upper())
+    else:
+        raise NotImplementedError(
+            'non-linearity {} not implemented'.format(non_linearity))
+
+
+def parse_layers(layers, in_dim, non_linearity):
+    """Parse layers of nn."""
+    if layers is None:
+        layers = []
+
+    nonlinearity = parse_nonlinearity(non_linearity)
+    layers_ = list()
+    for layer in layers:
+        layers_.append(nn.Linear(in_dim, layer))
+        layers_.append(nonlinearity())
+        in_dim = layer
+
+    return nn.Sequential(*layers_), in_dim
+
+
 def update_parameters(target_params, new_params, tau=1.0):
     """Update the parameters of target_params by those of new_params (softly).
 
@@ -145,7 +173,7 @@ def one_hot_encode(tensor, num_classes):
         if tensor not of dtype long.
 
     """
-    if tensor.dtype is not torch.long:
+    if not isinstance(tensor, torch.LongTensor):
         raise TypeError("tensor should be of type torch.long. Please call .long().")
 
     if tensor.dim() == 0:
@@ -174,7 +202,7 @@ def get_batch_size(tensor, is_discrete=None):
 
     """
     if is_discrete is None:
-        is_discrete = (tensor.dtype == torch.long)
+        is_discrete = isinstance(tensor, torch.LongTensor)
 
     if tensor.dim() == 0:
         return None

@@ -12,6 +12,11 @@ def layers(request):
     return request.param
 
 
+@pytest.fixture(params=['ReLU', 'tanh'])
+def non_linearity(request):
+    return request.param
+
+
 @pytest.fixture(params=[None, 1, 32])
 def batch_size(request):
     return request.param
@@ -32,13 +37,35 @@ def num_heads(request):
     return request.param
 
 
+def _test_from_other(object_, class_):
+    other = class_.from_other(object_)
+
+    assert isinstance(other, class_)
+    assert other is not object_
+    for p1, p2 in zip(object_.parameters(), other.parameters()):
+        if not torch.allclose(p1, p1[0]):
+            assert not torch.allclose(p1, p2)
+    assert count_vars(other) == count_vars(object_)
+
+
+def _test_from_other_with_copy(object_, class_):
+    other = class_.from_other_with_copy(object_)
+
+    assert isinstance(other, class_)
+    assert other is not object_
+    for p1, p2 in zip(object_.parameters(), other.parameters()):
+        assert torch.allclose(p1, p2)
+    assert count_vars(other) == count_vars(object_)
+
+
 class TestDeterministicNN(object):
     @pytest.fixture(scope="class")
     def net(self):
         return DeterministicNN
 
-    def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = net(in_dim, out_dim, layers)
+    def test_output_shape(self, net, in_dim, out_dim, layers, non_linearity,
+                          batch_size):
+        net = net(in_dim, out_dim, layers, non_linearity=non_linearity)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = net(t)
@@ -52,9 +79,6 @@ class TestDeterministicNN(object):
         net = net(in_dim, out_dim, layers)
         layers = layers or list()
 
-        # Check property assignment
-        assert net.layers == layers
-
         # Check nn.parameters (+1: head)
         assert 2 * (len(layers) + 1) == len([*net.parameters()])
 
@@ -62,6 +86,11 @@ class TestDeterministicNN(object):
         layers.append(out_dim)
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
+
+    def test_class_method(self, net, in_dim, out_dim, layers, non_linearity):
+        n1 = net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        _test_from_other(n1, net)
+        _test_from_other_with_copy(n1, net)
 
 
 class TestHeteroGaussianNN(object):
@@ -91,14 +120,12 @@ class TestHeteroGaussianNN(object):
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
-        assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
+        assert o.batch_shape == torch.Size(
+            [batch_size] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim, layers)
         layers = layers or list()
-
-        # Check property assignment
-        assert net.layers == layers
 
         # Check nn.parameters (+2: mean and covariance)
         assert 2 * (len(layers) + 2) == len([*net.parameters()])
@@ -108,6 +135,11 @@ class TestHeteroGaussianNN(object):
         layers.append(out_dim)
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
+
+    def test_class_method(self, net, in_dim, out_dim, layers, non_linearity):
+        n1 = net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        _test_from_other(n1, net)
+        _test_from_other_with_copy(n1, net)
 
 
 class TestHomoGaussianNN(object):
@@ -137,14 +169,12 @@ class TestHomoGaussianNN(object):
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
-        assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
+        assert o.batch_shape == torch.Size(
+            [batch_size] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim, layers)
         layers = layers or list()
-
-        # Check property assignment
-        assert net.layers == layers
 
         # Check nn.parameters (+1: mean and covariance has only 1 param)
         assert 2 * (len(layers) + 1) + 1 == len([*net.parameters()])
@@ -158,6 +188,11 @@ class TestHomoGaussianNN(object):
             else:
                 assert param.shape[0] == layers[i // 2]
                 i += 1
+
+    def test_class_method(self, net, in_dim, out_dim, layers, non_linearity):
+        n1 = net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        _test_from_other(n1, net)
+        _test_from_other_with_copy(n1, net)
 
 
 class TestCategoricalNN(object):
@@ -187,14 +222,12 @@ class TestCategoricalNN(object):
         assert isinstance(o, torch.distributions.Categorical)
         assert not o.has_rsample
         assert o.has_enumerate_support
-        assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
+        assert o.batch_shape == torch.Size(
+            [batch_size] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim, layers)
         layers = layers or list()
-
-        # Check property assignment
-        assert net.layers == layers
 
         # Check nn.parameters (+1: head)
         assert 2 * (len(layers) + 1) == len([*net.parameters()])
@@ -204,19 +237,34 @@ class TestCategoricalNN(object):
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
 
+    def test_class_method(self, net, in_dim, out_dim, layers, non_linearity):
+        n1 = net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        _test_from_other(n1, net)
+        _test_from_other_with_copy(n1, net)
+
 
 class TestEnsembleNN(object):
-    @pytest.fixture(scope="class")
-    def net(self):
-        return EnsembleNN
+    @pytest.fixture(scope="class", params=[DeterministicNN, DeterministicEnsemble])
+    def net(self, request):
+        return request.param
 
     def test_num_heads(self, net, num_heads):
-        net = net(4, 2, num_heads=num_heads)
+        try:
+            net = net(4, 2, num_heads=num_heads)
+        except TypeError:
+            base_net = net(4, 2)
+            net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
+
         assert net.num_heads == num_heads
 
     def test_output_shape(self, net, out_dim, layers, num_heads, batch_size):
         in_dim = 4
-        net = net(in_dim, out_dim, layers, num_heads=num_heads)
+        try:
+            net = net(in_dim, out_dim, layers=layers, num_heads=num_heads)
+        except TypeError:
+            base_net = net(in_dim, out_dim, layers=layers)
+            net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
+
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -228,7 +276,12 @@ class TestEnsembleNN(object):
 
     def test_output_properties(self, net, out_dim, num_heads, batch_size):
         in_dim = 4
-        net = net(in_dim, out_dim, num_heads=num_heads)
+        try:
+            net = net(in_dim, out_dim, num_heads=num_heads)
+        except TypeError:
+            base_net = net(in_dim, out_dim)
+            net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
+
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
@@ -238,15 +291,18 @@ class TestEnsembleNN(object):
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
-        assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
+        assert o.batch_shape == torch.Size(
+            [batch_size] if batch_size is not None else [])
 
     def test_layers(self, net, out_dim, num_heads, layers):
         in_dim = 4
-        net = net(in_dim, out_dim, layers, num_heads=num_heads)
-        layers = layers or list()
+        try:
+            net = net(in_dim, out_dim, layers=layers, num_heads=num_heads)
+        except TypeError:
+            base_net = net(in_dim, out_dim, layers=layers)
+            net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
 
-        # Check property assignment
-        assert net.layers == layers
+        layers = layers or list()
 
         # Check nn.parameters (+1: head)
         assert 2 * (len(layers) + 1) == len([*net.parameters()])
@@ -255,6 +311,16 @@ class TestEnsembleNN(object):
         layers.append(out_dim * num_heads)
         for i, (name, param) in enumerate(net.named_parameters()):
             assert param.shape[0] == layers[i // 2]
+
+    def test_class_method(self, net, in_dim, out_dim, num_heads, layers, non_linearity):
+        try:
+            n1 = net(in_dim, out_dim, layers=layers, num_heads=num_heads)
+        except TypeError:
+            base_net = net(in_dim, out_dim, layers=layers)
+            n1 = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
+
+        _test_from_other(n1, DeterministicEnsemble)
+        _test_from_other_with_copy(n1, DeterministicEnsemble)
 
 
 class TestFelixNet(object):
@@ -284,14 +350,12 @@ class TestFelixNet(object):
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
-        assert o.batch_shape == torch.Size([batch_size] if batch_size is not None else [])
+        assert o.batch_shape == torch.Size(
+            [batch_size] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = net(in_dim, out_dim)
         layers = [64, 64]
-
-        # Check property assignment
-        assert net.layers == layers
 
         # Check nn.parameters (+2: mean and covariance have only weights)
         assert 2 * (len(layers)) + 2 == len([*net.parameters()])
@@ -301,3 +365,7 @@ class TestFelixNet(object):
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
 
+    def test_class_method(self, net, in_dim, out_dim):
+        n1 = net(in_dim, out_dim)
+        _test_from_other(n1, net)
+        _test_from_other_with_copy(n1, net)

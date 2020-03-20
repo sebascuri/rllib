@@ -1,67 +1,69 @@
 """Implementation of different Neural Networks with pytorch."""
 
-from typing import List
-
+from typing import List, Dict, Tuple, TypeVar, Type, Any
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import TupleDistribution
+T = TypeVar('T', bound='FeedForwardNN')
 
 
-class DeterministicNN(nn.Module):
-    layers = List[int]
+class FeedForwardNN(nn.Module):
+    kwargs: Dict
     embedding_dim: int
     hidden_layers: nn.Sequential
     head: nn.Linear
+    squashed_output: bool
 
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True) -> None: ...
+                 non_linearity: str = 'ReLU', biased_head: bool = True,
+                 squashed_output: bool = False) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    @classmethod
+    def from_other(cls: Type[T], other: T) -> T: ...
+
+    @classmethod
+    def from_other_with_copy(cls: Type[T], other: T) -> T: ...
+
+    def forward(self, *args: Tensor, **kwargs) -> Any: ...
 
     def last_layer_embeddings(self, x: Tensor) -> Tensor: ...
 
 
-class ProbabilisticNN(DeterministicNN):
+class DeterministicNN(FeedForwardNN):
+    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
 
+
+class CategoricalNN(FeedForwardNN):
     def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True) -> None: ...
+                 non_linearity: str = 'ReLU', biased_head: bool = True) -> None: ...
 
 
-class HeteroGaussianNN(ProbabilisticNN):
+class HeteroGaussianNN(FeedForwardNN):
     _covariance: nn.Linear
 
-    def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True, squashed_output: bool = True) -> None: ...
+    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
 
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
-
-
-class HomoGaussianNN(ProbabilisticNN):
+class HomoGaussianNN(FeedForwardNN):
     _covariance: nn.Parameter
 
-    def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True, squashed_output: bool = True) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
 
-class CategoricalNN(ProbabilisticNN):
-
-    def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True) -> None: ...
-
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
-
-
-class EnsembleNN(ProbabilisticNN):
+class DeterministicEnsemble(FeedForwardNN):
     num_heads: int
+    head_ptr: int
 
-    def __init__(self, in_dim: int, out_dim: int, layers: List[int] = None,
-                 biased_head: bool = True) -> None: ...
+    def __init__(self, in_dim: int, out_dim: int, num_heads: int, layers: List[int] = None,
+                 non_linearity: str = 'ReLU', biased_head: bool = True,
+                 squashed_output: bool = False) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    @classmethod
+    def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int) -> T: ...
+
+
+    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
 
 class FelixNet(nn.Module):
@@ -73,4 +75,4 @@ class FelixNet(nn.Module):
 
     def __init__(self, in_dim: int, out_dim: int) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...

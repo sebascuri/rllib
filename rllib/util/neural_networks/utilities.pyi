@@ -1,8 +1,15 @@
-from typing import Iterator
+from typing import Iterator, Optional, List, Tuple
 
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import Parameter
+
+
+def parse_nonlinearity(non_linearity: str) -> nn.Module: ...
+
+
+def parse_layers(layers: Optional[List[int]], in_dim: int, non_linearity: str
+                 ) -> Tuple[nn.Sequential, int]: ...
 
 
 def update_parameters(target_params: Iterator[Parameter],
