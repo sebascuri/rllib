@@ -24,17 +24,17 @@ class UnscaledModel(AbstractModel):
             state, action, *_ = transformation(Observation(state, action))
 
         # Predict next-state
-        with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            next_state = self.base_model(state, action)
-            if next_state[0].shape[-1] is not self.dim_state:
-                mean = next_state[0].transpose(0, -1)
-                idx = torch.arange(0, next_state[0].shape[-1])
-                var = next_state[1][..., idx, idx].transpose(0, -1)
+        # with torch.no_grad(), gpytorch.settings.fast_pred_var():
+        next_state = self.base_model(state, action)
+        if next_state[0].shape[-1] is not self.dim_state:
+            mean = next_state[0].transpose(0, -1)
+            idx = torch.arange(0, next_state[0].shape[-1])
+            var = next_state[1][..., idx, idx].transpose(0, -1)
 
-                mean = mean.reshape(*batch_size, self.dim_state)
-                var = var.reshape(*batch_size, self.dim_state)
-                cov = torch.diag_embed(var)
-                next_state = mean, cov
+            mean = mean.reshape(*batch_size, self.dim_state)
+            var = var.reshape(*batch_size, self.dim_state)
+            cov = torch.diag_embed(var)
+            next_state = mean, cov
 
         # Back-transform
         for transformation in reversed(self.transformations):

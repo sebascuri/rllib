@@ -26,7 +26,7 @@ class NNModel(AbstractModel):
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 layers=None, biased_head=True, input_transform=None,
+                 layers=None, biased_head=True, non_linearity='ReLU', input_transform=None,
                  deterministic=False):
         super().__init__(dim_state, dim_action, num_states=num_states,
                          num_actions=num_actions)
@@ -46,9 +46,12 @@ class NNModel(AbstractModel):
             in_dim += getattr(input_transform, 'extra_dim')
 
         if self.discrete_action:
-            self.nn = CategoricalNN(in_dim, out_dim, layers, biased_head=biased_head)
+            self.nn = CategoricalNN(in_dim, out_dim, layers, biased_head=biased_head,
+                                    non_linearity=non_linearity)
         else:
-            self.nn = HeteroGaussianNN(in_dim, out_dim, layers, biased_head=biased_head)
+            self.nn = HeteroGaussianNN(in_dim, out_dim, layers, biased_head=biased_head,
+                                       non_linearity=non_linearity,
+                                       squashed_output=False)
 
         self.deterministic = deterministic
 
