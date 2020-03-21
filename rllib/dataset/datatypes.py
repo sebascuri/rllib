@@ -1,5 +1,6 @@
 """Project Data-types."""
 from typing import NamedTuple, Union, Tuple, List
+from collections import namedtuple
 
 import numpy as np
 import torch
@@ -19,8 +20,12 @@ TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
 NaN = float('nan')
 
+Observation = namedtuple('Observation',
+                         ['state', 'action', 'reward', 'next_state', 'done',
+                          'next_action', 'log_prob_action', 'entropy'])
 
-class Observation(NamedTuple):
+
+class RawObservation(NamedTuple):
     """Observation datatype."""
 
     state: State

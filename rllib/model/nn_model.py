@@ -26,8 +26,8 @@ class NNModel(AbstractModel):
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 layers=None, biased_head=True, non_linearity='ReLU', input_transform=None,
-                 deterministic=False):
+                 layers=None, biased_head=True, non_linearity='ReLU',
+                 input_transform=None, deterministic=False):
         super().__init__(dim_state, dim_action, num_states=num_states,
                          num_actions=num_actions)
         self.input_transform = input_transform

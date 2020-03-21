@@ -2,7 +2,7 @@
 
 import torch
 
-from ..datatypes import Observation
+from ..datatypes import RawObservation
 
 
 def init_er_from_er(target_er, source_er):
@@ -38,7 +38,7 @@ def init_er_from_environment(target_er, environment):
     assert environment.num_states is not None
 
     for state in range(environment.num_states):
-        observation = Observation(state, torch.empty(0))
+        observation = RawObservation(state, torch.empty(0))
         target_er.append(observation)
 
 
@@ -64,11 +64,11 @@ def init_er_from_rollout(target_er, agent, environment, max_steps=1000):
         while not done:
             action = agent.act(state)
             next_state, reward, done, _ = environment.step(action)
-            observation = Observation(state=state,
-                                      action=action,
-                                      reward=reward,
-                                      next_state=next_state,
-                                      done=done)
+            observation = RawObservation(state=state,
+                                         action=action,
+                                         reward=reward,
+                                         next_state=next_state,
+                                         done=done)
             state = next_state
 
             target_er.append(observation)

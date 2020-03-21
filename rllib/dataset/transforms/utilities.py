@@ -25,7 +25,7 @@ def update_mean(old_mean, old_count, new_mean, new_count):
 
 
 def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count,
-               biased=False):
+               biased: bool = False):
     """Update mean and variance statistics based on a new batch of data.
 
     Parameters
@@ -47,8 +47,8 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count,
     total = old_count + new_count
 
     if not biased:
-        old_c = old_count - 1 if old_count > 0 else 0
-        new_c = new_count - 1 if new_count > 0 else 0
+        old_c = old_count - 1 if old_count > 0 else torch.tensor(0)
+        new_c = new_count - 1 if new_count > 0 else torch.tensor(0)
     else:
         old_c = old_count
         new_c = new_count
@@ -64,7 +64,7 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count,
         return m2 / total
 
 
-def normalize(array, mean, variance, preserve_origin=False):
+def normalize(array, mean, variance, preserve_origin: bool = False):
     """Normalize an array.
 
     Parameters
@@ -82,7 +82,7 @@ def normalize(array, mean, variance, preserve_origin=False):
         return (array - mean) / torch.sqrt(variance)
 
 
-def denormalize(array, mean, variance, preserve_origin=False):
+def denormalize(array, mean, variance, preserve_origin: bool = False):
     """Denormalize an array.
 
     Parameters
@@ -93,9 +93,6 @@ def denormalize(array, mean, variance, preserve_origin=False):
     preserve_origin : bool, optional
         Whether to retain the origin (sign) of the data.
     """
-    if isinstance(array, MultitaskMultivariateNormal):
-        return shift_mvn(array, mean, variance)
-
     if preserve_origin:
         scale = torch.sqrt(variance + mean ** 2)
         return array * scale

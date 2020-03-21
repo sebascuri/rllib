@@ -5,7 +5,7 @@ import pickle
 import torch
 from tqdm import tqdm
 
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import RawObservation
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -15,11 +15,11 @@ def _step(environment, state, action, render):
     except TypeError:
         next_state, reward, done, _ = environment.step(action.item())
 
-    observation = Observation(state=state,
-                              action=action,
-                              reward=reward,
-                              next_state=next_state,
-                              done=done).to_torch()
+    observation = RawObservation(state=state,
+                                 action=action,
+                                 reward=reward,
+                                 next_state=next_state,
+                                 done=done).to_torch()
     state = next_state
     if render:
         environment.render()
@@ -161,11 +161,11 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         # Check for termination.
         if termination is not None and termination(state, action):
             trajectory.append(
-                Observation(state, action, reward, next_state, True).to_torch())
+                RawObservation(state, action, reward, next_state, True).to_torch())
             break
         else:
             trajectory.append(
-                Observation(state, action, reward, next_state, False).to_torch())
+                RawObservation(state, action, reward, next_state, False).to_torch())
 
         # Update state
         state = next_state

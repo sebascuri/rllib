@@ -2,9 +2,11 @@
 
 import numpy as np
 import torch
+import torch.jit
 import torch.nn as nn
 
 from .abstract_transform import AbstractTransform
+from rllib.dataset.datatypes import Observation
 
 
 class Clipper(nn.Module):
@@ -22,6 +24,7 @@ class Clipper(nn.Module):
         else:
             return np.clip(array, self._min, self._max)
 
+    @torch.jit.export
     def inverse(self, array):
         """See `AbstractTransform.inverse'."""
         return array
@@ -50,13 +53,32 @@ class RewardClipper(AbstractTransform):
         super().__init__()
         self._clipper = Clipper(min_reward, max_reward)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
-        return observation._replace(reward=self._clipper(observation.reward))
+        return Observation(
+            state=observation.state,
+            action=observation.action,
+            reward=self._clipper(observation.reward),
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return observation._replace(reward=self._clipper.inverse(observation.reward))
+        return Observation(
+            state=observation.state,
+            action=observation.action,
+            reward=self._clipper.inverse(observation.reward),
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
 
 class ActionClipper(AbstractTransform):
@@ -82,10 +104,29 @@ class ActionClipper(AbstractTransform):
         super().__init__()
         self._clipper = Clipper(min_action, max_action)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
-        return observation._replace(action=self._clipper(observation.action))
+        return Observation(
+            state=observation.state,
+            action=self._clipper(observation.action),
+            reward=observation.reward,
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return observation._replace(action=self._clipper.inverse(observation.action))
+        return Observation(
+            state=observation.state,
+            action=self._clipper.inverse(observation.action),
+            reward=observation.reward,
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )

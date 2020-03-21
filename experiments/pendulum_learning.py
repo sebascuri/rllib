@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from torch.distributions import Uniform
 import torch.optim as optim
 from gpytorch.distributions import Delta
+from tqdm import tqdm
 
 from rllib.algorithms.control.mppo import MBMPPO, train_mppo
 from rllib.dataset.dataset import TrajectoryDataset
@@ -19,7 +21,7 @@ from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel
 from rllib.model.pendulum_model import PendulumModel
 from rllib.model.unscaled_model import UnscaledModel
-from rllib.model.nn_model import NNModel
+from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
 from rllib.reward.pendulum_reward import PendulumReward
 from rllib.util.collect_data import collect_model_transitions
@@ -27,11 +29,10 @@ from rllib.util.collect_data import collect_model_transitions
 from rllib.util.utilities import tensor_to_distribution
 from rllib.util.plotting import plot_learning_losses, plot_values_and_policy
 from rllib.util.rollout import rollout_model, rollout_policy
+from rllib.util.training import train_model
 from rllib.util.neural_networks import DeterministicEnsemble
 from rllib.util.neural_networks.utilities import freeze_parameters
 from rllib.value_function import NNValueFunction
-
-from experiments.util import train_model
 
 torch.manual_seed(0)
 np.random.seed(0)
@@ -47,9 +48,19 @@ class StateTransform(nn.Module):
                             dim=-1)
         return states_
 
+class MeanModel(nn.Module):
+    def forward(self, state, action):
+        """Pass the mean model."""
+        return state
+
+transformations = [
+    ActionClipper(-1, 1),
+    MeanFunction(MeanModel()),
+    # StateActionNormalizer()
+]
+
 
 # %% Collect Data.
-ensemble_size = 5
 num_data = 500
 reward_model = PendulumReward()
 dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005)
@@ -59,103 +70,38 @@ transitions = collect_model_transitions(
     Uniform(torch.tensor([-1.]), torch.tensor([1.])),
     dynamic_model, reward_model, num_data)
 
+# %% Bootstrap into different trajectories.
+ensemble_size = 5
+
 bootstraps = bootstrap_trajectory(transitions, ensemble_size)
-dataset = [stack_list_of_tuples(t) for t in bootstraps]
+datasets = []
+dataloaders = []
+for transition in bootstraps:
+    dataset = TrajectoryDataset(sequence_length=1, transformations=transformations)
+    dataset.append(transitions)
 
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
-nn_model = [NNModel(2, 1, layers=[64], input_transform=StateTransform(),
-                    deterministic=True) for _ in range(ensemble_size)]
+    datasets.append(dataset)
+    dataloaders.append(dataloader)
+# %% Define ensemble model.
 
-
-class EnsembleModel(nn.Module):
-    def __init__(self, in_dim, out_dim, layers, input_transform=None, num_heads=5):
-        super().__init__()
-        self.input_transform = input_transform
-        if hasattr(input_transform, 'extra_dim'):
-            in_dim += getattr(input_transform, 'extra_dim')
-        self.nn = DeterministicEnsemble(in_dim, out_dim, layers=layers, non_linearity='ReLU',
-                                        num_heads=num_heads)
-
-    def forward(self, state, action):
-        if self.input_transform is not None:
-            expanded_state = self.input_transform(state)
-        else:
-            expanded_state = state
-
-        state_action = torch.cat((expanded_state, action), dim=-1)
-        next_state = self.nn(state_action)
-        return state + next_state[0], next_state[1]
-
-    @torch.jit.export
-    def select_head(self, head_ptr):
-        self.nn.select_head(head_ptr)
-
-
-class Ensemble(nn.Module):
-
-    def __init__(self, models):
-        super().__init__()
-        self.models = nn.ModuleList(models)
-        self.head = -1
-
-    def forward(self, state, action):
-        mean_ = []
-        cov_ = []
-        i = 0
-        for m in self.models:
-            mean_i, cov_i = m(state, action)
-            mean_.append(mean_i)
-            cov_.append(cov_i)
-            if i == self.head:
-                return mean_i, cov_i
-            i += 1
-        mean = torch.stack(mean_, dim=-1)
-        mu = torch.mean(mean, dim=-1, keepdim=True)
-
-        sigma = (mean - mu) @ (mean - mu).transpose(-2, -1)
-        cov = torch.mean(torch.stack(cov_, dim=-1))
-        if not torch.all(cov == 0):
-            sigma = sigma + cov
-
-        return mu.squeeze(-1), sigma
-
-    @torch.jit.export
-    def select_head(self, i: int):
-        self.head = i
-
-
-# ensemble = Ensemble(nn_model)
-ensemble = EnsembleModel(3, 2, layers=[64], input_transform=StateTransform(), num_heads=ensemble_size)
+# %% Train a Model
+ensemble = EnsembleModel(2, 1, num_heads=ensemble_size, layers=[64], biased_head=True,
+                         non_linearity='ReLU', input_transform=StateTransform(),
+                         deterministic=False)
 ensemble = torch.jit.script(ensemble)
 
 optimizer = torch.optim.Adam(ensemble.parameters(), lr=0.01)
-num_iter = 50
-grad_steps = 3
-for _ in range(num_iter):
-    for i, data in enumerate(dataset):
-        ensemble.nn.select_head(i)
-        train_model(ensemble, data, grad_steps, optimizer)
+for _ in tqdm(range(25)):
+    for i in range(ensemble_size):
+        ensemble.select_head(i)
+        train_model(ensemble, dataloaders[i], max_iter=3, optimizer=optimizer,
+                    print_flag=False)
 
-for i in range(6):
-    ensemble.nn.select_head(i)
-    print(ensemble(dataset[0].state[0], dataset[0].action[0]))
-# class MeanModel(nn.Module):
-#     def forward(self, state, action):
-#         """Pass the mean model."""
-#         return state
-#
-# transformations = [
-#     ActionClipper(-1, 1),
-#     # MeanFunction(MeanModel()),
-#     # StateActionNormalizer()
-# ]
-#
-# dataset = TrajectoryDataset(sequence_length=1, transformations=transformations)
-# dataset.append(transitions)
-# data = dataset.all_data
 
-# %% Train Model
-num_iter = 200
+dynamic_model = UnscaledModel(ensemble, torch.nn.ModuleList(transformations))
+dynamic_model = torch.jit.script(dynamic_model)
 
 # model = ExactGPModel(data.state, data.action, data.next_state)
 # model.eval()
@@ -199,7 +145,6 @@ num_iter = 200
 #     state, action = torch.randn(5, 20, 2), torch.randn(5, 20, 1)
 #     pred = dynamic_model(state, action)
 #     dynamic_model = torch.jit.trace(dynamic_model, (state, action))
-dynamic_model = ensemble
 freeze_parameters(dynamic_model)
 value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
                                  input_transform=StateTransform())
@@ -268,7 +213,7 @@ plt.plot(rewards)
 plt.xlabel('Time step')
 plt.ylabel('Instantaneous reward')
 plt.show()
-print(f'Cumulative reward: {torch.sum(rewards):.2f}')
+print(f'Model Cumulative reward: {torch.sum(rewards):.2f}')
 
 bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
 ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])
@@ -278,8 +223,11 @@ plt.show()
 
 # %% Test controller on Environment.
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                                                 step_size=1 / 80))
+                                                 step_size=1 / 80), reward=reward_model)
 environment.state = test_state.numpy()
 environment.initial_state = lambda: test_state.numpy()
-rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)), max_steps=400, render=True
-               )
+trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
+                            max_steps=400, render=True)
+trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
+print(f'Environment Cumulative reward: {torch.sum(rewards):.2f}')
+

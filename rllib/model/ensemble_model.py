@@ -25,6 +25,7 @@ class EnsembleModel(NNModel):
         self.deterministic = False
 
     def forward(self, state, action):
+        """Compute next state distribution."""
         if self.input_transform is not None:
             state = self.input_transform(state)
         else:
@@ -36,4 +37,5 @@ class EnsembleModel(NNModel):
 
     @torch.jit.export
     def select_head(self, head_ptr: int):
+        """Select head of ensemble."""
         self.nn.select_head(head_ptr)

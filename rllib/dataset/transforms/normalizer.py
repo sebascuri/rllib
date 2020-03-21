@@ -1,36 +1,42 @@
 """Implementation of a Transformation that normalizes attributes."""
 
 import torch
+import torch.jit
 import torch.nn as nn
 
 from rllib.dataset.transforms.utilities import normalize, denormalize, \
     update_var, update_mean
 from .abstract_transform import AbstractTransform
+from rllib.dataset.datatypes import Observation
 
 
 class Normalizer(nn.Module):
     """Normalizer Class."""
 
+    _preserve_orign: bool
+
     def __init__(self, preserve_origin=False):
         super().__init__()
         self._mean = torch.zeros(1)
         self._variance = torch.ones(1)
-        self._count = 0
+        self._count = torch.tensor(0)
         self._preserve_origin = preserve_origin
 
     def forward(self, array):
         """See `AbstractTransform.__call__'."""
         return normalize(array, self._mean, self._variance, self._preserve_origin)
 
+    @torch.jit.export
     def inverse(self, array):
         """See `AbstractTransform.inverse'."""
         return denormalize(array, self._mean, self._variance, self._preserve_origin)
 
+    @torch.jit.export
     def update(self, array):
         """See `AbstractTransform.update'."""
         new_mean = torch.mean(array, 0)
         new_var = torch.var(array, 0)
-        new_count = len(array)
+        new_count = torch.tensor(len(array))
 
         self._variance = update_var(self._mean, self._variance, self._count,
                                     new_mean, new_var, new_count)
@@ -56,16 +62,18 @@ class StateActionNormalizer(AbstractTransform):
         self._state_normalizer = StateNormalizer(preserve_origin)
         self._action_normalizer = ActionNormalizer(preserve_origin)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
         return self._action_normalizer(self._state_normalizer(observation))
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
         return self._action_normalizer.inverse(
             self._state_normalizer.inverse(observation))
 
-    def update(self, observation):
+    @torch.jit.export
+    def update(self, observation: Observation):
         """See `AbstractTransform.update'."""
         self._state_normalizer.update(observation)
         self._action_normalizer.update(observation)
@@ -91,18 +99,35 @@ class StateNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
-        return observation._replace(state=self._normalizer(observation.state),
-                                    next_state=self._normalizer(observation.next_state))
+        return Observation(
+            state=self._normalizer(observation.state),
+            action=observation.action,
+            reward=observation.reward,
+            next_state=self._normalizer(observation.next_state),
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return observation._replace(
+        return Observation(
             state=self._normalizer.inverse(observation.state),
-            next_state=self._normalizer.inverse(observation.next_state))
+            action=observation.action,
+            reward=observation.reward,
+            next_state=self._normalizer.inverse(observation.next_state),
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def update(self, observation):
+    @torch.jit.export
+    def update(self, observation: Observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.state)
 
@@ -127,14 +152,34 @@ class ActionNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
-        return observation._replace(action=self._normalizer(observation.action))
+        return Observation(
+            state=observation.state,
+            action=self._normalizer(observation.action),
+            reward=observation.reward,
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return observation._replace(action=self._normalizer.inverse(observation.action))
+        return Observation(
+            state=observation.state,
+            action=self._normalizer.inverse(observation.action),
+            reward=observation.reward,
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def update(self, observation):
+    @torch.jit.export
+    def update(self, observation: Observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.action)

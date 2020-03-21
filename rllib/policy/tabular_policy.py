@@ -28,10 +28,9 @@ class TabularPolicy(NNPolicy):
 
     def set_value(self, state, new_value):
         """Set value to value function at a given state."""
-        try:
+        if new_value.ndim < 1 or new_value.shape[-1] != self.nn.head.weight.shape[0]:
             new_value = torch.log(
                 one_hot_encode(new_value, num_classes=self.num_actions) + 1e-12
             )
-        except TypeError:
-            pass
+
         self.nn.head.weight[:, state] = new_value

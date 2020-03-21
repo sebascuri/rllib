@@ -194,6 +194,9 @@ class DeterministicEnsemble(FeedForwardNN):
 
     """
 
+    num_heads: int
+    head_ptr: int
+
     def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
                  biased_head=True, squashed_output=False):
         super().__init__(in_dim, out_dim * num_heads, layers=layers,

@@ -1,8 +1,8 @@
 """Implementation of an Unscaled Model."""
-import gpytorch
+# import gpytorch
 import torch
 
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import RawObservation
 from .abstract_model import AbstractModel
 
 
@@ -21,7 +21,7 @@ class UnscaledModel(AbstractModel):
         """Predict next state distribution."""
         batch_size = state.shape[0:-1]
         for transformation in self.transformations:
-            state, action, *_ = transformation(Observation(state, action))
+            state, action, *_ = transformation(RawObservation(state, action))
 
         # Predict next-state
         # with torch.no_grad(), gpytorch.settings.fast_pred_var():
@@ -39,6 +39,6 @@ class UnscaledModel(AbstractModel):
         # Back-transform
         for transformation in reversed(self.transformations):
             state, action, reward, next_state, *_ = transformation.inverse(
-                Observation(state, action, 0, next_state))
+                RawObservation(state, action, 0, next_state))
 
         return next_state

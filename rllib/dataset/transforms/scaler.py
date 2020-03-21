@@ -1,8 +1,10 @@
 """Implementation of a Transformation that scales attributes."""
 
+import torch.jit
 import torch.nn as nn
 
 from .abstract_transform import AbstractTransform
+from rllib.dataset.datatypes import Observation
 
 
 class Scaler(nn.Module):
@@ -17,6 +19,7 @@ class Scaler(nn.Module):
         """See `AbstractTransform.__call__'."""
         return array / self._scale
 
+    @torch.jit.export
     def inverse(self, array):
         """See `AbstractTransform.inverse'."""
         return array * self._scale
@@ -36,13 +39,32 @@ class RewardScaler(AbstractTransform):
         super().__init__()
         self._scaler = Scaler(scale)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
-        return observation._replace(reward=self._scaler(observation.reward))
+        return Observation(
+            state=observation.state,
+            action=observation.action,
+            reward=self._scaler(observation.reward),
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return observation._replace(reward=self._scaler.inverse(observation.reward))
+        return Observation(
+            state=observation.state,
+            action=observation.action,
+            reward=self._scaler.inverse(observation.reward),
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
 
 class ActionScaler(AbstractTransform):
@@ -60,10 +82,29 @@ class ActionScaler(AbstractTransform):
         super().__init__()
         self._scaler = Scaler(scale)
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
-        return observation._replace(action=self._scaler(observation.action))
+        return Observation(
+            state=observation.state,
+            action=self._scaler(observation.action),
+            reward=observation.reward,
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )
 
-    def inverse(self, observation):
+    @torch.jit.export
+    def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return observation._replace(action=self._scaler.inverse(observation.action))
+        return Observation(
+            state=observation.state,
+            action=self._scaler.inverse(observation.action),
+            reward=observation.reward,
+            next_state=observation.next_state,
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy
+        )

@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from rllib.dataset import TrajectoryDataset
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import RawObservation, Observation
 from rllib.dataset.transforms import *
 
 
@@ -27,11 +27,11 @@ def dataset(request):
         trajectory = []
         for i in range(episode_length):
             trajectory.append(
-                Observation(state=np.random.randn(state_dim),
-                            action=np.random.randn(action_dim),
-                            reward=np.random.randn(),
-                            next_state=np.random.randn(state_dim),
-                            done=i == (episode_length - 1)).to_torch()
+                RawObservation(state=np.random.randn(state_dim),
+                               action=np.random.randn(action_dim),
+                               reward=np.random.randn(),
+                               next_state=np.random.randn(state_dim),
+                               done=i == (episode_length - 1)).to_torch()
             )
 
         dataset.append(trajectory)
@@ -62,7 +62,7 @@ def test_shuffle(dataset):
 
 def test_append_error(dataset):
     dataset = TrajectoryDataset(sequence_length=10)
-    trajectory = [Observation(np.random.randn(4), np.random.randn(2), 1,
+    trajectory = [RawObservation(np.random.randn(4), np.random.randn(2), 1,
                               np.random.randn(4), True).to_torch()]
     with pytest.raises(ValueError):
         dataset.append(trajectory)
@@ -100,7 +100,8 @@ def test_sequence_length_setter(dataset, new_seq_len):
         assert sub_trajectory.reward.shape == torch.Size([batch_len, ])
         assert sub_trajectory.done.shape == torch.Size([batch_len, ])
 
-    assert i == (num_episodes * episode_length // new_seq_len) if new_seq_len else num_episodes
+    assert i == (
+                num_episodes * episode_length // new_seq_len) if new_seq_len else num_episodes
 
 
 def test_initial_states(dataset):

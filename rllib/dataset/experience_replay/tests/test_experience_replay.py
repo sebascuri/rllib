@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from rllib.dataset import ExperienceReplay
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import RawObservation, Observation
 from rllib.dataset.transforms import *
 
 
@@ -19,11 +19,11 @@ def memory(request):
     # ]
     memory_ = ExperienceReplay(max_len, transformations=transformations)
     for _ in range(number_of_samples):
-        memory_.append(Observation(state=np.random.randn(state_dim),
-                                   action=np.random.randn(action_dim),
-                                   reward=np.random.randn(),
-                                   next_state=np.random.randn(state_dim),
-                                   done=False).to_torch()
+        memory_.append(RawObservation(state=np.random.randn(state_dim),
+                                      action=np.random.randn(action_dim),
+                                      reward=np.random.randn(),
+                                      next_state=np.random.randn(state_dim),
+                                      done=False).to_torch()
                        )
     return memory_, max_len, number_of_samples
 
@@ -40,11 +40,11 @@ def experience_replay():
                        ]
     memory_ = ExperienceReplay(max_len, transformations=transformations)
     for _ in range(number_of_samples):
-        memory_.append(Observation(state=np.random.randn(state_dim),
-                                   action=np.random.randn(action_dim),
-                                   reward=np.random.randn(),
-                                   next_state=np.random.randn(state_dim),
-                                   done=False).to_torch()
+        memory_.append(RawObservation(state=np.random.randn(state_dim),
+                                      action=np.random.randn(action_dim),
+                                      reward=np.random.randn(),
+                                      next_state=np.random.randn(state_dim),
+                                      done=False).to_torch()
                        )
     return memory_
 
@@ -87,9 +87,7 @@ def test_transforms(experience_replay):
     memory = experience_replay
     for idx in range(len(memory)):
         observation = memory.__getitem__(idx)
-        print(observation)
-        print(memory.memory[idx])
-        assert observation != memory.memory[idx]
+
         assert observation is not memory.memory[idx]
         assert type(observation) is Observation
 
@@ -97,5 +95,3 @@ def test_transforms(experience_replay):
 def test_append_error(experience_replay):
     with pytest.raises(TypeError):
         experience_replay.append((1, 2, 3, 4, 5))
-
-

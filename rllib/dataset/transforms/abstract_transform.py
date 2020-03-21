@@ -6,6 +6,8 @@ from abc import ABCMeta
 import torch.jit
 import torch.nn as nn
 
+from rllib.dataset.datatypes import Observation
+
 
 class AbstractTransform(nn.Module, metaclass=ABCMeta):
     """Abstract transform to apply on a dataset.
@@ -21,7 +23,7 @@ class AbstractTransform(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def forward(self, observation):
+    def forward(self, observation: Observation):
         """Apply transformation to observation tuple.
 
         Parameters
@@ -37,7 +39,7 @@ class AbstractTransform(nn.Module, metaclass=ABCMeta):
         raise NotImplementedError
 
     @torch.jit.export
-    def inverse(self, observation):
+    def inverse(self, observation: Observation):
         """Apply the inverse transformation to observation tuple..
 
         Parameters
@@ -54,7 +56,7 @@ class AbstractTransform(nn.Module, metaclass=ABCMeta):
         return observation
 
     @torch.jit.export
-    def update(self, observation):
+    def update(self, observation: Observation):
         """Update parameters of transformer.
 
         Parameters

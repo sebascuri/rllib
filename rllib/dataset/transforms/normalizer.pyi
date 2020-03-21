@@ -1,3 +1,4 @@
+from torch import Tensor
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Observation, Array
@@ -12,7 +13,7 @@ class Normalizer(nn.Module):
 
     def __init__(self, preserve_origin: bool = False) -> None: ...
 
-    def forward(self, *array: Array, **kwargs) -> Array: ...
+    def forward(self, *array: Tensor, **kwargs) -> Array: ...
 
     def inverse(self, array: Array) -> Array: ...
 

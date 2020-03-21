@@ -1,18 +1,18 @@
 import numpy as np
 import torch
 
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import RawObservation, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
 def get_trajectory():
     t = []
     for reward in [3., -2., 0.5]:
-        t.append(Observation(state=torch.randn(4),
-                             action=torch.randn(2),
-                             reward=reward,
-                             next_state=torch.randn(4),
-                             done=False))
+        t.append(RawObservation(state=torch.randn(4),
+                                action=torch.randn(2),
+                                reward=reward,
+                                next_state=torch.randn(4),
+                                done=False))
     return t
 
 
@@ -24,8 +24,8 @@ def test_stack_list_of_observations():
     assert stacked_trajectory.state.shape == (3, 4)
     assert stacked_trajectory.action.shape == (3, 2)
     assert stacked_trajectory.next_state.shape == (3, 4)
-    assert stacked_trajectory.reward.shape == (3, )
-    assert stacked_trajectory.done.shape == (3, )
+    assert stacked_trajectory.reward.shape == (3,)
+    assert stacked_trajectory.done.shape == (3,)
     for val in stacked_trajectory:
         assert val.dtype is torch.get_default_dtype()
 
