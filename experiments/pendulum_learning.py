@@ -90,19 +90,19 @@ for transition in bootstraps:
 ensemble = EnsembleModel(2, 1, num_heads=ensemble_size, layers=[64], biased_head=True,
                          non_linearity='ReLU', input_transform=StateTransform(),
                          deterministic=False)
-ensemble = torch.jit.script(ensemble)
+# ensemble = torch.jit.script(ensemble)
 
 optimizer = torch.optim.Adam(ensemble.parameters(), lr=0.01)
-for _ in tqdm(range(25)):
+for _ in tqdm(range(15)):
     for i in range(ensemble_size):
         ensemble.select_head(i)
         train_model(ensemble, dataloaders[i], max_iter=3, optimizer=optimizer,
                     print_flag=False)
 
-
-dynamic_model = UnscaledModel(ensemble, torch.nn.ModuleList(transformations))
-dynamic_model = torch.jit.script(dynamic_model)
-
+# ensemble.select_head(ensemble_size)
+dynamic_model = UnscaledModel(ensemble, transformations)
+# dynamic_model = torch.jit.script(dynamic_model)
+# dynamic_model.base_model.select_head(ensemble_size)
 # model = ExactGPModel(data.state, data.action, data.next_state)
 # model.eval()
 # model(torch.randn(1, 2), torch.randn(1, 1))
@@ -229,5 +229,5 @@ environment.initial_state = lambda: test_state.numpy()
 trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
                             max_steps=400, render=True)
 trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
-print(f'Environment Cumulative reward: {torch.sum(rewards):.2f}')
+print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
 

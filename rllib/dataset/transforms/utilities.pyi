@@ -1,21 +1,15 @@
 """Utilities for the transformers."""
 
-from rllib.dataset.datatypes import Array
+from torch import Tensor
 
-def update_mean(old_mean: Array, old_count: int,
-                new_mean: Array, new_count: int) -> Array: ...
+def rescale(tensor: Tensor, scale: Tensor) -> Tensor: ...
 
-
-def update_var(old_mean: Array, old_var: Array, old_count: int,
-               new_mean: Array, new_var: Array, new_count: int,
-               biased: bool = False) -> Array: ...
+def update_mean(old_mean: Tensor, old_count: Tensor,
+                new_mean: Tensor, new_count: Tensor) -> Tensor: ...
 
 
-def normalize(array: Array, mean: Array, variance: Array,
-              preserve_origin: bool = False) -> Array: ...
+def update_var(old_mean: Tensor, old_var: Tensor, old_count: Tensor,
+               new_mean: Tensor, new_var: Tensor, new_count: Tensor) -> Tensor: ...
 
-
-def denormalize(array: Array, mean: Array, variance: Array,
-                preserve_origin: bool = False) -> Array: ...
 
 def shift_mvn(mvn, mean, variance=None): ...

@@ -49,7 +49,9 @@ class RewardScaler(AbstractTransform):
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=observation.next_state_scale_tril
         )
 
     @torch.jit.export
@@ -63,7 +65,9 @@ class RewardScaler(AbstractTransform):
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=observation.next_state_scale_tril
         )
 
 
@@ -92,7 +96,9 @@ class ActionScaler(AbstractTransform):
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=observation.next_state_scale_tril
         )
 
     @torch.jit.export
@@ -106,5 +112,7 @@ class ActionScaler(AbstractTransform):
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=observation.next_state_scale_tril
         )

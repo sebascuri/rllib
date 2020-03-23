@@ -4,9 +4,8 @@ import numpy as np
 import scipy.signal
 import torch
 import torch.distributions
-from gpytorch.distributions import Delta, MultivariateNormal, \
-    MultitaskMultivariateNormal
-from torch.distributions import Categorical
+from gpytorch.distributions import Delta, MultitaskMultivariateNormal
+from torch.distributions import Categorical, MultivariateNormal
 
 from rllib.dataset.utilities import get_backend
 
@@ -189,7 +188,7 @@ def tensor_to_distribution(args):
         return Delta(args[0])
     else:
         if args[0].shape[-1] == args[1].shape[-1]:
-            return MultivariateNormal(*args)
+            return MultivariateNormal(args[0], scale_tril=args[1])
         else:
             return MultitaskMultivariateNormal(*args)
 

@@ -12,7 +12,9 @@ def get_observation(reward=None):
                           action=torch.randn(4),
                           reward=reward if reward else torch.randn(1),
                           next_state=torch.randn(4),
-                          done=False).to_torch()
+                          done=False,
+                          state_scale_tril=torch.randn(4, 4),
+                          next_state_scale_tril=torch.randn(4, 4)).to_torch()
 
 
 @pytest.fixture
@@ -29,7 +31,7 @@ class MeanModel(torch.nn.Module):
 
 
 class TestMeanFunction(object):
-    def test_call(self, trajectory):
+    def test_custom_mean(self, trajectory):
         transformer = torch.jit.script(MeanFunction(torch.jit.script(MeanModel())))
         for observation in trajectory:
             transformed_observation = transformer(observation)
@@ -45,10 +47,23 @@ class TestMeanFunction(object):
             torch.testing.assert_allclose(transformed_observation.next_state,
                                           observation.next_state - mean)
 
-        # transformer.update(trajectory)
+    def test_call(self, trajectory):
+        transformer = torch.jit.script(MeanFunction(torch.jit.script(DeltaState())))
+        for observation in trajectory:
+            transformed_observation = transformer(observation)
+            torch.testing.assert_allclose(transformed_observation.state,
+                                          observation.state)
+            torch.testing.assert_allclose(transformed_observation.action,
+                                          observation.action)
+            torch.testing.assert_allclose(transformed_observation.reward,
+                                          observation.reward)
+            assert transformed_observation.done == observation.done
 
+            mean = observation.state
+            torch.testing.assert_allclose(transformed_observation.next_state,
+                                          observation.next_state - mean)
     def test_inverse(self, trajectory):
-        transformer = torch.jit.script(MeanFunction(MeanModel()))
+        transformer = torch.jit.script(MeanFunction(DeltaState()))
         for observation in trajectory:
             inverse_observation = transformer.inverse(transformer(observation))
             for x, y in zip(observation, inverse_observation):
@@ -226,8 +241,8 @@ class TestActionNormalize(object):
         var = torch.var(trajectory.action, 0)
 
         transformer.update(trajectory)
-        torch.testing.assert_allclose(transformer._normalizer._mean, mean)
-        torch.testing.assert_allclose(transformer._normalizer._variance, var)
+        torch.testing.assert_allclose(transformer._normalizer.mean, mean)
+        torch.testing.assert_allclose(transformer._normalizer.variance, var)
 
     def test_call(self, trajectory, preserve_origin):
         transformer = torch.jit.script(ActionNormalizer(preserve_origin))
@@ -239,11 +254,11 @@ class TestActionNormalize(object):
 
         if preserve_origin:
             mean = 0
-            scale = torch.sqrt(transformer._normalizer._variance
-                               + transformer._normalizer._mean ** 2)
+            scale = torch.sqrt(transformer._normalizer.variance
+                               + transformer._normalizer.mean ** 2)
         else:
-            mean = transformer._normalizer._mean
-            scale = torch.sqrt(transformer._normalizer._variance)
+            mean = transformer._normalizer.mean
+            scale = torch.sqrt(transformer._normalizer.variance)
         torch.testing.assert_allclose(transformed.action,
                                       (observation.action - mean) / scale)
 
@@ -260,7 +275,8 @@ class TestActionNormalize(object):
         observation = get_observation()
         inverse_observation = transformer.inverse(transformer(observation))
         for x, y in zip(observation, inverse_observation):
-            torch.testing.assert_allclose(x, y)
+            if x.shape == y.shape:
+                torch.testing.assert_allclose(x, y)
         assert observation is not inverse_observation
 
 
@@ -278,8 +294,8 @@ class TestStateNormalize(object):
         var = torch.var(trajectory.state, 0)
 
         transformer.update(trajectory)
-        torch.testing.assert_allclose(transformer._normalizer._mean, mean)
-        torch.testing.assert_allclose(transformer._normalizer._variance, var)
+        torch.testing.assert_allclose(transformer._normalizer.mean, mean)
+        torch.testing.assert_allclose(transformer._normalizer.variance, var)
 
     def test_call(self, trajectory, preserve_origin):
         transformer = torch.jit.script(StateNormalizer(preserve_origin))
@@ -291,11 +307,11 @@ class TestStateNormalize(object):
 
         if preserve_origin:
             mean = 0
-            scale = torch.sqrt(transformer._normalizer._variance
-                               + transformer._normalizer._mean ** 2)
+            scale = torch.sqrt(transformer._normalizer.variance
+                               + transformer._normalizer.mean ** 2)
         else:
-            mean = transformer._normalizer._mean
-            scale = torch.sqrt(transformer._normalizer._variance)
+            mean = transformer._normalizer.mean
+            scale = torch.sqrt(transformer._normalizer.variance)
         torch.testing.assert_allclose(transformed.state,
                                       (observation.state - mean) / scale)
         torch.testing.assert_allclose(transformed.next_state,
@@ -315,5 +331,6 @@ class TestStateNormalize(object):
         observation = get_observation()
         inverse_observation = transformer.inverse(transformer(observation))
         for x, y in zip(observation, inverse_observation):
-            torch.testing.assert_allclose(x, y)
+            if x.shape == y.shape:
+                torch.testing.assert_allclose(x, y)
         assert observation is not inverse_observation

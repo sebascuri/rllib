@@ -1,9 +1,18 @@
 """Implementation of a Transformation that offsets the data with a mean function."""
 
 import torch.jit
+import torch.nn as nn
 
 from .abstract_transform import AbstractTransform
 from rllib.dataset.datatypes import Observation
+
+
+class DeltaState(nn.Module):
+    """Implementation of a Mean function that returns f(s, a) = s."""
+
+    def forward(self, state, action):
+        """Compute next state."""
+        return state
 
 
 class MeanFunction(AbstractTransform):
@@ -33,7 +42,9 @@ class MeanFunction(AbstractTransform):
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=observation.next_state_scale_tril
         )
 
     @torch.jit.export
@@ -54,5 +65,7 @@ class MeanFunction(AbstractTransform):
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=observation.next_state_scale_tril
         )

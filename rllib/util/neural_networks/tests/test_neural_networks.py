@@ -42,6 +42,8 @@ def _test_from_other(object_, class_):
 
     assert isinstance(other, class_)
     assert other is not object_
+
+    other = torch.jit.script(other)
     for p1, p2 in zip(object_.parameters(), other.parameters()):
         if not torch.allclose(p1, p1[0]):
             assert not torch.allclose(p1, p2)
@@ -53,6 +55,8 @@ def _test_from_other_with_copy(object_, class_):
 
     assert isinstance(other, class_)
     assert other is not object_
+
+    other = torch.jit.script(other)
     for p1, p2 in zip(object_.parameters(), other.parameters()):
         assert torch.allclose(p1, p2)
     assert count_vars(other) == count_vars(object_)
@@ -65,7 +69,8 @@ class TestDeterministicNN(object):
 
     def test_output_shape(self, net, in_dim, out_dim, layers, non_linearity,
                           batch_size):
-        net = net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        net = torch.jit.script(
+            net(in_dim, out_dim, layers, non_linearity=non_linearity))
         if batch_size is None:
             t = torch.randn(in_dim)
             o = net(t)
@@ -76,7 +81,7 @@ class TestDeterministicNN(object):
             assert o.shape == torch.Size([batch_size, out_dim])
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         layers = layers or list()
 
         # Check nn.parameters (+1: head)
@@ -99,7 +104,7 @@ class TestHeteroGaussianNN(object):
         return HeteroGaussianNN
 
     def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -110,21 +115,21 @@ class TestHeteroGaussianNN(object):
             assert o.shape == torch.Size([batch_size, out_dim])
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = net(in_dim, out_dim)
+        net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn(batch_size, 2, in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         layers = layers or list()
 
         # Check nn.parameters (+2: mean and covariance)
@@ -133,8 +138,13 @@ class TestHeteroGaussianNN(object):
         # Check shapes
         layers.append(out_dim)
         layers.append(out_dim)
-        for i, param in enumerate(net.parameters()):
-            assert param.shape[0] == layers[i // 2]
+        i = 0
+        for name, param in net.named_parameters():
+            if name.startswith('_scale'):
+                assert param.shape[0] == out_dim  # * out_dim
+            else:
+                assert param.shape[0] == layers[i // 2]
+                i += 1
 
     def test_class_method(self, net, in_dim, out_dim, layers, non_linearity):
         n1 = net(in_dim, out_dim, layers, non_linearity=non_linearity)
@@ -148,7 +158,7 @@ class TestHomoGaussianNN(object):
         return HomoGaussianNN
 
     def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -159,21 +169,21 @@ class TestHomoGaussianNN(object):
             assert o.shape == torch.Size([batch_size, out_dim])
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = net(in_dim, out_dim)
+        net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn(batch_size, 2, in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         layers = layers or list()
 
         # Check nn.parameters (+1: mean and covariance has only 1 param)
@@ -183,7 +193,7 @@ class TestHomoGaussianNN(object):
         layers.append(out_dim)
         i = 0
         for name, param in net.named_parameters():
-            if name.startswith('_covariance'):
+            if name.startswith('_scale'):
                 assert param.shape[0] == out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
@@ -201,7 +211,7 @@ class TestCategoricalNN(object):
         return CategoricalNN
 
     def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -212,21 +222,21 @@ class TestCategoricalNN(object):
             assert o.shape == torch.Size([batch_size])
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = net(in_dim, out_dim)
+        net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn(batch_size, 2, in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.Categorical)
         assert not o.has_rsample
         assert o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = net(in_dim, out_dim, layers)
+        net = torch.jit.script(net(in_dim, out_dim, layers))
         layers = layers or list()
 
         # Check nn.parameters (+1: head)
@@ -255,6 +265,7 @@ class TestEnsembleNN(object):
             base_net = net(4, 2)
             net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
 
+        net = torch.jit.script(net)
         assert net.num_heads == num_heads
 
     def test_output_shape(self, net, out_dim, layers, num_heads, batch_size):
@@ -265,6 +276,7 @@ class TestEnsembleNN(object):
             base_net = net(in_dim, out_dim, layers=layers)
             net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
 
+        net = torch.jit.script(net)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -282,17 +294,18 @@ class TestEnsembleNN(object):
             base_net = net(in_dim, out_dim)
             net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
 
+        net = torch.jit.script(net)
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn(batch_size, 2, in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else [])
 
     def test_layers(self, net, out_dim, num_heads, layers):
         in_dim = 4
@@ -302,6 +315,7 @@ class TestEnsembleNN(object):
             base_net = net(in_dim, out_dim, layers=layers)
             net = DeterministicEnsemble.from_feedforward(base_net, num_heads=num_heads)
 
+        net = torch.jit.script(net)
         layers = layers or list()
 
         # Check nn.parameters (+1: head)
@@ -329,7 +343,7 @@ class TestFelixNet(object):
         return FelixNet
 
     def test_output_shape(self, net, in_dim, out_dim, batch_size):
-        net = net(in_dim, out_dim)
+        net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -340,21 +354,21 @@ class TestFelixNet(object):
             assert o.shape == torch.Size([batch_size, out_dim])
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = net(in_dim, out_dim)
+        net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn(batch_size, 2, in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else [])
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = net(in_dim, out_dim)
+        net = torch.jit.script(net(in_dim, out_dim))
         layers = [64, 64]
 
         # Check nn.parameters (+2: mean and covariance have only weights)

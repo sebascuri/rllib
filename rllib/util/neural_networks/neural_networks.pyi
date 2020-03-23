@@ -36,13 +36,13 @@ class CategoricalNN(FeedForwardNN):
 
 
 class HeteroGaussianNN(FeedForwardNN):
-    _covariance: nn.Linear
+    _scale: nn.Linear
 
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
 
 class HomoGaussianNN(FeedForwardNN):
-    _covariance: nn.Parameter
+    _scale: nn.Parameter
 
 
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
@@ -84,12 +84,8 @@ class MultiHeadNN(FeedForwardNN):
 
 
 
-class FelixNet(nn.Module):
-    layers: List[int]
-    linear1: nn.Linear
-    linear2: nn.Linear
-    _mean: nn.Linear
-    _covariance: nn.Linear
+class FelixNet(FeedForwardNN):
+    _scale_tril: nn.Linear
 
     def __init__(self, in_dim: int, out_dim: int) -> None: ...
 

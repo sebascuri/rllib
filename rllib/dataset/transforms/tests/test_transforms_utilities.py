@@ -11,24 +11,19 @@ def preserve_origin(request):
     return request.param
 
 
-@pytest.fixture(params=[torch])
-def backend(request):
-    return request.param
+def test_backend():
+    assert torch == get_backend(torch.randn(4))
 
 
-def test_backend(backend):
-    assert backend == get_backend(torch.randn(4))
-
-
-def test_update(backend, preserve_origin):
+def test_update(preserve_origin):
     array = torch.randn(32, 4)
     transformer = Normalizer(preserve_origin)
     transformer.update(array)
-    backend.testing.assert_allclose(transformer._mean, backend.mean(array, 0))
-    backend.testing.assert_allclose(transformer._variance, backend.var(array, 0))
+    torch.testing.assert_allclose(transformer.mean, torch.mean(array, 0))
+    torch.testing.assert_allclose(transformer.variance, torch.var(array, 0))
 
 
-def test_normalize(backend, preserve_origin):
+def test_normalize(preserve_origin):
     array = torch.randn(32, 4)
     new_array = torch.randn(4)
     transformer = Normalizer(preserve_origin)
@@ -37,14 +32,14 @@ def test_normalize(backend, preserve_origin):
 
     if preserve_origin:
         mean = 0
-        scale = backend.sqrt(backend.var(array, 0) + backend.mean(array, 0) ** 2)
+        scale = torch.sqrt(torch.var(array, 0) + torch.mean(array, 0) ** 2)
     else:
-        mean = backend.mean(array, 0)
-        scale = backend.sqrt(backend.var(array, 0))
-    backend.testing.assert_allclose(transformed_array, (new_array - mean) / scale)
+        mean = torch.mean(array, 0)
+        scale = torch.sqrt(torch.var(array, 0))
+    torch.testing.assert_allclose(transformed_array, (new_array - mean) / scale)
 
 
-def test_unnormalize(backend):
+def test_unnormalize():
     array = torch.randn(32, 4)
     new_array = torch.randn(4)
     transformer = Normalizer(preserve_origin)
@@ -52,19 +47,23 @@ def test_unnormalize(backend):
     transformed_array = transformer(new_array)
     back_array = transformer.inverse(transformed_array)
 
-    backend.testing.assert_allclose(back_array, new_array)
+    torch.testing.assert_allclose(back_array, new_array)
 
 
-def test_double_update(backend):
-    array1 = torch.randn(32, 4)
+def test_sequential_update():
+    array = torch.randn(16, 4)
 
     transformer = Normalizer()
-    transformer.update(array1)
+    transformer.update(array)
 
-    array2 = torch.randn(16, 4)
-    transformer.update(array2)
+    torch.testing.assert_allclose(transformer.mean, torch.mean(array, 0))
+    torch.testing.assert_allclose(transformer.variance, torch.var(array, 0))
 
-    array = backend.stack((*array1, *array2))
+    for i in range(10):
+        new_array = torch.randn(torch.randint(32, (1,)), 4)
+        transformer.update(new_array)
 
-    backend.testing.assert_allclose(transformer._mean, backend.mean(array, 0))
-    backend.testing.assert_allclose(transformer._variance, backend.var(array, 0))
+        array = torch.cat((array, new_array), dim=0)
+        torch.testing.assert_allclose(transformer.mean, torch.mean(array, 0))
+        torch.testing.assert_allclose(transformer.variance, torch.var(array, 0),
+                                      rtol=1e-2, atol=1e-3)

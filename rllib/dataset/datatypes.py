@@ -22,7 +22,8 @@ NaN = float('nan')
 
 Observation = namedtuple('Observation',
                          ['state', 'action', 'reward', 'next_state', 'done',
-                          'next_action', 'log_prob_action', 'entropy'])
+                          'next_action', 'log_prob_action', 'entropy',
+                          'state_scale_tril', 'next_state_scale_tril'])
 
 
 class RawObservation(NamedTuple):
@@ -36,6 +37,8 @@ class RawObservation(NamedTuple):
     next_action: Action = torch.tensor(NaN)  # SARSA algorithm.
     log_prob_action: Probability = torch.tensor(NaN)  # Off-policy algorithms.
     entropy: Probability = torch.tensor(NaN)  # Entropy of current policy.
+    state_scale_tril: Tensor = torch.tensor(NaN)
+    next_state_scale_tril: Tensor = torch.tensor(NaN)
 
     @staticmethod
     def _is_equal_nan(x, y):

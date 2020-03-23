@@ -3,6 +3,14 @@ import torch
 from gpytorch.distributions import MultivariateNormal, MultitaskMultivariateNormal
 
 
+def rescale(tensor, scale):
+    """Rescale an array by multiplying it by scale."""
+    if tensor.dim() < 2 or scale.shape[-1] != tensor.shape[-2]:
+        return tensor
+    else:
+        return scale @ tensor
+
+
 def update_mean(old_mean, old_count, new_mean, new_count):
     """Update mean based on a new batch of data.
 
@@ -24,8 +32,7 @@ def update_mean(old_mean, old_count, new_mean, new_count):
     return mean
 
 
-def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count,
-               biased: bool = False):
+def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count):
     """Update mean and variance statistics based on a new batch of data.
 
     Parameters
@@ -46,58 +53,15 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count,
     delta = new_mean - old_mean
     total = old_count + new_count
 
-    if not biased:
-        old_c = old_count - 1 if old_count > 0 else torch.tensor(0)
-        new_c = new_count - 1 if new_count > 0 else torch.tensor(0)
-    else:
-        old_c = old_count
-        new_c = new_count
+    old_c = old_count - 1 if old_count > 0 else torch.tensor(0)
+    new_c = new_count - 1 if new_count > 0 else torch.tensor(0)
 
     old_m = old_var * old_c
     new_m = new_var * new_c
 
     m2 = old_m + new_m + delta ** 2 * (old_count * new_count / total)
 
-    if not biased:
-        return m2 / (total - 1)
-    else:
-        return m2 / total
-
-
-def normalize(array, mean, variance, preserve_origin: bool = False):
-    """Normalize an array.
-
-    Parameters
-    ----------
-    array : array_like
-    mean : array_like
-    variance : array_like
-    preserve_origin : bool, optional
-        Whether to retain the origin (sign) of the data.
-    """
-    if preserve_origin:
-        scale = torch.sqrt(variance + mean ** 2)
-        return array / scale
-    else:
-        return (array - mean) / torch.sqrt(variance)
-
-
-def denormalize(array, mean, variance, preserve_origin: bool = False):
-    """Denormalize an array.
-
-    Parameters
-    ----------
-    array : array_like
-    mean : array_like
-    variance : array_like
-    preserve_origin : bool, optional
-        Whether to retain the origin (sign) of the data.
-    """
-    if preserve_origin:
-        scale = torch.sqrt(variance + mean ** 2)
-        return array * scale
-    else:
-        return mean + array * torch.sqrt(variance)
+    return m2 / (total - 1)
 
 
 def shift_mvn(mvn, mean, variance=None):

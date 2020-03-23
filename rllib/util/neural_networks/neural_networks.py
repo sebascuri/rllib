@@ -51,12 +51,12 @@ class FeedForwardNN(nn.Module):
 
         Parameters
         ----------
-        x: torch.Tensor
+        x: torch.Tensor.
             Tensor of size [batch_size x in_dim] where the NN is evaluated.
 
         Returns
         -------
-        out: torch.Tensor
+        out: torch.Tensor.
             Tensor of size [batch_size x out_dim].
         """
         out = self.head(self.hidden_layers(x))
@@ -70,12 +70,12 @@ class FeedForwardNN(nn.Module):
 
         Parameters
         ----------
-        x: torch.Tensor
+        x: torch.Tensor.
             Tensor of size [batch_size x in_dim] where the NN is evaluated.
 
         Returns
         -------
-        out: torch.Tensor
+        out: torch.Tensor.
             Tensor of size [batch_size x embedding_dim].
         """
         out = self.hidden_layers(x)
@@ -101,31 +101,49 @@ class HeteroGaussianNN(FeedForwardNN):
         super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
                          biased_head=biased_head, squashed_output=squashed_output)
         in_dim = self.head.in_features
-        self._covariance = nn.Linear(in_dim, out_dim, bias=biased_head)
+        self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
+        # self._scale_tril = nn.Linear(in_dim, out_dim * out_dim, bias=biased_head)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
 
         Parameters
         ----------
-        x: torch.Tensor
+        x: torch.Tensor.
             Tensor of size [batch_size x in_dim] where the NN is evaluated.
 
         Returns
         -------
-        out: torch.distributions.MultivariateNormal
-            Multivariate distribution with mean of size [batch_size x out_dim] and
-            covariance of size [batch_size x out_dim x out_dim].
+        mean: torch.Tensor.
+            Mean of size [batch_size x out_dim].
+        scale_tril: torch.Tensor.
+            Cholesky factorization of covariance matrix of size.
+            [batch_size x out_dim x out_dim].
         """
         x = self.hidden_layers(x)
         mean = self.head(x)
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        covariance = nn.functional.softplus(self._covariance(x))
-        covariance = torch.diag_embed(covariance)
+        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)))
 
-        return mean, covariance
+        # if x.dim() == 1 or x.dim() == 0:
+        #     batch_size = None
+        # else:
+        #     batch_size = x.shape[:-1]
+        # out_dim = mean.shape[-1]
+        # idx = torch.arange(out_dim)
+        # scale_tril = self._scale_tril(x)
+        # if batch_size is None:
+        #     scale_tril = scale_tril.reshape(out_dim, out_dim)
+        #     scale_tril[idx, idx] = nn.functional.softplus(scale_tril[idx, idx])
+        # else:
+        #     scale_tril = scale_tril.reshape(batch_size + (out_dim, out_dim))
+        #     scale_tril[..., idx, idx] = nn.functional.softplus(
+        #         scale_tril[..., idx, idx])
+        # scale = torch.tril(scale_tril)
+
+        return mean, scale
 
 
 class HomoGaussianNN(FeedForwardNN):
@@ -136,7 +154,7 @@ class HomoGaussianNN(FeedForwardNN):
         super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
                          biased_head=biased_head, squashed_output=squashed_output)
         initial_scale = inverse_softplus(torch.rand(out_dim))
-        self._covariance = nn.Parameter(initial_scale, requires_grad=True)
+        self._scale = nn.Parameter(initial_scale, requires_grad=True)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -157,10 +175,9 @@ class HomoGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        covariance = functional.softplus(self._covariance)
-        covariance = torch.diag_embed(covariance)
+        scale = torch.diag_embed(functional.softplus(self._scale))
 
-        return mean, covariance
+        return mean, scale
 
 
 class CategoricalNN(FeedForwardNN):
@@ -222,9 +239,11 @@ class DeterministicEnsemble(FeedForwardNN):
 
         Returns
         -------
-        out: torch.distributions.MultivariateNormal
-            Multivariate distribution with mean of size [batch_size x out_dim] and
-            covariance of size [batch_size x out_dim x out_dim].
+        mean: torch.Tensor.
+            Mean of size [batch_size x out_dim].
+        scale_tril: torch.Tensor.
+            Cholesky factorization of covariance matrix of size.
+            [batch_size x out_dim x out_dim].
         """
         x = self.hidden_layers(x)
         out = self.head(x)
@@ -234,7 +253,7 @@ class DeterministicEnsemble(FeedForwardNN):
         if self.head_ptr == self.num_heads:
             mean = torch.mean(out, dim=-1, keepdim=True)
             sigma = (mean - out) @ (mean - out).transpose(-2, -1)
-            covariance = sigma / self.num_heads
+            covariance = torch.cholesky(sigma) / self.num_heads
             mean = mean.squeeze(-1)
 
         else:
@@ -295,14 +314,13 @@ class MultiHeadNN(FeedForwardNN):
 
         Parameters
         ----------
-        x: torch.Tensor
+        x: torch.Tensor.
             Tensor of size [batch_size x in_dim] where the NN is evaluated.
 
         Returns
         -------
-        out: torch.distributions.MultivariateNormal
-            Multivariate distribution with mean of size [batch_size x out_dim] and
-            covariance of size [batch_size x out_dim x out_dim].
+        out: torch.Tensor.
+            Output of size [batch_size x out_dim] of current head.
         """
         x = self.hidden_layers(x)
         return self.heads[i](x)
@@ -320,15 +338,28 @@ class FelixNet(FeedForwardNN):
         torch.nn.init.zeros_(self.hidden_layers[2].bias)
         # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
 
-        self._covariance = nn.Linear(64, out_dim, bias=False)
+        self._scale_tril = nn.Linear(64, out_dim, bias=False)
         # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
 
     def forward(self, x):
-        """Execute felix network."""
+        """Execute forward computation of FelixNet.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        mean: torch.Tensor.
+            Mean of size [batch_size x out_dim].
+        scale_tril: torch.Tensor.
+            Cholesky factorization of covariance matrix of size.
+            [batch_size x out_dim x out_dim].
+        """
         x = self.hidden_layers(x)
 
         mean = torch.tanh(self.head(x))
-        covariance = functional.softplus(self._covariance(x))
-        covariance = torch.diag_embed(covariance)
+        scale = torch.diag_embed(functional.softplus(self._scale_tril(x)))
 
-        return mean, covariance
+        return mean, scale

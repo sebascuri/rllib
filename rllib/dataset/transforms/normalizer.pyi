@@ -6,18 +6,18 @@ from .abstract_transform import AbstractTransform
 
 
 class Normalizer(nn.Module):
-    _mean: Array
-    _variance: Array
-    _count: int
-    _preserve_origin: bool
+    mean: Tensor
+    variance: Tensor
+    count: Tensor
+    preserve_origin: bool
 
     def __init__(self, preserve_origin: bool = False) -> None: ...
 
-    def forward(self, *array: Tensor, **kwargs) -> Array: ...
+    def forward(self, *array, **kwargs) -> Tensor: ...
 
-    def inverse(self, array: Array) -> Array: ...
+    def inverse(self, array: Tensor) -> Tensor: ...
 
-    def update(self, array: Array) -> None: ...
+    def update(self, array: Tensor) -> None: ...
 
 
 class StateActionNormalizer(AbstractTransform):
