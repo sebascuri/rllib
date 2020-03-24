@@ -44,16 +44,20 @@ class ExpectedModel(TransformedModel):
     """Expected Model returns a Delta at the expected next state."""
 
     def forward(self, state, action):
-        return super().forward(state, action)[0], torch.tensor(0.)
+        """Get Expected Next state."""
+        ns, cov = super().forward(state, action)
+
+        return ns, torch.zeros_like(cov)
 
 
 class OptimisticModel(TransformedModel):
     """Optimistic Model returns a Delta at the optimistic next state."""
 
     def forward(self, state, action):
+        """Get Optimistic Next state."""
         control_action = action[..., :-self.dim_states]
         optimism_vars = action[..., -self.dim_states:]
         optimism_vars = torch.clamp(optimism_vars, -1., 1.)
 
         mean, tril = super().forward(state, control_action)
-        return mean + tril * optimism_vars, torch.tensor(0.)
+        return mean + tril * optimism_vars, torch.zeros_like(tril)

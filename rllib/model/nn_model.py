@@ -63,14 +63,11 @@ class NNModel(AbstractModel):
             action = one_hot_encode(action.long(), num_classes=self.num_actions)
 
         if self.input_transform is not None:
-            expanded_state = self.input_transform(state)
-        else:
-            expanded_state = state
+            state = self.input_transform(state)
 
-        state_action = torch.cat((expanded_state, action), dim=-1)
+        state_action = torch.cat((state, action), dim=-1)
         next_state = self.nn(state_action)
-        next_state = state + next_state[0], next_state[1]
 
         if self.deterministic:
-            return next_state[0], torch.zeros(1)
+            return next_state[0], torch.zeros_like(next_state[1])
         return next_state

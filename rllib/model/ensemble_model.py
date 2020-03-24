@@ -28,8 +28,6 @@ class EnsembleModel(NNModel):
         """Compute next state distribution."""
         if self.input_transform is not None:
             state = self.input_transform(state)
-        else:
-            state = state
 
         state_action = torch.cat((state, action), dim=-1)
         next_state = self.nn(state_action)

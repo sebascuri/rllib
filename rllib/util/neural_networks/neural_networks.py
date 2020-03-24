@@ -253,12 +253,13 @@ class DeterministicEnsemble(FeedForwardNN):
         if self.head_ptr == self.num_heads:
             mean = torch.mean(out, dim=-1, keepdim=True)
             sigma = (mean - out) @ (mean - out).transpose(-2, -1)
+            sigma += 1e-9 * torch.eye(mean.shape[-2])  # Add some jitter.
             covariance = torch.cholesky(sigma) / self.num_heads
             mean = mean.squeeze(-1)
 
         else:
             mean = out[..., self.head_ptr]
-            covariance = torch.zeros(1)
+            covariance = torch.zeros(mean.shape + (mean.shape[-1], ))
 
         return mean, covariance
 

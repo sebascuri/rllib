@@ -26,9 +26,6 @@ class MBMPPOAgent(AbstractAgent):
     exploration_episodes: int, optional
         Number of random exploration steps.
 
-    References
-    ----------
-
     """
 
     def __init__(self, dynamic_model, mppo,
@@ -70,6 +67,7 @@ class MBMPPOAgent(AbstractAgent):
         self.termination = termination
 
     def observe(self, observation):
+        """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.dataset.append(observation)
 
@@ -113,11 +111,13 @@ class MBMPPOAgent(AbstractAgent):
                                                    initial_state=initial_states,
                                                    max_steps=self.num_simulation_steps,
                                                    termination=self.termination)
-                        trajectory = Observation(*stack_list_of_tuples(trajectory))
+                        stacked_trajectory = Observation(
+                            *stack_list_of_tuples(trajectory))
                         policy_returns.append(
-                            trajectory.reward.sum(dim=0).mean().item())
+                            stacked_trajectory.reward.sum(dim=0).mean().item())
                         # Shuffle to get a state distribution
-                        states = trajectory.state.reshape(-1, self.policy.dim_state)
+                        states = stacked_trajectory.state.reshape(-1,
+                                                                  self.policy.dim_state)
                         np.random.shuffle(states.numpy())
                         state_batches = torch.split(states, self.batch_size)
 

@@ -64,8 +64,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def act(self, state):
         """Ask the agent for an action to interact with the environment."""
-        if self.total_steps <= self.exploration_steps or (
-                self.total_episodes <= self.exploration_episodes):
+        if self.total_steps < self.exploration_steps or (
+                self.total_episodes < self.exploration_episodes):
             policy = self.policy.random()
         else:
             if not isinstance(state, torch.Tensor):
@@ -101,13 +101,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def start_episode(self):
         """Start a new episode."""
-        self.counters['total_episodes'] += 1
         self.episode_steps.append(0)
         for log in self.logs.values():
             log.start_episode()
 
     def end_episode(self):
         """End an episode."""
+        self.counters['total_episodes'] += 1
         for log in self.logs.values():
             log.end_episode()
 

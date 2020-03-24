@@ -46,8 +46,7 @@ def train_model(model, train_loader, optimizer, max_iter=100, eps=1e-6,
 
         if i_epoch > 2 * convergence_horizon and np.abs(
                 np.mean(episode_loss[-2 * convergence_horizon: -convergence_horizon]) -
-                np.mean(episode_loss[-convergence_horizon:])
-        ):
+                np.mean(episode_loss[-convergence_horizon:]) < eps):
             break
     return logger
 
