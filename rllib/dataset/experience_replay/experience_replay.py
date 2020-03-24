@@ -45,7 +45,7 @@ class ExperienceReplay(data.Dataset):
         self.max_len = max_len
         self.memory = np.empty((self.max_len,), dtype=Observation)
         self._ptr = 0
-        self._transformations = transformations or list()
+        self.transformations = transformations or list()
         self.batch_size = batch_size
 
     def __getitem__(self, idx):
@@ -61,7 +61,7 @@ class ExperienceReplay(data.Dataset):
 
         """
         observation = self.memory[idx]
-        for transform in self._transformations:
+        for transform in self.transformations:
             observation = transform(observation)
         return observation
 
@@ -91,7 +91,7 @@ class ExperienceReplay(data.Dataset):
         self.memory[self._ptr] = observation
         self._ptr = (self._ptr + 1) % self.max_len
 
-        for transformation in self._transformations:
+        for transformation in self.transformations:
             transformation.update(observation)
 
     def get_batch(self, batch_size=None):

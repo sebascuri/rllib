@@ -11,8 +11,8 @@ class ExperienceReplay(data.Dataset):
     max_len: int
     batch_size: int
     memory: ndarray
+    transformations: List[AbstractTransform]
     _ptr: int
-    _transformations: List[AbstractTransform]
 
     def __init__(self, max_len: int, batch_size: int = 1,
                  transformations: List[AbstractTransform] = None

@@ -54,13 +54,9 @@ class TrajectoryDataset(data.Dataset):
         -------
         sub-trajectory: Observation
         """
-        if self.sequence_length is None:
+        if self.sequence_length is None:  # get trajectory
             observation = self._trajectories[idx]
-            for transform in self.transformations:
-                observation = transform(observation)
-
-            return observation
-        else:
+        else:  # Get sub-trajectory.
             trajectory_idx, start = self._sub_trajectory_indexes[idx]
             end = start + self._sequence_length
 
@@ -69,10 +65,10 @@ class TrajectoryDataset(data.Dataset):
             observation = Observation(**{key: val[start:end] for key, val in
                                          trajectory._asdict().items()})
 
-            for transform in self.transformations:
-                observation = transform(observation)
+        for transform in self.transformations:
+            observation = transform(observation)
 
-            return observation
+        return observation
 
     def __len__(self):
         """Return the size in the dataset.
