@@ -25,9 +25,8 @@ def _model_loss(model, state, action, next_state):
 def train_model(model, train_loader, optimizer, max_iter=100, eps=1e-6,
                 convergence_horizon=10, print_flag=False):
     """Train a Dynamical Model."""
-    logger = Logger('mean')
+    logger = Logger('model_training')
     for i_epoch in range(max_iter):
-        logger.start_episode()
         for obs in train_loader:
             optimizer.zero_grad()
 
@@ -35,11 +34,11 @@ def train_model(model, train_loader, optimizer, max_iter=100, eps=1e-6,
             loss.backward()
 
             optimizer.step()
-            logger.append(loss.item())
+            logger.update(loss=loss.item())
 
         logger.end_episode()
 
-        episode_loss = logger.episode_log
+        episode_loss = logger.get('loss')
         if print_flag:
             print(f"""Epoch {i_epoch}/{max_iter}
                   Train Loss: {episode_loss[-1]:.2f}.""")
@@ -51,7 +50,7 @@ def train_model(model, train_loader, optimizer, max_iter=100, eps=1e-6,
     return logger
 
 
-def train_agent(agent, environment, num_episodes, max_steps):
+def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True):
     """Train an agent in an environment.
 
     Parameters
@@ -60,20 +59,22 @@ def train_agent(agent, environment, num_episodes, max_steps):
     environment: AbstractEnvironment
     num_episodes: int
     max_steps: int
+    plot_flag: bool
     """
     agent.train()
     rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps)
 
-    for key, log in agent.logs.items():
-        plt.plot(log.episode_log)
-        plt.xlabel('Episode')
-        plt.ylabel(' '.join(key.split('_')).capitalize())
-        plt.title('{} in {}'.format(agent.name, environment.name))
-        plt.show()
-    print(repr(agent))
+    if plot_flag:
+        for key in agent.logger.keys():
+            plt.plot(agent.logger.get(key))
+            plt.xlabel("Episode")
+            plt.ylabel(" ".join(key.split('_')).title())
+            plt.title(f"{agent.name} in {environment.name}")
+            plt.show()
+    print(agent)
 
 
-def evaluate_agent(agent, environment, num_episodes, max_steps):
+def evaluate_agent(agent, environment, num_episodes, max_steps, render=True):
     """Evaluate an agent in an environment.
 
     Parameters
@@ -82,13 +83,12 @@ def evaluate_agent(agent, environment, num_episodes, max_steps):
     environment: AbstractEnvironment
     num_episodes: int
     max_steps: int
+    render: bool
     """
     agent.eval()
     rollout_agent(environment, agent, max_steps=max_steps, num_episodes=num_episodes,
-                  render=True)
-    print('Test Rewards:',
-          np.array(agent.logs['rewards'].episode_log[-num_episodes]).mean()
-          )
+                  render=render)
+    print(f"Test Rewards: {np.mean(agent.logger.get('rewards')[-num_episodes:])}")
 
 
 def save_agent(agent, file_name):

@@ -1,24 +1,34 @@
 """Implementation of a Logger class."""
 
-from typing import List, Union
+from typing import List, Dict, Tuple, Iterator, Union
 
+import tensorboardX
 import numpy as np
-
-Values = Union[float, int, np.ndarray]
-
+import torch
 
 class Logger(object):
-    running_log: List[Values]
-    episode_log: List[Values]
-    current_log: List[Values]
-    type_: str
+    statistics: List[Dict[str, float]]
+    current: Dict[str, Tuple[int, float]]
+    name: str
+    writer: tensorboardX.SummaryWriter
+    start: float
 
-    def __init__(self, type_: str) -> None: ...
+    def __init__(self, name: str) -> None: ...
 
-    def start_episode(self) -> None: ...
+    def __len__(self) -> int: ...
 
-    def append(self, value: Values) -> None: ...
+    def __iter__(self) -> Iterator[Dict[str, float]]: ...
 
-    def end_episode(self) -> None: ...
+    def __getitem__(self, item: int) -> Dict[str, float]: ...
+
+    def __str__(self) -> str: ...
+
+    def get(self, key: str) -> List[float]: ...
+
+    def keys(self) -> Iterator[str]: ...
+
+    def update(self, **kwargs) -> None: ...
+
+    def end_episode(self, **kwargs) -> None: ...
 
     def dump(self, name: str) -> None: ...

@@ -5,7 +5,7 @@ import torch
 from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent, ExpectedActorCriticAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
-from rllib.util.rollout import rollout_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNValueFunction, NNQFunction
 
 MAX_STEPS = 25
@@ -58,7 +58,8 @@ def test_ac_agent(environment, agent, num_rollouts):
                   critic=critic, critic_optimizer=critic_optimizer,
                   criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
-    rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
+    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
 
 
 def test_gaac_agent(environment, num_rollouts):
@@ -83,4 +84,5 @@ def test_gaac_agent(environment, num_rollouts):
                       critic=critic, critic_optimizer=critic_optimizer,
                       criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
-    rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
+    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

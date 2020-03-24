@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.modules.loss as loss
 
-from experiments.util import train_agent, evaluate_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import A2CAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy

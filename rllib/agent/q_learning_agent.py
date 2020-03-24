@@ -3,7 +3,6 @@ import torch
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.q_learning import QLearning
-from rllib.util.logger import Logger
 
 
 class QLearningAgent(AbstractAgent):
@@ -57,9 +56,6 @@ class QLearningAgent(AbstractAgent):
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
 
-        self.logs['td_errors'] = Logger('abs_mean')
-        self.logs['losses'] = Logger('mean')
-
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
@@ -75,16 +71,18 @@ class QLearningAgent(AbstractAgent):
         observation, idx, weight = self.memory.get_batch()
         weight = torch.tensor(weight)
 
+        # Optimize critic
         self.optimizer.zero_grad()
         losses = self.q_learning(
             observation.state, observation.action, observation.reward,
             observation.next_state, observation.done)
-
         loss = (weight * losses.loss).mean()
         loss.backward()
-
         self.optimizer.step()
+
+        # Update memory
         self.memory.update(idx, losses.td_error.numpy())
 
-        self.logs['td_errors'].append(losses.td_error.mean().item())
-        self.logs['losses'].append(loss.item())
+        # Update loss
+        self.logger.update(critic_losses=loss.item(),
+                           td_errors=losses.td_error.abs().mean().item())

@@ -60,7 +60,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         agent.end_episode()
 
         if episode in milestones:
-            file_name = '{}_{}_{}.pkl'.format(environment.name, agent.name, episode)
+            file_name = f"{environment.name}_{agent.name}_{episode}.pkl"
             with open(file_name, 'wb') as file:
                 pickle.dump(agent, file)
     agent.end_interaction()

@@ -3,7 +3,7 @@ import torch.jit
 import torch.nn.functional as func
 import torch.optim
 
-from experiments.util import train_agent, evaluate_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import DDQNAgent
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
@@ -42,7 +42,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
 policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
 q_function = torch.jit.script(q_function)
-policy = torch.jit.script(policy)
+# policy = torch.jit.script(policy)
 
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)

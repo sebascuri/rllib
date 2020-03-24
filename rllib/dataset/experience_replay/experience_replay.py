@@ -85,9 +85,8 @@ class ExperienceReplay(data.Dataset):
             If the new observation is not of type Observation.
         """
         if not type(observation) == Observation:
-            raise TypeError("""
-            input has to be of type Observation, and it was found of type {}
-            """.format(type(observation)))
+            raise TypeError(
+                f"input has to be of type Observation, and it was {type(observation)}")
 
         self.memory[self._ptr] = observation
         self._ptr = (self._ptr + 1) % self.max_len

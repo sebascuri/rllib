@@ -6,7 +6,7 @@ from rllib.dataset import PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
-from rllib.util import rollout_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.value_function import NNQFunction
 
@@ -58,7 +58,8 @@ def test_ddpg_interaction(environment, agent):
     memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
     actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
                                        weight_decay=WEIGHT_DECAY)
-    critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_RATE,
+    critic_optimizer = torch.optim.Adam(q_function.parameters(),
+                                        lr=CRITIC_LEARNING_RATE,
                                         weight_decay=WEIGHT_DECAY)
 
     agent = agent(
@@ -66,4 +67,6 @@ def test_ddpg_interaction(environment, agent):
         actor_optimizer, memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
         gamma=GAMMA, exploration_steps=2, policy_noise=POLICY_NOISE)
-    rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
+
+    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

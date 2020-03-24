@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from experiments.util import train_agent, evaluate_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy

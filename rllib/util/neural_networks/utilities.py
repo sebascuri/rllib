@@ -27,8 +27,7 @@ def parse_nonlinearity(non_linearity):
     elif hasattr(nn, non_linearity.upper()):
         return getattr(nn, non_linearity.upper())
     else:
-        raise NotImplementedError(
-            'non-linearity {} not implemented'.format(non_linearity))
+        raise NotImplementedError(f"non-linearity {non_linearity} not implemented")
 
 
 def parse_layers(layers, in_dim, non_linearity):

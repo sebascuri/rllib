@@ -80,9 +80,7 @@ class FeedForwardNN(nn.Module):
         """
         out = self.hidden_layers(x)
         if self.head.bias is not None:
-            print(out.shape)
             out = torch.cat((out, torch.ones(out.shape[:-1] + (1, ))), dim=-1)
-            print(out.shape)
 
         return out
 
@@ -253,7 +251,7 @@ class DeterministicEnsemble(FeedForwardNN):
         if self.head_ptr == self.num_heads:
             mean = torch.mean(out, dim=-1, keepdim=True)
             sigma = (mean - out) @ (mean - out).transpose(-2, -1)
-            sigma += 1e-9 * torch.eye(mean.shape[-2])  # Add some jitter.
+            sigma += 1e-6 * torch.eye(sigma.shape[-1])  # Add some jitter.
             covariance = torch.cholesky(sigma) / self.num_heads
             mean = mean.squeeze(-1)
 

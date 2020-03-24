@@ -78,7 +78,7 @@ class MBMPPOAgent(AbstractAgent):
                 self._train()
 
         super().end_episode()
-        print(f"Episode Returns {self.logs['rewards'].episode_log[-1]}")
+        print(f"Episode Returns {self.logger.statistics[-1]['rewards']}")
 
     def _train(self) -> None:
         # Step 1: Train Model with new data.
@@ -87,7 +87,7 @@ class MBMPPOAgent(AbstractAgent):
         model_train_log = train_model(
             self.dynamic_model.base_model, train_loader=loader,
             max_iter=self.num_iter, optimizer=self.model_optimizer, print_flag=False)
-        print(f"Model training loss: {model_train_log.episode_log[-1]}")
+        print(f"Model training loss: {model_train_log.statistics[-1]['loss']}")
 
         # Step 2: Optimize Policy with model.
         init_distribution = torch.distributions.Uniform(torch.tensor([-np.pi, -0.05]),

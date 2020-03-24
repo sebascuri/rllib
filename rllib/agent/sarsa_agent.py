@@ -6,7 +6,6 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.sarsa import SARSA
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.logger import Logger
 
 
 class SARSAAgent(AbstractAgent):
@@ -54,9 +53,6 @@ class SARSAAgent(AbstractAgent):
         self.batch_size = batch_size
         self.trajectory = list()
 
-        self.logs['td_errors'] = Logger('abs_mean')
-        self.logs['losses'] = Logger('mean')
-
     def act(self, state):
         """See `AbstractAgent.act'."""
         action = super().act(state)
@@ -97,15 +93,15 @@ class SARSAAgent(AbstractAgent):
         """Train the SARSA agent."""
         trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 
+        # Update critic.
         self.optimizer.zero_grad()
         losses = self.sarsa(
             trajectory.state, trajectory.action, trajectory.reward,
             trajectory.next_state, trajectory.done, trajectory.next_action)
-
         loss = losses.loss.mean()
         loss.backward()
-
         self.optimizer.step()
 
-        self.logs['td_errors'].append(losses.td_error.mean().item())
-        self.logs['losses'].append(loss.item())
+        # Update loss
+        self.logger.update(critic_losses=loss.item(),
+                           td_errors=losses.td_error.abs().mean().item())

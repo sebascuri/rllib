@@ -14,6 +14,7 @@ setup(
                       'tqdm>=4.0.0,<5.0',
                       'matplotlib>=3.1.0',
                       'gpytorch==1.0.1',
+                      'tensorboardX>=2.0,<3',
                       ],
     extras_require={
         'test': [

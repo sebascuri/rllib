@@ -2,7 +2,6 @@
 
 from abc import ABCMeta
 
-import numpy as np
 import torch
 
 from rllib.util.logger import Logger
@@ -36,7 +35,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     """
 
     def __init__(self, gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        self.logs = {'rewards': Logger('sum'), 'policy entropy': Logger('mean')}
+        self.logger = Logger(self.name)
         self.counters = {'total_episodes': 0, 'total_steps': 0}
         self.episode_steps = []
 
@@ -46,20 +45,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self._training = True
 
-    def __repr__(self):
+    def __str__(self):
         """Generate string to parse the agent."""
         opening = "====================================\n"
-        str_ = opening
-        str_ += "Total episodes {}\n".format(self.counters['total_episodes'])
-        str_ += "Total steps {}\n".format(self.counters['total_steps'])
-        rewards = self.logs['rewards'].episode_log
-        entropy = self.logs['policy entropy'].episode_log
-        str_ += "Average reward {:.1f}\n".format(np.mean(rewards))
-        str_ += "10-Episode reward {:.1f}\n".format(np.mean(rewards[-10:]))
-        if not self.policy.deterministic:
-            str_ += "Policy entropy {:.2e}\n".format(np.mean(entropy))
-            str_ += "10-Episode policy entropy {:.2e}\n".format(np.mean(entropy[-10:]))
-        str_ += opening
+        str_ = f"{opening}{self.name} with {self.policy.__class__.__name__}\n"
+        str_ += f"Total episodes {self.counters['total_episodes']}\n"
+        str_ += f"Total steps {self.counters['total_steps']}\n"
+        str_ += f"{self.logger}{opening}"
         return str_
 
     def act(self, state):
@@ -82,7 +74,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 action = policy.mean
 
         if not self.policy.deterministic:
-            self.logs['policy entropy'].append(policy.entropy().detach().item())
+            self.logger.update(policy_entropy=policy.entropy().detach().item())
         return action.detach().numpy()
 
     def observe(self, observation):
@@ -97,19 +89,17 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self.counters['total_steps'] += 1
         self.episode_steps[-1] += 1
-        self.logs['rewards'].append(observation.reward.item())
+        self.logger.update(rewards=observation.reward.item())
 
     def start_episode(self):
         """Start a new episode."""
         self.episode_steps.append(0)
-        for log in self.logs.values():
-            log.start_episode()
 
     def end_episode(self):
         """End an episode."""
         self.counters['total_episodes'] += 1
-        for log in self.logs.values():
-            log.end_episode()
+        current_rewards = self.logger.current['rewards']
+        self.logger.end_episode(rewards=current_rewards[0] * current_rewards[1])
 
     def end_interaction(self):
         """End the interaction with the environment."""

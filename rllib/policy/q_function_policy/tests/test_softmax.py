@@ -23,6 +23,5 @@ def test_discrete(t_start, q_function):
         state = torch.randint(4, ())
         logits = q_function(state)
         probs = torch.softmax(logits / t_start, dim=0)
-        print(probs)
         torch.testing.assert_allclose(
             tensor_to_distribution(policy(state)).probs, probs)

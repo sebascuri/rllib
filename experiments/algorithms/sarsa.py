@@ -2,7 +2,7 @@ import numpy as np
 import torch.nn.functional as func
 import torch.optim
 
-from experiments.util import train_agent, evaluate_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import ExpectedSARSAAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy

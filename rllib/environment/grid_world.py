@@ -55,7 +55,7 @@ class EasyGridWorld(MDP):
     @staticmethod
     def _action_to_grid(action, num_actions):
         if action >= num_actions:
-            raise ValueError("action has to be < {}.".format(num_actions))
+            raise ValueError(f"action has to be < {num_actions}.")
 
         if action == 0:  # Down
             return np.array([1, 0])

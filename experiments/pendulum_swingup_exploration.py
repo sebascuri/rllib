@@ -75,12 +75,11 @@ optimizer = optim.Adam(mppo.parameters(), lr=5e-4)
 num_iter = 100
 num_simulation_steps = 400
 batch_size = 100
-refresh_interval = 2
-num_inner_iterations = 30
-num_trajectories = math.ceil(num_inner_iterations * 100 / num_simulation_steps)
+refresh_interval = 5
+num_trajectories = 8  #math.ceil(num_inner_iterations * 100 / num_simulation_steps)
 num_subsample = 1
 
-value_losses, policy_losses, policy_returns, eta_parameters = train_mppo(
+value_losses, policy_losses, policy_returns, eta_parameters, kl_div = train_mppo(
     mppo, init_distribution, optimizer,
     num_iter=num_iter, num_trajectories=num_trajectories,
     num_simulation_steps=num_simulation_steps, refresh_interval=refresh_interval,
@@ -127,9 +126,15 @@ ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
 plt.show()
 
 # %% Test controller on Environment.
-environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                                                 step_size=1 / 80))
-environment.state = test_state.numpy()
-environment.initial_state = lambda: test_state.numpy()
-policy.deterministic = True
-rollout_policy(environment, policy, max_steps=400, render=True)
+# environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
+#                                                  step_size=1 / 80),
+#                                 reward=PendulumReward())
+# environment.state = test_state.numpy()
+# environment.initial_state = lambda: test_state.numpy()
+# policy.deterministic = True
+# trajectory = rollout_policy(environment, policy, max_steps=400, render=True)
+#
+# # trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
+# #                             max_steps=400, render=True)
+# trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
+# print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')

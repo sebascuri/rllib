@@ -64,7 +64,6 @@ class TestTabularQFunction(object):
 
         state = random_tensor(True, num_states, batch_size)
         action = random_tensor(True, num_actions, batch_size)
-        print(state.shape, action.shape)
         value = q_function(state, action)
         assert value.shape == torch.Size([batch_size] if batch_size else [])
         assert value.dtype is torch.get_default_dtype()

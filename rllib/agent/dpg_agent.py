@@ -4,7 +4,6 @@ import torch
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.dpg import DPG
-from rllib.util.logger import Logger
 
 
 class DPGAgent(AbstractAgent):
@@ -60,10 +59,6 @@ class DPGAgent(AbstractAgent):
         self.max_action = max_action
         self.policy_update_frequency = policy_update_frequency
 
-        self.logs['td_errors'] = Logger('abs_mean')
-        self.logs['critic_losses'] = Logger('mean')
-        self.logs['actor_losses'] = Logger('mean')
-
     def act(self, state):
         """See `AbstractAgent.act'.
 
@@ -112,6 +107,6 @@ class DPGAgent(AbstractAgent):
         self.memory.update(idx, ans.td_error.detach().numpy())
 
         # Update logs
-        self.logs['td_errors'].append(ans.td_error.mean().item())
-        self.logs['actor_losses'].append(actor_loss.item())
-        self.logs['critic_losses'].append(critic_loss.item())
+        self.logger.update(actor_losses=actor_loss.item(),
+                           critic_losses=critic_loss.item(),
+                           td_errors=ans.td_error.abs().mean().item())

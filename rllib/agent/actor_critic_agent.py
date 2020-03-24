@@ -4,7 +4,6 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.ac import ActorCritic
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.logger import Logger
 
 
 class ActorCriticAgent(AbstractAgent):
@@ -40,10 +39,6 @@ class ActorCriticAgent(AbstractAgent):
 
         self.num_rollouts = num_rollouts
         self.target_update_freq = target_update_frequency
-
-        self.logs['actor_losses'] = Logger('mean')
-        self.logs['critic_losses'] = Logger('mean')
-        self.logs['td_errors'] = Logger('abs_mean')
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -82,6 +77,6 @@ class ActorCriticAgent(AbstractAgent):
         self.critic_optimizer.step()
 
         # Update logs
-        self.logs['actor_losses'].append(losses.actor_loss.item())
-        self.logs['critic_losses'].append(losses.critic_loss.item())
-        self.logs['td_errors'].append(losses.td_error.mean().item())
+        self.logger.update(actor_losses=losses.actor_loss.item(),
+                           critic_losses=losses.critic_loss.item(),
+                           td_errors=losses.td_error.abs().mean().item())

@@ -10,7 +10,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
     counters: Dict[str, int]
     episode_steps: List[int]
-    logs: Dict[str, Logger]
+    logger: Logger
     gamma: float
     exploration_steps: int
     exploration_episodes: int

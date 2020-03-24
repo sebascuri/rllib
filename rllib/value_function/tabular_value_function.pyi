@@ -20,6 +20,7 @@ class TabularQFunction(NNQFunction):
     def __init__(self, num_states: int, num_actions: int, tau: float = 1.0,
                  biased_head: bool = False) -> None: ...
 
+    @property
     def table(self) -> Tensor: ...
 
     def set_value(self, state: Union[Tensor, int],

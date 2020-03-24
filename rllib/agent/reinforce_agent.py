@@ -4,7 +4,6 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.reinforce import REINFORCE
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.logger import Logger
 
 
 class REINFORCEAgent(AbstractAgent):
@@ -35,9 +34,6 @@ class REINFORCEAgent(AbstractAgent):
         self.num_rollouts = num_rollouts
         self.target_update_frequency = target_update_frequency
 
-        self.logs['actor_losses'] = Logger('mean')
-        self.logs['baseline_losses'] = Logger('mean')
-
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
@@ -64,17 +60,20 @@ class REINFORCEAgent(AbstractAgent):
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]
 
+        # Update actor.
         self.policy_optimizer.zero_grad()
         if self.baseline_optimizer is not None:
             self.baseline_optimizer.zero_grad()
 
         losses = self.reinforce(trajectories)
-
         losses.actor_loss.backward()
         self.policy_optimizer.step()
-        self.logs['actor_losses'].append(losses.actor_loss.item())
 
+        # Update Logs.
+        self.logger.update(actor_losses=losses.actor_loss.item())
+
+        # Update baseline.
         if self.baseline_optimizer is not None:
             losses.baseline_loss.backward()
             self.baseline_optimizer.step()
-            self.logs['baseline_losses'].append(losses.baseline_loss.item())
+            self.logger.update(baseline_losses=losses.baseline_loss.item())

@@ -1,12 +1,14 @@
 import pytest
 import torch.nn.functional as func
 import torch.optim
+import torch.testing
+import torch
 
 from rllib.agent import QLearningAgent, DQNAgent, DDQNAgent
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment, EasyGridWorld
 from rllib.policy import EpsGreedy, SoftMax, MellowMax
-from rllib.util import rollout_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.value_function import NNQFunction, TabularQFunction
 
@@ -55,12 +57,13 @@ def test_nnq_interaction(environment, agent):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = agent(q_function=q_function, policy=policy,
-                    criterion=criterion, optimizer=optimizer, memory=memory,
-                    target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                    gamma=GAMMA,
-                    exploration_steps=2)
-    rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
+    agent = agent(q_function=q_function, policy=policy,
+                  criterion=criterion, optimizer=optimizer, memory=memory,
+                  target_update_frequency=TARGET_UPDATE_FREQUENCY,
+                  gamma=GAMMA,
+                  exploration_steps=2)
+    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
 
 
 def test_policies(environment, policy):
@@ -79,11 +82,12 @@ def test_policies(environment, policy):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = DDQNAgent(
+    agent = DDQNAgent(
         q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer, memory=memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
-    rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
+    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
 
 
 def test_tabular_interaction(agent, policy):
@@ -97,10 +101,13 @@ def test_tabular_interaction(agent, policy):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
-    q_agent = agent(
+    agent = agent(
         q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer, memory=memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
-    rollout_agent(environment, q_agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES)
-    print(q_function.table)
+    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
+
+    torch.testing.assert_allclose(q_function.table.shape, torch.Size(
+        [environment.num_actions, environment.num_states]))
