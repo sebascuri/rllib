@@ -10,7 +10,7 @@ DynaReturn = namedtuple('DynaReturn', ['q_target', 'trajectory'])
 
 
 def dyna_rollout(state, model, policy, reward, steps, gamma=0.99, value_function=None,
-                 num_samples=1):
+                 num_samples=1, termination=None):
     r"""Estimate the value of a system with the model and the value function.
 
     Rolls out the model for a number of `steps` and sums up the rewards. After this,
@@ -59,7 +59,8 @@ def dyna_rollout(state, model, policy, reward, steps, gamma=0.99, value_function
     # Repeat states to get a better estimate of the expected value
     if num_samples > 1:
         state = repeat_along_dimension(state, number=num_samples, dim=0)
-    trajectory = rollout_model(model, reward, policy, state, max_steps=steps + 1)
+    trajectory = rollout_model(model, reward, policy, state, max_steps=steps + 1,
+                               termination=termination)
     value = mc_return(trajectory, gamma=gamma, value_function=value_function)
 
     return DynaReturn(value, trajectory)

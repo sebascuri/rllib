@@ -12,7 +12,7 @@ class PendulumReward(AbstractReward):
     def forward(self, state, action):
         """See `abstract_reward.forward'."""
         if not isinstance(state, torch.Tensor):
-            state = torch.tensor(state)
+            state = torch.tensor(state, dtype=torch.get_default_dtype())
         cos_angle = torch.cos(state[..., 0])
         velocity = state[..., 1]
 

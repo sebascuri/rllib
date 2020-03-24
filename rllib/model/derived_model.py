@@ -1,4 +1,4 @@
-"""Implementation of an Unscaled Model."""
+"""Implementation Derived Models."""
 import torch
 import torch.nn as nn
 
@@ -6,10 +6,8 @@ from rllib.dataset.datatypes import Observation
 from .abstract_model import AbstractModel
 
 
-class UnscaledModel(AbstractModel):
-    """Unscaled Model computes the next state distribution."""
-
-    num_transformations: int
+class TransformedModel(AbstractModel):
+    """Transformed Model computes the next state distribution."""
 
     def __init__(self, base_model, transformations):
         super().__init__(dim_state=base_model.dim_state,
@@ -19,7 +17,6 @@ class UnscaledModel(AbstractModel):
         self.base_model = base_model
         self.forward_transformations = nn.ModuleList(transformations)
         self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
-        self.num_transformations = len(transformations)
 
     def forward(self, state, action):
         """Predict next state distribution."""
@@ -29,18 +26,8 @@ class UnscaledModel(AbstractModel):
             obs = transformation(obs)
 
         # Predict next-state
-        # with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        # batch_size = state.shape[0:-1]
+        self.base_model.eval()
         next_state = self.base_model(obs.state, obs.action)
-        # if next_state[0].shape[-1] is not self.dim_state:
-        #     mean = next_state[0].transpose(0, -1)
-        #     idx = torch.arange(0, next_state[0].shape[-1])
-        #     var = next_state[1][..., idx, idx].transpose(0, -1)
-        #
-        #     mean = mean.reshape(*batch_size, self.dim_state)
-        #     var = var.reshape(*batch_size, self.dim_state)
-        #     cov = torch.diag_embed(var)
-        #     next_state = mean, cov
 
         # Back-transform
         obs = Observation(state, action, reward=none, done=none, next_action=none,
@@ -51,3 +38,22 @@ class UnscaledModel(AbstractModel):
         for transformation in self.reverse_transformations:
             obs = transformation.inverse(obs)
         return obs.next_state, obs.next_state_scale_tril
+
+
+class ExpectedModel(TransformedModel):
+    """Expected Model returns a Delta at the expected next state."""
+
+    def forward(self, state, action):
+        return super().forward(state, action)[0], torch.tensor(0.)
+
+
+class OptimisticModel(TransformedModel):
+    """Optimistic Model returns a Delta at the optimistic next state."""
+
+    def forward(self, state, action):
+        control_action = action[..., :-self.dim_states]
+        optimism_vars = action[..., -self.dim_states:]
+        optimism_vars = torch.clamp(optimism_vars, -1., 1.)
+
+        mean, tril = super().forward(state, control_action)
+        return mean + tril * optimism_vars, torch.tensor(0.)

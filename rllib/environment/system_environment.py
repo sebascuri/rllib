@@ -1,5 +1,6 @@
 """Wrapper for Custom System Environments."""
 from .abstract_environment import AbstractEnvironment
+from rllib.util.utilities import tensor_to_distribution
 
 
 class SystemEnvironment(AbstractEnvironment):
@@ -48,7 +49,7 @@ class SystemEnvironment(AbstractEnvironment):
         state = self.system.state  # this might be noisy.
         reward = float('nan')
         if self.reward is not None:
-            reward = self.reward(state, action)
+            reward = tensor_to_distribution(self.reward(state, action)).sample()
 
         next_state = self.system.step(action)
         if self.termination is not None:

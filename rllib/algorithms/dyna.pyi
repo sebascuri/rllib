@@ -1,4 +1,4 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Callable
 
 from torch import Tensor
 
@@ -17,5 +17,6 @@ class DynaReturn(NamedTuple):
 
 def dyna_rollout(state: State, model: AbstractModel, policy: AbstractPolicy,
                  reward: AbstractReward, steps: int, gamma: float = 0.99,
-                 num_samples: int = 1, value_function: AbstractValueFunction = None
+                 num_samples: int = 1, value_function: AbstractValueFunction = None,
+                 termination: Callable[[Tensor, Tensor], Tensor] = None
                  ) -> DynaReturn: ...

@@ -4,6 +4,7 @@ import os
 
 import numpy as np
 from gym.envs.classic_control import rendering
+from gym.spaces import Box
 
 from rllib.environment.systems.ode_system import ODESystem
 from rllib.util.utilities import get_backend
@@ -97,6 +98,16 @@ class InvertedPendulum(ODESystem):
                   - friction / inertia * angular_velocity)
 
         return np.array((angular_velocity, x_ddot))
+
+    @property
+    def action_space(self):
+        """Return action space."""
+        return Box(np.array([-1.]), np.array([1.]))
+
+    @property
+    def observation_space(self):
+        """Return observation space."""
+        return Box(np.array([-np.pi, -0.05]), np.array([np.pi, 0.05]))
 
 
 if __name__ == "__main__":

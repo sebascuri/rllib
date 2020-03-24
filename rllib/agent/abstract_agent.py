@@ -64,8 +64,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def act(self, state):
         """Ask the agent for an action to interact with the environment."""
-        if self.total_steps < self.exploration_steps or (
-                self.total_episodes < self.exploration_episodes):
+        if self.total_steps <= self.exploration_steps or (
+                self.total_episodes <= self.exploration_episodes):
             policy = self.policy.random()
         else:
             if not isinstance(state, torch.Tensor):
@@ -82,7 +82,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 action = policy.mean
 
         if not self.policy.deterministic:
-            self.logs['policy entropy'].append(policy.entropy().detach().numpy())
+            self.logs['policy entropy'].append(policy.entropy().detach().item())
         return action.detach().numpy()
 
     def observe(self, observation):
@@ -97,7 +97,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self.counters['total_steps'] += 1
         self.episode_steps[-1] += 1
-        self.logs['rewards'].append(observation.reward)
+        self.logs['rewards'].append(observation.reward.item())
 
     def start_episode(self):
         """Start a new episode."""

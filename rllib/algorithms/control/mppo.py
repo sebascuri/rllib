@@ -142,7 +142,8 @@ class MBMPPO(nn.Module):
     """
 
     def __init__(self, dynamical_model, reward_model, policy, value_function,
-                 epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15):
+                 epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15,
+                 termination=None):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
@@ -157,6 +158,7 @@ class MBMPPO(nn.Module):
         self.mppo = MPPO(epsilon, epsilon_mean, epsilon_var)
         self.value_loss = nn.MSELoss(reduction='mean')
         self.num_action_samples = num_action_samples
+        self.termination = termination
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
@@ -198,7 +200,8 @@ class MBMPPO(nn.Module):
                                        reward=self.reward_model, steps=0,
                                        gamma=self.gamma,
                                        value_function=self.value_function,
-                                       num_samples=self.num_action_samples)
+                                       num_samples=self.num_action_samples,
+                                       termination=self.termination)
         q_values = dyna_return.q_target
         action_log_probs = pi_dist.log_prob(dyna_return.trajectory[0].action)
 
@@ -225,6 +228,7 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
     eta_parameters = []
     policy_losses = []
     policy_returns = []
+    kl_div = []
     for i in tqdm(range(num_iter)):
         # Compute the state distribution
         if i % refresh_interval == 0:
@@ -237,22 +241,20 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
                                            max_steps=num_simulation_steps)
                 trajectory = Observation(*stack_list_of_tuples(trajectory))
                 policy_returns.append(trajectory.reward.sum(dim=0).mean().item())
-        #
-        # if np.all(np.array(policy_returns[-5:]) >= 200):
-        #     break
 
-        # Shuffle to get a state distribution
-        states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
-        np.random.shuffle(states.numpy())
+                # Shuffle to get a state distribution
+                states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
+                np.random.shuffle(states.numpy())
+                state_batches = torch.split(states, batch_size)[::num_subsample]
 
         policy_episode_loss = 0.
         value_episode_loss = 0.
+        episode_kl_div = 0.
 
         # Copy over old policy for KL divergence
         mppo.reset()
 
         # Iterate over state batches in the state distribution
-        state_batches = torch.split(states, batch_size)[::num_subsample]
         for states in state_batches:
             optimizer.zero_grad()
             losses = mppo(states)
@@ -260,14 +262,15 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
             optimizer.step()
 
             # Track statistics
-            value_episode_loss += losses.value_loss.detach().numpy()
-            policy_episode_loss += losses.policy_loss.detach().numpy()
+            value_episode_loss += losses.value_loss.item()
+            policy_episode_loss += losses.policy_loss.item()
+            episode_kl_div += losses.kl_div.item()
 
         value_losses.append(value_episode_loss / len(state_batches))
         policy_losses.append(policy_episode_loss / len(state_batches))
         eta_parameters.append(
-            [eta.detach().numpy() for name, eta in mppo.named_parameters() if
-             'eta' in name]
-        )
+            [eta.detach().clone().numpy() for name, eta in mppo.named_parameters() if
+             'eta' in name])
+        kl_div.append(episode_kl_div)
 
-    return value_losses, policy_losses, policy_returns, eta_parameters
+    return value_losses, policy_losses, policy_returns, eta_parameters, kl_div

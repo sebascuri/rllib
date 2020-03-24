@@ -1,7 +1,7 @@
 """Python Script Template."""
 
 from typing import List, Tuple
-from typing import NamedTuple
+from typing import NamedTuple, Callable
 
 import torch.nn as nn
 from torch import Tensor
@@ -52,11 +52,13 @@ class MBMPPO(nn.Module):
     mppo: MPPO
     value_loss: nn.modules.loss._Loss
     num_action_samples: int
+    termination: Callable[[Tensor, Tensor], Tensor]
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
                  epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float,
-                 num_action_samples: int = 15) -> None: ...
+                 num_action_samples: int = 15,
+                 termination: Callable[[Tensor, Tensor], Tensor] = None) -> None: ...
 
     def reset(self) -> None: ...
 
@@ -66,4 +68,4 @@ class MBMPPO(nn.Module):
 def train_mppo(mppo: MBMPPO, initial_distribution: Distribution, optimizer: Optimizer,
                num_iter: int, num_trajectories: int, num_simulation_steps: int,
                refresh_interval: int,
-               batch_size: int, num_subsample: int) -> Tuple[List, List, List, List]: ...
+               batch_size: int, num_subsample: int) -> Tuple[List, List, List, List, List]: ...

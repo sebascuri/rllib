@@ -209,11 +209,11 @@ def separated_kl(p, q):
     kl_mean : torch.Tensor
     kl_var : torch.Tensor
     """
-    p_mean, p_scale = p.loc, p.covariance_matrix
-    q_mean, q_scale = q.loc, q.covariance_matrix
+    p_mean, p_scale = p.loc, p.scale_tril
+    q_mean, q_scale = q.loc, q.scale_tril
 
-    pi_mean = torch.distributions.MultivariateNormal(p_mean, q_scale)
-    pi_var = torch.distributions.MultivariateNormal(q_mean, p_scale)
+    pi_mean = torch.distributions.MultivariateNormal(p_mean, scale_tril=q_scale)
+    pi_var = torch.distributions.MultivariateNormal(q_mean, scale_tril=p_scale)
 
     kl_mean = torch.distributions.kl_divergence(pi_mean, q).mean()
     kl_var = torch.distributions.kl_divergence(pi_var, q).mean()
