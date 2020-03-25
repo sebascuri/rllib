@@ -18,7 +18,7 @@ class Normalizer(nn.Module):
         super().__init__()
         self.mean = torch.zeros(1)
         self.variance = torch.ones(1)
-        self.count = torch.tensor(0)
+        self.count = torch.tensor(0.)
         self.preserve_origin = preserve_origin
 
     def forward(self, array: torch.Tensor):
@@ -43,7 +43,7 @@ class Normalizer(nn.Module):
         """See `AbstractTransform.update'."""
         new_mean = torch.mean(array, 0)
         new_var = torch.var(array, 0)
-        new_count = torch.tensor(array.shape[0])
+        new_count = torch.tensor(1.) * torch.tensor(array.shape[0])
         self.variance = update_var(self.mean, self.variance, self.count,
                                    new_mean, new_var, new_count)
         self.mean = update_mean(self.mean, self.count, new_mean, new_count)

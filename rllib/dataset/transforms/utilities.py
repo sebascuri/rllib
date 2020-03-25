@@ -54,17 +54,16 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count):
     total = old_count + new_count
 
     if old_count <= 1:
-        old_m = 0
+        old_m = torch.zeros_like(old_var)
     else:
         old_m = old_var * (old_count - 1)
 
     if new_count <= 1:
-        new_m = 0
+        new_m = torch.zeros_like(new_var)
     else:
         new_m = new_var * (new_count - 1)
 
-    m2 = old_m + new_m + delta ** 2 * (
-            old_count.type_as(delta) * new_count.type_as(delta) / total.type_as(delta))
+    m2 = old_m + new_m + delta ** 2 * (old_count * new_count) / total
     return m2 / (total - 1.)
 
 
