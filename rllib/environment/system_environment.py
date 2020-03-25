@@ -33,7 +33,8 @@ class SystemEnvironment(AbstractEnvironment):
         self._time = 0
 
         if initial_state is None:
-            initial_state = self.system.observation_space.sample()
+            initial_state = self.system.observation_space.sample
+
         if not callable(initial_state):
             self.initial_state = lambda: initial_state
         else:
