@@ -4,6 +4,18 @@ import gpytorch
 import torch
 
 
+class Delta(gpytorch.distributions.Delta):
+    """Delta Distribution."""
+
+    def __str__(self):
+        """Get string of Delta distribution."""
+        return f"Delta loc: {self.v}"
+
+    def entropy(self):
+        """Return entropy of distribution."""
+        return torch.zeros_like(self.v)
+
+
 class MultivariateNormal(gpytorch.distributions.MultivariateNormal):
     """Multivariate Normal with extra __algebraic__ methods."""
 

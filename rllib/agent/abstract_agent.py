@@ -64,17 +64,15 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
             policy = self.policy(state)
 
-        policy = tensor_to_distribution(policy)
+        self.pi = tensor_to_distribution(policy)
         if self._training:
-            action = policy.sample()
+            action = self.pi.sample()
         else:
-            if policy.has_enumerate_support:
-                action = torch.argmax(policy.probs)
+            if self.pi.has_enumerate_support:
+                action = torch.argmax(self.pi.probs)
             else:
-                action = policy.mean
+                action = self.pi.mean
 
-        if not self.policy.deterministic:
-            self.logger.update(policy_entropy=policy.entropy().detach().item())
         return action.detach().numpy()
 
     def observe(self, observation):
@@ -90,6 +88,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.counters['total_steps'] += 1
         self.episode_steps[-1] += 1
         self.logger.update(rewards=observation.reward.item())
+        self.logger.update(entropy=observation.entropy.item())
 
     def start_episode(self):
         """Start a new episode."""

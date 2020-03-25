@@ -143,6 +143,7 @@ class MBMPPO(nn.Module):
 
     def __init__(self, dynamical_model, reward_model, policy, value_function,
                  epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15,
+                 entropy_reg=0.,
                  termination=None):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
@@ -158,6 +159,7 @@ class MBMPPO(nn.Module):
         self.mppo = MPPO(epsilon, epsilon_mean, epsilon_var)
         self.value_loss = nn.MSELoss(reduction='mean')
         self.num_action_samples = num_action_samples
+        self.entropy_reg = entropy_reg
         self.termination = termination
 
     def reset(self):
@@ -201,7 +203,9 @@ class MBMPPO(nn.Module):
                                        gamma=self.gamma,
                                        value_function=self.value_function,
                                        num_samples=self.num_action_samples,
-                                       termination=self.termination)
+                                       entropy_reg=self.entropy_reg,
+                                       termination=self.termination,
+                                       )
         q_values = dyna_return.q_target
         action_log_probs = pi_dist.log_prob(dyna_return.trajectory[0].action)
 

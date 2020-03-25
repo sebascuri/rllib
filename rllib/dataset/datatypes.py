@@ -4,9 +4,9 @@ from collections import namedtuple
 
 import numpy as np
 import torch
-from gpytorch.distributions import Delta, MultivariateNormal
+from gpytorch.distributions import Delta
 from torch import Tensor
-from torch.distributions import Categorical, Uniform
+from torch.distributions import Categorical, Uniform, MultivariateNormal
 
 Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]

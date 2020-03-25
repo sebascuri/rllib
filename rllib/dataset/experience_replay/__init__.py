@@ -2,3 +2,4 @@ from .absolute_exp3_experience_replay import AEXP3Sampler
 from .exp3_experience_replay import EXP3Sampler
 from .experience_replay import ExperienceReplay
 from .prioritized_experience_replay import PrioritizedExperienceReplay
+from .bootstrap_experience_replay import BootstrapExperienceReplay

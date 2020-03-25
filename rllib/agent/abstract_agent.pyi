@@ -1,13 +1,14 @@
 from abc import ABCMeta
 from typing import Dict, List
 
-from rllib.dataset.datatypes import Observation, State, Action
+from rllib.dataset.datatypes import Observation, State, Action, Distribution
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
 
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
+    pi: Distribution
     counters: Dict[str, int]
     episode_steps: List[int]
     logger: Logger

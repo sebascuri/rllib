@@ -52,12 +52,13 @@ class MBMPPO(nn.Module):
     mppo: MPPO
     value_loss: nn.modules.loss._Loss
     num_action_samples: int
+    entropy_reg: float
     termination: Callable[[Tensor, Tensor], Tensor]
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
                  epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float,
-                 num_action_samples: int = 15,
+                 num_action_samples: int = 15, entropy_reg: float = 0.,
                  termination: Callable[[Tensor, Tensor], Tensor] = None) -> None: ...
 
     def reset(self) -> None: ...

@@ -3,7 +3,7 @@ from typing import List, Union, Tuple, Callable
 from numpy import ndarray
 
 from rllib.agent import AbstractAgent
-from rllib.dataset.datatypes import Observation, State, Action
+from rllib.dataset.datatypes import Observation, State, Action, Distribution
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
@@ -11,7 +11,7 @@ from rllib.reward import AbstractReward
 
 
 def _step(environment: AbstractEnvironment, state: Union[int, ndarray],
-          action: Union[int, ndarray], render: bool
+          action: Union[int, ndarray], pi: Distribution, render: bool
           ) -> Tuple[Observation, Union[int, ndarray], bool]:...
 
 

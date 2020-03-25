@@ -66,7 +66,7 @@ def test_ddpg_interaction(environment, agent):
         q_function, policy, noise, criterion, critic_optimizer,
         actor_optimizer, memory,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
-        gamma=GAMMA, exploration_steps=2, policy_noise=POLICY_NOISE)
+        gamma=GAMMA, policy_noise=POLICY_NOISE)
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

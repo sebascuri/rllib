@@ -50,7 +50,7 @@ class QLearningAgent(AbstractAgent):
         super().__init__(gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.policy = policy
-        self.q_learning = QLearning(q_function, criterion(reduction='none'), self.gamma)
+        self.q_learning = QLearning(q_function, criterion(reduction='none'), gamma)
 
         self.memory = memory
         self.target_update_frequency = target_update_frequency

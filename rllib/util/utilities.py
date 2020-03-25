@@ -4,7 +4,8 @@ import numpy as np
 import scipy.signal
 import torch
 import torch.distributions
-from gpytorch.distributions import Delta, MultitaskMultivariateNormal
+from gpytorch.distributions import MultitaskMultivariateNormal
+from .distributions import Delta
 from torch.distributions import Categorical, MultivariateNormal
 
 from rllib.dataset.utilities import get_backend
@@ -115,7 +116,7 @@ def discount_sum(rewards, gamma=1.0):
     return (bk.pow(gamma * bk.ones(steps), bk.arange(steps)) * rewards).sum()
 
 
-def mc_return(trajectory, gamma=1.0, value_function=None):
+def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
     r"""Calculate n-step MC return from the trajectory.
 
     The N-step return of a trajectory is calculated as:
@@ -135,7 +136,7 @@ def mc_return(trajectory, gamma=1.0, value_function=None):
     discount = 1.
     value = torch.zeros_like(trajectory[0].reward)
     for observation in trajectory:
-        value += discount * observation.reward
+        value += discount * (observation.reward + entropy_reg * observation.entropy)
         discount *= gamma
 
     if value_function is not None:

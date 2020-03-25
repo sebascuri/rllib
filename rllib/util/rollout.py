@@ -9,17 +9,23 @@ from rllib.dataset.datatypes import RawObservation
 from rllib.util.utilities import tensor_to_distribution
 
 
-def _step(environment, state, action, render):
+def _step(environment, state, action, pi, render):
     try:
         next_state, reward, done, _ = environment.step(action)
     except TypeError:
         next_state, reward, done, _ = environment.step(action.item())
 
+    if not isinstance(action, torch.Tensor):
+        action = torch.tensor(action, dtype=torch.get_default_dtype())
+
     observation = RawObservation(state=state,
                                  action=action,
                                  reward=reward,
                                  next_state=next_state,
-                                 done=done).to_torch()
+                                 done=done,
+                                 entropy=pi.entropy(),
+                                 log_prob_action=pi.log_prob(action)
+                                 ).to_torch()
     state = next_state
     if render:
         environment.render()
@@ -53,7 +59,8 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         done = False
         while not done:
             action = agent.act(state)
-            observation, state, done = _step(environment, state, action, render)
+            observation, state, done = _step(environment, state, action, agent.pi,
+                                             render)
             agent.observe(observation)
             if max_steps <= environment.time:
                 break
@@ -95,9 +102,10 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         trajectory = []
         with torch.no_grad():
             while not done:
-                pi = policy(torch.tensor(state, dtype=torch.get_default_dtype()))
-                action = tensor_to_distribution(pi).sample().numpy()
-                observation, state, done = _step(environment, state, action, render)
+                pi = tensor_to_distribution(policy(
+                    torch.tensor(state, dtype=torch.get_default_dtype())))
+                action = pi.sample().numpy()
+                observation, state, done = _step(environment, state, action, pi, render)
                 trajectory.append(observation)
                 if max_steps <= environment.time:
                     break
@@ -135,14 +143,14 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
     """
     trajectory = list()
     state = initial_state
-
+    assert max_steps > 0
     for _ in range(max_steps):
         # Sample actions
-        action = tensor_to_distribution(policy(state))
-        if action.has_rsample:
-            action = action.rsample()
+        pi = tensor_to_distribution(policy(state))
+        if pi.has_rsample:
+            action = pi.rsample()
         else:
-            action = action.sample()
+            action = pi.sample()
 
         # % Sample a reward
         reward_distribution = tensor_to_distribution(reward_model(state, action))
@@ -152,22 +160,28 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             reward = reward_distribution.sample()
 
         # Sample next states
-        next_state = tensor_to_distribution(dynamical_model(state, action))
-        if next_state.has_rsample:
-            next_state = next_state.rsample()
+        next_state_distribution = tensor_to_distribution(dynamical_model(state, action))
+        if next_state_distribution.has_rsample:
+            next_state = next_state_distribution.rsample()
         else:
-            next_state = next_state.sample()
+            next_state = next_state_distribution.sample()
 
         # Check for termination.
         if termination is not None and termination(state, action):
-            trajectory.append(
-                RawObservation(state, action, reward, next_state, True).to_torch())
-            break
+            done = True
         else:
-            trajectory.append(
-                RawObservation(state, action, reward, next_state, False).to_torch())
+            done = False
+
+        trajectory.append(
+            RawObservation(state, action, reward, next_state, done,
+                           log_prob_action=pi.log_prob(action),
+                           entropy=pi.entropy()).to_torch()
+        )
 
         # Update state
         state = next_state
+
+        if done:
+            break
 
     return trajectory
