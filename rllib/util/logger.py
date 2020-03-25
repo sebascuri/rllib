@@ -3,6 +3,7 @@
 import time
 
 import numpy as np
+import torch
 from tensorboardX import SummaryWriter
 
 
@@ -39,8 +40,9 @@ class Logger(object):
         for key in self.keys():
             values = self.get(key)
             key = ' '.join(key.split('_')).title()
-            str_ += f"Average {key} {np.mean(values):.1f}\n"
-            str_ += f"10-Episode {key} {np.mean(values[-10:]):.1f}\n"
+            str_ += f"{key} Last: {values[-1]:.2g}. "
+            str_ += f"Average: {np.mean(values):.2g}. "
+            str_ += f"10-Episode: {np.mean(values[-10:]):.2g}.\n"
 
         return str_
 
@@ -62,6 +64,8 @@ class Logger(object):
             over the course of an episode.
         """
         for key, value in kwargs.items():
+            if isinstance(value, torch.Tensor):
+                value = value.detach().numpy()
             value = np.nan_to_num(value)
             if key not in self.current:
                 self.current[key] = (1, value)
