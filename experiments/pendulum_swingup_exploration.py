@@ -27,7 +27,7 @@ np.random.seed(0)
 # %% Reward Function
 reward_model = PendulumReward()
 bounds = [(-np.pi, np.pi), (-2, 2)]
-plot_on_grid(lambda x: reward_model(x, action=None)[0], bounds,
+plot_on_grid(lambda x: reward_model(x, action=torch.tensor([0]))[0], bounds,
              num_entries=[100, 100])
 plt.title('Reward function')
 plt.xlabel('Angle')
@@ -117,7 +117,7 @@ plt.plot(rewards)
 plt.xlabel('Time step')
 plt.ylabel('Instantaneous reward')
 plt.show()
-print(f'Cumulative reward: {torch.sum(rewards):.2f}')
+print(f'System Cumulative Reward: {torch.sum(rewards):.2f}')
 
 bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
 ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])
@@ -126,15 +126,15 @@ ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
 plt.show()
 
 # %% Test controller on Environment.
-# environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-#                                                  step_size=1 / 80),
-#                                 reward=PendulumReward())
-# environment.state = test_state.numpy()
-# environment.initial_state = lambda: test_state.numpy()
-# policy.deterministic = True
-# trajectory = rollout_policy(environment, policy, max_steps=400, render=True)
-#
-# # trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
-# #                             max_steps=400, render=True)
-# trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
-# print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
+environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
+                                                 step_size=1 / 80),
+                                reward=PendulumReward())
+environment.state = test_state.numpy()
+environment.initial_state = lambda: test_state.numpy()
+policy.deterministic = True
+trajectory = rollout_policy(environment, policy, max_steps=400, render=True)
+
+# trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
+#                             max_steps=400, render=True)
+trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
+print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')

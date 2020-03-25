@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from rllib.algorithms.control.mppo import MBMPPO, train_mppo
 from rllib.dataset.dataset import TrajectoryDataset
+from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import MeanFunction, StateActionNormalizer, ActionClipper
 from rllib.dataset.utilities import stack_list_of_tuples, bootstrap_trajectory
@@ -72,20 +73,12 @@ transitions = collect_model_transitions(
 
 # %% Bootstrap into different trajectories.
 ensemble_size = 5
+dataset = BootstrapExperienceReplay(max_len=int(1e4), transformations=transformations,
+                                    num_bootstraps=ensemble_size)
+for transition in transitions:
+    dataset.append(transition)
 
-bootstraps = bootstrap_trajectory(transitions, ensemble_size)
-datasets = []
-dataloaders = []
-for transition in bootstraps:
-    dataset = TrajectoryDataset(sequence_length=1, transformations=transformations)
-    dataset.append(transitions)
-
-    dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-
-    datasets.append(dataset)
-    dataloaders.append(dataloader)
-# %% Define ensemble model.
-
+dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 # %% Train a Model
 ensemble = EnsembleModel(2, 1, num_heads=ensemble_size, layers=[64], biased_head=True,
                          non_linearity='ReLU', input_transform=StateTransform(),
@@ -93,11 +86,7 @@ ensemble = EnsembleModel(2, 1, num_heads=ensemble_size, layers=[64], biased_head
 # ensemble = torch.jit.script(ensemble)
 
 optimizer = torch.optim.Adam(ensemble.parameters(), lr=0.01)
-for _ in tqdm(range(15)):
-    for i in range(ensemble_size):
-        ensemble.select_head(i)
-        train_model(ensemble, dataloaders[i], max_iter=3, optimizer=optimizer,
-                    print_flag=False)
+train_model(ensemble, dataloader, max_iter=30, optimizer=optimizer)
 
 # ensemble.select_head(ensemble_size)
 dynamic_model = UnscaledModel(ensemble, transformations)
@@ -172,7 +161,7 @@ num_inner_iterations = 30
 num_trajectories = math.ceil(num_inner_iterations * 100 / num_simulation_steps)
 num_subsample = 1
 
-value_losses, policy_losses, policy_returns, eta_parameters = train_mppo(
+value_losses, policy_losses, policy_returns, eta_parameters, kl_div = train_mppo(
     mppo, init_distribution, optimizer,
     num_iter=num_iter, num_trajectories=num_trajectories,
     num_simulation_steps=num_simulation_steps, refresh_interval=refresh_interval,

@@ -32,7 +32,7 @@ from rllib.util.collect_data import collect_model_transitions
 from rllib.util.utilities import tensor_to_distribution
 from rllib.util.plotting import plot_learning_losses, plot_values_and_policy
 from rllib.util.rollout import rollout_model, rollout_policy, rollout_agent
-from rllib.util.training import train_model
+from rllib.util.training import train_agent
 from rllib.util.neural_networks import DeterministicEnsemble
 from rllib.util.neural_networks.utilities import freeze_parameters
 from rllib.value_function import NNValueFunction
@@ -53,7 +53,7 @@ class StateTransform(nn.Module):
 
 
 def termination(state, action):
-    return torch.any(state > 100) or torch.any(action > 100)
+    return torch.any(torch.abs(state) > 100) or torch.any(torch.abs(action) > 100)
 
 
 transformations = [
@@ -63,25 +63,33 @@ transformations = [
 ]
 
 # %% Collect Data.
-reward_model = PendulumReward()
+reward_model = PendulumReward(action_cost_ratio=0.1)
+initial_distribution = torch.distributions.Uniform(
+    torch.tensor([-np.pi - np.pi / 6, -1]), torch.tensor([-np.pi + np.pi / 6, +1])
+)
+
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                                                 step_size=1 / 80), reward=reward_model)
+                                                 step_size=1 / 80), reward=reward_model,
+                                initial_state=initial_distribution.sample)
 
 model = EnsembleModel(
     environment.dim_state, environment.dim_action, num_heads=5, layers=[64],
     biased_head=True, non_linearity='ReLU',
     input_transform=StateTransform(), deterministic=False)
 
+sampled_model = TransformedModel(model, transformations)
 dynamic_model = OptimisticModel(model, transformations)
 model_optimizer = optim.Adam(dynamic_model.parameters(), lr=1e-4)
 
 value_function = NNValueFunction(dim_state=environment.dim_state, layers=[64, 64],
                                  biased_head=False, input_transform=StateTransform())
-policy = NNPolicy(dim_state=environment.dim_state, dim_action=environment.dim_action,
-                  layers=[64, 64], biased_head=False, squashed_output=True,
-                  input_transform=StateTransform(), deterministic=False)
+optimistic_policy = NNPolicy(
+    dim_state=environment.dim_state,
+    dim_action=environment.dim_action + environment.dim_state,
+    layers=[64, 64], biased_head=False, squashed_output=True,
+    input_transform=StateTransform(), deterministic=False)
 
-mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
+mppo = MBMPPO(dynamic_model, reward_model, optimistic_policy, value_function,
               epsilon=0.1, epsilon_mean=0.01, epsilon_var=0.00, gamma=0.99,
               num_action_samples=15,
               termination=termination)
@@ -89,21 +97,20 @@ mppo_optimizer = optim.Adam(
     [p for name, p in mppo.named_parameters() if 'model' not in name], lr=5e-4)
 
 agent = MBMPPOAgent(dynamic_model, mppo, model_optimizer, mppo_optimizer,
-                    transformations=transformations, max_len=int(1e5), batch_size=64,
-                    num_env_rollouts=1, num_iter=30, num_mppo_iter=100,
+                    transformations=transformations, max_len=int(1e3), batch_size=64,
+                    num_env_rollouts=1, num_iter=25, num_mppo_iter=25,
                     num_simulation_steps=400, state_refresh_interval=2,
                     num_simulation_trajectories=8,
                     termination=termination,
-                    gamma=0.99, exploration_episodes=3,
-                    )
-rollout_agent(environment, agent, num_episodes=25, max_steps=400)
+                    gamma=0.99)
+train_agent(agent, environment, num_episodes=30, max_steps=400, plot_flag=True)
 
 # %% Test controller on Model.
 test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 
 with torch.no_grad():
-    trajectory = rollout_model(mppo.dynamical_model, mppo.reward_model,
-                               lambda x: (policy(x)[0], torch.zeros(1)),
+    trajectory = rollout_model(sampled_model, reward_model,
+                               lambda x: (agent.policy(x)[0], torch.zeros(1)),
                                initial_state=test_state.unsqueeze(0),
                                max_steps=400)
 
@@ -127,17 +134,15 @@ plt.show()
 print(f'Model Cumulative reward: {torch.sum(rewards):.2f}')
 
 bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
-ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])
+ax_value, ax_policy = plot_values_and_policy(value_function, agent.policy, bounds, [200, 200])
 ax_value.plot(states[:, 0], states[:, 1], color='C1')
 ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
 plt.show()
 
 # %% Test controller on Environment.
-environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                                                 step_size=1 / 80), reward=reward_model)
 environment.state = test_state.numpy()
 environment.initial_state = lambda: test_state.numpy()
-trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
+trajectory = rollout_policy(environment, lambda x: (agent.policy(x)[0], torch.zeros(1)),
                             max_steps=400, render=True)
 trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
 print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
