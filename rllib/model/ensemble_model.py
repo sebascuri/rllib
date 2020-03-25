@@ -16,7 +16,7 @@ class EnsembleModel(NNModel):
                  deterministic=False):
         super().__init__(dim_state, dim_action, num_states, num_actions,
                          input_transform=input_transform)
-
+        self.num_heads = num_heads
         # if deterministic
         self.nn = DeterministicEnsemble(
             self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'], layers=layers,

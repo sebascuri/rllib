@@ -55,9 +55,10 @@ class OptimisticModel(TransformedModel):
 
     def forward(self, state, action):
         """Get Optimistic Next state."""
-        control_action = action[..., :-self.dim_states]
-        optimism_vars = action[..., -self.dim_states:]
+        control_action = action[..., :-self.dim_state]
+        optimism_vars = action[..., -self.dim_state:]
         optimism_vars = torch.clamp(optimism_vars, -1., 1.)
 
         mean, tril = super().forward(state, control_action)
-        return mean + tril * optimism_vars, torch.zeros_like(tril)
+        return (mean + (tril @ optimism_vars.unsqueeze(-1)).squeeze(-1),
+                torch.zeros_like(tril))

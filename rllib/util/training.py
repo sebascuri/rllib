@@ -12,42 +12,34 @@ from .logger import Logger
 
 def _model_loss(model, state, action, next_state):
     mean, cov = model(state, action)
-    y_pred = mean
     y = next_state
     if torch.all(cov == 0):
-        loss = torch.mean((y_pred - y) ** 2)
+        loss = ((mean - y) ** 2).sum(-1)
     else:
-        loss = ((mean - y) @ torch.inverse(cov) @ (mean - y).T).mean()
-        loss += torch.mean(torch.logdet(cov))
+        delta = (mean - y).unsqueeze(-1)
+        loss = (delta.transpose(-2, -1) @ torch.inverse(cov) @ delta).squeeze()
+        loss += torch.logdet(cov)
     return loss
 
 
-def train_model(model, train_loader, optimizer, max_iter=100, eps=1e-6,
-                convergence_horizon=10, print_flag=False):
+def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
     """Train a Dynamical Model."""
-    logger = Logger('model_training')
+    if logger is None:
+        logger = Logger('model_training')
     for i_epoch in range(max_iter):
-        for obs in train_loader:
-            optimizer.zero_grad()
+        for obs, mask in train_loader:
+            ensemble_loss = 0
+            for i in range(model.num_heads):
+                optimizer.zero_grad()
+                model.select_head(i)
+                loss = (mask[:, i] * _model_loss(model, obs.state, obs.action,
+                                                 obs.next_state)).mean()
 
-            loss = _model_loss(model, obs.state, obs.action, obs.next_state)
-            loss.backward()
-
-            optimizer.step()
-            logger.update(loss=loss.item())
-
-        logger.end_episode()
-
-        episode_loss = logger.get('loss')
-        if print_flag:
-            print(f"""Epoch {i_epoch}/{max_iter}
-                  Train Loss: {episode_loss[-1]:.2f}.""")
-
-        if i_epoch > 2 * convergence_horizon and np.abs(
-                np.mean(episode_loss[-2 * convergence_horizon: -convergence_horizon]) -
-                np.mean(episode_loss[-convergence_horizon:]) < eps):
-            break
-    return logger
+                loss.backward()
+                optimizer.step()
+                ensemble_loss += loss.item()
+                logger.update(**{f"model-{i}": loss.item()})
+            logger.update(ensemble_loss=ensemble_loss)
 
 
 def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True):
