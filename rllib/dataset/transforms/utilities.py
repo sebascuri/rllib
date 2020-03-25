@@ -53,15 +53,19 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count):
     delta = new_mean - old_mean
     total = old_count + new_count
 
-    old_c = old_count - 1 if old_count > 0 else torch.tensor(0)
-    new_c = new_count - 1 if new_count > 0 else torch.tensor(0)
+    if old_count <= 1:
+        old_m = 0
+    else:
+        old_m = old_var * (old_count - 1)
 
-    old_m = old_var * old_c
-    new_m = new_var * new_c
+    if new_count <= 1:
+        new_m = 0
+    else:
+        new_m = new_var * (new_count - 1)
 
-    m2 = old_m + new_m + delta ** 2 * (old_count * new_count / total)
-
-    return m2 / (total - 1)
+    m2 = old_m + new_m + delta ** 2 * (
+            old_count.type_as(delta) * new_count.type_as(delta) / total.type_as(delta))
+    return m2 / (total - 1.)
 
 
 def shift_mvn(mvn, mean, variance=None):
