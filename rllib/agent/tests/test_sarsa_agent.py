@@ -57,7 +57,7 @@ def test_nnq_interaction(environment, agent):
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
     agent = agent(
-        q_function=q_function, policy=policy,
+        environment.name, q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA,
         exploration_episodes=2)
@@ -79,7 +79,7 @@ def test_policies(environment, policy, batch_size):
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    agent = SARSAAgent(q_function=q_function, policy=policy,
+    agent = SARSAAgent(environment.name, q_function=q_function, policy=policy,
                        criterion=criterion, optimizer=optimizer,
                        batch_size=batch_size,
                        target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
@@ -97,7 +97,7 @@ def test_tabular_interaction(agent, policy):
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
 
-    agent = agent(q_function=q_function, policy=policy,
+    agent = agent(environment.name, q_function=q_function, policy=policy,
                   criterion=criterion, optimizer=optimizer,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 

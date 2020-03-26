@@ -53,7 +53,7 @@ critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_
 criterion = torch.nn.MSELoss
 
 agent = TD3Agent(
-    q_function, policy, noise, criterion, critic_optimizer,
+    environment.name, q_function, policy, noise, criterion, critic_optimizer,
     actor_optimizer, memory,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)

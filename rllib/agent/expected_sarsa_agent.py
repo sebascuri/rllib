@@ -38,10 +38,10 @@ class ExpectedSARSAAgent(AbstractAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(self, q_function, policy, criterion, optimizer,
+    def __init__(self, environment, q_function, policy, criterion, optimizer,
                  batch_size=1, target_update_frequency=1, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.sarsa = ESARSA(q_function, criterion(reduction='none'), policy, gamma)
         self.policy = policy

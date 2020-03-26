@@ -37,12 +37,12 @@ class DPGAgent(AbstractAgent):
 
     """
 
-    def __init__(self, q_function, policy, exploration, criterion,
+    def __init__(self, environment, q_function, policy, exploration, criterion,
                  critic_optimizer, actor_optimizer, memory, max_action=1,
                  target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1.,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         assert policy.deterministic, "Policy must be deterministic."
 

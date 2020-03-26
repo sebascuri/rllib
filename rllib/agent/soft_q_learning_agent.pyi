@@ -16,7 +16,7 @@ class SoftQLearningAgent(QLearningAgent):
     q_learning: SoftQLearning
     policy: SoftMax
 
-    def __init__(self, q_function: AbstractQFunction, criterion: _Loss,
+    def __init__(self, environment: str, q_function: AbstractQFunction, criterion: _Loss,
                  optimizer: Optimizer, memory: ExperienceReplay,
                  temperature: Union[float, ParameterDecay], target_update_frequency: int = 4,
                  gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...

@@ -18,10 +18,11 @@ class REINFORCEAgent(AbstractAgent):
     connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
     """
 
-    def __init__(self, policy, policy_optimizer, baseline=None, baseline_optimizer=None,
-                 criterion=None, num_rollouts=1, target_update_frequency=1, gamma=1.0,
-                 exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+    def __init__(self, environment, policy, policy_optimizer, baseline=None,
+                 baseline_optimizer=None, criterion=None, num_rollouts=1,
+                 target_update_frequency=1, gamma=1.0, exploration_steps=0,
+                 exploration_episodes=0):
+        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.trajectories = []
         self.reinforce = REINFORCE(policy, baseline,

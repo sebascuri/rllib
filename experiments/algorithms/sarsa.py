@@ -38,7 +38,7 @@ policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
-agent = ExpectedSARSAAgent(q_function, policy, criterion, optimizer,
+agent = ExpectedSARSAAgent(environment.name, q_function, policy, criterion, optimizer,
                            target_update_frequency=TARGET_UPDATE_FREQUENCY,
                            gamma=GAMMA, batch_size=BATCH_SIZE)
 

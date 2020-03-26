@@ -50,7 +50,7 @@ criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
 agent = DDQNAgent(
-    q_function, policy, criterion, optimizer, memory,
+    environment.name, q_function, policy, criterion, optimizer, memory,
     target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)

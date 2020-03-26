@@ -143,7 +143,7 @@ mppo_optimizer = optim.Adam([p for name, p in mppo.named_parameters()
                              if 'model' not in name], lr=policy_opt_params['lr'],
                             weight_decay=model_opt_params['weight_decay'])
 
-agent = MBMPPOAgent(mppo, model_optimizer, mppo_optimizer,
+agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
                     transformations=transformations,
                     max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
                     num_model_iter=hparams['num_model_iter'],
@@ -168,7 +168,7 @@ hparams.update({f"policy-opt-{key}": val if not isinstance(val, tuple) else list
                 })
 
 train_agent(agent, environment, num_episodes=hparams['train_episodes'],
-            max_steps=hparams['horizon'], plot_flag=True, print_episodes=1)
+            max_steps=hparams['horizon'], plot_flag=True, print_frequency=1)
 agent.logger.export_to_json(hparams)
 
 # %% Test controller on Environment.

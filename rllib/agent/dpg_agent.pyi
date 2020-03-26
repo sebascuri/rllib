@@ -19,7 +19,7 @@ class DPGAgent(AbstractAgent):
     max_action: float
     policy_update_frequency: int
 
-    def __init__(self, q_function: AbstractQFunction, policy: AbstractPolicy,
+    def __init__(self,environment: str, q_function: AbstractQFunction, policy: AbstractPolicy,
                  exploration: AbstractExplorationStrategy, criterion: _Loss,
                  critic_optimizer: Optimizer, actor_optimizer: Optimizer,
                  memory: ExperienceReplay, max_action: float = 1.0,

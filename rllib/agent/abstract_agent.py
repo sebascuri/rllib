@@ -34,8 +34,10 @@ class AbstractAgent(object, metaclass=ABCMeta):
         End an interaction with an environment.
     """
 
-    def __init__(self, gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        self.logger = Logger(self.name)
+    def __init__(self, environment, gamma=1.0, exploration_steps=0,
+                 exploration_episodes=0):
+        self.environment = environment
+        self.logger = Logger(f"{environment.title()}/{self.name}")
         self.counters = {'total_episodes': 0, 'total_steps': 0}
         self.episode_steps = []
 

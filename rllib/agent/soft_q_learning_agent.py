@@ -33,10 +33,10 @@ class SoftQLearningAgent(QLearningAgent):
     Human-level control through deep reinforcement learning. Nature.
     """
 
-    def __init__(self, q_function, criterion, optimizer,
+    def __init__(self, environment, q_function, criterion, optimizer,
                  memory, temperature, target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
-        super().__init__(q_function, None, criterion, optimizer, memory,
+        super().__init__(environment, q_function, None, criterion, optimizer, memory,
                          target_update_frequency, gamma,
                          exploration_steps, exploration_episodes)
         self.q_learning = SoftQLearning(q_function, criterion(reduction='none'),

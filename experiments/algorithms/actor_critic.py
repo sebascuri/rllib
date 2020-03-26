@@ -37,7 +37,7 @@ critic_optimizer = torch.optim.Adam(critic.parameters(), lr=CRITIC_LEARNING_RATE
 criterion = loss.MSELoss
 
 agent = A2CAgent(
-    policy=policy, actor_optimizer=actor_optimizer, critic=critic,
+    environment.name, policy=policy, actor_optimizer=actor_optimizer, critic=critic,
     critic_optimizer=critic_optimizer, criterion=criterion,
     num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 

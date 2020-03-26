@@ -66,9 +66,10 @@ class GPUCBAgent(AbstractAgent):
     design.
     """
 
-    def __init__(self, gp, x, beta=2.0):
+    def __init__(self, environment, gp, x, beta=2.0):
         self.policy = GPUCBPolicy(gp, x, beta)
-        super().__init__(gamma=1, exploration_episodes=0, exploration_steps=0)
+        super().__init__(environment, gamma=1, exploration_episodes=0,
+                         exploration_steps=0)
 
     def observe(self, observation) -> None:
         """Observe and update GP."""

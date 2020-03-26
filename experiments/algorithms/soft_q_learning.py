@@ -41,9 +41,8 @@ criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
 
 agent = SoftQLearningAgent(
-    q_function, criterion, optimizer, memory, temperature=TEMPERATURE,
-    target_update_frequency=TARGET_UPDATE_FREQUENCY,
-    gamma=GAMMA)
+    environment.name, q_function, criterion, optimizer, memory, temperature=TEMPERATURE,
+    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

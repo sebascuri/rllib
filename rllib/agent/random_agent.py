@@ -8,9 +8,9 @@ from .abstract_agent import AbstractAgent
 class RandomAgent(AbstractAgent):
     """Agent that interacts randomly in an environment."""
 
-    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 gamma=None, exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+    def __init__(self, environment, dim_state, dim_action, num_states=-1,
+                 num_actions=-1, gamma=1, exploration_steps=0, exploration_episodes=0):
+        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.policy = RandomPolicy(dim_state, dim_action, num_states=num_states,
                                    num_actions=num_actions)

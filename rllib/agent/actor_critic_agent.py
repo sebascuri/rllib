@@ -24,10 +24,10 @@ class ActorCriticAgent(AbstractAgent):
 
     eps = 1e-12
 
-    def __init__(self, policy, actor_optimizer, critic, critic_optimizer, criterion,
-                 num_rollouts=1, target_update_frequency=1,
+    def __init__(self, environment, policy, actor_optimizer, critic, critic_optimizer,
+                 criterion, num_rollouts=1, target_update_frequency=1,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.trajectories = []
         self.actor_critic = ActorCritic(policy, critic, criterion(reduction='none'),

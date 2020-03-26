@@ -33,10 +33,10 @@ class DQNAgent(QLearningAgent):
     Human-level control through deep reinforcement learning. Nature.
     """
 
-    def __init__(self, q_function, policy, criterion, optimizer,
+    def __init__(self, environment, q_function, policy, criterion, optimizer,
                  memory, target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
-        super().__init__(q_function, policy, criterion, optimizer, memory,
+        super().__init__(environment, q_function, policy, criterion, optimizer, memory,
                          target_update_frequency, gamma,
                          exploration_steps, exploration_episodes)
         self.q_learning = DQN(q_function, criterion(reduction='none'), self.gamma)

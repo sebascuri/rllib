@@ -72,9 +72,9 @@ if __name__ == '__main__':
     y0 = objective(None, x0)[0].type(torch.get_default_dtype())
     model = ExactGP(x0, y0, likelihood)
     model.covar_module.base_kernel.lengthscale = 1
-    agent = GPUCBAgent(model, x, beta=2.0)
     environment = BanditEnvironment(objective,
                                     x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
+    agent = GPUCBAgent(environment.name, model, x, beta=2.0)
     state = environment.reset()
 
     fig, axes = plt.subplots(5, 2)

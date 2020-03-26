@@ -37,7 +37,8 @@ actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 critic_optimizer = torch.optim.Adam(critic.parameters(), lr=CRITIC_LEARNING_RATE)
 criterion = loss.MSELoss
 
-agent = GAACAgent(policy=policy, actor_optimizer=actor_optimizer, critic=critic,
+agent = GAACAgent(environment.name,
+                  policy=policy, actor_optimizer=actor_optimizer, critic=critic,
                   critic_optimizer=critic_optimizer, criterion=criterion,
                   num_rollouts=NUM_ROLLOUTS, lambda_=LAMBDA, gamma=GAMMA)
 

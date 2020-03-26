@@ -35,8 +35,9 @@ policy_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 value_optimizer = torch.optim.Adam(value_function.parameters(), lr=CRITIC_LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
-agent = REINFORCEAgent(policy=policy, policy_optimizer=policy_optimizer,
-                       baseline=value_function, baseline_optimizer=value_optimizer,
+agent = REINFORCEAgent(environment.name, policy=policy, baseline=value_function,
+                       policy_optimizer=policy_optimizer,
+                       baseline_optimizer=value_optimizer,
                        criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)

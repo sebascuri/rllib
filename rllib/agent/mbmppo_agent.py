@@ -29,7 +29,7 @@ class MBMPPOAgent(AbstractAgent):
 
     """
 
-    def __init__(self, mppo,
+    def __init__(self, environment, mppo,
                  model_optimizer, mppo_optimizer, transformations,
                  max_memory=10000, batch_size=64,
                  num_model_iter=30,
@@ -38,7 +38,7 @@ class MBMPPOAgent(AbstractAgent):
                  num_simulation_trajectories=8,
                  state_refresh_interval=2,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.mppo = mppo
         self.mppo_optimizer = mppo_optimizer

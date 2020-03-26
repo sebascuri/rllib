@@ -16,7 +16,7 @@ class REINFORCEAgent(AbstractAgent):
     target_update_frequency: int
     num_rollouts: int
 
-    def __init__(self, policy: AbstractPolicy, policy_optimizer: Optimizer,
+    def __init__(self, environment: str, policy: AbstractPolicy, policy_optimizer: Optimizer,
                  baseline: AbstractValueFunction = None, critic: AbstractQFunction = None,
                  baseline_optimizer: Optimizer = None, critic_optimizer: Optimizer = None,
                  criterion: _Loss = None, num_rollouts: int = 1, target_update_frequency: int = 1,

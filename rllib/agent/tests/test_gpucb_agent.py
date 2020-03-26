@@ -34,8 +34,8 @@ def test_GPUCB(reward):
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     likelihood.noise_covar.noise = 0.1 ** 2
     model = ExactGP(x0, y0, likelihood)
-    agent = GPUCBAgent(model, x, beta=2.0)
     environment = BanditEnvironment(reward,
                                     x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
+    agent = GPUCBAgent(environment.name, model, x, beta=2.0)
 
     rollout_agent(environment, agent, num_episodes=1, max_steps=STEPS)
