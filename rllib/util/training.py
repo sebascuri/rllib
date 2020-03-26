@@ -39,10 +39,11 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
                 optimizer.step()
                 ensemble_loss += loss.item()
                 logger.update(**{f"model-{i}": loss.item()})
-            logger.update(ensemble_loss=ensemble_loss)
+            logger.update(model_loss=ensemble_loss)
 
 
-def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True):
+def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
+                print_frequency=0, render=False):
     """Train an agent in an environment.
 
     Parameters
@@ -51,10 +52,13 @@ def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True):
     environment: AbstractEnvironment
     num_episodes: int
     max_steps: int
-    plot_flag: bool
+    plot_flag: bool, optional.
+    print_frequency: int, optional.
+    render: bool, optional.
     """
     agent.train()
-    rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps)
+    rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps,
+                  print_frequency=print_frequency, render=render)
 
     if plot_flag:
         for key in agent.logger.keys():
@@ -80,7 +84,8 @@ def evaluate_agent(agent, environment, num_episodes, max_steps, render=True):
     agent.eval()
     rollout_agent(environment, agent, max_steps=max_steps, num_episodes=num_episodes,
                   render=render)
-    print(f"Test Rewards: {np.mean(agent.logger.get('rewards')[-num_episodes:])}")
+    returns = np.mean(agent.logger.get('environment_return')[-num_episodes:])
+    print(f"Test Cumulative Rewards: {returns}")
 
 
 def save_agent(agent, file_name):

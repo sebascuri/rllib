@@ -47,11 +47,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def __str__(self):
         """Generate string to parse the agent."""
-        opening = "====================================\n"
-        str_ = f"{opening}{self.name} with {self.policy.__class__.__name__}\n"
+        opening = "===================================="
+        str_ = f"\n{opening}\n{self.name} with {self.policy.__class__.__name__}\n"
         str_ += f"Total episodes {self.counters['total_episodes']}\n"
         str_ += f"Total steps {self.counters['total_steps']}\n"
-        str_ += f"{self.logger}{opening}"
+        str_ += f"{self.logger}{opening}\n"
         return str_
 
     def act(self, state):
@@ -97,8 +97,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def end_episode(self):
         """End an episode."""
         self.counters['total_episodes'] += 1
-        current_rewards = self.logger.current['rewards']
-        self.logger.end_episode(rewards=current_rewards[0] * current_rewards[1])
+        rewards = self.logger.current['rewards']
+        self.logger.end_episode(environment_return=rewards[0] * rewards[1])
 
     def end_interaction(self):
         """End the interaction with the environment."""

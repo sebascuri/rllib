@@ -1,7 +1,9 @@
 """Implementation of a Logger class."""
 
 import time
+from datetime import datetime
 
+import json
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter
@@ -18,8 +20,8 @@ class Logger(object):
     def __init__(self, name=''):
         self.statistics = list()
         self.current = dict()
-        self.writer = SummaryWriter()
-        self.name = name
+        current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+        self.writer = SummaryWriter(f"runs/{name}_{current_time}")
         self.start = time.time()
 
     def __len__(self):
@@ -52,7 +54,10 @@ class Logger(object):
 
     def keys(self):
         """Return iterator of stored keys."""
-        return self.statistics[-1].keys()
+        if len(self.statistics):
+            return self.statistics[-1].keys()
+        else:
+            return []
 
     def update(self, **kwargs):
         """Update the statistics for the current episode.
@@ -75,6 +80,8 @@ class Logger(object):
                 new_value = old_value + (value - old_value) * (1 / new_count)
                 self.current[key] = (new_count, new_value)
 
+            self.writer.add_scalar(f"current/{key}", self.current[key][1])
+
     def end_episode(self, **kwargs):
         """Finalize collected data and add final fixed values.
 
@@ -89,13 +96,17 @@ class Logger(object):
         kwargs = {key: value for key, value in kwargs.items()}
         data.update(kwargs)
 
-        for key, value in self.current.items():
-            self.writer.add_scalar(f"{self.name}/{key}", value[1], len(self),
-                                   walltime=time.time() - self.start)
+        for key, value in data.items():
+            if isinstance(value, float) or isinstance(value, int):
+                self.writer.add_scalar(f"episode/{key}", value)
 
         self.statistics.append(data)
         self.current = dict()
 
-    def dump(self, name):
-        """Save the logs. TODO: Implement it."""
-        pass
+    def export_to_json(self, hparams=None):
+        """Save the statistics (and hparams) to a json file."""
+        with open(f"{self.writer.logdir}/statistics.json", "w") as f:
+            json.dump(self.statistics, f)
+        if hparams is not None:
+            with open(f"{self.writer.logdir}/hparams.json", "w") as f:
+                json.dump(hparams, f)

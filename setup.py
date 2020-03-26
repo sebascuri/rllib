@@ -24,6 +24,9 @@ setup(
             'pytest_cov>=2.7,<3',
             'mypy>=0.740',
         ],
+        'logging': [
+            'tensorboard>=2.0,<3',
+        ]
     },
     classifiers=[
         # How mature is this project? Common values are

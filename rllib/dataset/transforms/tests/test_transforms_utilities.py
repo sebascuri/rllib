@@ -51,6 +51,7 @@ def test_unnormalize():
 
 
 def test_sequential_update():
+    torch.manual_seed(0)
     array = torch.randn(16, 4)
 
     transformer = Normalizer()
@@ -60,7 +61,7 @@ def test_sequential_update():
     torch.testing.assert_allclose(transformer.variance, torch.var(array, 0))
 
     for i in range(10):
-        new_array = torch.randn(torch.randint(32, (1,)), 4)
+        new_array = torch.randn(torch.randint(1, 32, (1,)), 4)
         transformer.update(new_array)
 
         array = torch.cat((array, new_array), dim=0)

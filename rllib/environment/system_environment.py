@@ -79,3 +79,8 @@ class SystemEnvironment(AbstractEnvironment):
     def time(self):
         """See `AbstractEnvironment.time'."""
         return self._time
+
+    @property
+    def name(self):
+        """Return class name."""
+        return self.system.__class__.__name__

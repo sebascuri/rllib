@@ -33,7 +33,7 @@ def _step(environment, state, action, pi, render):
 
 
 def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
-                  milestones=None):
+                  print_frequency=0, milestones=None):
     """Conduct a rollout of an agent in an environment.
 
     Parameters
@@ -48,6 +48,8 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         Maximum number of steps per episode.
     render: bool.
         Flag that indicates whether to render the environment or not.
+    print_frequency: int, optional.
+        Print agent stats every `print_episodes' if > 0.
     milestones: list.
         List with episodes in which to save the agent.
 
@@ -65,6 +67,9 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
             if max_steps <= environment.time:
                 break
         agent.end_episode()
+
+        if print_frequency and episode % print_frequency == 0:
+            print(agent)
 
         if episode in milestones:
             file_name = f"{environment.name}_{agent.name}_{episode}.pkl"
