@@ -35,9 +35,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
     """
 
     def __init__(self, environment, gamma=1.0, exploration_steps=0,
-                 exploration_episodes=0):
+                 exploration_episodes=0, comment=''):
         self.environment = environment
-        self.logger = Logger(f"{environment.title()}/{self.name}")
+        self.logger = Logger(f"{environment.title()}/{self.name}", comment=comment)
         self.counters = {'total_episodes': 0, 'total_steps': 0}
         self.episode_steps = []
 

@@ -43,7 +43,10 @@ class MBMPPOAgent(AbstractAgent):
         self.mppo = mppo
         self.mppo_optimizer = mppo_optimizer
         self.model_optimizer = model_optimizer
-        num_heads = mppo.dynamical_model.base_model.num_heads
+        if hasattr(mppo.dynamical_model.base_model, 'num_heads'):
+            num_heads = mppo.dynamical_model.base_model.num_heads
+        else:
+            num_heads = 1
 
         self.dataset = BootstrapExperienceReplay(
             max_len=max_memory, batch_size=batch_size, transformations=transformations,
@@ -122,8 +125,9 @@ class MBMPPOAgent(AbstractAgent):
                     max_iter=self.num_model_iter, optimizer=self.model_optimizer,
                     logger=self.logger)
 
-        self.mppo.dynamical_model.base_model.select_head(
-            self.mppo.dynamical_model.base_model.num_heads)
+        if hasattr(self.mppo.dynamical_model.base_model, 'num_heads'):
+            self.mppo.dynamical_model.base_model.select_head(
+                self.mppo.dynamical_model.base_model.num_heads)
 
         # Step 2: Optimize Policy with model.
         if self.total_steps < self.exploration_steps or (

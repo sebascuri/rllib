@@ -37,8 +37,9 @@ hparams = {'seed': 0,
            'train_episodes': 25,
            'test_episodes': 5,
            'action_cost_ratio': 0,
-           'optimistic': True,
-           'learn_model': True,
+           'optimistic': False,
+           'learn_model': False,
+           'exploratory_initial_distribution': False,
            'max_memory': 1000,
            'batch_size': 64,
            'num_model_iter': 25,
@@ -55,14 +56,8 @@ policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output':
 policy_opt_params = {'lr': 5e-4, 'weight_decay': 0}
 mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.001,
                'num_action_samples': 15}
-
 vf_params = {'layers': [64, 64], 'non_linearity': 'ReLU',
              'biased_head': False}
-
-hparams.update({f"model_{key}": value for key, value in model_params.items()})
-hparams.update({f"policy_{key}": value for key, value in policy_params.items()})
-hparams.update({f"value_function_{key}": value for key, value in vf_params.items()})
-hparams.update(mppo_params)
 
 torch.manual_seed(hparams['seed'])
 np.random.seed(hparams['seed'])
@@ -91,58 +86,91 @@ transformations = [
 
 # %% Define Environment.
 reward_model = PendulumReward(action_cost_ratio=hparams['action_cost_ratio'])
-initial_distribution = torch.distributions.Uniform(
-    torch.tensor([np.pi - 0 * np.pi / 12, 0.0]), torch.tensor([np.pi + 0 * np.pi / 12, +0.0])
-)
+if hparams['exploratory_initial_distribution']:
+    initial_distribution = torch.distributions.Uniform(
+        torch.tensor([-np.pi, -0.05]),
+        torch.tensor([np.pi, 0.05])
+    )
+else:
+    initial_distribution = torch.distributions.Uniform(
+        torch.tensor([np.pi, 0.0]),
+        torch.tensor([np.pi, +0.0])
+    )
+
 
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
                                                  step_size=1 / 80), reward=reward_model,
                                 initial_state=initial_distribution.sample)
 
-# %% Define Model, Policy, Value Function.
-model = EnsembleModel(
-    environment.dim_state, environment.dim_action, num_heads=model_params['heads'],
-    layers=model_params['layers'], biased_head=model_params['biased_head'],
-    non_linearity=model_params['non_linearity'], input_transform=StateTransform(),
-    deterministic=model_params['deterministic'])
+# %% Define Model
+if hparams['learn_model']:
+    model = EnsembleModel(
+        environment.dim_state, environment.dim_action, num_heads=model_params['heads'],
+        layers=model_params['layers'], biased_head=model_params['biased_head'],
+        non_linearity=model_params['non_linearity'], input_transform=StateTransform(),
+        deterministic=model_params['deterministic'])
+    hparams.update({f"model_{key}": value for key, value in model_params.items()})
+else:
+    model_optimizer = None
+    hparams['num_model_iter'] = 0
+    transformations = []
+    model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
+hparams.update({"model": model.__class__.__name__})
 
 if hparams['optimistic']:
     dynamic_model = OptimisticModel(model, transformations)
     dim_policy_action = environment.dim_action + environment.dim_state
 else:
-    if hparams['learn_model']:
-        dynamic_model = TransformedModel(model, transformations)
-    else:
-        dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005,
-                                      step_size=1 / 80)
+    dynamic_model = TransformedModel(model, transformations)
     dim_policy_action = environment.dim_action
+hparams.update({"dynamic_model": dynamic_model.__class__.__name__})
 
+if hparams['learn_model']:
+    model_optimizer = optim.Adam(dynamic_model.parameters(), lr=model_opt_params['lr'],
+                                 weight_decay=model_opt_params['weight_decay'])
+    hparams.update({"model-opt": model_optimizer.__class__.__name__})
+    hparams.update({f"model-opt-{key}": val if not isinstance(val, tuple) else list(val)
+                    for key, val in model_optimizer.defaults.items()
+                    })
+
+# %% Define Policy
 policy = NNPolicy(
     dim_state=environment.dim_state, dim_action=dim_policy_action,
     layers=policy_params['layers'], biased_head=policy_params['biased_head'],
     non_linearity=policy_params['non_linearity'],
     squashed_output=policy_params['squashed_output'],
     input_transform=StateTransform(), deterministic=policy_params['deterministic'])
+hparams.update({"policy": policy.__class__.__name__})
+hparams.update({f"policy_{key}": value for key, value in policy_params.items()})
 
-sampled_model = TransformedModel(model, transformations)
-
+# %% Define Value Function
 value_function = NNValueFunction(dim_state=environment.dim_state,
                                  layers=vf_params['layers'],
                                  biased_head=vf_params['biased_head'],
                                  input_transform=StateTransform())
+hparams.update({"value_function": value_function.__class__.__name__})
+hparams.update({f"value_function_{key}": value for key, value in vf_params.items()})
+
+# %% Define MPPO
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
               epsilon=mppo_params['epsilon'], epsilon_mean=mppo_params['epsilon_mean'],
               epsilon_var=mppo_params['epsilon_var'], gamma=hparams['gamma'],
               num_action_samples=mppo_params['num_action_samples'],
               termination=termination)
 
-# %% Define Optimizers.
-model_optimizer = optim.Adam(dynamic_model.parameters(), lr=model_opt_params['lr'],
-                             weight_decay=model_opt_params['weight_decay'])
 mppo_optimizer = optim.Adam([p for name, p in mppo.named_parameters()
                              if 'model' not in name], lr=policy_opt_params['lr'],
                             weight_decay=model_opt_params['weight_decay'])
+hparams.update(mppo_params)
 
+hparams.update({
+    "mppo-opt": mppo_optimizer.__class__.__name__,
+})
+hparams.update({f"mppo-opt-{key}": val if not isinstance(val, tuple) else list(val)
+                for key, val in mppo_optimizer.defaults.items()
+                })
+
+# %% Define Agent
 agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
                     transformations=transformations,
                     max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
@@ -153,20 +181,7 @@ agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
                     num_simulation_steps=hparams['num_simulation_steps'],
                     gamma=hparams['gamma'])
 
-hparams.update({"model-opt": model_optimizer.__class__.__name__,
-                "policy-opt": mppo_optimizer.__class__.__name__,
-                "model": model.__class__.__name__,
-                "dynamic_model": dynamic_model.__class__.__name__,
-                "value_function": value_function.__class__.__name__,
-                "policy": policy.__class__.__name__})
-
-hparams.update({f"model-opt-{key}": val if not isinstance(val, tuple) else list(val)
-                for key, val in model_optimizer.defaults.items()
-                })
-hparams.update({f"policy-opt-{key}": val if not isinstance(val, tuple) else list(val)
-                for key, val in mppo_optimizer.defaults.items()
-                })
-
+# Train Agent
 train_agent(agent, environment, num_episodes=hparams['train_episodes'],
             max_steps=hparams['horizon'], plot_flag=True, print_frequency=1)
 agent.logger.export_to_json(hparams)
@@ -181,8 +196,8 @@ evaluate_agent(agent, environment, num_episodes=hparams['test_episodes'],
 returns = np.mean(agent.logger.get('environment_return')[-hparams['test_episodes']:])
 agent.logger.writer.add_hparams(hparams, {"test/environment_returns": returns})
 
-
 # %% Test controller on Sampled Model.
+sampled_model = TransformedModel(model, transformations)
 test_state = torch.tensor(test_state, dtype=torch.get_default_dtype())
 with torch.no_grad():
     trajectory = rollout_model(sampled_model, reward_model,
