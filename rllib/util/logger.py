@@ -1,6 +1,5 @@
 """Implementation of a Logger class."""
 
-import time
 from datetime import datetime
 
 import json
@@ -17,12 +16,11 @@ class Logger(object):
     name: str
     """
 
-    def __init__(self, name=''):
+    def __init__(self, name, comment=''):
         self.statistics = list()
         self.current = dict()
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        self.writer = SummaryWriter(f"runs/{name}_{current_time}")
-        self.start = time.time()
+        self.writer = SummaryWriter(f"runs/{name}_{comment}_{current_time}")
 
     def __len__(self):
         """Return the number of episodes."""

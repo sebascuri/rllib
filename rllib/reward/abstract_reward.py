@@ -8,11 +8,11 @@ import torch.nn as nn
 class AbstractReward(nn.Module, metaclass=ABCMeta):
     """Interface for Rewards of an Environment.
 
-    A Reward is an approximation of the reward of the environment.
+    A Reward is a model of the reward of the environment.
 
     Methods
     -------
-    forward(state, action): torch.Distribution
+    forward(state, action): Tensor, Union[Tensor, Tensor]
         return the next state distribution given a state and an action.
 
     """
