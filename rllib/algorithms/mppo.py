@@ -140,12 +140,11 @@ class MPPO(nn.Module):
     gamma: float
         The discount factor.
 
-
     References
     ----------
     Abdolmaleki, et al. "Maximum a Posteriori Policy Optimisation." (2018). ICLR.
-
     """
+
     def __init__(self, policy, value_function, epsilon, epsilon_mean, epsilon_var,
                  gamma, num_action_samples=15, entropy_reg=0.):
         old_policy = deep_copy_module(policy)
