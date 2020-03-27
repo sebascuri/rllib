@@ -1,6 +1,6 @@
 """Interface for Markov Decision Processes."""
 
-
+import numpy as np
 import torch
 from gym import spaces
 from torch.distributions import Categorical
@@ -108,3 +108,102 @@ class MDP(AbstractEnvironment):
             done = False
 
         return next_state, reward, done, {}
+
+
+class TwoStateProblem(MDP):
+    """Implementation of Two State Problem.
+
+    References
+    ----------
+    Bagnell, J. A., & Schneider, J. (2003).
+    Covariant policy search. IJCAI.
+    """
+
+    def __init__(self):
+        kernel = np.zeros((2, 2, 2))
+        reward = np.zeros((2, 2))
+
+        for state in range(2):
+            for action in range(2):
+                for next_state in range(2):
+                    kernel[state, action, next_state] = 1 if action == next_state else 0
+                reward[state, action] = action + 1 if action == state else 0
+
+        super().__init__(kernel, reward)
+
+
+class SingleChainProblem(MDP):
+    """Implementation of Single Chain Problem.
+
+    Parameters
+    ----------
+    chain_length: int
+        number of states in chain.
+
+    References
+    ----------
+    Furmston, T., & Barber, D. (2010).
+    Variational methods for reinforcement learning. AISTATS
+    """
+
+    def __init__(self, chain_length=5):
+        num_states = chain_length
+        kernel = np.zeros((num_states, 2, num_states))
+        reward = np.zeros((num_states, 2))
+
+        for state in range(num_states):
+            kernel[state, 0, min(state + 1, num_states - 1)] = 1
+            kernel[state, 1, 0] = 1
+
+            reward[state, 0] = 0
+            reward[state, 1] = 2
+        reward[num_states - 1, 0] = 2 * chain_length
+
+        initial_state = 0
+        super().__init__(kernel, reward, initial_state)
+
+
+class DoubleChain(MDP):
+    """Implementation of Single Chain Problem.
+
+    Parameters
+    ----------
+    chain_length: int
+        number of states in chain.
+
+    References
+    ----------
+    Furmston, T., & Barber, D. (2010).
+    Variational methods for reinforcement learning. AISTATS
+    """
+
+    def __init__(self, chain_length=5):
+        num_states = 2 * chain_length - 1
+        kernel = np.zeros((num_states, 2, num_states))
+        reward = np.zeros((num_states, 2))
+
+        # Initial transition
+        kernel[0, 0, 1] = 1
+        kernel[0, 1, chain_length] = 1
+        reward[0, 0] = 0
+        reward[0, 1] = 2
+
+        for i in range(chain_length - 1):
+            top_state = 1 + i
+            bottom_state = chain_length + i
+
+            kernel[top_state, 1, 0] = 1
+            kernel[bottom_state, 1, 0] = 1
+            reward[top_state, 1] = 2
+            reward[bottom_state, 1] = 2
+
+            kernel[top_state, 0, min(top_state + 1, chain_length - 1)] = 1
+            kernel[bottom_state, 0, min(bottom_state + 1, num_states - 1)] = 1
+            reward[top_state, 0] = 0
+            reward[bottom_state, 0] = 0
+
+        reward[chain_length - 1, 0] = 2 * chain_length
+        reward[num_states - 1, 0] = chain_length
+
+        initial_state = 0
+        super().__init__(kernel, reward, initial_state)
