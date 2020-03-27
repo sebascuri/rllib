@@ -3,14 +3,6 @@ import numpy as np
 import torch
 
 
-def get_backend(array):
-    """Get backend of the array."""
-    if isinstance(array, torch.Tensor):
-        return torch
-    else:
-        return np
-
-
 def _cast_to_iter_class(generator, class_):
     if class_ in (tuple, list):
         return class_(generator)

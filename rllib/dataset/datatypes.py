@@ -33,7 +33,7 @@ class RawObservation(NamedTuple):
     action: Action
     reward: Reward = torch.tensor(NaN)
     next_state: State = torch.tensor(NaN)
-    done: Done = torch.tensor(False)
+    done: Done = False
     next_action: Action = torch.tensor(NaN)  # SARSA algorithm.
     log_prob_action: Probability = torch.tensor(NaN)  # Off-policy algorithms.
     entropy: Probability = torch.tensor(NaN)  # Entropy of current policy.

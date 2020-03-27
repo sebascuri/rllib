@@ -5,10 +5,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from rllib.util.utilities import moving_average_filter
 
 __all__ = ['combinations', 'linearly_spaced_combinations', 'plot_combinations_as_grid',
            'plot_learning_losses', 'plot_on_grid', 'plot_values_and_policy']
+
+
+def moving_average_filter(x, y, horizon):
+    """Apply a moving average filter to data x and y.
+
+    This function truncates the data to match the horizon.
+
+    Parameters
+    ----------
+    x : ndarray
+        The time stamps of the data.
+    y : ndarray
+        The values of the data.
+    horizon : int
+        The horizon over which to apply the filter.
+
+    Returns
+    -------
+    x_smooth : ndarray
+        A shorter array of x positions for smoothed values.
+    y_smooth : ndarray
+        The corresponding smoothed values
+    """
+    horizon = min(horizon, len(y))
+
+    smoothing_weights = np.ones(horizon) / horizon
+    x_smooth = x[horizon // 2: -horizon // 2 + 1]
+    y_smooth = np.convolve(y, smoothing_weights, 'valid')
+    return x_smooth, y_smooth
 
 
 def combinations(arrays):

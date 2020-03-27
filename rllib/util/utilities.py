@@ -8,11 +8,25 @@ from gpytorch.distributions import MultitaskMultivariateNormal
 from .distributions import Delta
 from torch.distributions import Categorical, MultivariateNormal
 
-from rllib.dataset.utilities import get_backend
+
+def get_backend(array):
+    """Get backend of the array."""
+    if isinstance(array, torch.Tensor):
+        return torch
+    elif isinstance(array, np.ndarray):
+        return np
+    else:
+        raise TypeError
 
 
 def integrate(function, distribution, num_samples=1):
-    """Integrate a function over a distribution.
+    r"""Integrate a function over a distribution.
+
+    Compute:
+    .. math:: \int_a function(a) distribution(a) da.
+
+    When the distribution is discrete, just sum over the actions.
+    When the distribution is continuous, approximate the integral via MC sampling.
 
     Parameters
     ----------
@@ -37,16 +51,19 @@ def integrate(function, distribution, num_samples=1):
 
     else:
         for _ in range(num_samples):
-            f_val = function(distribution.rsample())
-            ans += f_val
-
+            if distribution.has_rsample:
+                action = distribution.rsample()
+            else:
+                action = distribution.sample()
+            ans += function(action).squeeze() / num_samples
     return ans
 
 
 def mellow_max(values, omega=1.):
-    """Find mellow-max of an array of values.
+    r"""Find mellow-max of an array of values.
 
-    The mellow max is log(1/n sum(e^x)).
+    The mellow max is:
+    .. math:: mm_\omega(x) =1 / \omega \log(1 / n \sum_{i=1}^n e^{\omega x_i}).
 
     Parameters
     ----------
@@ -66,18 +83,23 @@ def mellow_max(values, omega=1.):
 
 
 def discount_cumsum(rewards, gamma=1.0):
-    """Get cumulative discounted returns.
+    r"""Get discounted cumulative sum of an array.
 
-    Given a vector [r0, r1, r2], return [r0 + gamma r1 + gamma^2 r2, r1 + gamma r2, r2].
+    Given a vector [r0, r1, r2], the discounted cum sum is another vector:
+    .. math:: [r0 + gamma r1 + gamma^2 r2, r1 + gamma r2, r2].
+
 
     Parameters
     ----------
-    rewards: array of rewards.
-    gamma: discount factor.
+    rewards: Array.
+        Array of rewards
+    gamma: float, optional.
+        Discount factor.
 
     Returns
     -------
-    discounted_returns: sum of discounted returns.
+    discounted_returns: Array.
+        Sum of discounted returns.
 
     References
     ----------
@@ -97,30 +119,35 @@ def discount_cumsum(rewards, gamma=1.0):
 
 
 def discount_sum(rewards, gamma=1.0):
-    """Get sum of discounted returns.
+    r"""Get discounted sum of returns.
+
+    Given a vector [r0, r1, r2], the discounted sum is tensor:
+    .. math:: r0 + gamma r1 + gamma^2 r2
 
     Parameters
     ----------
-    rewards: Array
-    gamma: float
+    rewards: Tensor.
+        Array of rewards
+    gamma: float, optional.
+        Discount factor.
 
     Returns
     -------
-    cum_sum
+    cum_sum: tensor.
+        Cumulative sum of returns.
     """
     if len(rewards.shape) == 0:
         steps = 1
     else:
         steps = len(rewards)
-    bk = get_backend(rewards)
-    return (bk.pow(gamma * bk.ones(steps), bk.arange(steps)) * rewards).sum()
+    return (torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards).sum()
 
 
 def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
     r"""Calculate n-step MC return from the trajectory.
 
     The N-step return of a trajectory is calculated as:
-    .. math:: V(s) = \sum_{t=0}^T \gamma^t r + \gamma^{T+1} V(s_{T+1})
+    .. math:: V(s) = \sum_{t=0}^T \gamma^t (r + \lambda H) + \gamma^{T+1} V(s_{T+1}).
 
     Parameters
     ----------
@@ -129,7 +156,9 @@ def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
     gamma: float, optional.
         Discount factor.
     value_function: AbstractValueFunction, optional.
-        value function to bootstrap the value of the final state.
+        Value function to bootstrap the value of the final state.
+    entropy_reg: float, optional.
+        Entropy regularization coefficient.
     """
     if len(trajectory) == 0:
         return 0.
@@ -146,37 +175,14 @@ def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
     return value
 
 
-def moving_average_filter(x, y, horizon):
-    """Apply a moving average filter to data x and y.
-
-    This function truncates the data to match the horizon.
-
-    Parameters
-    ----------
-    x : ndarray
-        The time stamps of the data.
-    y : ndarray
-        The values of the data.
-    horizon : int
-        The horizon over which to apply the filter.
-
-    Returns
-    -------
-    x_smooth : ndarray
-        A shorter array of x positions for smoothed values.
-    y_smooth : ndarray
-        The corresponding smoothed values
-    """
-    horizon = min(horizon, len(y))
-
-    smoothing_weights = np.ones(horizon) / horizon
-    x_smooth = x[horizon // 2: -horizon // 2 + 1]
-    y_smooth = np.convolve(y, smoothing_weights, 'valid')
-    return x_smooth, y_smooth
-
-
 def tensor_to_distribution(args):
     """Convert tensors to a distribution.
+
+    When args is a tensor, it returns a Categorical distribution with logits given by
+    args.
+
+    When args is a tuple, it returns a MultivariateNormal distribution with args[0] as
+    mean and args[1] as scale_tril matrix. When args[1] is zero, it returns a Delta.
 
     Parameters
     ----------
@@ -202,13 +208,13 @@ def separated_kl(p, q):
 
     Parameters
     ----------
-    p : torch.distributions.MultivariateNormal
-    q : torch.distributions.MultivariateNormal
+    p: torch.distributions.MultivariateNormal
+    q: torch.distributions.MultivariateNormal
 
     Returns
     -------
-    kl_mean : torch.Tensor
-    kl_var : torch.Tensor
+    kl_mean: torch.Tensor
+    kl_var: torch.Tensor
     """
     p_mean, p_scale = p.loc, p.scale_tril
     q_mean, q_scale = q.loc, q.scale_tril

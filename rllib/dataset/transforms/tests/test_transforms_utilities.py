@@ -3,7 +3,7 @@ import torch
 import torch.testing
 
 from rllib.dataset.transforms.normalizer import Normalizer
-from rllib.dataset.utilities import get_backend
+from rllib.util.utilities import get_backend
 
 
 @pytest.fixture(params=[True, False])
