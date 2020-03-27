@@ -20,13 +20,17 @@ class TransformedModel(AbstractModel):
 
     def forward(self, state, action):
         """Predict next state distribution."""
+        return self.next_state(state, action)
+
+    @torch.jit.export
+    def next_state(self, state, action):
+        """Get next_state distribution."""
         none = torch.tensor(0)
         obs = Observation(state, action, none, none, none, none, none, none, none, none)
         for transformation in self.forward_transformations:
             obs = transformation(obs)
 
         # Predict next-state
-        self.base_model.eval()
         next_state = self.base_model(obs.state, obs.action)
 
         # Back-transform
@@ -45,7 +49,7 @@ class ExpectedModel(TransformedModel):
 
     def forward(self, state, action):
         """Get Expected Next state."""
-        ns, cov = super().forward(state, action)
+        ns, cov = self.next_state(state, action)
 
         return ns, torch.zeros_like(cov)
 
@@ -59,6 +63,6 @@ class OptimisticModel(TransformedModel):
         optimism_vars = action[..., -self.dim_state:]
         optimism_vars = torch.clamp(optimism_vars, -1., 1.)
 
-        mean, tril = super().forward(state, control_action)
+        mean, tril = self.next_state(state, control_action)
         return (mean + (tril @ optimism_vars.unsqueeze(-1)).squeeze(-1),
                 torch.zeros_like(tril))

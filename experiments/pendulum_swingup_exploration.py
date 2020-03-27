@@ -8,7 +8,7 @@ import torch.jit
 import torch.nn as nn
 import torch.optim as optim
 
-from rllib.algorithms.control.mppo import MBMPPO, train_mppo
+from rllib.algorithms.mppo import MBMPPO, train_mppo
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment.system_environment import SystemEnvironment

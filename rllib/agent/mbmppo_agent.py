@@ -141,7 +141,7 @@ class MBMPPOAgent(AbstractAgent):
                 if i % self.state_refresh_interval == 0:
                     with torch.no_grad():
                         idx = torch.randint(self.initial_states.shape[0],
-                                            (self.num_simulation_trajectories,))
+                                            (1, self.num_simulation_trajectories,))
                         initial_states = self.initial_states[idx]
                         trajectory = rollout_model(self.mppo.dynamical_model,
                                                    reward_model=self.mppo.reward_model,
@@ -157,8 +157,8 @@ class MBMPPOAgent(AbstractAgent):
                         self.logger.update(model_return=average_return.item())
 
                         # Shuffle to get a state distribution
-                        states = stacked_trajectory.state.reshape(-1,
-                                                                  self.policy.dim_state)
+                        states = stacked_trajectory.state.reshape(
+                            -1, self.mppo.dynamical_model.dim_state)
                         np.random.shuffle(states.numpy())
                         state_batches = torch.split(states, self.batch_size)
 

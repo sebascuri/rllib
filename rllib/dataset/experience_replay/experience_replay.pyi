@@ -28,6 +28,9 @@ class ExperienceReplay(data.Dataset):
                   ) -> Tuple[Observation, ndarray, ndarray]: ...
 
     @property
+    def all_data(self) -> Observation: ...
+
+    @property
     def is_full(self) -> bool: ...
 
     @property

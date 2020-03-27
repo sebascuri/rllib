@@ -9,7 +9,7 @@ from torch.distributions import Uniform
 import torch.optim as optim
 
 from rllib.agent.mbmppo_agent import MBMPPOAgent
-from rllib.algorithms.control.mppo import MBMPPO
+from rllib.algorithms.mppo import MBMPPO
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import MeanFunction, StateActionNormalizer, ActionClipper, \
     DeltaState
@@ -37,8 +37,8 @@ hparams = {'seed': 0,
            'train_episodes': 25,
            'test_episodes': 5,
            'action_cost_ratio': 0,
-           'optimistic': False,
-           'learn_model': False,
+           'optimistic': True,
+           'learn_model': True,
            'exploratory_initial_distribution': False,
            'max_memory': 1000,
            'batch_size': 64,
@@ -123,6 +123,7 @@ else:
     dynamic_model = TransformedModel(model, transformations)
     dim_policy_action = environment.dim_action
 hparams.update({"dynamic_model": dynamic_model.__class__.__name__})
+
 
 if hparams['learn_model']:
     model_optimizer = optim.Adam(dynamic_model.parameters(), lr=model_opt_params['lr'],

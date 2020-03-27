@@ -62,7 +62,7 @@ transformations = [
 
 
 # %% Collect Data.
-num_data = 500
+num_data = 200
 reward_model = PendulumReward()
 dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005)
 
@@ -72,68 +72,60 @@ transitions = collect_model_transitions(
     dynamic_model, reward_model, num_data)
 
 # %% Bootstrap into different trajectories.
-ensemble_size = 5
 dataset = BootstrapExperienceReplay(max_len=int(1e4), transformations=transformations,
-                                    num_bootstraps=ensemble_size)
+                                    num_bootstraps=1)
 for transition in transitions:
     dataset.append(transition)
 
+data = dataset.all_data
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+
 # %% Train a Model
-ensemble = EnsembleModel(2, 1, num_heads=ensemble_size, layers=[64], biased_head=True,
-                         non_linearity='ReLU', input_transform=StateTransform(),
-                         deterministic=False)
-# ensemble = torch.jit.script(ensemble)
+model = ExactGPModel(data.state, data.action, data.next_state)
 
-optimizer = torch.optim.Adam(ensemble.parameters(), lr=0.01)
-train_model(ensemble, dataloader, max_iter=30, optimizer=optimizer)
+model.eval()
+mean, stddev = model(torch.randn(2, 5, 2), torch.randn(2, 5, 1))
+# print(mean.shape, stddev.shape, mean, stddev)
 
-# ensemble.select_head(ensemble_size)
-dynamic_model = UnscaledModel(ensemble, transformations)
-# dynamic_model = torch.jit.script(dynamic_model)
-# dynamic_model.base_model.select_head(ensemble_size)
-# model = ExactGPModel(data.state, data.action, data.next_state)
-# model.eval()
-# model(torch.randn(1, 2), torch.randn(1, 1))
-# model.train()
-#
-# # Use the adam optimizer
-# optimizer = torch.optim.Adam([
-#     {'params': model.parameters()},  # Includes GaussianLikelihood parameters
-# ], lr=0.1)
-#
-# # "Loss" for GPs - the marginal log likelihood
-# mlls = [gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, gp)
-#         for likelihood, gp in zip(model.likelihood, model.gp)]
-# for i in range(num_iter):
-#     optimizer.zero_grad()
-#     loss = torch.tensor(0.)
-#     outputs = model(data.state, data.action)
-#     for output_mean, output_cov, mll, next_state in zip(outputs[0], outputs[1], mlls, data.next_state.T):
-#         output = tensor_to_distribution((output_mean, output_cov))
-#         loss -= mll(output, next_state)
-#     loss.backward()
-#
-#     optimizer.step()
-#     print('Iter %d/%d - Loss: %.3f' % (i + 1, num_iter, loss.item()))
-#
-# model.eval()
-# outputs = model(data.state, data.action)
-# l2 = torch.tensor(0.)
-# for output_mean, output_cov, mll, next_state in zip(outputs[0], outputs[1], mlls,
-#                                                     data.next_state.T):
-#     l2 += torch.mean((output_mean - next_state) ** 2)
-# print(l2)
-#
+model.train()
+out = model(data.state, data.action)
+optimizer = torch.optim.Adam([
+    {'params': model.parameters()},  # Includes GaussianLikelihood parameters
+], lr=0.1)
 
-#
-# %% Define Policy, Value function, Model, Initial Distribution, Optimizer.
-# dynamic_model = UnscaledModel(model, dataset.transformations)
-# with torch.no_grad(), gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
-#     dynamic_model.eval()
-#     state, action = torch.randn(5, 20, 2), torch.randn(5, 20, 1)
-#     pred = dynamic_model(state, action)
-#     dynamic_model = torch.jit.trace(dynamic_model, (state, action))
+
+n = data.state.shape[0]
+for i in range(100):
+    optimizer.zero_grad()
+    output = tensor_to_distribution(model(data.state, data.action))
+    loss = -output.log_prob(data.next_state.T).sum()
+
+    for gp in model.gp:
+        # Add additional terms (SGPR / learned inducing points, heteroskedastic likelihood models)
+        for added_loss_term in gp.added_loss_terms():
+            loss = loss.add(added_loss_term.loss())
+
+        # Add log probs of priors on the (functions of) parameters
+        for _, prior, closure, _ in gp.named_priors():
+            loss.add_(prior.log_prob(closure()).sum())
+
+    loss = loss / n
+    loss.backward()
+
+    optimizer.step()
+    print('Iter %d/%d - Loss: %.3f' % (i + 1, 100, loss.item()))
+
+print([(n, p) for (n, p) in model.named_parameters()])
+
+model.eval()
+dynamic_model = UnscaledModel(model, transformations)
+
+with gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
+    s, a = data.state.expand(15, 200, 2), data.action.expand(15, 200, 1)
+    dynamic_model(s, a)
+    dynamic_model = torch.jit.trace(dynamic_model, (s, a))
+
+
 freeze_parameters(dynamic_model)
 value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
                                  input_transform=StateTransform())
@@ -161,11 +153,12 @@ num_inner_iterations = 30
 num_trajectories = math.ceil(num_inner_iterations * 100 / num_simulation_steps)
 num_subsample = 1
 
-value_losses, policy_losses, policy_returns, eta_parameters, kl_div = train_mppo(
-    mppo, init_distribution, optimizer,
-    num_iter=num_iter, num_trajectories=num_trajectories,
-    num_simulation_steps=num_simulation_steps, refresh_interval=refresh_interval,
-    batch_size=batch_size, num_subsample=num_subsample)
+with gpytorch.settings.fast_pred_var(), gpytorch.settings.detach_test_caches():
+    value_losses, policy_losses, policy_returns, eta_parameters, kl_div = train_mppo(
+        mppo, init_distribution, optimizer,
+        num_iter=num_iter, num_trajectories=num_trajectories,
+        num_simulation_steps=num_simulation_steps, refresh_interval=refresh_interval,
+        batch_size=batch_size, num_subsample=num_subsample)
 
 plt.plot(refresh_interval * np.arange(len(policy_returns)), policy_returns)
 plt.xlabel('Iteration')
@@ -182,7 +175,7 @@ test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype()
 with torch.no_grad():
     trajectory = rollout_model(mppo.dynamical_model, mppo.reward_model,
                                lambda x: (policy(x)[0], torch.zeros(1)),
-                               initial_state=test_state.unsqueeze(0),
+                               initial_state=test_state.unsqueeze(0).unsqueeze(1),
                                max_steps=400)
 
     trajectory = Observation(*stack_list_of_tuples(trajectory))
@@ -192,13 +185,13 @@ rewards = trajectory.reward
 fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
 
 plt.sca(ax1)
-plt.plot(states[:, 0], states[:, 1], 'x')
-plt.plot(states[-1, 0], states[-1, 1], 'x')
+plt.plot(states[0, :, 0], states[0, :, 1], 'x')
+plt.plot(states[0, -1, 0], states[0, -1, 1], 'x')
 plt.xlabel('Angle [rad]')
 plt.ylabel('Angular velocity [rad/s]')
 
 plt.sca(ax2)
-plt.plot(rewards)
+plt.plot(rewards[:, 0, 0])
 plt.xlabel('Time step')
 plt.ylabel('Instantaneous reward')
 plt.show()
@@ -206,8 +199,8 @@ print(f'Model Cumulative reward: {torch.sum(rewards):.2f}')
 
 bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
 ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])
-ax_value.plot(states[:, 0], states[:, 1], color='C1')
-ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
+ax_value.plot(states[0, :, 0], states[0, :, 1], color='C1')
+ax_value.plot(states[0, -1, 0], states[0, -1, 1], 'x', color='C1')
 plt.show()
 
 # %% Test controller on Environment.

@@ -1,10 +1,12 @@
 """Implementation of an Experience Replay Buffer."""
 
 import numpy as np
+# import torch
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
 from rllib.dataset.datatypes import Observation
+from rllib.dataset.utilities import stack_list_of_tuples
 
 
 class ExperienceReplay(data.Dataset):
@@ -110,6 +112,15 @@ class ExperienceReplay(data.Dataset):
         bool
         """
         return self.memory[-1] is not None  # check if the last element is not empty.
+
+    @property
+    def all_data(self):
+        """Get all the data."""
+        data = stack_list_of_tuples(self.memory[:self._ptr])
+
+        for transformation in self.transformations:
+            data = transformation(data)
+        return data
 
     @property
     def has_batch(self):

@@ -28,6 +28,7 @@ class ExactGPModel(AbstractModel):
 
     def forward(self, state, action):
         """Get next state distribution."""
+        print(state.shape, action.shape)
         state_action = torch.cat((state, action), dim=-1)
         if state_action.dim() < 2:
             state_action = state_action.unsqueeze(0)
@@ -35,8 +36,12 @@ class ExactGPModel(AbstractModel):
         # for gp, likelihood in zip(self.gp, self.likelihood):
         out = [likelihood(gp(state_action))
                for gp, likelihood in zip(self.gp, self.likelihood)]
-        # out = self.likelihood(*self.gp()))
-        mean = torch.stack(tuple(o.mean for o in out), dim=0)
-        cov = torch.stack(tuple(o.covariance_matrix for o in out), dim=0)
 
-        return mean, cov
+        if self.training:
+            mean = torch.stack(tuple(o.mean for o in out), dim=0)
+            scale_tril = torch.stack(tuple(o.scale_tril for o in out), dim=0)
+            return mean, scale_tril
+        else:
+            mean = torch.stack(tuple(o.mean for o in out), dim=-1)
+            stddev = torch.stack(tuple(o.stddev for o in out), dim=-1)
+            return mean, torch.diag_embed(stddev)
