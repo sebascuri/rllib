@@ -26,7 +26,7 @@ class MPOReturn(NamedTuple):
     kl_div: Tensor
 
 
-class MPPO(nn.Module):
+class MPPOLoss(nn.Module):
     eta: nn.Parameter
     eta_mean: nn.Parameter
     eta_var: nn.Parameter
@@ -49,7 +49,7 @@ class MBMPPO(nn.Module):
 
     gamma: float
 
-    mppo: MPPO
+    mppo_loss: MPPOLoss
     value_loss: nn.modules.loss._Loss
     num_action_samples: int
     entropy_reg: float
