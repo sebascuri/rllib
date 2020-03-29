@@ -1,7 +1,6 @@
 """Utilities for environment module."""
 
 from collections import defaultdict
-from itertools import product
 
 import numpy as np
 import torch
@@ -23,29 +22,18 @@ def gym2mdp(environment):
     """
     num_states = environment.num_states
     num_actions = environment.num_actions
-    transitions = environment.env.P
-
-    kernel = np.zeros((num_states, num_actions, num_states))
-    reward = np.zeros((num_states, num_actions))
-
-    for state, action in product(range(num_states), range(num_actions)):
-        if state == (num_states - 1):  # terminal state
-            kernel[state, action, state] = 1
-            reward[state, action] = 0
-            continue
-        for (p, ns, r, done) in transitions[state][action]:
-            if done:
-                ns = num_states - 1
-            kernel[state, action, ns] = p
-            reward[state, action] = r
-
+    # transitions = environment.env.P
+    transitions = defaultdict(list)
     terminal_states = [num_states - 1]
+    for state, action_transition_dict in environment.env.P.items():
+        for action, transitions_ in action_transition_dict.items():
+            for prob, next_state, reward, done in transitions_:
+                if done:
+                    next_state = num_states - 1
+                transitions[(state, action)].append({
+                    'next_state': next_state, 'probability': prob, 'reward': reward})
 
-    # Verify for correctness of kernel.
-    for state, action in product(range(num_states), range(num_actions)):
-        assert kernel[state, action].sum() == 1
-
-    return MDP(kernelreward2transitions(kernel, reward),
+    return MDP(transitions,
                num_states, num_actions,
                initial_state=environment.env.reset,
                terminal_states=terminal_states)
