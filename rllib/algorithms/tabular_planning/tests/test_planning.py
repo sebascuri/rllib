@@ -67,7 +67,7 @@ def test_policy_iteration():
         nv = r + GAMMA * value_function.table[:, ns]
 
         environment.state = state
-        ns, r, done, info = environment.step(opt[state])
+        ns, r, done, info = environment.step(opt[state].item())
         nv2 = r + GAMMA * value_function.table[:, ns]
 
         torch.testing.assert_allclose(nv, nv2)
@@ -93,7 +93,7 @@ def test_policy_iteration():
         nv = r + GAMMA * value_function.table[:, ns]
 
         environment.state = state
-        ns, r, done, info = environment.step(opt[state])
+        ns, r, done, info = environment.step(opt[state].item())
         nv2 = r + GAMMA * value_function.table[:, ns]
 
         torch.testing.assert_allclose(nv, nv2)

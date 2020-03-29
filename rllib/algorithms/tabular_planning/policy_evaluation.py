@@ -3,7 +3,7 @@
 import numpy as np
 import torch
 
-from rllib.environment import mdp2mrp
+from rllib.environment import mdp2mrp, transitions2kernelreward
 from rllib.util.utilities import tensor_to_distribution
 from .utilities import init_value_function
 
@@ -21,9 +21,13 @@ def linear_system_policy_evaluation(policy, model, gamma, value_function=None):
         value_function = init_value_function(model.num_states, model.terminal_states)
 
     mrp = mdp2mrp(environment=model, policy=policy)
-    A = torch.eye(model.num_states) - gamma * mrp.kernel[:, 0, :]
+
+    kernel, reward = transitions2kernelreward(mrp.transitions,
+                                              model.num_states, model.num_actions)
+
+    A = torch.eye(model.num_states) - gamma * kernel[:, 0, :]
     # torch.testing.assert_allclose(A.inverse() @ A, torch.eye(model.num_states))
-    vals = A.inverse() @ mrp.reward[:, 0]
+    vals = A.inverse() @ reward[:, 0]
     for state in range(model.num_states):
         value_function.set_value(state, vals[state].item())
 
@@ -71,23 +75,23 @@ def iterative_policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
     for _ in range(max_iter):
         max_error = 0
         avg_error = 0
-        for state_ in range(model.num_states):
-            if state_ in model.terminal_states:
+        for state in range(model.num_states):
+            if state in model.terminal_states:
                 continue
-            state = torch.tensor(state_).long()
 
-            value = value_function(state)
             value_estimate = torch.tensor(0.)
+            state = torch.tensor(state).long()
             policy_ = tensor_to_distribution(policy(state))
             for action in np.where(policy_.probs.detach().numpy())[0]:
                 p_action = policy_.probs[action].item()
-                value_estimate += p_action * model.reward[state, action]
-                for next_state in np.where(model.kernel[state, action])[0]:
-                    p_next = model.kernel[state, action, next_state]
-                    next_state = torch.tensor(next_state).long()
-                    next_val = value_function(next_state)
-                    value_estimate += gamma * p_action * p_next * next_val
+                for transition in model.transitions[(state.item(), action)]:
+                    next_state = torch.tensor(transition['next_state']).long()
 
+                    value_estimate += p_action * transition['probability'] * (
+                        transition['reward'] + gamma * value_function(next_state)
+                    )
+
+            value = value_function(state)
             error = torch.abs(value_estimate - value).item()
             max_error = max(max_error, error)
             avg_error += error

@@ -1,6 +1,5 @@
 """Policy iteration algorithm."""
 
-import numpy as np
 import torch
 import torch.testing
 
@@ -46,20 +45,20 @@ def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None)
 
         policy_stable = True
         for state in range(model.num_states):
-            state = torch.tensor(state).long()
-            old_action = policy(state)
+
             value_ = torch.zeros(model.num_actions)
             for action in range(model.num_actions):
                 value_estimate = 0
-                for next_state in np.where(model.kernel[state, action])[0]:
-                    next_state = torch.tensor(next_state).long()
-                    value_estimate += model.kernel[state, action, next_state] * (
-                            model.reward[state, action]
-                            + gamma * value_function(next_state)
+                for transition in model.transitions[(state, action)]:
+                    next_state = torch.tensor(transition['next_state']).long()
+                    value_estimate = transition['probability'] * (
+                        transition['reward'] + gamma * value_function(next_state)
                     )
 
                 value_[action] = value_estimate
 
+            state = torch.tensor(state).long()
+            old_action = policy(state)
             action = torch.argmax(value_)
             policy.set_value(state, action)
 

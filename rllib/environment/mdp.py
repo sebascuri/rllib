@@ -1,9 +1,11 @@
 """Interface for Markov Decision Processes."""
 
+from collections import defaultdict
+from itertools import product
+
 import numpy as np
 import torch
 from gym import spaces
-from torch.distributions import Categorical
 
 from rllib.environment.abstract_environment import AbstractEnvironment
 
@@ -13,9 +15,13 @@ class MDP(AbstractEnvironment):
 
     Parameters
     ----------
-    transition_kernel: nd-array [num_states x num_actions x num_states]
-    reward: nd-array [num_states x num_actions]
+    transitions: dict.
+        Mapping from (state, action) tuples to a list of transitions.
+        A transition is a dictionary with keys 'reward', 'next_state' and 'probability'.
+    num_states: int.
+    num_actions: int.
     terminal_states: list of int, optional
+        For each state, action
     initial_state: callable or int, optional
 
     Methods
@@ -31,18 +37,15 @@ class MDP(AbstractEnvironment):
 
     """
 
-    def __init__(self, transition_kernel, reward, initial_state=None,
+    def __init__(self, transitions, num_states, num_actions, initial_state=None,
                  terminal_states=None):
 
-        self.num_states = transition_kernel.shape[0]
-        self.num_actions = transition_kernel.shape[1]
-
-        observation_space = spaces.Discrete(self.num_states)
-        action_space = spaces.Discrete(self.num_actions)
+        observation_space = spaces.Discrete(num_states)
+        action_space = spaces.Discrete(num_actions)
         super().__init__(dim_state=1, dim_action=1, dim_observation=1,
                          observation_space=observation_space, action_space=action_space,
-                         num_states=self.num_states, num_actions=self.num_actions,
-                         num_observations=self.num_states)
+                         num_states=num_states, num_actions=num_actions,
+                         num_observations=num_states)
 
         if initial_state is None:
             self.initial_state = lambda: self.observation_space.sample()
@@ -53,8 +56,10 @@ class MDP(AbstractEnvironment):
 
         self._state = self.initial_state()
         self._time = 0
-        self.kernel = transition_kernel
-        self.reward = reward
+
+        self.check_transitions(transitions, num_states, num_actions)
+        self.transitions = transitions
+
         self.terminal_states = terminal_states if terminal_states is not None else []
 
     @property
@@ -96,9 +101,18 @@ class MDP(AbstractEnvironment):
 
         """
         self._time += 1
-        next_state = Categorical(torch.tensor(self.kernel[self.state, action]))
-        reward = self.reward[self.state, action]
-        next_state = next_state.sample().item()
+        if isinstance(action, torch.Tensor):
+            action = action.item()
+        transitions = self.transitions[(self.state, action)]
+        next_state = []
+        probs = []
+        reward = 0
+        for transition in transitions:
+            next_state.append(transition['next_state'])
+            probs.append(transition['probability'])
+            reward += transition['reward'] * transition['probability']
+
+        next_state = np.random.choice(next_state, p=probs)
         self.state = next_state
 
         if self.state in self.terminal_states:
@@ -108,6 +122,18 @@ class MDP(AbstractEnvironment):
             done = False
 
         return next_state, reward, done, {}
+
+    @staticmethod
+    def check_transitions(transitions, num_states, num_actions):
+        """Check if transitions belong to an MDP."""
+        for state, action in product(range(num_states), range(num_actions)):
+            p = 0
+            for transition in transitions[(state, action)]:
+                p += transition['probability']
+                assert 'next_state' in transition
+                assert 'reward' in transition
+
+            np.testing.assert_allclose(p, 1.)
 
 
 class TwoStateProblem(MDP):
@@ -120,16 +146,14 @@ class TwoStateProblem(MDP):
     """
 
     def __init__(self):
-        kernel = np.zeros((2, 2, 2))
-        reward = np.zeros((2, 2))
 
+        transitions = defaultdict(list)
         for state in range(2):
             for action in range(2):
-                for next_state in range(2):
-                    kernel[state, action, next_state] = 1 if action == next_state else 0
-                reward[state, action] = action + 1 if action == state else 0
-
-        super().__init__(kernel, reward)
+                transitions[state, action].append({
+                    'next_state': action, 'probability': 1.,
+                    'reward': action + 1 if state == action else 0})
+        super().__init__(transitions, 2, 2)
 
 
 class SingleChainProblem(MDP):
@@ -148,22 +172,32 @@ class SingleChainProblem(MDP):
 
     def __init__(self, chain_length=5):
         num_states = chain_length
-        kernel = np.zeros((num_states, 2, num_states))
-        reward = np.zeros((num_states, 2))
+        num_actions = 2
+        transitions = defaultdict(list)
 
-        for state in range(num_states):
-            kernel[state, 0, min(state + 1, num_states - 1)] = 1
-            kernel[state, 1, 0] = 1
+        for state in range(num_states - 1):
+            transitions[(state, 0)].append(
+                {'next_state': state + 1, 'probability': 1., 'reward': 0})
 
-            reward[state, 0] = 0
-            reward[state, 1] = 2
-        reward[num_states - 1, 0] = 2 * chain_length
+            transitions[(state, 1)].append(
+                {'next_state': 0, 'probability': 1.,
+                 'reward': 2})
+
+        # Final transition.
+        transitions[(num_states - 1, 1)].append(
+            {'next_state': 0, 'probability': 1., 'reward': 2}
+        )
+
+        transitions[(num_states - 1, 0)].append(
+            {'next_state': num_states - 1, 'probability': 1.,
+             'reward': 2 * chain_length}
+        )
 
         initial_state = 0
-        super().__init__(kernel, reward, initial_state)
+        super().__init__(transitions, num_states, num_actions, initial_state)
 
 
-class DoubleChain(MDP):
+class DoubleChainProblem(MDP):
     """Implementation of Single Chain Problem.
 
     Parameters
@@ -179,31 +213,50 @@ class DoubleChain(MDP):
 
     def __init__(self, chain_length=5):
         num_states = 2 * chain_length - 1
-        kernel = np.zeros((num_states, 2, num_states))
-        reward = np.zeros((num_states, 2))
+        num_actions = 2
+
+        transitions = defaultdict(list)
 
         # Initial transition
-        kernel[0, 0, 1] = 1
-        kernel[0, 1, chain_length] = 1
-        reward[0, 0] = 0
-        reward[0, 1] = 2
+        transitions[(0, 0)].append({'next_state': 1, 'probability': 1., 'reward': 0})
+        transitions[(0, 1)].append({'next_state': chain_length, 'probability': 1.,
+                                    'reward': 2})
 
-        for i in range(chain_length - 1):
+        for i in range(chain_length - 2):
             top_state = 1 + i
             bottom_state = chain_length + i
 
-            kernel[top_state, 1, 0] = 1
-            kernel[bottom_state, 1, 0] = 1
-            reward[top_state, 1] = 2
-            reward[bottom_state, 1] = 2
+            transitions[(top_state, 0)].append(
+                {'next_state': 0, 'probability': 1., 'reward': 2}
+            )
+            transitions[(top_state, 1)].append(
+                {'next_state': top_state + 1, 'probability': 1., 'reward': 0}
+            )
 
-            kernel[top_state, 0, min(top_state + 1, chain_length - 1)] = 1
-            kernel[bottom_state, 0, min(bottom_state + 1, num_states - 1)] = 1
-            reward[top_state, 0] = 0
-            reward[bottom_state, 0] = 0
+            transitions[(bottom_state, 0)].append(
+                {'next_state': 0, 'probability': 1., 'reward': 2}
+            )
+            transitions[(bottom_state, 1)].append(
+                {'next_state': min(bottom_state + 1, num_states - 1), 'probability': 1.,
+                 'reward': 0}
+            )
 
-        reward[chain_length - 1, 0] = 2 * chain_length
-        reward[num_states - 1, 0] = chain_length
+        transitions[(chain_length - 1, 0)].append(
+            {'next_state': 0, 'probability': 1., 'reward': 2}
+        )
+
+        transitions[(chain_length - 1, 1)].append(
+            {'next_state': chain_length - 1, 'probability': 1.,
+             'reward': 2 * chain_length}
+        )
+
+        transitions[(num_states - 1, 0)].append(
+            {'next_state': 0, 'probability': 1., 'reward': 2}
+        )
+
+        transitions[(num_states - 1, 1)].append(
+            {'next_state': num_states - 1, 'probability': 1., 'reward': chain_length}
+        )
 
         initial_state = 0
-        super().__init__(kernel, reward, initial_state)
+        super().__init__(transitions, num_states, num_actions, initial_state)

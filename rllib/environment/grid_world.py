@@ -1,5 +1,6 @@
 """Interface for Grid World."""
 
+from collections import defaultdict
 import numpy as np
 
 from .mdp import MDP
@@ -11,15 +12,17 @@ class EasyGridWorld(MDP):
     def __init__(self, width=5, height=5, num_actions=4, terminal_states=None):
         self.width = width
         self.height = height
-        kernel, reward = self._build_mdp(num_actions, terminal_states)
-        super().__init__(kernel, reward, terminal_states=terminal_states)
+        self.num_states = self.width * self.height
+        self.num_actions = num_actions
+        transitions = self._build_mdp(terminal_states)
+        print(transitions)
+        super().__init__(transitions, self.num_states, self.num_actions,
+                         terminal_states=terminal_states)
 
-    def _build_mdp(self, num_actions, terminal_states=None):
-        num_states = self.width * self.height
-        kernel = np.zeros((num_states, num_actions, num_states))
-        reward = np.zeros((num_states, num_actions))
-        for state in range(num_states):
-            for action in range(num_actions):
+    def _build_mdp(self, terminal_states=None):
+        transitions = defaultdict(list)
+        for state in range(self.num_states):
+            for action in range(self.num_actions):
                 g_state = self._state_to_grid(state)
                 if (g_state == np.array([0, 1])).all():
                     g_next_state = np.array([self.height-1, 1])
@@ -28,7 +31,7 @@ class EasyGridWorld(MDP):
                     g_next_state = np.array([self.height // 2, self.width-2])
                     r = 5
                 else:
-                    g_action = self._action_to_grid(action, num_actions)
+                    g_action = self._action_to_grid(action)
                     g_next_state = g_state + g_action
                     if not self._is_valid(g_next_state):
                         g_next_state = g_state
@@ -38,13 +41,15 @@ class EasyGridWorld(MDP):
 
                 next_state = self._grid_to_state(g_next_state)
                 if state in terminal_states if terminal_states else []:
-                    kernel[state, action, state] = 1
-                    reward[state, action] = 0
+                    transitions[(state, action)].append(
+                        {'next_state': state, 'reward': 0, 'probability': 1.}
+                    )
                 else:
-                    kernel[state, action, next_state] = 1
-                    reward[state, action] = r
+                    transitions[(state, action)].append(
+                        {'next_state': next_state, 'reward': r, 'probability': 1.}
+                    )
 
-        return kernel, reward
+        return transitions
 
     def _state_to_grid(self, state):
         return np.array([state // self.width, state % self.width])
@@ -52,10 +57,9 @@ class EasyGridWorld(MDP):
     def _grid_to_state(self, grid_state):
         return grid_state[0] * self.width + grid_state[1]
 
-    @staticmethod
-    def _action_to_grid(action, num_actions):
-        if action >= num_actions:
-            raise ValueError(f"action has to be < {num_actions}.")
+    def _action_to_grid(self, action):
+        if action >= self.num_actions:
+            raise ValueError(f"action has to be < {self.num_actions}.")
 
         if action == 0:  # Down
             return np.array([1, 0])

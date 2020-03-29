@@ -1,10 +1,9 @@
 """Value Iteration Algorithm."""
 
-import numpy as np
 import torch
 
 from rllib.policy import TabularPolicy
-from .utilities import init_value_function
+from rllib.algorithms.tabular_planning.utilities import init_value_function
 
 
 def value_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):
@@ -40,23 +39,19 @@ def value_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):
     for _ in range(max_iter):
         error = 0
         for state in range(model.num_states):
-            state = torch.tensor(state).long()
-
-            value = value_function(state)
 
             value_ = torch.zeros(model.num_actions)
             for action in range(model.num_actions):
                 value_estimate = 0
-                for next_state in np.where(model.kernel[state, action])[0]:
-                    next_state = torch.tensor(next_state).long()
-                    value_estimate += model.kernel[state, action, next_state] * (
-                            model.reward[state, action]
-                            + gamma * value_function(next_state)
-                    )
-
+                for transition in model.transitions[(state, action)]:
+                    next_state = torch.tensor(transition['next_state']).long()
+                    value_estimate += transition['probability'] * (
+                            transition['reward'] + gamma * value_function(next_state))
                 value_[action] = value_estimate
-
+            state = torch.tensor(state).long()
+            value = value_function(state)
             value_, action = torch.max(value_, 0)
+
             error = max(error, torch.abs(value_ - value.item()))
             value_function.set_value(state, value_)
             policy.set_value(state, action)

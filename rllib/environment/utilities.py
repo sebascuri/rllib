@@ -1,12 +1,13 @@
 """Utilities for environment module."""
 
+from collections import defaultdict
 from itertools import product
 
 import numpy as np
 import torch
 
 from rllib.util.utilities import tensor_to_distribution
-from .mdp import MDP
+from rllib.environment.mdp import MDP
 
 
 def gym2mdp(environment):
@@ -24,8 +25,8 @@ def gym2mdp(environment):
     num_actions = environment.num_actions
     transitions = environment.env.P
 
-    kernel = torch.zeros((num_states, num_actions, num_states))
-    reward = torch.zeros((num_states, num_actions))
+    kernel = np.zeros((num_states, num_actions, num_states))
+    reward = np.zeros((num_states, num_actions))
 
     for state, action in product(range(num_states), range(num_actions)):
         if state == (num_states - 1):  # terminal state
@@ -44,7 +45,8 @@ def gym2mdp(environment):
     for state, action in product(range(num_states), range(num_actions)):
         assert kernel[state, action].sum() == 1
 
-    return MDP(transition_kernel=kernel, reward=reward,
+    return MDP(kernelreward2transitions(kernel, reward),
+               num_states, num_actions,
                initial_state=environment.env.reset,
                terminal_states=terminal_states)
 
@@ -61,8 +63,8 @@ def mdp2mrp(environment, policy):
     -------
     environment: MDP.
     """
-    mrp_kernel = torch.zeros((environment.num_states, 1, environment.num_states))
-    mrp_reward = torch.zeros(environment.num_states, 1)
+    mrp_kernel = np.zeros((environment.num_states, 1, environment.num_states))
+    mrp_reward = np.zeros((environment.num_states, 1))
 
     for state in range(environment.num_states):
         if state in environment.terminal_states:
@@ -74,11 +76,42 @@ def mdp2mrp(environment, policy):
         policy_ = tensor_to_distribution(policy(state))
 
         for a, p_action in enumerate(policy_.probs):
-            mrp_reward[state, 0] += p_action * environment.reward[state, a]
-            for next_state in np.where(environment.kernel[state, a])[0]:
-                p_next_state = environment.kernel[state, a, next_state]
-                mrp_kernel[state, 0, next_state] += p_action * p_next_state
+            for transition in environment.transitions[(state.item(), a)]:
+                p_ns = transition['probability']
+                mrp_reward[state, 0] += p_action * p_ns * transition['reward']
+                mrp_kernel[state, 0, transition['next_state']] += p_action * p_ns
 
-    return MDP(mrp_kernel, mrp_reward,
+    return MDP(kernelreward2transitions(mrp_kernel, mrp_reward),
+               environment.num_states, 1,
                initial_state=environment.initial_state,
                terminal_states=environment.terminal_states)
+
+
+def transitions2kernelreward(transitions, num_states, num_actions):
+    """Transform a dictionary of transitions to kernel, reward matrices."""
+    kernel = np.zeros((num_states, num_actions, num_states))
+    reward = np.zeros((num_states, num_actions))
+    for (state, action), transition in transitions.items():
+        for data in transition:
+            kernel[state, action, data['next_state']] = data['probability']
+            reward[state, action] += data['reward'] * data['probability']
+
+    return kernel, reward
+
+
+def kernelreward2transitions(kernel, reward):
+    """Transform a kernel and reward matrix into a transition dicitionary."""
+    transitions = defaultdict(list)
+
+    num_states, num_actions = reward.shape
+
+    for state in range(num_states):
+        for action in range(num_actions):
+            for next_state in np.where(kernel[state, action])[0]:
+                transitions[(state, action)].append(
+                    {'next_state': next_state,
+                     'probability': kernel[state, action, next_state],
+                     'reward': reward[state, action]}
+                )
+
+    return transitions
