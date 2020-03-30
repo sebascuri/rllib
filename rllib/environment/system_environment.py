@@ -54,7 +54,7 @@ class SystemEnvironment(AbstractEnvironment):
 
         next_state = self.system.step(action)
         if self.termination is not None:
-            done = self.termination(next_state)
+            done = self.termination(state, action, next_state)
         else:
             done = False
 
