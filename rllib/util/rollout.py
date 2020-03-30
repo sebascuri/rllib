@@ -165,7 +165,13 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             reward = reward_distribution.sample()
 
         # Sample next states
-        next_state_distribution = tensor_to_distribution(dynamical_model(state, action))
+        next_state_out = dynamical_model(state, action)
+        next_state_distribution = tensor_to_distribution(next_state_out)
+        if len(next_state_out) == 3:
+            next_state_tril = next_state_out[2]
+        else:
+            next_state_tril = next_state_out[1]
+
         if next_state_distribution.has_rsample:
             next_state = next_state_distribution.rsample()
         else:
@@ -180,7 +186,85 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         trajectory.append(
             RawObservation(state, action, reward, next_state, done,
                            log_prob_action=pi.log_prob(action),
-                           entropy=pi.entropy()).to_torch()
+                           entropy=pi.entropy(),
+                           next_state_scale_tril=next_state_tril).to_torch()
+        )
+
+        # Update state
+        state = next_state
+
+        if done:
+            break
+
+    return trajectory
+
+
+def rollout_actions(dynamical_model, reward_model, action_sequence, initial_state,
+                    termination=None, max_steps=1000):
+    """Conduct a rollout of an action sequence interacting with a model.
+
+    Parameters
+    ----------
+    dynamical_model: AbstractModel
+        Dynamical Model with which the policy interacts.
+    reward_model: AbstractReward, optional.
+        Reward Model with which the policy interacts.
+    action_sequence: Action
+        Action Sequence that interacts with the environment.
+        The dimensions are [horizon x num_samples x dim_action].
+    initial_state: State
+        Starting states for the interaction.
+        The dimensions are [1 x num_samples x dim_state].
+    termination: Callable.
+        Termination condition to finish the rollout.
+    max_steps: int.
+        Maximum number of steps per episode.
+
+    Returns
+    -------
+    trajectory: Trajectory=List[Observation]
+        A list of observations.
+
+    Notes
+    -----
+    It will try to do the re-parametrization trick with the policy and models.
+    """
+    trajectory = list()
+    state = initial_state
+    assert max_steps > 0
+    for t in range(max_steps):
+        # Sample actions
+        action = action_sequence[t]
+
+        # % Sample a reward
+        reward_distribution = tensor_to_distribution(reward_model(state, action))
+        if reward_distribution.has_rsample:
+            reward = reward_distribution.rsample()
+        else:
+            reward = reward_distribution.sample()
+
+        # Sample next states
+        next_state_out = dynamical_model(state, action)
+        next_state_distribution = tensor_to_distribution(next_state_out)
+        if len(next_state_out) == 3:
+            next_state_tril = next_state_out[2]
+        else:
+            next_state_tril = next_state_out[1]
+
+        if next_state_distribution.has_rsample:
+            next_state = next_state_distribution.rsample()
+        else:
+            next_state = next_state_distribution.sample()
+
+        # Check for termination.
+        if termination is not None and termination(state, action):
+            done = True
+        else:
+            done = False
+
+        trajectory.append(
+            RawObservation(state, action, reward, next_state, done,
+                           next_state_scale_tril=next_state_tril).to_torch()
         )
 
         # Update state
