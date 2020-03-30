@@ -1,6 +1,7 @@
 """Model-Based MPPO Agent."""
 
 import numpy as np
+import gpytorch
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -10,6 +11,8 @@ from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.policy.derived_policy import DerivedPolicy
+
+from rllib.model import ExactGPModel
 from rllib.util.neural_networks.utilities import disable_gradient
 from rllib.util.rollout import rollout_model
 from rllib.util.training import train_model
@@ -69,6 +72,7 @@ class MBMPPOAgent(AbstractAgent):
 
         self.initial_states = None
         self.new_episode = True
+        self._trajectory = []
 
         layout = {
             'Model Training': {
@@ -98,6 +102,7 @@ class MBMPPOAgent(AbstractAgent):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.dataset.append(observation)
+        self._trajectory.append(observation)
         if self.new_episode:
             initial_state = observation.state.unsqueeze(0)
             if self.initial_states is None:
@@ -109,11 +114,22 @@ class MBMPPOAgent(AbstractAgent):
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
+        self._trajectory = []
         self.new_episode = True
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if self._training:
+            if isinstance(self.mppo.dynamical_model.base_model, ExactGPModel):
+                observation = stack_list_of_tuples(self._trajectory)
+                for transform in self.dataset.transformations:
+                    observation = transform(observation)
+
+                self.mppo.dynamical_model.base_model.add_data(
+                    observation.state, observation.action, observation.next_state)
+
+                self.mppo.dynamical_model.base_model.plot_inputs()
+
             self._train()
         super().end_episode()
 
@@ -134,8 +150,9 @@ class MBMPPOAgent(AbstractAgent):
                 self.total_episodes < self.exploration_episodes):
             return
 
-        # tracker = Logger(f"policy_training_{self.total_episodes}")
-        with disable_gradient(self.mppo.dynamical_model):
+        self.mppo.dynamical_model.eval()
+        with disable_gradient(self.mppo.dynamical_model), \
+                gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.num_mppo_iter)):
                 # Compute the state distribution
                 if i % self.state_refresh_interval == 0:
@@ -155,6 +172,11 @@ class MBMPPOAgent(AbstractAgent):
                         # Sum along trajectory, average across samples
                         average_return = stacked_trajectory.reward.sum(dim=0).mean()
                         self.logger.update(model_return=average_return.item())
+
+                        self.logger.update(total_scale=(
+                            torch.diagonal(stacked_trajectory.next_state_scale_tril,
+                                           dim1=-1, dim2=-2)
+                        ).sum(dim=0).mean())
 
                         # Shuffle to get a state distribution
                         states = stacked_trajectory.state.reshape(
