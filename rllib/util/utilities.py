@@ -127,7 +127,7 @@ def discount_sum(rewards, gamma=1.0):
     Parameters
     ----------
     rewards: Tensor.
-        Array of rewards
+        Array of rewards. Either 1-d or 2-d. When 2-d, [trajectory x num_samples].
     gamma: float, optional.
         Discount factor.
 
@@ -136,11 +136,15 @@ def discount_sum(rewards, gamma=1.0):
     cum_sum: tensor.
         Cumulative sum of returns.
     """
-    if len(rewards.shape) == 0:
-        steps = 1
-    else:
+    if rewards.dim() == 0:
+        return rewards
+    elif rewards.dim() == 1:
         steps = len(rewards)
-    return (torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards).sum()
+        return (torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards
+                ).sum()
+    else:
+        steps = rewards.shape[0]
+        return torch.pow(gamma * torch.ones(steps), torch.arange(steps)) @ rewards
 
 
 def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
@@ -226,3 +230,29 @@ def separated_kl(p, q):
     kl_var = torch.distributions.kl_divergence(pi_var, q).mean()
 
     return kl_mean, kl_var
+
+
+def sample_mean_and_cov(sample):
+    """Compute mean and covariance of a sample of vectors.
+
+    Parameters
+    ----------
+    sample: Tensor
+        Tensor of dimensions [batch x N x num_samples].
+
+    Returns
+    -------
+    mean: Tensor
+        Tensor of dimension [batch x N].
+    covariance: Tensor
+        Tensor of dimension [batch x N x N].
+
+    """
+    num_samples = sample.shape[-1]
+    mean = torch.mean(sample, dim=-1, keepdim=True)
+    sigma = (mean - sample) @ (mean - sample).transpose(-2, -1)
+    sigma += 1e-6 * torch.eye(sigma.shape[-1])  # Add some jitter.
+    covariance = sigma / num_samples
+    mean = mean.squeeze(-1)
+
+    return mean, covariance
