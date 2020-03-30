@@ -8,18 +8,68 @@ import matplotlib.pyplot as plt
 
 from .rollout import rollout_agent
 from .logger import Logger
+from .utilities import tensor_to_distribution
+from rllib.util.gaussian_processes.mlls import exact_mll
+
+from rllib.model.ensemble_model import EnsembleModel
+from rllib.model.gp_model import ExactGPModel
+from rllib.model.nn_model import NNModel
 
 
 def _model_loss(model, state, action, next_state):
     mean, cov = model(state, action)
     y = next_state
-    if torch.all(cov == 0):
+    if torch.all(cov == 0):  # Deterministic Model
         loss = ((mean - y) ** 2).sum(-1)
-    else:
+    else:  # Probabilistic Model
         delta = (mean - y).unsqueeze(-1)
         loss = (delta.transpose(-2, -1) @ torch.inverse(cov) @ delta).squeeze()
         loss += torch.logdet(cov)
     return loss
+
+
+def train_nn_step(model, observation, optimizer):
+    """Train a Neural Network Model."""
+    model.train()
+    optimizer.zero_grad()
+    loss = _model_loss(model, observation.state, observation.action,
+                       observation.next_state).mean()
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
+
+
+def train_ensemble_step(model, observation, mask, optimizer, logger):
+    """Train a model ensemble."""
+    model.train()
+    ensemble_loss = 0
+    for i in range(model.num_heads):
+        optimizer.zero_grad()
+        model.select_head(i)
+        loss = (mask[:, i] * _model_loss(
+            model, observation.state, observation.action, observation.next_state)
+                ).mean()
+
+        loss.backward()
+        optimizer.step()
+        ensemble_loss += loss.item()
+        logger.update(**{f"model-{i}": loss.item()})
+    return ensemble_loss
+
+
+def train_exact_gp_type2mll_step(model, observation, optimizer):
+    """Train a GP using type-2 Marginal-Log-Likelihood optimization."""
+    optimizer.zero_grad()
+    model.training = True
+
+    output = tensor_to_distribution(model(observation.state, observation.action))
+    loss = exact_mll(output, observation.next_state.T, model.gp)
+    loss.backward()
+    optimizer.step()
+
+    model.training = False
+    return loss.item()
 
 
 def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
@@ -27,19 +77,17 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
     if logger is None:
         logger = Logger('model_training')
     for i_epoch in range(max_iter):
-        for obs, mask in train_loader:
-            ensemble_loss = 0
-            for i in range(model.num_heads):
-                optimizer.zero_grad()
-                model.select_head(i)
-                loss = (mask[:, i] * _model_loss(model, obs.state, obs.action,
-                                                 obs.next_state)).mean()
-
-                loss.backward()
-                optimizer.step()
-                ensemble_loss += loss.item()
-                logger.update(**{f"model-{i}": loss.item()})
-            logger.update(model_loss=ensemble_loss)
+        for observation, mask in train_loader:
+            if isinstance(model, EnsembleModel):
+                model_loss = train_ensemble_step(model, observation, mask, optimizer,
+                                                 logger)
+            elif isinstance(model, NNModel):
+                model_loss = train_nn_step(model, observation, optimizer)
+            elif isinstance(model, ExactGPModel):
+                model_loss = train_exact_gp_type2mll_step(model, observation, optimizer)
+            else:
+                raise TypeError("Only Implemented for Ensembles and GP Models.")
+            logger.update(model_loss=model_loss)
 
 
 def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
