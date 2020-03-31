@@ -33,7 +33,7 @@ def _step(environment, state, action, pi, render):
 
 
 def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
-                  print_frequency=0, milestones=None):
+                  print_frequency=0, milestones=None, plot_callbacks=None):
     """Conduct a rollout of an agent in an environment.
 
     Parameters
@@ -50,11 +50,13 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         Flag that indicates whether to render the environment or not.
     print_frequency: int, optional.
         Print agent stats every `print_episodes' if > 0.
-    milestones: list.
+    milestones: List[int], optional.
         List with episodes in which to save the agent.
-
+    plot_callbacks: List[Callable[[AbstractAgent], None]], optional.
+        List of functions for plotting the agent.
     """
     milestones = list() if milestones is None else milestones
+    plot_callbacks = list() if plot_callbacks is None else plot_callbacks
     for episode in tqdm(range(num_episodes)):
         state = environment.reset()
         agent.start_episode()
@@ -70,6 +72,8 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
 
         if print_frequency and episode % print_frequency == 0:
             print(agent)
+            for plot_callback in plot_callbacks:
+                plot_callback(agent)
 
         if episode in milestones:
             file_name = f"{environment.name}_{agent.name}_{episode}.pkl"

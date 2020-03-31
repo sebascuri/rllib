@@ -12,21 +12,27 @@ from rllib.reward import AbstractReward
 
 def _step(environment: AbstractEnvironment, state: Union[int, ndarray],
           action: Union[int, ndarray], pi: Distribution, render: bool
-          ) -> Tuple[Observation, Union[int, ndarray], bool]:...
+          ) -> Tuple[Observation, Union[int, ndarray], bool]: ...
 
 
 def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False,
-                  print_frequency: int = 0, milestones: List[int] = None
+                  print_frequency: int = 0, milestones: List[int] = None,
+                  plot_callbacks: List[Callable[[AbstractAgent], None]] = None
                   ) -> None: ...
 
-def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
-                  num_episodes: int = 1, max_steps: int = 1000, render: bool = False
-                  ) -> List[Trajectory]: ...
 
-def rollout_model(dynamical_model: AbstractModel, reward_model: AbstractReward, policy: AbstractPolicy,
-                  initial_state: State, termination: Callable[[State, Action], bool] = None,
+def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
+                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False
+                   ) -> List[Trajectory]: ...
+
+
+def rollout_model(dynamical_model: AbstractModel, reward_model: AbstractReward,
+                  policy: AbstractPolicy,
+                  initial_state: State,
+                  termination: Callable[[State, Action], bool] = None,
                   max_steps: int = 1000) -> Trajectory: ...
+
 
 def rollout_actions(dynamical_model: AbstractModel, reward_model: AbstractReward,
                     action_sequence: Action, initial_state: State,

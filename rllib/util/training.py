@@ -3,6 +3,7 @@
 import pickle
 
 import numpy as np
+import gpytorch.settings
 import torch
 import matplotlib.pyplot as plt
 
@@ -64,7 +65,8 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
     model.training = True
 
     output = tensor_to_distribution(model(observation.state, observation.action))
-    loss = exact_mll(output, observation.next_state.T, model.gp)
+    with gpytorch.settings.fast_pred_var():
+        loss = exact_mll(output, observation.next_state.T, model.gp)
     loss.backward()
     optimizer.step()
 
@@ -91,7 +93,7 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
 
 
 def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
-                print_frequency=0, render=False):
+                print_frequency=0, render=False, plot_callbacks=None):
     """Train an agent in an environment.
 
     Parameters
@@ -103,10 +105,12 @@ def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
     plot_flag: bool, optional.
     print_frequency: int, optional.
     render: bool, optional.
+    plot_callbacks: list, optional.
     """
     agent.train()
     rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps,
-                  print_frequency=print_frequency, render=render)
+                  print_frequency=print_frequency, render=render,
+                  plot_callbacks=plot_callbacks)
 
     if plot_flag:
         for key in agent.logger.keys():
