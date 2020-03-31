@@ -8,10 +8,11 @@ from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.reward.gp_reward import GPBanditReward
 from rllib.util import rollout_agent
-from rllib.util.gaussian_processes import ExactGP, plot_gp
+from rllib.util.gaussian_processes import ExactGP
+from rllib.util.plotting import plot_gp
 
 
-def plot(agent, objective, axis=None, noise=False):
+def plot(agent, objective, axis=None):
     if axis is None:
         axis = plt.gca()
 

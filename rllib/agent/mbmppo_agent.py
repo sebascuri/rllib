@@ -72,7 +72,8 @@ class MBMPPOAgent(AbstractAgent):
 
         self.initial_states = None
         self.new_episode = True
-        self._trajectory = []
+        self.trajectory = []
+        self.sim_trajectory = []
 
         layout = {
             'Model Training': {
@@ -102,7 +103,7 @@ class MBMPPOAgent(AbstractAgent):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.dataset.append(observation)
-        self._trajectory.append(observation)
+        self.trajectory.append(observation)
         if self.new_episode:
             initial_state = observation.state.unsqueeze(0)
             if self.initial_states is None:
@@ -114,21 +115,19 @@ class MBMPPOAgent(AbstractAgent):
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
-        self._trajectory = []
+        self.trajectory = []
         self.new_episode = True
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if self._training:
             if isinstance(self.mppo.dynamical_model.base_model, ExactGPModel):
-                observation = stack_list_of_tuples(self._trajectory)
+                observation = stack_list_of_tuples(self.trajectory)
                 for transform in self.dataset.transformations:
                     observation = transform(observation)
 
                 self.mppo.dynamical_model.base_model.add_data(
                     observation.state, observation.action, observation.next_state)
-
-                self.mppo.dynamical_model.base_model.plot_inputs()
 
             self._train()
         super().end_episode()
@@ -166,20 +165,20 @@ class MBMPPOAgent(AbstractAgent):
                                                    initial_state=initial_states,
                                                    max_steps=self.num_simulation_steps,
                                                    termination=self.mppo.termination)
-                        stacked_trajectory = Observation(
+                        self.sim_trajectory = Observation(
                             *stack_list_of_tuples(trajectory))
 
                         # Sum along trajectory, average across samples
-                        average_return = stacked_trajectory.reward.sum(dim=0).mean()
+                        average_return = self.sim_trajectory.reward.sum(dim=0).mean()
                         self.logger.update(model_return=average_return.item())
 
                         self.logger.update(total_scale=(
-                            torch.diagonal(stacked_trajectory.next_state_scale_tril,
+                            torch.diagonal(self.sim_trajectory.next_state_scale_tril,
                                            dim1=-1, dim2=-2)
                         ).sum(dim=0).mean())
 
                         # Shuffle to get a state distribution
-                        states = stacked_trajectory.state.reshape(
+                        states = self.sim_trajectory.state.reshape(
                             -1, self.mppo.dynamical_model.dim_state)
                         np.random.shuffle(states.numpy())
                         state_batches = torch.split(states, self.batch_size)

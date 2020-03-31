@@ -5,10 +5,8 @@ import torch.jit
 import torch.nn
 
 from rllib.util.gaussian_processes.exact_gp import ExactGP  # , MultitaskExactGP
-from rllib.util.gaussian_processes.utilities import add_data_to_gp, plot_gp_inputs
+from rllib.util.gaussian_processes.utilities import add_data_to_gp
 from .abstract_model import AbstractModel
-
-import matplotlib.pyplot as plt
 
 
 class ExactGPModel(AbstractModel):
@@ -105,16 +103,3 @@ class ExactGPModel(AbstractModel):
         train_y = next_state.t().contiguous()
 
         return train_x, train_y
-
-    def plot_inputs(self):
-        """Plot GP inputs."""
-        fig, axes = plt.subplots(self.dim_state, 1, sharex='row')
-        for i, model in enumerate(self.gp):
-            plot_gp_inputs(model, axes[i])
-
-            axes[i].set_xlim([-180, 180])
-            axes[i].set_ylim([-15, 15])
-            axes[i].set_ylabel('Angular Velocity')
-        axes[0].set_title('Input Data of GP.')
-        axes[-1].set_xlabel('Angle')
-        plt.show()

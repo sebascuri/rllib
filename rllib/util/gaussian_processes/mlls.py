@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 def exact_mll(predicted_distribution, target, gp):
-    """Caluclate mll of exact model."""
+    """Calculate negative marginal log-likelihood of exact model."""
     data_size = target.shape[-1]
     loss = -predicted_distribution.log_prob(target).sum()
 

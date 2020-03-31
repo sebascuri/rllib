@@ -21,6 +21,7 @@ from rllib.environment.system_environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel
 from rllib.model.pendulum_model import PendulumModel
+from rllib.model.derived_model import OptimisticModel, TransformedModel
 from rllib.model.unscaled_model import UnscaledModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
@@ -32,6 +33,7 @@ from rllib.util.plotting import plot_learning_losses, plot_values_and_policy
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.training import train_model
 from rllib.util.neural_networks import DeterministicEnsemble
+from rllib.util.gaussian_processes.mlls import exact_mll
 from rllib.util.neural_networks.utilities import freeze_parameters
 from rllib.value_function import NNValueFunction
 
@@ -78,38 +80,44 @@ for transition in transitions:
     dataset.append(transition)
 
 data = dataset.all_data
+split = 50
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
 # %% Train a Model
-model = ExactGPModel(data.state, data.action, data.next_state)
+model = ExactGPModel(data.state[:split], data.action[:split], data.next_state[:split],
+                     input_transform=StateTransform(), max_num_points=75)
 
 model.eval()
-mean, stddev = model(torch.randn(2, 5, 2), torch.randn(2, 5, 1))
+mean, stddev = model(torch.randn(8, 5, 2), torch.randn(8, 5, 1))
 # print(mean.shape, stddev.shape, mean, stddev)
 
 model.train()
-out = model(data.state, data.action)
+out = model(data.state[:split], data.action[:split])
 optimizer = torch.optim.Adam([
     {'params': model.parameters()},  # Includes GaussianLikelihood parameters
 ], lr=0.1)
 
-
-n = data.state.shape[0]
 for i in range(100):
     optimizer.zero_grad()
-    output = tensor_to_distribution(model(data.state, data.action))
-    loss = -output.log_prob(data.next_state.T).sum()
+    output = tensor_to_distribution(model(data.state[:split], data.action[:split]))
 
-    for gp in model.gp:
-        # Add additional terms (SGPR / learned inducing points, heteroskedastic likelihood models)
-        for added_loss_term in gp.added_loss_terms():
-            loss = loss.add(added_loss_term.loss())
+    with gpytorch.settings.fast_pred_var():
+        loss = exact_mll(output, data.next_state[:split].T, model.gp)
+    loss.backward()
 
-        # Add log probs of priors on the (functions of) parameters
-        for _, prior, closure, _ in gp.named_priors():
-            loss.add_(prior.log_prob(closure()).sum())
+    optimizer.step()
+    print('Iter %d/%d - Loss: %.3f' % (i + 1, 30, loss.item()))
 
-    loss = loss / n
+print([(n, p) for (n, p) in model.named_parameters()])
+
+model.add_data(data.state[split:2 * split], data.action[split:2 * split],
+               data.next_state[split:2 * split])
+
+for i in range(70):
+    optimizer.zero_grad()
+    output = tensor_to_distribution(model(data.state[:2 * split], data.action[:2 * split]))
+
+    loss = exact_mll(output, data.next_state[:2 * split].T, model.gp)
     loss.backward()
 
     optimizer.step()
@@ -117,14 +125,16 @@ for i in range(100):
 
 print([(n, p) for (n, p) in model.named_parameters()])
 
+model.add_data(data.state[2 * split:], data.action[2 * split:],
+               data.next_state[2 * split:])
+
 model.eval()
-dynamic_model = UnscaledModel(model, transformations)
+dynamic_model = TransformedModel(model, transformations)
 
 with gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
     s, a = data.state.expand(15, 200, 2), data.action.expand(15, 200, 1)
     dynamic_model(s, a)
     dynamic_model = torch.jit.trace(dynamic_model, (s, a))
-
 
 freeze_parameters(dynamic_model)
 value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,

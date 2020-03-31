@@ -25,7 +25,7 @@ from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
 from rllib.reward.pendulum_reward import PendulumReward
 
-from rllib.util.plotting import plot_learning_losses, plot_values_and_policy
+from rllib.util.plotting import plot_learning_losses, plot_values_and_policy, pendulum_gp_inputs_and_trajectory
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNValueFunction
@@ -34,27 +34,33 @@ from rllib.value_function import NNValueFunction
 hparams = {'seed': 0,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 25,
-           'test_episodes': 5,
+           'train_episodes': 10,
+           'test_episodes': 1,
            'action_cost_ratio': 0,
            'optimistic': True,
            'learn_model': True,
            'exploratory_initial_distribution': False,
+           'beta': 1.0,
            'max_memory': 1000,
-           'batch_size': 64,
-           'num_model_iter': 25,
-           'num_mppo_iter': 25,
+           'batch_size': 100,
+           'num_model_iter': 0,
+           'num_mppo_iter': 30,
            'num_simulation_steps': 400,
            'state_refresh_interval': 2,
            'num_simulation_trajectories': 8,
            }
-model_params = {'heads': 5, 'layers': [64], 'non_linearity': 'ReLU',
-                'biased_head': True, 'deterministic': True}
-model_opt_params = {'lr': 1e-4, 'weight_decay': 0}
+
+# model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64], 'non_linearity': 'ReLU',
+#                 'biased_head': True, 'deterministic': True}
+# model_opt_params = {'lr': 1e-4, 'weight_decay': 0}
+
+model_params = {'kind': 'ExactGP', 'max_num_points': 15000}
+model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
+
 policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
                  'biased_head': False, 'deterministic': False}
 policy_opt_params = {'lr': 5e-4, 'weight_decay': 0}
-mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.001,
+mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.00,
                'num_action_samples': 15}
 vf_params = {'layers': [64, 64], 'non_linearity': 'ReLU',
              'biased_head': False}
@@ -74,8 +80,13 @@ class StateTransform(nn.Module):
         return states_
 
 
-def termination(state, action):
-    return torch.any(torch.abs(state) > 100) or torch.any(torch.abs(action) > 100)
+def termination(state, action, next_state=None):
+    if not isinstance(state, torch.Tensor):
+        state = torch.tensor(state)
+    if not isinstance(action, torch.Tensor):
+        action = torch.tensor(action)
+
+    return torch.any(torch.abs(state) > 15) or torch.any(torch.abs(action) > 15)
 
 
 transformations = [
@@ -98,16 +109,34 @@ else:
     )
 
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                                                 step_size=1 / 80), reward=reward_model,
-                                initial_state=initial_distribution.sample)
+                                                 step_size=1 / 80),
+                                reward=reward_model,
+                                initial_state=initial_distribution.sample,
+                                termination=termination)
 
 # %% Define Model
 if hparams['learn_model']:
-    model = EnsembleModel(
-        environment.dim_state, environment.dim_action, num_heads=model_params['heads'],
-        layers=model_params['layers'], biased_head=model_params['biased_head'],
-        non_linearity=model_params['non_linearity'], input_transform=StateTransform(),
-        deterministic=model_params['deterministic'])
+    if model_params['kind'] == 'ExactGP':
+        model = ExactGPModel(torch.tensor([[np.pi, 0.0]]), torch.tensor([[0.0]]),
+                             torch.tensor([[0.0, 0.0]]),
+                             input_transform=StateTransform(),
+                             max_num_points=model_params['max_num_points'])
+        model.gp[0].covar_module.outputscale = torch.tensor(0.01)
+        model.gp[1].covar_module.outputscale = torch.tensor(0.05)
+        model.gp[0].covar_module.base_kernel.lengthscale = torch.tensor([[0.5]])
+        model.gp[1].covar_module.base_kernel.lengthscale = torch.tensor([[2.]])
+
+        model.likelihood[0].noise = torch.tensor([1e-3])
+        model.likelihood[1].noise = torch.tensor([1e-3])
+
+    elif model_params['kind'] == 'Ensemble':
+        model = EnsembleModel(
+            environment.dim_state, environment.dim_action,
+            num_heads=model_params['heads'], layers=model_params['layers'],
+            biased_head=model_params['biased_head'],
+            non_linearity=model_params['non_linearity'],
+            input_transform=StateTransform(),
+            deterministic=model_params['deterministic'])
     hparams.update({f"model_{key}": value for key, value in model_params.items()})
 else:
     model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
@@ -117,13 +146,18 @@ else:
 hparams.update({"model": model.__class__.__name__})
 
 if hparams['optimistic']:
-    dynamic_model = OptimisticModel(model, transformations)
+    dynamic_model = OptimisticModel(model, transformations, beta=hparams['beta'])
     dim_policy_action = environment.dim_action + environment.dim_state
 else:
     dynamic_model = TransformedModel(model, transformations)
     dim_policy_action = environment.dim_action
 hparams.update({"dynamic_model": dynamic_model.__class__.__name__})
 
+# with gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
+#     dynamic_model.eval()
+#     s, a = torch.randn(15, 200, 2), torch.randn(15, 200, dim_policy_action)
+#     dynamic_model(s, a)
+#     dynamic_model = torch.jit.trace(dynamic_model, (s, a))
 
 if hparams['learn_model']:
     model_optimizer = optim.Adam(dynamic_model.parameters(), lr=model_opt_params['lr'],
@@ -188,8 +222,12 @@ agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
                     gamma=hparams['gamma'], comment=comment)
 
 # Train Agent
-train_agent(agent, environment, num_episodes=hparams['train_episodes'],
-            max_steps=hparams['horizon'], plot_flag=True, print_frequency=1)
+with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
+      gpytorch.settings.fast_pred_samples():
+    train_agent(agent, environment, num_episodes=hparams['train_episodes'],
+                max_steps=hparams['horizon'], plot_flag=True, print_frequency=1,
+                render=False, plot_callbacks=[pendulum_gp_inputs_and_trajectory]
+                )
 agent.logger.export_to_json(hparams)
 
 # %% Test controller on Environment.

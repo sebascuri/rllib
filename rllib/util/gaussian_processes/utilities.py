@@ -1,42 +1,7 @@
 """Utilities for GP models."""
 
 import gpytorch
-import matplotlib.pyplot as plt
 import torch
-
-
-def plot_gp_inputs(model: gpytorch.models.ExactGP, axes=None):
-    """Plot the inputs of the GP model."""
-    if axes is None:
-        axes = plt.gca()
-    inputs = model.train_inputs[0]
-    return axes.scatter(torch.atan2(inputs[:, 1], inputs[:, 0]) * 180 / 3.141,
-                        inputs[:, 2], c=inputs[:, 3])
-
-
-def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> None:
-    """Plot 1-D GP.
-
-    Parameters
-    ----------
-    x: points to plot.
-    model: GP model.
-    num_samples: number of random samples from gp.
-    """
-    with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        pred = model(x)
-        mean = pred.mean.numpy()
-        error = 2 * pred.stddev.numpy()
-
-    # Plot GP
-    plt.fill_between(x, mean - error, mean + error, lw=0, alpha=0.4, color='C0')
-
-    # Plot mean
-    plt.plot(x, mean, color='C0')
-
-    # Plot samples.
-    for _ in range(num_samples):
-        plt.plot(x.numpy(), pred.sample().numpy())
 
 
 def _add_data_to_gp(gp_model: gpytorch.models.ExactGP, new_inputs, new_targets):
@@ -85,9 +50,13 @@ def add_data_to_gp(gp_model, new_inputs=None, new_targets=None,
     gp_model.eval()
     for _ in range(max_num - 1):
         with gpytorch.settings.fast_pred_var():
-            pred = gp_model(inputs)
-            noise_var = gp_model.likelihood.noise_covar(inputs).diag()
-            index = torch.argmax(torch.log(1 + pred.variance / noise_var))
+            # The set function to maximize is f_s = log det (I + \lambda^2 K_s).
+            # Greedy selection resorts to sequentially selecting the index that solves
+            # i^\star = \arg max_i log (1 + \lambda^2 K_(i|s))
+            # This is equivalent to doing \arg max_i (1 + \lambda^2 K_(i|s)) and to
+            # i^\star = \arg max_i K_(i|s).
+            # Hence, the point with greater predictive variance is selected.
+            index = torch.argmax(gp_model(inputs).variance)
 
         new_input = inputs[index].unsqueeze(0)
         new_target = targets[index].unsqueeze(-1)

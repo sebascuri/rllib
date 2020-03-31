@@ -11,6 +11,8 @@ import torch.optim as optim
 from gpytorch.distributions import Delta
 from tqdm import tqdm
 
+from rllib.algorithms.control.mpc import random_shooting
+
 from rllib.algorithms.mppo import MBMPPO, train_mppo
 from rllib.dataset.dataset import TrajectoryDataset
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
@@ -21,7 +23,7 @@ from rllib.environment.system_environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel
 from rllib.model.pendulum_model import PendulumModel
-from rllib.model.unscaled_model import UnscaledModel
+from rllib.model.derived_model import TransformedModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
 from rllib.reward.pendulum_reward import PendulumReward
@@ -89,7 +91,7 @@ optimizer = torch.optim.Adam(ensemble.parameters(), lr=0.01)
 train_model(ensemble, dataloader, max_iter=30, optimizer=optimizer)
 
 # ensemble.select_head(ensemble_size)
-dynamic_model = UnscaledModel(ensemble, transformations)
+dynamic_model = TransformedModel(ensemble, transformations)
 # dynamic_model = torch.jit.script(dynamic_model)
 # dynamic_model.base_model.select_head(ensemble_size)
 # model = ExactGPModel(data.state, data.action, data.next_state)
@@ -144,6 +146,9 @@ policy = NNPolicy(dim_state=2, dim_action=1, layers=[64, 64], biased_head=False,
 value_function = torch.jit.script(value_function)
 init_distribution = torch.distributions.Uniform(torch.tensor([-np.pi, -0.05]),
                                                 torch.tensor([np.pi, 0.05]))
+
+action = random_shooting(dynamic_model, reward_model, horizon=20, num_samples=200,
+                         x0=init_distribution.sample())
 
 # Initialize MPPO and optimizer.
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
