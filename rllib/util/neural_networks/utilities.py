@@ -165,6 +165,19 @@ def inverse_softplus(x):
     return torch.log(torch.exp(x) - 1.)
 
 
+class OneHotEncode(nn.Module):
+    """One Hot Encoder."""
+
+    def __init__(self, num_classes: int):
+        super().__init__()
+        assert num_classes > 0
+        self.num_classes = num_classes
+
+    def forward(self, x):
+        """One-Hot Encode Vector."""
+        return one_hot_encode(x.long(), self.num_classes)
+
+
 def one_hot_encode(tensor, num_classes: int):
     """Encode a tensor using one hot encoding.
 
