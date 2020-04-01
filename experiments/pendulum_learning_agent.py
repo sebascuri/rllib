@@ -34,7 +34,7 @@ from rllib.value_function import NNValueFunction
 hparams = {'seed': 0,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 10,
+           'train_episodes': 30,
            'test_episodes': 1,
            'action_cost_ratio': 0,
            'optimistic': True,
@@ -54,7 +54,7 @@ hparams = {'seed': 0,
 #                 'biased_head': True, 'deterministic': True}
 # model_opt_params = {'lr': 1e-4, 'weight_decay': 0}
 
-model_params = {'kind': 'ExactGP', 'max_num_points': 15000}
+model_params = {'kind': 'ExactGP', 'max_num_points': 150}
 model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
 
 policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
@@ -121,13 +121,13 @@ if hparams['learn_model']:
                              torch.tensor([[0.0, 0.0]]),
                              input_transform=StateTransform(),
                              max_num_points=model_params['max_num_points'])
-        model.gp[0].covar_module.outputscale = torch.tensor(0.01)
-        model.gp[1].covar_module.outputscale = torch.tensor(0.05)
-        model.gp[0].covar_module.base_kernel.lengthscale = torch.tensor([[0.5]])
-        model.gp[1].covar_module.base_kernel.lengthscale = torch.tensor([[2.]])
+        model.gp[0].covar_module.outputscale = torch.tensor(0.0042)
+        model.gp[1].covar_module.outputscale = torch.tensor(0.56)
+        model.gp[0].covar_module.base_kernel.lengthscale = torch.tensor([[8.3]])
+        model.gp[1].covar_module.base_kernel.lengthscale = torch.tensor([[9.0]])
 
-        model.likelihood[0].noise = torch.tensor([1e-3])
-        model.likelihood[1].noise = torch.tensor([1e-3])
+        model.likelihood[0].noise = torch.tensor([1e-4])
+        model.likelihood[1].noise = torch.tensor([1e-4])
 
     elif model_params['kind'] == 'Ensemble':
         model = EnsembleModel(

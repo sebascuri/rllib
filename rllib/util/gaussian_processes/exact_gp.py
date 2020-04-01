@@ -8,7 +8,7 @@ class ExactGP(gpytorch.models.ExactGP):
     def __init__(self, train_x, train_y, likelihood, mean=None, kernel=None):
         super().__init__(train_x, train_y, likelihood)
         if mean is None:
-            mean = gpytorch.means.ConstantMean()
+            mean = gpytorch.means.ZeroMean()
         self.mean_module = mean
         if kernel is None:
             kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
