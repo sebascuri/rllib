@@ -20,7 +20,9 @@ class Logger(object):
         self.statistics = list()
         self.current = dict()
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        self.writer = SummaryWriter(f"runs/{name}_{comment}_{current_time}")
+        self.writer = SummaryWriter(
+            f"runs/{name}/{comment + '_' + current_time if comment else current_time}"
+        )
 
     def __len__(self):
         """Return the number of episodes."""
