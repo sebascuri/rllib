@@ -9,7 +9,8 @@ from rllib.dataset.datatypes import RawObservation
 from rllib.util.utilities import tensor_to_distribution
 
 
-def _step(environment, state, action, pi, render):
+def step(environment, state, action, pi, render):
+    """Perform a single step in an environment."""
     try:
         next_state, reward, done, _ = environment.step(action)
     except TypeError:
@@ -63,7 +64,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         done = False
         while not done:
             action = agent.act(state)
-            observation, state, done = _step(environment, state, action, agent.pi,
+            observation, state, done = step(environment, state, action, agent.pi,
                                              render)
             agent.observe(observation)
             if max_steps <= environment.time:
@@ -114,7 +115,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                 pi = tensor_to_distribution(policy(
                     torch.tensor(state, dtype=torch.get_default_dtype())))
                 action = pi.sample().numpy()
-                observation, state, done = _step(environment, state, action, pi, render)
+                observation, state, done = step(environment, state, action, pi, render)
                 trajectory.append(observation)
                 if max_steps <= environment.time:
                     break

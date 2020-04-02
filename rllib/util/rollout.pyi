@@ -10,9 +10,9 @@ from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 
 
-def _step(environment: AbstractEnvironment, state: Union[int, ndarray],
-          action: Union[int, ndarray], pi: Distribution, render: bool
-          ) -> Tuple[Observation, Union[int, ndarray], bool]: ...
+def step(environment: AbstractEnvironment, state: Union[int, ndarray],
+         action: Union[int, ndarray], pi: Distribution, render: bool
+         ) -> Tuple[Observation, Union[int, ndarray], bool]: ...
 
 
 def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
