@@ -67,6 +67,11 @@ class ExperienceReplay(data.Dataset):
             observation = transform(observation)
         return observation
 
+    def reset(self):
+        """Reset memory to empty."""
+        self.memory = np.empty((self.max_len,), dtype=Observation)
+        self._ptr = 0
+
     def __len__(self):
         """Return the current size of the buffer."""
         if self.is_full:
