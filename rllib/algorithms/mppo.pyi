@@ -41,6 +41,24 @@ class MPPOLoss(nn.Module):
     def forward(self, *args: Tensor, **kwargs: Tensor) -> MPOLosses: ...
 
 
+class MPPO(nn.Module):
+    old_policy: AbstractPolicy
+    policy: AbstractPolicy
+    q_function: AbstractValueFunction
+    gamma: float
+
+    mppo_loss: MPPOLoss
+    value_loss: nn.modules.loss._Loss
+
+    def __init__(self, policy: AbstractPolicy, value_function: AbstractValueFunction,
+                 epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float
+                 ) -> None: ...
+
+    def reset(self) -> None: ...
+
+    def forward(self, *args: Tensor, **kwargs) -> MPOReturn: ...
+
+
 class MBMPPO(nn.Module):
     dynamical_model: AbstractModel
     reward_model: AbstractReward

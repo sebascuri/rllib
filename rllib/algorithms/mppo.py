@@ -14,7 +14,7 @@ from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import freeze_parameters
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import separated_kl, tensor_to_distribution
-from rllib.util.neural_networks import deep_copy_module
+from rllib.util.neural_networks import deep_copy_module, repeat_along_dimension
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -90,7 +90,7 @@ class MPPOLoss(nn.Module):
         q_values = q_values.detach() * (torch.tensor(1.) / self.eta)
         normalizer = torch.logsumexp(q_values, dim=0)
         num_actions_ = action_log_probs.shape[0]
-        num_actions = torch.tensor(num_actions_, dtype=torch.get_default_dtype())
+        num_actions = torch.tensor(1.0 * num_actions_)
 
         dual_loss = self.eta * (
                 self.epsilon + torch.mean(normalizer) - torch.log(num_actions))
@@ -119,13 +119,19 @@ class MPPOLoss(nn.Module):
 class MPPO(nn.Module):
     """Maximum a Posteriori Policy Optimizaiton.
 
-    This method uses the `MPOLoss`, but assumes on-policy data to directly estimate
-    the value function, rather than the q-function.
+    The MPPO algorithm returns a loss that is a combination of three losses.
+
+    - The dual loss associated with the variational distribution (Eq. 9)
+    - The dual loss associated with the KL-hard constraint (Eq. 12).
+    - The primal loss associated with the policy fitting term (Eq. 12).
+    - A policy evaluation loss (Eq. 13).
+
+    To compute the primal and dual losses, it uses the MPPOLoss module.
 
     Parameters
     ----------
     policy : AbstractPolicy
-    value_function : AbstractValueFunction
+    q_function : AbstractValueFunction
     epsilon: float
         The average KL-divergence for the E-step, i.e., the KL divergence between
         the sample-based policy and the original policy
@@ -142,40 +148,86 @@ class MPPO(nn.Module):
 
     References
     ----------
-    Abdolmaleki, et al. "Maximum a Posteriori Policy Optimisation." (2018). ICLR.
+    Abdolmaleki, et al. (2018)
+    Maximum a Posteriori Policy Optimisation. ICLR.
+
+    TODO: Add Retrace for policy evaluation.
     """
 
-    def __init__(self, policy, value_function, epsilon, epsilon_mean, epsilon_var,
-                 gamma, num_action_samples=15, entropy_reg=0.):
+    def __init__(self, policy, q_function, num_action_samples,
+                 epsilon, epsilon_mean, epsilon_var, gamma):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
         super().__init__()
         self.old_policy = old_policy
         self.policy = policy
-        self.value_function = value_function
+        self.q_function = q_function
+        self.num_action_samples = num_action_samples
         self.gamma = gamma
 
         self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var)
         self.value_loss = nn.MSELoss(reduction='mean')
-        self.num_action_samples = num_action_samples
-        self.entropy_reg = entropy_reg
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
 
-    def forward(self, states, actions, rewards, next_states, done):
-        """Compute the losses for one step of MPO.
+    def get_kl_and_pi(self, state):
+        """Get kl divergence and current policy at a given state.
+
+        Compute the separated KL divergence between current and old policy.
+        When the policy is a MultivariateNormal distribution, it compute the divergence
+        that correspond to the mean and the covariance separately.
+
+        When the policy is a Categorical distribution, it computes the divergence and
+        assigns it to the mean component. The variance component is kept to zero.
 
         Parameters
         ----------
-        states: torch.Tensor
-            The states at which to compute the losses.
-        actions: torch.Tensor
-        rewards: torch.Tensor
-        next_states: torch.Tensor
+        state: torch.Tensor
+            Empirical state distribution.
+
+        Returns
+        -------
+        kl_mean: torch.Tensor
+            KL-Divergence due to the change in the mean between current and
+            previous policy.
+
+        kl_var: torch.Tensor
+            KL-Divergence due to the change in the variance between current and
+            previous policy.
+
+        pi_dist: torch.distribution.Distribution
+            Current policy distribution.
+        """
+        pi_dist = tensor_to_distribution(self.policy(state))
+        pi_dist_old = tensor_to_distribution(self.old_policy(state))
+
+        if isinstance(pi_dist, torch.distributions.MultivariateNormal):
+            kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
+        else:
+            kl_mean = torch.distributions.kl_divergence(pi_dist, pi_dist_old).mean()
+            kl_var = torch.zeros_like(kl_mean)
+
+        return kl_mean, kl_var, pi_dist
+
+    def forward(self, state, action, reward, next_state, done):
+        """Compute the losses for one step of MPPO.
+
+        Parameters
+        ----------
+        state: torch.Tensor
+            The state at which to compute the losses.
+        action: torch.Tensor
+            Sampled action.
+        reward: torch.Tensor
+            Sampled reward.
+        next_state: torch.Tensor
+            Sampled next state.
+        done: torch.Tensor
+            Sampled done flag.
 
         Returns
         -------
@@ -190,22 +242,29 @@ class MPPO(nn.Module):
         kl_div: torch.Tensor
             The average KL divergence of the policy.
         """
-        value_prediction = self.value_function(states)
+        value_pred = self.q_function(state, action)
+        state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
+        next_state = repeat_along_dimension(next_state, number=self.num_action_samples,
+                                            dim=0)
 
-        pi_dist = tensor_to_distribution(self.policy(states))
-        pi_dist_old = tensor_to_distribution(self.old_policy(states))
-        kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
+        kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
-        action_log_probs = pi_dist.log_prob(actions)
+        sampled_action = pi_dist.sample()
+        action_log_probs = pi_dist.log_prob(sampled_action)
+
+        losses = self.mppo_loss(q_values=self.q_function(state, sampled_action),
+                                action_log_probs=action_log_probs,
+                                kl_mean=kl_mean,
+                                kl_var=kl_var)
+
         with torch.no_grad():
-            next_values = self.value_function()
-            value_target = rewards.unsqueeze(-1) + self.gamma * next_values * (1 - done)
+            next_pi = tensor_to_distribution(self.policy(next_state))
+            next_action = next_pi.sample()
 
-        losses = self.mpo_loss(q_values=value_target,
-                               action_log_probs=action_log_probs,
-                               kl_mean=kl_mean,
-                               kl_var=kl_var)
-        value_loss = self.value_loss(value_prediction, value_target.mean(dim=0))
+            next_values = self.q_function(next_state, next_action)
+            value_target = reward + self.gamma * next_values * (1 - done)
+
+        value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
         combined_loss = value_loss + losses.primal_loss.mean() + losses.dual_loss.mean()
         return MPOReturn(loss=combined_loss,
                          value_loss=value_loss,
