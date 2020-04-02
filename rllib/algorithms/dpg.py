@@ -32,6 +32,7 @@ class DPG(nn.Module):
     ----------
     Silver, David, et al. (2014)
     Deterministic policy gradient algorithms. JMLR.
+
     Lillicrap et. al. (2016).
     Continuous Control with Deep Reinforcement Learning. ICLR.
     """
