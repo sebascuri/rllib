@@ -65,7 +65,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         while not done:
             action = agent.act(state)
             observation, state, done = step(environment, state, action, agent.pi,
-                                             render)
+                                            render)
             agent.observe(observation)
             if max_steps <= environment.time:
                 break

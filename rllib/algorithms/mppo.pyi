@@ -11,7 +11,7 @@ from torch.optim.optimizer import Optimizer
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
-from rllib.value_function import AbstractValueFunction
+from rllib.value_function import AbstractValueFunction, AbstractQFunction
 
 
 class MPOLosses(NamedTuple):
@@ -44,13 +44,15 @@ class MPPOLoss(nn.Module):
 class MPPO(nn.Module):
     old_policy: AbstractPolicy
     policy: AbstractPolicy
-    q_function: AbstractValueFunction
+    q_function: AbstractQFunction
     gamma: float
+    num_action_samples: int
 
     mppo_loss: MPPOLoss
     value_loss: nn.modules.loss._Loss
 
-    def __init__(self, policy: AbstractPolicy, value_function: AbstractValueFunction,
+    def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
+                 num_action_samples: int,
                  epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float
                  ) -> None: ...
 
