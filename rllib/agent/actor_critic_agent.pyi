@@ -6,7 +6,7 @@ from torch.optim.optimizer import Optimizer
 from rllib.algorithms.ac import ActorCritic
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
-from rllib.value_function import AbstractValueFunction
+from rllib.value_function import AbstractQFunction
 from .abstract_agent import AbstractAgent
 
 
@@ -32,6 +32,6 @@ class ActorCriticAgent(AbstractAgent):
     eps: float = 1e-12
 
     def __init__(self, environment: str, policy: AbstractPolicy, actor_optimizer: Optimizer,
-                 critic: AbstractValueFunction, critic_optimizer: Optimizer,
+                 critic: AbstractQFunction, critic_optimizer: Optimizer,
                  criterion: _Loss, num_rollouts: int = 1, target_update_frequency: int = 1,
                  gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...

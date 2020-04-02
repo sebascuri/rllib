@@ -3,10 +3,10 @@ from typing import List, Type, TypeVar
 import torch.nn
 from torch import Tensor
 
-from .abstract_value_function import AbstractValueFunction
+from .abstract_value_function import AbstractQFunction
 from .nn_value_function import NNValueFunction, NNQFunction
 
-T = TypeVar('T', bound='AbstractValueFunction')
+T = TypeVar('T', bound='AbstractQFunction')
 
 
 class NNEnsembleValueFunction(NNValueFunction):

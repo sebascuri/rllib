@@ -30,7 +30,7 @@ class ActorCritic(nn.Module):
     ----------
     policy: AbstractPolicy
         Policy to optimize.
-    critic: AbstractValueFunction
+    critic: AbstractQFunction
         Critic that evaluates the current policy.
     criterion: _Loss
         Criterion to optimize the baseline.

@@ -7,7 +7,7 @@ from torch.nn.modules.loss import _Loss
 
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
-from rllib.value_function import AbstractQFunction, AbstractValueFunction
+from rllib.value_function import AbstractQFunction
 
 
 class PGLoss(NamedTuple):
@@ -18,8 +18,8 @@ class PGLoss(NamedTuple):
 class ActorCritic(nn.Module):
     policy: AbstractPolicy
     policy_target: AbstractPolicy
-    critic: AbstractValueFunction
-    critic_target: AbstractValueFunction
+    critic: AbstractQFunction
+    critic_target: AbstractQFunction
     criterion: _Loss
     gamma: float
     eps: float = 1e-12

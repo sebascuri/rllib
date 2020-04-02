@@ -5,7 +5,7 @@ from torch import Tensor
 
 from .abstract_value_function import AbstractValueFunction, AbstractQFunction
 
-T = TypeVar('T', bound='AbstractValueFunction')
+T = TypeVar('T', bound='AbstractQFunction')
 
 
 class NNValueFunction(AbstractValueFunction):

@@ -131,7 +131,7 @@ class MPPO(nn.Module):
     Parameters
     ----------
     policy : AbstractPolicy
-    q_function : AbstractValueFunction
+    q_function : AbstractQFunction
     epsilon: float
         The average KL-divergence for the E-step, i.e., the KL divergence between
         the sample-based policy and the original policy
