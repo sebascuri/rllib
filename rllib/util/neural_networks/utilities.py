@@ -202,11 +202,9 @@ def one_hot_encode(tensor, num_classes: int):
     if tensor.dim() == 0:
         return torch.scatter(torch.zeros(num_classes), -1, tensor, 1)
     else:
-        batch_size = tensor.shape[0]
-        if tensor.dim() == 1:
-            tensor = tensor.unsqueeze(-1)
-
-        return torch.scatter(torch.zeros(batch_size, num_classes), -1, tensor, 1)
+        tensor_ = tensor.reshape(-1, 1)
+        out = torch.scatter(torch.zeros(tensor_.shape[0], num_classes), -1, tensor_, 1)
+        return out.reshape(tensor.shape + (num_classes,))
 
 
 def get_batch_size(tensor):

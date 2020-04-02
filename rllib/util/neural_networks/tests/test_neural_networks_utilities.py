@@ -77,7 +77,7 @@ class TestUpdateParams(object):
         torch.testing.assert_allclose(t2, nn.Parameter(torch.tensor(t2_data)))
 
 
-class TestOneHoteEncode(object):
+class TestOneHotEncode(object):
     @pytest.fixture(params=[None, 1, 16], scope="class")
     def batch_size(self, request):
         return request.param
@@ -88,9 +88,16 @@ class TestOneHoteEncode(object):
         out_tensor = one_hot_encode(tensor, num_classes)
         assert out_tensor.dim() == 2 if batch_size else 1
 
-        tensor = torch.randint(4, torch.Size([batch_size, 1] if batch_size else [1]))
+        # tensor = torch.randint(4, torch.Size([batch_size, 1] if batch_size else [1]))
+        # out_tensor = one_hot_encode(tensor, num_classes)
+        # assert out_tensor.dim() == 2 if batch_size else 1
+
+    def test_double_batch(self):
+        num_classes = 4
+        tensor = torch.randint(num_classes, torch.Size([32, 5]))
         out_tensor = one_hot_encode(tensor, num_classes)
-        assert out_tensor.dim() == 2 if batch_size else 1
+        assert out_tensor.dim() == 3
+        assert out_tensor.shape == torch.Size([32, 5, 4])
 
     def test_correctness(self):
         tensor = torch.tensor([2])
@@ -113,12 +120,12 @@ class TestOneHoteEncode(object):
 
     def test_indexing(self, batch_size):
         num_classes = 4
-        tensor = torch.randint(4, torch.Size([batch_size, 1] if batch_size else [1]))
+        tensor = torch.randint(4, torch.Size([batch_size] if batch_size else [1]))
         out_tensor = one_hot_encode(tensor, num_classes)
         if batch_size:
-            indexes = out_tensor.gather(-1, tensor).long()
+            indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long().squeeze(-1)
         else:
-            indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long()
+            indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long().squeeze(-1)
         torch.testing.assert_allclose(indexes, torch.ones_like(tensor))
 
 
