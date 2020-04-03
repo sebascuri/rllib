@@ -11,15 +11,15 @@ class ParameterDecay(nn.Module, metaclass=ABCMeta):
 
     def __init__(self, start, end=None, decay=None):
         super().__init__()
-        self.start = start
+        self.start = nn.Parameter(torch.tensor(start), requires_grad=False)
 
         if end is None:
             end = start
-        self.end = end
+        self.end = nn.Parameter(torch.tensor(end), requires_grad=False)
 
         if decay is None:
-            decay = 1
-        self.decay = decay
+            decay = 1.
+        self.decay = nn.Parameter(torch.tensor(decay), requires_grad=False)
 
         self.step = 0
 
@@ -36,9 +36,17 @@ class Constant(ParameterDecay):
         """See `ParameterDecay.__call__'."""
         return self.start
 
-    def update(self):
-        """Update parameter."""
-        pass
+
+class Learnable(ParameterDecay):
+    """Learnable parameter."""
+
+    def __init__(self, val):
+        super().__init__(val)
+        self.start.requires_grad = True
+
+    def forward(self):
+        """See `ParameterDecay.__call__'."""
+        return self.param
 
 
 class ExponentialDecay(ParameterDecay):
@@ -46,8 +54,23 @@ class ExponentialDecay(ParameterDecay):
 
     def forward(self):
         """See `ParameterDecay.__call__'."""
-        decay = torch.exp(-torch.tensor(self.step / self.decay))
+        decay = torch.exp(-torch.tensor(1. * self.step) / self.decay)
         return self.end + (self.start - self.end) * decay
+
+    def update(self):
+        """Update parameter."""
+        self.step += 1
+
+
+class PolynomialDecay(ParameterDecay):
+    """Polynomial Decay of a parameter.
+
+    It returns the minimum between start and end / step ** decay.
+    """
+
+    def forward(self):
+        """See `ParameterDecay.__call__'."""
+        return min(self.start, self.end / torch.tensor(self.step + 1.) ** self.decay)
 
     def update(self):
         """Update parameter."""

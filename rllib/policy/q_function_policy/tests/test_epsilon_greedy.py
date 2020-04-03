@@ -27,7 +27,9 @@ def test_epsilon(eps_start, q_function):
     policy = EpsGreedy(q_function,
                        ExponentialDecay(start=eps_start, end=0.1, decay=100))
     for t in range(100):
-        assert policy.param() == 0.1 + (eps_start - 0.1) * torch.exp(-torch.tensor(t / 100))
+        torch.testing.assert_allclose(
+            policy.param(), 0.1 + (eps_start - 0.1) * torch.exp(-torch.tensor(t / 100))
+        )
         policy.update()
 
 
