@@ -1,47 +1,63 @@
 """Implementation of an EXP3 Experience Replay Buffer."""
 
 import numpy as np
+import torch
 from torch.utils.data._utils.collate import default_collate
 
 from .experience_replay import ExperienceReplay
+from rllib.util.parameter_decay import Constant
 
 
-class EXP3Sampler(ExperienceReplay):
-    """Sampler for EXP3-Sampler Algorithm."""
+class EXP3ExperienceReplay(ExperienceReplay):
+    """Sampler for EXP3-Sampler."""
 
-    def __init__(self, max_len, eta=0.1, beta=0.1, batch_size=1, max_priority=1.,
+    def __init__(self, max_len, eta=0.1, gamma=0.1, max_priority=1.,
                  transformations=None):
-        super().__init__(max_len, batch_size, transformations)
+        super().__init__(max_len, transformations)
+        if isinstance(eta, float):
+            eta = Constant(eta)
         self.eta = eta
-        self.beta = beta
+
+        if isinstance(gamma, float):
+            gamma = Constant(gamma)
+        self.gamma = gamma
+
         self.max_priority = max_priority
-        self.priorities = np.empty((self.max_len,), dtype=np.float)
+        self.priorities = torch.zeros(self.max_len)
+        self.weights = torch.zeros(self.max_len)
 
     def append(self, observation):
         """Append new observations."""
         self.priorities[self._ptr] = self.max_priority
         super().append(observation)
+        self._update_weights()
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""
-        # Implement this way or in the primal space?
-        self.priorities[indexes] += self.eta * td_error / self.probabilities(indexes)
+        idx, inverse_idx, counts = torch.unique(indexes, return_counts=True,
+                                                return_inverse=True)
 
-    def probabilities(self, indexes=None, sign=1):
-        """Get probabilities of a given set of indexes."""
+        td = torch.abs(td_error)
+        inv_prob = self.weights[indexes]
+        self.priorities[indexes] += self.eta() * td * inv_prob * counts[inverse_idx]
+
+        self.max_priority = max(self.max_priority,
+                                torch.max(self.priorities[idx]).item())
+        self.eta.update()
+        self.gamma.update()
+        self._update_weights()
+
+    def _update_weights(self):
+        """Update priorities and weights."""
         num = len(self)
-        if indexes is None:
-            indexes = np.arange(num)
-        probs = np.exp(sign * self.priorities[:num])
-        probs = probs / np.sum(probs)
-        probs = (1 - self.beta) * probs + self.beta / num
-        return probs[indexes]
+        probs = torch.exp(self.priorities[:num] - self.max_priority)
+        probs = (1 - self.gamma()) * probs / torch.sum(probs) + self.gamma() / num
+        weights = 1. / (num * probs)
+        self.weights[:num] = weights
 
-    def get_batch(self, batch_size=None):
+    def get_batch(self, batch_size):
         """Get a batch of data."""
-        batch_size = batch_size if batch_size is not None else self.batch_size
-        num = len(self)
-        probs = self.probabilities()
-        indices = np.random.choice(num, batch_size, p=probs)
-
-        return default_collate([self[i] for i in indices]), indices, 1 / probs[indices]
+        probs = 1. / self.weights[:len(self)].numpy()
+        # assert np.all(probs + 1e-3 >= self.gamma().data.item())
+        indices = np.random.choice(len(self), batch_size, p=probs / np.sum(probs))
+        return default_collate([self[i] for i in indices])

@@ -85,13 +85,10 @@ class PrioritizedExperienceReplay(ExperienceReplay):
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""
-        self.priorities[indexes] = self._get_priority(td_error)
+        self.priorities[indexes] = (torch.abs(td_error) + self.epsilon) ** self.alpha()
         self.alpha.update()
         self.beta.update()
         self._update_weights()
-
-    def _get_priority(self, td_error):
-        return (torch.abs(td_error) + self.epsilon) ** self.alpha()
 
     def get_batch(self, batch_size):
         """Get a batch of data."""
