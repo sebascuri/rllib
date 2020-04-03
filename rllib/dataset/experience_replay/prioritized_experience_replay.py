@@ -9,7 +9,33 @@ from rllib.util.parameter_decay import Constant
 
 
 class PrioritizedExperienceReplay(ExperienceReplay):
-    """Implementation of Prioritized Experience Replay Algorithm.
+    r"""Implementation of Prioritized Experience Replay Algorithm.
+
+    The priority is:
+    ..math :: p_i = |\delta_i| + \epsilon_i,
+    where \delta_i is the last TD-error.
+
+    The observations are sampled according to the probability:
+    ..math :: P(i) \propto p_i ^ \alpha,
+    where \alpha is a parameter.
+
+    The IS weights are given by:
+    ..math :: w_i = (N P(i)) ^ \beta,
+    where \beta is a parameter.
+
+    Parameters
+    ----------
+    max_len: int.
+        Maximum length of Buffer.
+    alpha: float, ParameterDecay, optional.
+        Parameter alpha for probabilities.
+    beta: float, ParameterDecay, optional.
+        Parameter beta for importance weights.
+    epsilon: float, optional.
+        Epsilon parameter for minimum priority.
+    max_priority: float, optional.
+        Maximum value for the priorities.
+        New observations are initialized with this value.
 
     References
     ----------
