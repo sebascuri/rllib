@@ -26,7 +26,7 @@ class ParameterDecay(nn.Module, metaclass=ABCMeta):
     @torch.jit.export
     def update(self):
         """Update parameter."""
-        pass
+        self.step += 1
 
 
 class Constant(ParameterDecay):
@@ -57,10 +57,6 @@ class ExponentialDecay(ParameterDecay):
         decay = torch.exp(-torch.tensor(1. * self.step) / self.decay)
         return self.end + (self.start - self.end) * decay
 
-    def update(self):
-        """Update parameter."""
-        self.step += 1
-
 
 class PolynomialDecay(ParameterDecay):
     """Polynomial Decay of a parameter.
@@ -72,19 +68,18 @@ class PolynomialDecay(ParameterDecay):
         """See `ParameterDecay.__call__'."""
         return min(self.start, self.end / torch.tensor(self.step + 1.) ** self.decay)
 
-    def update(self):
-        """Update parameter."""
-        self.step += 1
-
 
 class LinearDecay(ParameterDecay):
     """Linear decay of parameter."""
 
     def forward(self):
         """See `ParameterDecay.__call__'."""
-        return self.start
+        return max(self.end, self.start - self.decay * self.step)
 
-    def update(self):
-        """Update parameter."""
-        self.step += 1
-        self.start = max(self.end, self.start - self.decay)
+
+class LinearGrowth(ParameterDecay):
+    """Linear decay of parameter."""
+
+    def forward(self):
+        """See `ParameterDecay.__call__'."""
+        return min(self.end, self.start + self.decay * self.step)

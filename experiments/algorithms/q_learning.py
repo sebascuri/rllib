@@ -8,7 +8,7 @@ from rllib.agent import DDQNAgent
 from rllib.dataset import PrioritizedExperienceReplay, ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
-from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.parameter_decay import ExponentialDecay, LinearGrowth
 from rllib.value_function import NNQFunction
 
 # ENVIRONMENT = 'NChain-v0'
@@ -47,7 +47,8 @@ q_function = torch.jit.script(q_function)
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
+memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE,
+                                     beta=LinearGrowth(0.8, 1., 0.001))
 
 agent = DDQNAgent(
     environment.name, q_function, policy, criterion, optimizer, memory,

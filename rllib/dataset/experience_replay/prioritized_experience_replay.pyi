@@ -1,24 +1,21 @@
-from typing import List, Tuple
+from typing import List, Union
 
-from numpy import ndarray
-
-from rllib.dataset.datatypes import Observation
+from torch import Tensor
 from rllib.dataset.transforms import AbstractTransform
+from rllib.util.parameter_decay import ParameterDecay
 from .experience_replay import ExperienceReplay
 
 
 class PrioritizedExperienceReplay(ExperienceReplay):
-    alpha: float
-    beta: float
-    epsilon: float
-    beta_increment: float
+    alpha: ParameterDecay
+    beta: ParameterDecay
+    epsilon: Tensor
     max_priority: float
-    priorities: ndarray
-    probabilities: ndarray
+    priorities: Tensor
 
-    def __init__(self, max_len: int, alpha: float = 0.6, beta: float = 0.4,
-                 epsilon: float = 0.01, beta_inc: float = 0.001,
-                 max_priority: float = 10.,
+    def __init__(self, max_len: int, alpha: Union[float, ParameterDecay] = 0.6,
+                 beta: Union[float, ParameterDecay] = 0.4,
+                 epsilon: float = 0.01, max_priority: float = 10.,
                  transformations: List[AbstractTransform] = None) -> None: ...
 
-    def _get_priority(self, td_error: ndarray) -> ndarray: ...
+    def _get_priority(self, td_error: Tensor) -> Tensor: ...

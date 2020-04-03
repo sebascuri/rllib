@@ -104,7 +104,7 @@ class DPGAgent(AbstractAgent):
                 self.actor_optimizer.step()
 
             # Update memory
-            self.memory.update(idx.numpy(), ans.td_error.detach().numpy())
+            self.memory.update(idx, ans.td_error.detach())
 
             # Update logs
             self.logger.update(actor_losses=actor_loss.item(),

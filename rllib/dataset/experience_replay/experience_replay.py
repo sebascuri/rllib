@@ -1,7 +1,7 @@
 """Implementation of an Experience Replay Buffer."""
 
 import numpy as np
-# import torch
+import torch
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
@@ -42,13 +42,27 @@ class ExperienceReplay(data.Dataset):
 
     """
 
-    def __init__(self, max_len, batch_size=1, transformations=None):
+    def __init__(self, max_len, transformations=None):
         super().__init__()
         self.max_len = max_len
         self.memory = np.empty((self.max_len,), dtype=Observation)
-        self.weights = np.ones((self.max_len,), dtype=np.float)
+        self.weights = torch.ones(self.max_len)
         self._ptr = 0
         self.transformations = transformations or list()
+
+    @classmethod
+    def from_other(cls, other):
+        """Create a Experience Replay from another one.
+
+        All observations will be added sequentially, but only that will be copied.
+        Weights will be initialized as if these were new observations.
+        """
+        new = cls(other.max_len, other.transformations)
+
+        for observation in other.memory:
+            if isinstance(observation, Observation):
+                new.append(observation)
+        return new
 
     def __len__(self):
         """Return the current size of the buffer."""
@@ -135,11 +149,11 @@ class ExperienceReplay(data.Dataset):
     @property
     def all_data(self):
         """Get all the data."""
-        data = stack_list_of_tuples(self.memory[:self._ptr])
+        all_obs = stack_list_of_tuples(self.memory[:self._ptr])
 
         for transformation in self.transformations:
-            data = transformation(data)
-        return data
+            all_obs = transformation(all_obs)
+        return all_obs
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""
