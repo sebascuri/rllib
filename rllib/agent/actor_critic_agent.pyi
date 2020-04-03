@@ -29,9 +29,11 @@ class ActorCriticAgent(AbstractAgent):
     actor_critic: ActorCritic
     target_update_freq: int
     num_rollouts: int
+    num_iter: int
     eps: float = 1e-12
 
     def __init__(self, environment: str, policy: AbstractPolicy, actor_optimizer: Optimizer,
                  critic: AbstractQFunction, critic_optimizer: Optimizer,
-                 criterion: _Loss, num_rollouts: int = 1, target_update_frequency: int = 1,
-                 gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
+                 criterion: _Loss, num_rollouts: int = 1, num_iter: int = 1,
+                 target_update_frequency: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...

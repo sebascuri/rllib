@@ -5,7 +5,7 @@ import torch.optim
 
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import DDQNAgent
-from rllib.dataset import ExperienceReplay
+from rllib.dataset import PrioritizedExperienceReplay, ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
@@ -47,11 +47,11 @@ q_function = torch.jit.script(q_function)
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 agent = DDQNAgent(
     environment.name, q_function, policy, criterion, optimizer, memory,
-    target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+    batch_size=BATCH_SIZE, target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

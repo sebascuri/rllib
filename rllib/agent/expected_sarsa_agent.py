@@ -39,7 +39,7 @@ class ExpectedSARSAAgent(AbstractAgent):
     """
 
     def __init__(self, environment, q_function, policy, criterion, optimizer,
-                 batch_size=1, target_update_frequency=1, gamma=1.0,
+                 num_iter=1, batch_size=1, target_update_frequency=1, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
@@ -47,8 +47,9 @@ class ExpectedSARSAAgent(AbstractAgent):
         self.policy = policy
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
+        self.num_iter = num_iter
         self.batch_size = batch_size
-        self.trajectory = list()
+        self.trajectory = []
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -57,7 +58,7 @@ class ExpectedSARSAAgent(AbstractAgent):
         if len(self.trajectory) >= self.batch_size:
             if self._training:
                 self._train()
-            self.trajectory = list()
+            self.trajectory = []
 
         if self.total_steps % self.target_update_frequency == 0:
             self.sarsa.update()
@@ -72,15 +73,16 @@ class ExpectedSARSAAgent(AbstractAgent):
         """Train the SARSA agent."""
         trajectory = Observation(*stack_list_of_tuples(self.trajectory))
 
-        # Update critic
-        self.optimizer.zero_grad()
-        losses = self.sarsa(trajectory.state, trajectory.action, trajectory.reward,
-                            trajectory.next_state, trajectory.done)
+        for _ in range(self.num_iter):
+            # Update critic
+            self.optimizer.zero_grad()
+            losses = self.sarsa(trajectory.state, trajectory.action, trajectory.reward,
+                                trajectory.next_state, trajectory.done)
 
-        loss = losses.loss.mean()
-        loss.backward()
-        self.optimizer.step()
+            loss = losses.loss.mean()
+            loss.backward()
+            self.optimizer.step()
 
-        # Update loss
-        self.logger.update(critic_losses=loss.item(),
-                           td_errors=losses.td_error.abs().mean().item())
+            # Update loss
+            self.logger.update(critic_losses=loss.item(),
+                               td_errors=losses.td_error.abs().mean().item())

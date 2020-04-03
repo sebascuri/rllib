@@ -55,12 +55,12 @@ def test_nnq_interaction(environment, agent):
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = agent(environment.name, q_function=q_function, policy=policy,
                   criterion=criterion, optimizer=optimizer, memory=memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                  gamma=GAMMA,
+                  gamma=GAMMA, batch_size=BATCH_SIZE,
                   exploration_steps=2)
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
@@ -80,12 +80,12 @@ def test_policies(environment, policy):
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = DDQNAgent(
         environment.name,
         q_function=q_function, policy=policy,
-        criterion=criterion, optimizer=optimizer, memory=memory,
+        criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
@@ -100,11 +100,11 @@ def test_tabular_interaction(agent, policy):
     policy = policy(q_function, 0.1)
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = agent(
         environment.name, q_function=q_function, policy=policy,
-        criterion=criterion, optimizer=optimizer, memory=memory,
+        criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)

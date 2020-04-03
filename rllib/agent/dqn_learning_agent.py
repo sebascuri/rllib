@@ -34,9 +34,9 @@ class DQNAgent(QLearningAgent):
     """
 
     def __init__(self, environment, q_function, policy, criterion, optimizer,
-                 memory, target_update_frequency=4, gamma=1.0,
-                 exploration_steps=0, exploration_episodes=0):
+                 memory, num_iter=1, batch_size=64, target_update_frequency=4,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
         super().__init__(environment, q_function, policy, criterion, optimizer, memory,
-                         target_update_frequency, gamma,
+                         num_iter, batch_size, target_update_frequency, gamma,
                          exploration_steps, exploration_episodes)
         self.q_learning = DQN(q_function, criterion(reduction='none'), self.gamma)

@@ -55,7 +55,7 @@ def test_ddpg_interaction(environment, agent):
     criterion = torch.nn.MSELoss
 
     noise = GaussianNoise(ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
-    memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+    memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
     actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
                                        weight_decay=WEIGHT_DECAY)
     critic_optimizer = torch.optim.Adam(q_function.parameters(),
@@ -64,7 +64,7 @@ def test_ddpg_interaction(environment, agent):
 
     agent = agent(
         environment.name, q_function, policy, noise, criterion, critic_optimizer,
-        actor_optimizer, memory,
+        actor_optimizer, memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
         gamma=GAMMA, policy_noise=POLICY_NOISE)
 

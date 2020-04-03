@@ -19,7 +19,7 @@ class REINFORCEAgent(AbstractAgent):
     """
 
     def __init__(self, environment, policy, policy_optimizer, baseline=None,
-                 baseline_optimizer=None, criterion=None, num_rollouts=1,
+                 baseline_optimizer=None, criterion=None, num_rollouts=1, num_iter=1,
                  target_update_frequency=1, gamma=1.0, exploration_steps=0,
                  exploration_episodes=0):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
@@ -32,6 +32,7 @@ class REINFORCEAgent(AbstractAgent):
         self.policy_optimizer = policy_optimizer
         self.baseline_optimizer = baseline_optimizer
 
+        self.num_iter = num_iter
         self.num_rollouts = num_rollouts
         self.target_update_frequency = target_update_frequency
 
@@ -61,20 +62,21 @@ class REINFORCEAgent(AbstractAgent):
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]
 
-        # Update actor.
-        self.policy_optimizer.zero_grad()
-        if self.baseline_optimizer is not None:
-            self.baseline_optimizer.zero_grad()
+        for _ in range(self.num_iter):
+            # Update actor.
+            self.policy_optimizer.zero_grad()
+            if self.baseline_optimizer is not None:
+                self.baseline_optimizer.zero_grad()
 
-        losses = self.reinforce(trajectories)
-        losses.actor_loss.backward()
-        self.policy_optimizer.step()
+            losses = self.reinforce(trajectories)
+            losses.actor_loss.backward()
+            self.policy_optimizer.step()
 
-        # Update Logs.
-        self.logger.update(actor_losses=losses.actor_loss.item())
+            # Update Logs.
+            self.logger.update(actor_losses=losses.actor_loss.item())
 
-        # Update baseline.
-        if self.baseline_optimizer is not None:
-            losses.baseline_loss.backward()
-            self.baseline_optimizer.step()
-            self.logger.update(baseline_losses=losses.baseline_loss.item())
+            # Update baseline.
+            if self.baseline_optimizer is not None:
+                losses.baseline_loss.backward()
+                self.baseline_optimizer.step()
+                self.logger.update(baseline_losses=losses.baseline_loss.item())

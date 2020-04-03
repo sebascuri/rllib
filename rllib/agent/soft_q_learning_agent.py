@@ -34,11 +34,12 @@ class SoftQLearningAgent(QLearningAgent):
     """
 
     def __init__(self, environment, q_function, criterion, optimizer,
-                 memory, temperature, target_update_frequency=4, gamma=1.0,
+                 memory, temperature, num_iter=1, batch_size=64,
+                 target_update_frequency=4, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
         super().__init__(environment, q_function, None, criterion, optimizer, memory,
-                         target_update_frequency, gamma,
-                         exploration_steps, exploration_episodes)
+                         num_iter, batch_size, target_update_frequency,
+                         gamma, exploration_steps, exploration_episodes)
         self.q_learning = SoftQLearning(q_function, criterion(reduction='none'),
                                         temperature, self.gamma)
         self.policy = self.q_learning.policy

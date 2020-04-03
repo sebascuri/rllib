@@ -19,11 +19,13 @@ class DPGAgent(AbstractAgent):
     max_action: float
     policy_update_frequency: int
 
+    batch_size: int
+    num_iter: int
+
     def __init__(self,environment: str, q_function: AbstractQFunction, policy: AbstractPolicy,
                  exploration: AbstractExplorationStrategy, criterion: _Loss,
                  critic_optimizer: Optimizer, actor_optimizer: Optimizer,
-                 memory: ExperienceReplay, max_action: float = 1.0,
-                 target_update_frequency: int = 4, policy_update_frequency: int = 1,
-                 policy_noise: float = 0., noise_clip: float = 1.,
-                 gamma: float = 1.0,
-                 exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
+                 memory: ExperienceReplay, num_iter: int = 1, batch_size: int = 64,
+                 max_action: float = 1.0, target_update_frequency: int = 4,
+                 policy_update_frequency: int = 1, policy_noise: float = 0., noise_clip: float = 1.,
+                 gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...

@@ -46,11 +46,34 @@ class ExperienceReplay(data.Dataset):
         super().__init__()
         self.max_len = max_len
         self.memory = np.empty((self.max_len,), dtype=Observation)
+        self.weights = np.ones((self.max_len,), dtype=np.float)
         self._ptr = 0
         self.transformations = transformations or list()
-        self.batch_size = batch_size
+
+    def __len__(self):
+        """Return the current size of the buffer."""
+        if self.is_full:
+            return self.max_len
+        else:
+            return self._ptr
 
     def __getitem__(self, idx):
+        """Return any desired observation.
+
+        Parameters
+        ----------
+        idx: int
+
+        Returns
+        -------
+        observation: Observation
+        idx: int
+        weight: torch.tensor.
+
+        """
+        return self.get_observation(idx), idx, self.weights[idx]
+
+    def get_observation(self, idx):
         """Return any desired observation.
 
         Parameters
@@ -71,13 +94,6 @@ class ExperienceReplay(data.Dataset):
         """Reset memory to empty."""
         self.memory = np.empty((self.max_len,), dtype=Observation)
         self._ptr = 0
-
-    def __len__(self):
-        """Return the current size of the buffer."""
-        if self.is_full:
-            return self.max_len
-        else:
-            return self._ptr
 
     def append(self, observation):
         """Append new observation to the dataset.
@@ -101,12 +117,10 @@ class ExperienceReplay(data.Dataset):
         for transformation in self.transformations:
             transformation.update(observation)
 
-    def get_batch(self, batch_size=None):
+    def get_batch(self, batch_size):
         """Get a batch of data."""
-        batch_size = batch_size if batch_size is not None else self.batch_size
         indices = np.random.choice(len(self), batch_size)
-        weights = np.ones(batch_size)
-        return default_collate([self[i] for i in indices]), indices, weights
+        return default_collate([self[i] for i in indices])
 
     @property
     def is_full(self):
@@ -126,11 +140,6 @@ class ExperienceReplay(data.Dataset):
         for transformation in self.transformations:
             data = transformation(data)
         return data
-
-    @property
-    def has_batch(self):
-        """Return true if there are more examples than the batch size."""
-        return len(self) >= self.batch_size
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""

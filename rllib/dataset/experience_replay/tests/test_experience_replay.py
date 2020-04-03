@@ -62,7 +62,9 @@ def test_is_full(memory):
 def test_get_item(memory):
     memory, max_len, number_of_samples = memory
     for idx in range(len(memory)):
-        observation = memory.__getitem__(idx)
+        observation, idx, weight = memory.__getitem__(idx)
+        assert idx == idx
+        assert weight == 1.
         assert observation is memory.memory[idx]
         assert observation == memory.memory[idx]
         assert type(observation) is Observation
@@ -73,9 +75,11 @@ def test_get_item(memory):
 
 def test_iter(memory):
     memory, max_len, number_of_samples = memory
-    for idx, observation in enumerate(memory):
+    for idx, (observation, idx_, weight) in enumerate(memory):
         if idx >= len(memory):
             continue
+        assert idx == idx_
+        assert weight == 1.
         assert observation is memory.memory[idx]
         assert observation == memory.memory[idx]
         assert observation.state.shape == torch.Size([3, ])
@@ -86,7 +90,7 @@ def test_iter(memory):
 def test_transforms(experience_replay):
     memory = experience_replay
     for idx in range(len(memory)):
-        observation = memory.__getitem__(idx)
+        observation, idx, weight = memory.__getitem__(idx)
 
         assert observation is not memory.memory[idx]
         assert type(observation) is Observation

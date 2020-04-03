@@ -52,8 +52,8 @@ class MBMPPOAgent(AbstractAgent):
             num_heads = 1
 
         self.dataset = BootstrapExperienceReplay(
-            max_len=max_memory, batch_size=batch_size, transformations=transformations,
-            num_bootstraps=num_heads)
+            max_len=max_memory, num_bootstraps=num_heads,
+            transformations=transformations)
 
         if self.mppo.policy.dim_action == mppo.dynamical_model.dim_action:
             self.policy = self.mppo.policy

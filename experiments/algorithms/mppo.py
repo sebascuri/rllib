@@ -42,9 +42,9 @@ mppo = MPPO(policy, q_function, num_action_samples=NUM_ACTION_SAMPLES,
             epsilon=EPSILON, epsilon_mean=EPSILON_MEAN, epsilon_var=0.,
             gamma=GAMMA)
 optimizer = torch.optim.Adam(mppo.parameters(), lr=LR)
-memory = ExperienceReplay(max_len=int(MAX_STEPS * NUM_ROLLOUTS), batch_size=BATCH_SIZE)
+memory = ExperienceReplay(max_len=int(MAX_STEPS * NUM_ROLLOUTS))
 agent = MPPOAgent(ENVIRONMENT, mppo, optimizer, memory, num_rollouts=NUM_ROLLOUTS,
-                  num_iter=NUM_ITER, gamma=GAMMA)
+                  num_iter=NUM_ITER, batch_size=BATCH_SIZE, gamma=GAMMA)
 
 train_agent(agent, env, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, env, num_episodes=2, max_steps=MAX_STEPS, render=True)

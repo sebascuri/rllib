@@ -1,6 +1,5 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
 import numpy as np
-import torch
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.dpg import DPG
@@ -38,8 +37,8 @@ class DPGAgent(AbstractAgent):
     """
 
     def __init__(self, environment, q_function, policy, exploration, criterion,
-                 critic_optimizer, actor_optimizer, memory, max_action=1,
-                 target_update_frequency=4, policy_update_frequency=1,
+                 critic_optimizer, actor_optimizer, memory, num_iter=1, batch_size=64,
+                 max_action=1, target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1.,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
@@ -53,6 +52,9 @@ class DPGAgent(AbstractAgent):
 
         self.exploration = exploration
         self.memory = memory
+
+        self.num_iter = num_iter
+        self.batch_size = batch_size
         self.target_update_frequency = target_update_frequency
         self.critic_optimizer = critic_optimizer
         self.actor_optimizer = actor_optimizer
@@ -73,40 +75,38 @@ class DPGAgent(AbstractAgent):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.memory.append(observation)
-        if self.memory.has_batch and (self.total_steps > self.exploration_steps) and (
-                self.total_episodes > self.exploration_episodes):
-            if self._training:
-                self._train()
-            if self.total_steps % self.target_update_frequency == 0:
-                self.dpg_algorithm.update()
+        if self._training and len(self.memory) > self.batch_size:
+            self._train()
+        if self.total_steps % self.target_update_frequency == 0:
+            self.dpg_algorithm.update()
 
     def _train(self):
         """Train the DPG Agent."""
-        observation, idx, weight = self.memory.get_batch()
-        weight = torch.tensor(weight)
+        for _ in range(self.num_iter):
+            observation, idx, weight = self.memory.get_batch(self.batch_size)
 
-        self.critic_optimizer.zero_grad()
-        self.actor_optimizer.zero_grad()
+            self.critic_optimizer.zero_grad()
+            self.actor_optimizer.zero_grad()
 
-        ans = self.dpg_algorithm(
-            observation.state, observation.action, observation.reward,
-            observation.next_state, observation.done)
+            ans = self.dpg_algorithm(
+                observation.state, observation.action, observation.reward,
+                observation.next_state, observation.done)
 
-        # Optimize critic
-        critic_loss = (weight * ans.critic_loss).mean()
-        critic_loss.backward()
-        self.critic_optimizer.step()
+            # Optimize critic
+            critic_loss = (weight * ans.critic_loss).mean()
+            critic_loss.backward()
+            self.critic_optimizer.step()
 
-        # Optimize actor
-        actor_loss = (weight * ans.actor_loss).mean()
-        if not (self.total_steps % self.policy_update_frequency):
-            actor_loss.backward()
-            self.actor_optimizer.step()
+            # Optimize actor
+            actor_loss = (weight * ans.actor_loss).mean()
+            if not (self.total_steps % self.policy_update_frequency):
+                actor_loss.backward()
+                self.actor_optimizer.step()
 
-        # Update memory
-        self.memory.update(idx, ans.td_error.detach().numpy())
+            # Update memory
+            self.memory.update(idx.numpy(), ans.td_error.detach().numpy())
 
-        # Update logs
-        self.logger.update(actor_losses=actor_loss.item(),
-                           critic_losses=critic_loss.item(),
-                           td_errors=ans.td_error.abs().mean().item())
+            # Update logs
+            self.logger.update(actor_losses=actor_loss.item(),
+                               critic_losses=critic_loss.item(),
+                               td_errors=ans.td_error.abs().mean().item())

@@ -4,7 +4,7 @@ import torch.optim
 
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import TD3Agent
-from rllib.dataset import ExperienceReplay
+from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
@@ -41,7 +41,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 policy = torch.jit.script(policy)
 # q_function = torch.jit.script(q_function)
@@ -54,7 +54,7 @@ criterion = torch.nn.MSELoss
 
 agent = TD3Agent(
     environment.name, q_function, policy, noise, criterion, critic_optimizer,
-    actor_optimizer, memory,
+    actor_optimizer, memory, batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA)
 

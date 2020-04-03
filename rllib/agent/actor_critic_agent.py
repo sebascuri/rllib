@@ -25,7 +25,7 @@ class ActorCriticAgent(AbstractAgent):
     eps = 1e-12
 
     def __init__(self, environment, policy, actor_optimizer, critic, critic_optimizer,
-                 criterion, num_rollouts=1, target_update_frequency=1,
+                 criterion, num_rollouts=1, num_iter=1, target_update_frequency=1,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
@@ -38,6 +38,7 @@ class ActorCriticAgent(AbstractAgent):
         self.critic_optimizer = critic_optimizer
 
         self.num_rollouts = num_rollouts
+        self.num_iter = num_iter
         self.target_update_freq = target_update_frequency
 
     def observe(self, observation):
@@ -66,17 +67,19 @@ class ActorCriticAgent(AbstractAgent):
         """Train Policy Gradient Agent."""
         trajectories = [Observation(*stack_list_of_tuples(t))
                         for t in self.trajectories]
-        self.actor_optimizer.zero_grad()
-        self.critic_optimizer.zero_grad()
 
-        losses = self.actor_critic(trajectories)
+        for _ in range(self.num_iter):
+            self.actor_optimizer.zero_grad()
+            self.critic_optimizer.zero_grad()
 
-        total_loss = losses.actor_loss + losses.critic_loss
-        total_loss.backward()
-        self.actor_optimizer.step()
-        self.critic_optimizer.step()
+            losses = self.actor_critic(trajectories)
 
-        # Update logs
-        self.logger.update(actor_losses=losses.actor_loss.item(),
-                           critic_losses=losses.critic_loss.item(),
-                           td_errors=losses.td_error.abs().mean().item())
+            total_loss = losses.actor_loss + losses.critic_loss
+            total_loss.backward()
+            self.actor_optimizer.step()
+            self.critic_optimizer.step()
+
+            # Update logs
+            self.logger.update(actor_losses=losses.actor_loss.item(),
+                               critic_losses=losses.critic_loss.item(),
+                               td_errors=losses.td_error.abs().mean().item())

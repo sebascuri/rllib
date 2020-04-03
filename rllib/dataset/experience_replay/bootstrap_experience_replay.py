@@ -40,26 +40,13 @@ class BootstrapExperienceReplay(ExperienceReplay):
 
     def __init__(self, max_len, batch_size=1, transformations=None, num_bootstraps=1):
         super().__init__(max_len, batch_size, transformations)
-        self.bootstrap_mask = np.empty((self.max_len, num_bootstraps))
+        self.weights = np.empty((self.max_len, num_bootstraps), dtype=np.int)
         self.mask_distribution = Poisson(torch.ones(num_bootstraps))
-
-    def __getitem__(self, idx):
-        """Return any desired observation.
-
-        Parameters
-        ----------
-        idx: int
-
-        Returns
-        -------
-        observation: Observation
-
-        """
-        observation = super().__getitem__(idx)
-        return observation, self.bootstrap_mask[idx]
 
     def append(self, observation):
         """Append new observation to the dataset.
+
+        Every time a new observation is appended, sample a mask to build a Bootstrap.
 
         Parameters
         ----------
@@ -74,5 +61,5 @@ class BootstrapExperienceReplay(ExperienceReplay):
             raise TypeError(
                 f"input has to be of type Observation, and it was {type(observation)}")
 
-        self.bootstrap_mask[self._ptr] = self.mask_distribution.sample()
+        self.weights[self._ptr] = self.mask_distribution.sample()
         super().append(observation)

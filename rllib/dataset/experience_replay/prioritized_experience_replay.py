@@ -16,14 +16,15 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     """
 
     def __init__(self, max_len, alpha=0.6, beta=0.4, epsilon=0.01, beta_inc=0.001,
-                 batch_size=1, max_priority=10., transformations=None):
-        super().__init__(max_len, batch_size, transformations)
+                 max_priority=10., transformations=None):
+        super().__init__(max_len, transformations)
         self.alpha = alpha
         self.beta = beta
         self.epsilon = epsilon
         self.beta_increment = beta_inc
         self.max_priority = max_priority
-        self.priorities = np.empty((self.max_len,), dtype=np.float)
+        self.priorities = np.zeros((self.max_len,), dtype=np.float)
+        self.weights = np.zeros((self.max_len,), dtype=np.float)
 
     def append(self, observation):
         """Append new observation to the dataset.
@@ -39,27 +40,27 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         """
         self.priorities[self._ptr] = self.max_priority
         super().append(observation)
+        self._update_weights()
+
+    def _update_weights(self):
+        """Update priorities and weights."""
+        num = len(self)
+        probs = self.priorities[:num] / np.sum(self.priorities[:num])
+
+        weights = np.power(probs * num, -self.beta)
+        self.weights[:num] = weights / weights.max()
 
     def update(self, indexes, td_error):
         """Update experience replay sampling distribution with set of weights."""
-        priority = self._get_priority(td_error)
-        self.priorities[indexes] = priority
+        self.priorities[indexes] = self._get_priority(td_error)
+        self.beta = np.min([1., self.beta + self.beta_increment])
+        self._update_weights()
 
     def _get_priority(self, td_error):
         return (np.abs(td_error) + self.epsilon) ** self.alpha
 
-    def get_batch(self, batch_size=None):
+    def get_batch(self, batch_size):
         """Get a batch of data."""
-        batch_size = batch_size if batch_size is not None else self.batch_size
-
-        self.beta = np.min([1., self.beta + self.beta_increment])
-        num = len(self)
-        probs = self.priorities[:num]
-        probs = probs / np.sum(probs)
-        indices = np.random.choice(num, batch_size, p=probs)
-
-        probs = probs[indices]
-        weights = np.power(probs * num, -self.beta)
-        weights /= weights.max()
-
-        return default_collate([self[i] for i in indices]), indices, weights
+        probs = self.priorities[:len(self)]
+        indices = np.random.choice(len(self), batch_size, p=probs/np.sum(probs))
+        return default_collate([self[i] for i in indices])
