@@ -19,6 +19,8 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     action_space: Space
     observation_space: Space
 
+    def __str__(self) -> str: ...
+
     @abstractmethod
     def step(self, action: Action) -> Tuple[State, Reward, Done, dict]: ...
 

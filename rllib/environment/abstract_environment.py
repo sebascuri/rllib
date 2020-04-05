@@ -51,6 +51,19 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         self.discrete_action = self.num_actions >= 0
         self.discrete_observation = self.num_observations >= 0
 
+    def __str__(self):
+        """Return string that explains environment."""
+        if self.discrete_state:
+            state_str = f"{self.num_states} discrete states"
+        else:
+            state_str = f"{self.dim_state} continuous states"
+        if self.discrete_action:
+            action_str = f"{self.num_actions} discrete actions"
+        else:
+            action_str = f"{self.dim_action} continuous actions"
+
+        return f"{self.name}, {state_str}, {action_str}."
+
     @abstractmethod
     def step(self, action):
         """Run one time-step of the model dynamics.
