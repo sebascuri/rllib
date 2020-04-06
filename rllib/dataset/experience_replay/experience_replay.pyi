@@ -18,9 +18,11 @@ class ExperienceReplay(data.Dataset):
     weights: Tensor
     transformations: List[AbstractTransform]
     _ptr: int
+    num_steps: int
+    new_observation: bool
 
-    def __init__(self, max_len: int, transformations: List[AbstractTransform] = None
-                 ) -> None: ...
+    def __init__(self, max_len: int, transformations: List[AbstractTransform] = None,
+                 num_steps: int = 1) -> None: ...
 
     @classmethod
     def from_other(cls: Type[T], other: T) -> T: ...

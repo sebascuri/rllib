@@ -28,8 +28,12 @@ def memory(request):
     return memory_, max_len, number_of_samples
 
 
-@pytest.fixture
-def experience_replay():
+@pytest.fixture(params=[1, 3])
+def n_steps(request):
+    return request.param
+
+
+def experience_replay(n_steps):
     max_len = 10000
     number_of_samples = 100
     state_dim = 3
@@ -38,7 +42,8 @@ def experience_replay():
     transformations = [MeanFunction(lambda state, action: state),
                        StateNormalizer(), ActionNormalizer(), RewardClipper(),
                        ]
-    memory_ = ExperienceReplay(max_len, transformations=transformations)
+    memory_ = ExperienceReplay(max_len, transformations=transformations,
+                               num_steps=n_steps)
     for _ in range(number_of_samples):
         memory_.append(RawObservation(state=np.random.randn(state_dim),
                                       action=np.random.randn(action_dim),
@@ -68,10 +73,30 @@ def test_get_item(memory):
         assert observation is memory.memory[idx]
         assert observation == memory.memory[idx]
         assert type(observation) is Observation
-        assert observation.state.shape == torch.Size([3, ])
-        assert observation.action.shape == torch.Size([2, ])
-        assert observation.next_state.shape == torch.Size([3, ])
+        assert observation.state.shape == torch.Size([1, 3])
+        assert observation.action.shape == torch.Size([1, 2])
+        assert observation.next_state.shape == torch.Size([1, 3])
 
+
+def test_n_steps(n_steps):
+    er = experience_replay(n_steps)
+
+    for idx in range(len(er)):
+        observation, idx, weight = er.__getitem__(idx)
+        assert idx == idx
+        assert weight == 1.
+        assert type(observation) is Observation
+        assert observation is not er.memory[idx]
+        assert type(observation) is Observation
+
+        if idx < len(er) - 1:
+            assert observation.state.shape == torch.Size([n_steps, 3])
+            assert observation.action.shape == torch.Size([n_steps, 2])
+            assert observation.next_state.shape == torch.Size([n_steps, 3])
+        else:
+            assert observation.state.shape == torch.Size([len(er) % n_steps + n_steps, 3])
+            assert observation.action.shape == torch.Size([len(er) % n_steps + n_steps, 2])
+            assert observation.next_state.shape == torch.Size([len(er) % n_steps + n_steps, 3])
 
 def test_iter(memory):
     memory, max_len, number_of_samples = memory
@@ -82,20 +107,11 @@ def test_iter(memory):
         assert weight == 1.
         assert observation is memory.memory[idx]
         assert observation == memory.memory[idx]
-        assert observation.state.shape == torch.Size([3, ])
-        assert observation.action.shape == torch.Size([2, ])
-        assert observation.next_state.shape == torch.Size([3, ])
+        assert observation.state.shape == torch.Size([1, 3, ])
+        assert observation.action.shape == torch.Size([1, 2, ])
+        assert observation.next_state.shape == torch.Size([1, 3, ])
 
 
-def test_transforms(experience_replay):
-    memory = experience_replay
-    for idx in range(len(memory)):
-        observation, idx, weight = memory.__getitem__(idx)
-
-        assert observation is not memory.memory[idx]
-        assert type(observation) is Observation
-
-
-def test_append_error(experience_replay):
+def test_append_error():
     with pytest.raises(TypeError):
-        experience_replay.append((1, 2, 3, 4, 5))
+        experience_replay(1).append((1, 2, 3, 4, 5))

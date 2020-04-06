@@ -38,8 +38,8 @@ class BootstrapExperienceReplay(ExperienceReplay):
     Deep exploration via bootstrapped DQN. NeuRIPS.
     """
 
-    def __init__(self, max_len, batch_size=1, transformations=None, num_bootstraps=1):
-        super().__init__(max_len, batch_size, transformations)
+    def __init__(self, max_len, transformations=None, num_bootstraps=1):
+        super().__init__(max_len, transformations)
         self.weights = np.empty((self.max_len, num_bootstraps), dtype=np.int)
         self.mask_distribution = Poisson(torch.ones(num_bootstraps))
 

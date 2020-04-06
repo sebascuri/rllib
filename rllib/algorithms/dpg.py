@@ -98,8 +98,9 @@ class DPG(nn.Module):
         # Actor loss
         actor_loss = self.actor_loss(state)
 
-        return PGLoss(actor_loss=actor_loss, critic_loss=critic_loss,
-                      td_error=td_error)
+        return PGLoss(actor_loss=actor_loss.squeeze(-1),
+                      critic_loss=critic_loss.squeeze(-1),
+                      td_error=td_error.squeeze(-1))
 
     def update(self):
         """Update the target network."""

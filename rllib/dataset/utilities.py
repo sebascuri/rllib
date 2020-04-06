@@ -2,6 +2,8 @@
 import numpy as np
 import torch
 
+from .datatypes import Observation
+
 
 def _cast_to_iter_class(generator, class_):
     if class_ in (tuple, list):
@@ -55,3 +57,30 @@ def bootstrap_trajectory(trajectory, bootstraps):
         new_trajectories.append(t)
 
     return new_trajectories
+
+
+def batch_trajectory_to_single_trajectory(trajectory):
+    """Convert a batch trajectory into a single trajectory.
+
+    A batch trajectory contains a list of batch observations, e.g., Observations with
+    states that have b x h x dim_states dimensions.
+
+    Return a Trajectory that have just 1 x dim_states.
+    """
+    batch_shape = trajectory[0].state.shape[:-1]
+    out = []
+    for batch_obs in trajectory:
+        expanded_obs = Observation(
+            *[k.repeat(batch_shape) if k.dim() < 1 else k for k in batch_obs])
+        squeezed_obs = Observation(
+            *[k.reshape(-1, *k.shape[len(batch_shape):]) for k in expanded_obs]
+        )
+        out += [Observation(*k) for k in zip(*squeezed_obs)]
+
+    return out
+
+
+def concatenate_observations(observation, new_observation):
+    """Concatenate observations and return a new observation."""
+    return Observation(*[torch.cat((a, b.unsqueeze(0)), dim=0)
+                         for a, b in zip(observation, new_observation)])

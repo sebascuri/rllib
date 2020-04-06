@@ -6,7 +6,7 @@ from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
 from rllib.dataset.datatypes import Observation
-from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.dataset.utilities import stack_list_of_tuples, concatenate_observations
 
 
 class ExperienceReplay(data.Dataset):
@@ -19,8 +19,6 @@ class ExperienceReplay(data.Dataset):
     ----------
     max_len: int.
         buffer size of experience replay algorithm.
-    batch_size: int.
-        batch size to sample.
     transformations: list of transforms.AbstractTransform, optional.
         A sequence of transformations to apply to the dataset, each of which is a
         callable that takes an observation as input and returns a modified observation.
@@ -42,13 +40,15 @@ class ExperienceReplay(data.Dataset):
 
     """
 
-    def __init__(self, max_len, transformations=None):
+    def __init__(self, max_len, transformations=None, num_steps=1):
         super().__init__()
         self.max_len = max_len
         self.memory = np.empty((self.max_len,), dtype=Observation)
         self.weights = torch.ones(self.max_len)
         self._ptr = 0
         self.transformations = transformations or list()
+        self.num_steps = num_steps
+        self.new_observation = True
 
     @classmethod
     def from_other(cls, other):
@@ -57,7 +57,7 @@ class ExperienceReplay(data.Dataset):
         All observations will be added sequentially, but only that will be copied.
         Weights will be initialized as if these were new observations.
         """
-        new = cls(other.max_len, other.transformations)
+        new = cls(other.max_len, other.transformations, other.n_step)
 
         for observation in other.memory:
             if isinstance(observation, Observation):
@@ -125,8 +125,18 @@ class ExperienceReplay(data.Dataset):
             raise TypeError(
                 f"input has to be of type Observation, and it was {type(observation)}")
 
+        if self.new_observation:
+            observation = Observation(*[o.unsqueeze(0) for o in observation])
+            self.new_observation = False
+        else:
+            observation = concatenate_observations(self.memory[self._ptr], observation)
+
         self.memory[self._ptr] = observation
-        self._ptr = (self._ptr + 1) % self.max_len
+
+        if self.memory[self._ptr].state.shape[0] == self.num_steps or \
+                self.memory[self._ptr].done[-1]:
+            self._ptr = (self._ptr + 1) % self.max_len
+            self.new_observation = True
 
         for transformation in self.transformations:
             transformation.update(observation)
