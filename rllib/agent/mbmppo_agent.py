@@ -2,13 +2,14 @@
 
 import numpy as np
 import gpytorch
+from gym.utils import colorize
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from .abstract_agent import AbstractAgent
-from rllib.dataset.experience_replay import BootstrapExperienceReplay
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
+# from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.policy.derived_policy import DerivedPolicy
 
@@ -54,6 +55,7 @@ class MBMPPOAgent(AbstractAgent):
         self.dataset = BootstrapExperienceReplay(
             max_len=max_memory, num_bootstraps=num_heads,
             transformations=transformations)
+        self.sim_dataset = ExperienceReplay(max_len=max_memory)
 
         if self.mppo.policy.dim_action == mppo.dynamical_model.dim_action:
             self.policy = self.mppo.policy
@@ -70,7 +72,7 @@ class MBMPPOAgent(AbstractAgent):
         self.num_simulation_trajectories = num_simulation_trajectories
         self.state_refresh_interval = state_refresh_interval
 
-        self.initial_states = None
+        self.initial_states = torch.tensor(float('nan'))
         self.new_episode = True
         self.trajectory = []
         self.sim_trajectory = []
@@ -106,7 +108,7 @@ class MBMPPOAgent(AbstractAgent):
         self.trajectory.append(observation)
         if self.new_episode:
             initial_state = observation.state.unsqueeze(0)
-            if self.initial_states is None:
+            if torch.isnan(self.initial_states).any():
                 self.initial_states = initial_state
             else:
                 self.initial_states = torch.cat((self.initial_states, initial_state))
@@ -122,6 +124,7 @@ class MBMPPOAgent(AbstractAgent):
         """See `AbstractAgent.end_episode'."""
         if self._training:
             if isinstance(self.mppo.dynamical_model.base_model, ExactGPModel):
+                print(colorize('Update GP Model', 'yellow'))
                 observation = stack_list_of_tuples(self.trajectory)
                 for transform in self.dataset.transformations:
                     observation = transform(observation)
@@ -134,6 +137,7 @@ class MBMPPOAgent(AbstractAgent):
 
     def _train(self) -> None:
         # Step 1: Train Model with new data.
+        print(colorize('Training Model', 'yellow'))
         loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
         train_model(self.mppo.dynamical_model.base_model, train_loader=loader,
@@ -149,6 +153,7 @@ class MBMPPOAgent(AbstractAgent):
                 self.total_episodes < self.exploration_episodes):
             return
 
+        print(colorize('Optimizing Policy with Model Data', 'yellow'))
         self.mppo.dynamical_model.eval()
         with disable_gradient(self.mppo.dynamical_model), \
                 gpytorch.settings.fast_pred_var():
@@ -165,8 +170,7 @@ class MBMPPOAgent(AbstractAgent):
                                                    initial_state=initial_states,
                                                    max_steps=self.num_simulation_steps,
                                                    termination=self.mppo.termination)
-                        self.sim_trajectory = Observation(
-                            *stack_list_of_tuples(trajectory))
+                        self.sim_trajectory = stack_list_of_tuples(trajectory)
 
                         # Sum along trajectory, average across samples
                         average_return = self.sim_trajectory.reward.sum(dim=0).mean()
