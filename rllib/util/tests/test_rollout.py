@@ -7,7 +7,7 @@ from rllib.util import rollout_policy, rollout_agent
 
 
 @pytest.fixture(params=['CartPole-v0', 'Pendulum-v0', 'MountainCarContinuous-v0',
-                        'Taxi-v2'])
+                        'Taxi-v3'])
 def environment(request):
     return GymEnvironment(request.param)
 
