@@ -6,6 +6,7 @@ import numpy as np
 import gpytorch.settings
 import torch
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from .rollout import rollout_agent
 from .logger import Logger
@@ -78,8 +79,8 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
     """Train a Dynamical Model."""
     if logger is None:
         logger = Logger('model_training')
-    for i_epoch in range(max_iter):
-        for observation, mask in train_loader:
+    for i_epoch in tqdm(range(max_iter)):
+        for observation, idx, mask in train_loader:
             if isinstance(model, EnsembleModel):
                 model_loss = train_ensemble_step(model, observation, mask, optimizer,
                                                  logger)
