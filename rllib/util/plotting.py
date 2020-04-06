@@ -6,6 +6,7 @@ import numpy as np
 import gpytorch
 import torch
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.model.gp_model import ExactGPModel
 
 
 def moving_average_filter(x, y, horizon):
@@ -222,7 +223,7 @@ def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> Non
         plt.plot(x.numpy(), pred.sample().numpy())
 
 
-def pendulum_gp_inputs_and_trajectory(agent):
+def plot_pendulum_trajectories(agent):
     """Plot GP inputs and trajectory in a Pendulum environment."""
     model = agent.mppo.dynamical_model.base_model
     trajectory = stack_list_of_tuples(agent.trajectory)
@@ -231,33 +232,41 @@ def pendulum_gp_inputs_and_trajectory(agent):
     for transformation in agent.dataset.transformations:
         trajectory = transformation(trajectory)
         sim_obs = transformation(sim_obs)
+    if isinstance(model, ExactGPModel):
+        fig, axes = plt.subplots(model.dim_state, 3, sharex='col', sharey='row')
+    else:
+        fig, axes = plt.subplots(model.dim_state, 2, sharex='col', sharey='row')
 
-    fig, axes = plt.subplots(model.dim_state, 3, sharex='col', sharey='row')
-    for i, gp in enumerate(model.gp):
-        inputs = gp.train_inputs[0]
-        sin, cos = inputs[:, 1], inputs[:, 0]
-        axes[i, 0].scatter(torch.atan2(sin, cos) * 180 / np.pi, inputs[:, 2],
-                           c=inputs[:, 3], cmap='jet', vmin=-1, vmax=1)
-
+    for i in range(model.dim_state):
         sin, cos = torch.sin(trajectory.state[:, 0]), torch.cos(trajectory.state[:, 0])
-        axes[i, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi, trajectory.state[:, 1],
+        axes[i, 0].scatter(torch.atan2(sin, cos) * 180 / np.pi, trajectory.state[:, 1],
                            c=trajectory.action[:, 0], cmap='jet', vmin=-1, vmax=1)
 
         sin = torch.sin(sim_obs.state[:, 0, :, 0])
         cos = torch.cos(sim_obs.state[:, 0, :, 0])
-        axes[i, 2].scatter(torch.atan2(sin, cos) * 180 / np.pi,
+        axes[i, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi,
                            sim_obs.state[:, 0, :, 1],
                            c=sim_obs.action[:, 0, :, 0], cmap='jet', vmin=-1, vmax=1)
-        for j in range(3):
+
+        if isinstance(model, ExactGPModel):
+            inputs = model.gp[i].train_inputs[0]
+            sin, cos = inputs[:, 1], inputs[:, 0]
+            axes[i, 2].scatter(torch.atan2(sin, cos) * 180 / np.pi, inputs[:, 2],
+                               c=inputs[:, 3], cmap='jet', vmin=-1, vmax=1)
+
+        for j in range(axes.shape[-1]):
             axes[i, j].set_xlim([-180, 180])
             axes[i, j].set_ylim([-15, 15])
 
     for i in range(2):
         axes[i, 0].set_ylabel('Angular Velocity')
 
-    axes[0, 0].set_title('Input Data of GP.')
-    axes[0, 1].set_title('Last real trajectory.')
-    axes[0, 2].set_title('Last sim trajectories.')
-    for j in range(3):
+    axes[0, 0].set_title('Last real trajectory.')
+    axes[0, 1].set_title('Last sim trajectories.')
+
+    if isinstance(model, ExactGPModel):
+        axes[0, 2].set_title('Input Data of GP.')
+
+    for j in range(axes.shape[-1]):
         axes[-1, j].set_xlabel('Angle')
     plt.show()
