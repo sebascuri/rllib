@@ -14,9 +14,10 @@ from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import MeanFunction, StateActionNormalizer, ActionClipper, \
     DeltaState
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.environment.system_environment import SystemEnvironment
+from rllib.environment import SystemEnvironment, GymEnvironment
 from rllib.environment.systems import InvertedPendulum
-from rllib.model.gp_model import ExactGPModel
+from rllib.model.gp_model import ExactGPModel, SparseGreedyGPModel, \
+    SparseWeightedGreedyGPModel, BKBGPModel
 from rllib.model.nn_model import NNModel
 from rllib.model.pendulum_model import PendulumModel
 
@@ -25,7 +26,8 @@ from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
 from rllib.reward.pendulum_reward import PendulumReward
 
-from rllib.util.plotting import plot_learning_losses, plot_values_and_policy, pendulum_gp_inputs_and_trajectory
+from rllib.util.plotting import plot_learning_losses, plot_values_and_policy, \
+    plot_pendulum_trajectories
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNValueFunction
@@ -52,10 +54,12 @@ hparams = {'seed': 0,
 
 # model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64], 'non_linearity': 'ReLU',
 #                 'biased_head': True, 'deterministic': True}
-# model_opt_params = {'lr': 1e-4, 'weight_decay': 0}
+# model_opt_params = {'lr': 5e-4, 'weight_decay': 0}
+# hparams.update({'num_model_iter': 25, 'num_mppo_iter': 25})
 
 model_params = {'kind': 'ExactGP', 'max_num_points': 150}
 model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
+hparams.update({'num_model_iter': 0, 'num_mppo_iter': 30})
 
 policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
                  'biased_head': False, 'deterministic': False}
@@ -117,16 +121,18 @@ environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=
 # %% Define Model
 if hparams['learn_model']:
     if model_params['kind'] == 'ExactGP':
-        model = ExactGPModel(torch.tensor([[np.pi, 0.0]]), torch.tensor([[0.0]]),
-                             torch.tensor([[0.0, 0.0]]),
-                             input_transform=StateTransform(),
-                             max_num_points=model_params['max_num_points'])
-        model.gp[0].covar_module.outputscale = torch.tensor(0.0042)
-        model.gp[1].covar_module.outputscale = torch.tensor(0.56)
-        model.gp[0].covar_module.base_kernel.lengthscale = torch.tensor([[8.3]])
-        model.gp[1].covar_module.base_kernel.lengthscale = torch.tensor([[9.0]])
+        model = SparseGreedyGPModel(torch.tensor([[np.pi, 0.0]]), torch.tensor([[0.0]]),
+                                    torch.tensor([[0.0, 0.0]]),
+                                    input_transform=StateTransform(),
+                                    approximation='rff',
+                                    max_points=None)  #model_params['max_num_points'])
 
+        model.gp[0].output_scale = torch.tensor(0.0042)
+        model.gp[0].length_scale = torch.tensor([[8.3]])
         model.likelihood[0].noise = torch.tensor([1e-4])
+
+        model.gp[1].output_scale = torch.tensor(0.56)
+        model.gp[1].length_scale = torch.tensor([[9.0]])
         model.likelihood[1].noise = torch.tensor([1e-4])
 
     elif model_params['kind'] == 'Ensemble':
@@ -223,10 +229,10 @@ agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
 
 # Train Agent
 with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
-      gpytorch.settings.fast_pred_samples():
+     gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
     train_agent(agent, environment, num_episodes=hparams['train_episodes'],
                 max_steps=hparams['horizon'], plot_flag=True, print_frequency=1,
-                render=False, plot_callbacks=[pendulum_gp_inputs_and_trajectory]
+                render=False, plot_callbacks=[plot_pendulum_trajectories]
                 )
 agent.logger.export_to_json(hparams)
 
