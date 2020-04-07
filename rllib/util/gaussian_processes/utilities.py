@@ -2,7 +2,7 @@
 
 import gpytorch
 import torch
-from .exact_gp import ExactGP, SparseGP
+from .exact_gp import SparseGP
 from torch.distributions import Bernoulli
 
 

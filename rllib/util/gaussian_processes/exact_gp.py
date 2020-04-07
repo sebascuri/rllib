@@ -1,9 +1,6 @@
 """Exact GP Model."""
 import gpytorch
-from gpytorch.models.exact_prediction_strategies import prediction_strategy
-
 import torch
-from torch.distributions import MultivariateNormal
 import numpy as np
 
 
@@ -43,14 +40,14 @@ class RFF(gpytorch.models.ExactGP):
         self.update_cache()
 
     def update_cache(self):
-        """Updated cached data."""
+        """Update cached quantities."""
         with torch.no_grad():
             prior_mean, prior_covar = self._mean_covar(self.train_inputs[0])
 
             prior_features = self.features(self.train_inputs[0])
             residual = self.train_targets - prior_mean
-            l = torch.cholesky(prior_covar)
-            kf_kff_inv = torch.cholesky_solve(prior_features, l).transpose(-2, -1)
+            lower = torch.cholesky(prior_covar)
+            kf_kff_inv = torch.cholesky_solve(prior_features, lower).transpose(-2, -1)
 
             self.kf_kff_inv_y = kf_kff_inv @ residual
             self.qff = kf_kff_inv @ prior_features
@@ -89,6 +86,7 @@ class RFF(gpytorch.models.ExactGP):
         return self.mean_module(x), kernel
 
     def __call__(self, *args, **kwargs):
+        """Compute predictive distribution."""
         test_mean, test_cov = self._mean_covar(args[0])
         test_features = self.features(args[0])
 
@@ -177,7 +175,7 @@ class SparseGP(gpytorch.models.GP):
         w_d_inv = w / diag
         k = (w_d_inv @ w.transpose(-2, -1)).contiguous()
         k.view(-1)[::m + 1] += 1  # add identity matrix to K
-        self.l = k.cholesky()
+        self.lower = k.cholesky()
 
         # get y_residual and convert it into 2D tensor for packing
         y_residual = self.train_targets - self.mean_module(self.train_inputs[0])
@@ -194,7 +192,7 @@ class SparseGP(gpytorch.models.GP):
         else:
             w_d_inv_y = self.w_d_inv_y.expand(x_new.shape[0], *self.w_d_inv_y.shape)
         pack = torch.cat((w_d_inv_y, w_s), dim=-1)
-        l_inv_pack = pack.triangular_solve(self.l, upper=False)[0]
+        l_inv_pack = pack.triangular_solve(self.lower, upper=False)[0]
 
         # unpack
         l_inv_w_d_inv_y = l_inv_pack[..., :self.w_d_inv_y.shape[-1]]
