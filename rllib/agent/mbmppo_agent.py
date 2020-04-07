@@ -130,7 +130,9 @@ class MBMPPOAgent(AbstractAgent):
                     observation = transform(observation)
 
                 self.mppo.dynamical_model.base_model.add_data(
-                    observation.state, observation.action, observation.next_state)
+                    observation.state, observation.action, observation.next_state,
+                    weight_function=self.mppo.value_function,
+                )
 
             self._train()
         super().end_episode()
