@@ -2,11 +2,44 @@
 
 import gpytorch
 import torch
-from .exact_gp import SparseGP
 from torch.distributions import Bernoulli
+import numpy as np
 
 
-def _add_data_to_gp(gp_model, new_inputs, new_targets):
+def cartesian(arrays, out=None):
+    """Generate a cartesian product of input arrays.
+
+    Parameters
+    ----------
+    arrays : list of array-like
+            1-D arrays to form the cartesian product of.
+    out : ndarray
+            Array to place the cartesian product in.
+
+    Returns
+    -------
+    out : ndarray
+            2-D array of shape (M, len(arrays)) containing cartesian products
+            formed of input arrays.
+    """
+    arrays = [np.asarray(x) for x in arrays]
+    dtype = arrays[0].dtype
+
+    n = np.prod([x.size for x in arrays])
+    if out is None:
+        out = np.zeros([n, len(arrays)], dtype=dtype)
+
+    m = n / arrays[0].size
+    m = int(m)
+    out[:, 0] = np.repeat(arrays[0], m)
+    if arrays[1:]:
+        cartesian(arrays[1:], out=out[0:m, 1:])
+        for j in range(1, arrays[0].size):
+            out[j * m:(j + 1) * m, 1:] = out[0:m, 1:]
+    return out
+
+
+def add_data_to_gp(gp_model, new_inputs, new_targets):
     """Add new data points to an existing GP model.
 
     Once available, gp_model.get_fantasy_model should be preferred over this.
@@ -17,42 +50,29 @@ def _add_data_to_gp(gp_model, new_inputs, new_targets):
     # return gp_model.get_fantasy_model(inputs, targets)
 
 
-def add_data_to_gp(gp_model, new_inputs=None, new_targets=None,
-                   max_num: int = None, weight_function=None):
+def summarize_gp(gp_model, max_num_points: int = None, weight_function=None):
     """Summarize the GP model with a fixed number of data points inplace.
 
     Parameters
     ----------
     gp_model : gpytorch.models.ExactGPModel
-    new_inputs : torch.Tensor
-        New data points to add to the GP. Ignored if new_targets is None.
-    new_targets : torch.Tensor
-        New target data points to add to the GP. Ignored if new_inputs is None.
     max_num : int
         The maximum number of data points to use.
     weight_function: Callable[[torch.Tensor], torch.Tensor]
         weighing_function that computes the weight of each input.
     """
-    old_inputs = gp_model.train_inputs[0]
-    old_targets = gp_model.train_targets
-
-    # For convenience, define new data as empty arrays
-    if new_inputs is None or new_targets is None:
-        new_inputs = torch.empty((0, old_inputs.shape[-1]))
-        new_targets = torch.empty((old_targets.shape[0], 0))
+    inputs = gp_model.train_inputs[0]
+    targets = gp_model.train_targets
 
     # Can add all data points directly
-    if max_num is None or len(old_inputs) + len(new_inputs) <= max_num:
-        return _add_data_to_gp(gp_model, new_inputs, new_targets)
+    if max_num_points is None or len(inputs) <= max_num_points:
+        return
 
     # Remove all data points but one
-    gp_model.set_train_data(old_inputs[0].unsqueeze(0), old_targets[0].unsqueeze(-1),
+    gp_model.set_train_data(inputs[0].unsqueeze(0), targets[0].unsqueeze(-1),
                             strict=False)
-    inputs = torch.cat((old_inputs[1:], new_inputs), dim=0)
-    targets = torch.cat((old_targets[1:], new_targets), dim=-1)
-
     gp_model.eval()
-    for _ in range(max_num - 1):
+    for _ in range(max_num_points - 1):
         with gpytorch.settings.fast_pred_var():
             # The set function to maximize is f_s = log det (I + \lambda^2 K_s).
             # Greedy selection resorts to sequentially selecting the index that solves
@@ -71,7 +91,7 @@ def add_data_to_gp(gp_model, new_inputs=None, new_targets=None,
 
         # Once enabled use this
         # gp_model = gp_model.get_fantasy_model(new_input, new_target)
-        _add_data_to_gp(gp_model, new_input, new_target)
+        add_data_to_gp(gp_model, new_input, new_target)
 
         # Remove data from input space
         idx = int(index.item())
@@ -79,39 +99,26 @@ def add_data_to_gp(gp_model, new_inputs=None, new_targets=None,
         targets = torch.cat((targets[:idx], targets[idx + 1:]), dim=-1)
 
 
-def bkb(gp_model, new_inputs, new_targets, q_bar=1):
+def bkb(gp_model, inducing_points, q_bar=1):
     """Update the GP model using BKB algorithm.
 
     Parameters
     ----------
     gp_model: ExactGP
         model to update
-    new_inputs: torch.Tensor
+    inducing_points: torch.Tensor
         Tensor of dimension [N x d_x]
-    new_targets: torch.Tensor
-        Tensor of dimesnion [N]
     q_bar: float
         float with algorithm parameter.
     """
     gp_model.eval()
-    inputs = torch.cat((gp_model.train_inputs[0], new_inputs), dim=0)
-    targets = torch.cat((gp_model.train_targets, new_targets), dim=-1)
-
-    # Previous arms
-    if isinstance(gp_model, SparseGP):
-        ip = torch.cat((gp_model.xu, new_inputs), dim=0)
-    else:
-        ip = inputs
 
     # Scaled predictive variance of arms under current model.
-    p = q_bar * gp_model(ip).variance / gp_model.likelihood.noise
+    p = q_bar * gp_model(inducing_points).variance / (
+        gp_model.likelihood.noise)
     q = Bernoulli(probs=p.clamp_(0, 1)).sample()
     idx = torch.where(q == 1)[0]
     if len(idx) == 0:  # the GP has to have at least one point.
         idx = [0]
 
-    if isinstance(gp_model, SparseGP):
-        gp_model.set_train_data(inputs, targets, strict=False)
-        gp_model.set_inducing_points(ip[idx])
-    else:
-        gp_model.set_train_data(inputs[idx], targets[idx], strict=False)
+    return inducing_points[idx]
