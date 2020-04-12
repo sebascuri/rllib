@@ -124,15 +124,15 @@ class MBMPPOAgent(AbstractAgent):
         """See `AbstractAgent.end_episode'."""
         if self._training:
             if isinstance(self.mppo.dynamical_model.base_model, ExactGPModel):
-                print(colorize('Update GP Model', 'yellow'))
                 observation = stack_list_of_tuples(self.trajectory)
                 for transform in self.dataset.transformations:
                     observation = transform(observation)
-
+                print(colorize('Add data to GP Model', 'yellow'))
                 self.mppo.dynamical_model.base_model.add_data(
-                    observation.state, observation.action, observation.next_state,
-                    weight_function=self.mppo.value_function,
-                )
+                    observation.state, observation.action, observation.next_state)
+
+                print(colorize('Summarize GP Model', 'yellow'))
+                self.mppo.dynamical_model.base_model.summarize_gp()
 
             self._train()
         super().end_episode()
