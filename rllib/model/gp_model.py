@@ -4,8 +4,8 @@ import torch
 import torch.jit
 import torch.nn
 
-from rllib.util.gaussian_processes.exact_gp import ExactGP, SparseGP, RFF
-from rllib.util.gaussian_processes.utilities import add_data_to_gp, bkb
+from rllib.util.gaussian_processes.gps import ExactGP, SparseGP, RandomFeatureGP
+from rllib.util.gaussian_processes.utilities import add_data_to_gp, summarize_gp, bkb
 from .abstract_model import AbstractModel
 
 
@@ -13,9 +13,11 @@ class ExactGPModel(AbstractModel):
     """An Exact GP State Space Model."""
 
     def __init__(self, state, action, next_state, mean=None, kernel=None,
-                 approximation=None, input_transform=None):
+                 input_transform=None, max_num_points=None):
         dim_state = state.shape[-1]
         dim_action = action.shape[-1]
+        self.max_num_points = max_num_points
+
         super().__init__(dim_state, dim_action)
         self.input_transform = input_transform
         train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
@@ -24,13 +26,7 @@ class ExactGPModel(AbstractModel):
         gps = []
         for train_y_i in train_y:
             likelihood = gpytorch.likelihoods.GaussianLikelihood()
-            if approximation == 'sparse':
-                gp = SparseGP(train_x, train_y_i, likelihood, train_x, mean, kernel)
-            elif approximation == 'rff':
-                gp = RFF(train_x, train_y_i, likelihood, num_features=1000, mean=mean,
-                         kernel=kernel, outputscale=1., lengthscale=1.)
-            else:
-                gp = ExactGP(train_x, train_y_i, likelihood, mean, kernel)
+            gp = ExactGP(train_x, train_y_i, likelihood, mean, kernel)
             gps.append(gp)
             likelihoods.append(likelihood)
 
@@ -50,14 +46,59 @@ class ExactGPModel(AbstractModel):
             return mean, scale_tril
         else:
             mean = torch.stack(tuple(o.mean for o in out), dim=-1)
-            stddev = torch.stack(tuple(o.stddev for o in out), dim=-1)
+
+            # Sometimes, gpytorch returns negative variances due to numerical errors.
+            # Hence, clamp the output variance to the noise of the likelihood.
+            stddev = torch.stack(
+                tuple(torch.sqrt(o.variance.clamp(l.noise.item() ** 2, float('inf')))
+                      for o, l in zip(out, self.likelihood)), dim=-1)
             return mean, torch.diag_embed(stddev)
 
-    def add_data(self, state, action, next_state, weight_function=None):
+    def add_data(self, state, action, next_state):
         """Add new data to GP-Model, independently to each GP."""
         new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
         for i, new_y_i in enumerate(new_y):
             add_data_to_gp(self.gp[i], new_x, new_y_i)
+
+    def summarize_gp(self, weight_function=None):
+        r"""Summarize training data to GP, independently for each GP.
+
+        Training inputs are selected by greedily maximizing
+        ..math:: log det(1 + \lambda K(x, x))
+
+        until a set of size `max_points' is built.
+
+        References
+        ----------
+        Seeger, M., Williams, C., & Lawrence, N. (2003).
+        Fast forward selection to speed up sparse Gaussian process regression.
+
+        Gomes, R., & Krause, A. (2010).
+        Budgeted Nonparametric Learning from Data Streams. ICML.
+
+        """
+        for gp in self.gp:
+            summarize_gp(
+                gp, self.max_num_points,
+                weight_function=self._transform_weight_function(weight_function))
+            print(len(gp.train_targets))
+
+    def _transform_weight_function(self, weight_function=None):
+        """Transform weight function according to input transform of the GP."""
+        if not weight_function:
+            return None
+
+        if self.input_transform is None:
+            def _wf(x):
+                s = x[:, :-self.dim_action]
+                a = x[:, -self.dim_action:]
+                return weight_function(s, a)
+        else:
+            def _wf(x):
+                s = self.input_transform.inverse(x[:, :-self.dim_action])
+                a = x[:, -self.dim_action:]
+                return weight_function(s, a)
+        return _wf
 
     # @torch.jit.export
     def state_actions_to_input_data(self, state, action):
@@ -112,98 +153,50 @@ class ExactGPModel(AbstractModel):
         return train_x, train_y
 
 
-class SparseGreedyGPModel(ExactGPModel):
-    r"""Sparse GP Model.
+class RandomFeatureGPModel(ExactGPModel):
+    """GP Model approximated by Random Fourier Features."""
 
-    Inducing points are selected by greedily maximizing
-    ..math:: log det(1 + \lambda K(x, x))
-
-    until a set of size `max_points' is built.
-
-    References
-    ----------
-    Seeger, M., Williams, C., & Lawrence, N. (2003).
-    Fast forward selection to speed up sparse Gaussian process regression.
-
-    Gomes, R., & Krause, A. (2010).
-    Budgeted Nonparametric Learning from Data Streams. ICML.
-    """
-
-    def __init__(self, state, action, next_state, max_points, mean=None, kernel=None,
-                 approximation='sparse', input_transform=None):
-        super().__init__(state, action, next_state, mean, kernel, approximation,
-                         input_transform)
-        self.max_points = max_points
-
-    def add_data(self, state, action, next_state, weight_function=None):
-        """Add new data to GP-Model, independently to each GP."""
-        new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
-        for i, new_y_i in enumerate(new_y):
-            add_data_to_gp(self.gp[i], new_x, new_y_i, max_num=self.max_points)
+    def __init__(self, state, action, next_state, num_features=1024,
+                 mean=None, kernel=None, input_transform=None, max_num_points=None):
+        super().__init__(state, action, next_state, mean, kernel, input_transform,
+                         max_num_points)
+        gps = []
+        train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
+        for train_y_i, likelihood in zip(train_y, self.likelihood):
+            gp = RandomFeatureGP(train_x, train_y_i, likelihood,
+                                 num_features=num_features,
+                                 mean=mean, kernel=kernel)
+            gps.append(gp)
+        self.gp = torch.nn.ModuleList(gps)
 
 
-class SparseWeightedGreedyGPModel(ExactGPModel):
-    r"""Sparse GP Model.
+class SparseGPModel(ExactGPModel):
+    """Sparse approximation of Exact GP models."""
 
-    Inducing points are selected by greedily maximizing
-    ..math:: log det(1 + \lambda K(x, x)) J(x)
+    def __init__(self, state, action, next_state, inducing_points=None,
+                 approximation='DTC', mean=None, kernel=None, input_transform=None,
+                 max_num_points=None, max_inducing_points=None):
+        super().__init__(state, action, next_state, mean, kernel, input_transform,
+                         max_num_points)
+        gps = []
+        train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
+        if inducing_points is None:
+            inducing_points = train_x
 
-    until a set of size `max_points' is built.
+        self.max_inducing_points = max_inducing_points
 
-    References
-    ----------
-    McIntire, M., Ratner, D., & Ermon, S. (2016).
-    Sparse Gaussian Processes for Bayesian Optimization. UAI.
-    """
-
-    def __init__(self, state, action, next_state, max_points, mean=None, kernel=None,
-                 approximation='sparse', input_transform=None):
-        super().__init__(state, action, next_state, mean, kernel, approximation,
-                         input_transform)
-        self.max_points = max_points
+        for train_y_i, likelihood in zip(train_y, self.likelihood):
+            gp = SparseGP(train_x, train_y_i, likelihood, inducing_points,
+                          approximation=approximation, mean=mean, kernel=kernel)
+            gps.append(gp)
+        self.gp = torch.nn.ModuleList(gps)
 
     def add_data(self, state, action, next_state, weight_function=None):
-        """Add new data to GP-Model, independently to each GP."""
+        """Add Data to GP and Re-Sparsify."""
         new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
         for i, new_y_i in enumerate(new_y):
-
-            if self.input_transform is None:
-                def _wf(x):
-                    s = x[:, :-self.dim_action]
-                    a = x[:, -self.dim_action:]
-                    return weight_function(s, a)
-            else:
-                def _wf(x):
-                    s = self.input_transform.inverse(x[:, :-self.dim_action])
-                    a = x[:, -self.dim_action:]
-                    return weight_function(s, a)
-
-            add_data_to_gp(self.gp[i], new_x, new_y_i, max_num=self.max_points,
-                           weight_function=_wf)
-
-
-class BKBGPModel(ExactGPModel):
-    r"""Sparse GP Model.
-
-    Inducing points are selected by sampling according to
-    ..math:: i \sim Bernoulli(\bar{q} \sigma^2(x)),
-    where \sigma^2 is the predictive variance of the current GP model and \bar{q} a
-    parameter of the algorithm.
-
-    References
-    ----------
-    McIntire, M., Ratner, D., & Ermon, S. (2016).
-    Sparse Gaussian Processes for Bayesian Optimization. UAI.
-    """
-
-    def __init__(self, state, action, next_state, q_bar, mean=None, kernel=None,
-                 approximation='sparse', input_transform=None):
-        super().__init__(state, action, next_state, mean, kernel, approximation,
-                         input_transform)
-        self.q_bar = q_bar
-
-    def add_data(self, state, action, next_state, weight_function=None):
-        """Add new data to GP-Model, independently to each GP."""
-        new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
-        for i, new_y_i in enumerate(new_y):
-            bkb(self.gp[i], new_x, new_y_i, self.q_bar)
+            arm_set = torch.cat((new_x, self.gp[i].train_inputs[0]), dim=0)
+            inducing_points = bkb(self.gp[i], arm_set)
+            print(len(arm_set), len(inducing_points))
+            self.gp[i].set_inducing_points(inducing_points)
+            add_data_to_gp(self.gp[i], new_x, new_y_i)
