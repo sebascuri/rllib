@@ -74,7 +74,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         if print_frequency and episode % print_frequency == 0:
             print(agent)
             for plot_callback in plot_callbacks:
-                plot_callback(agent)
+                plot_callback(agent, episode)
 
         if episode in milestones:
             file_name = f"{environment.name}_{agent.name}_{episode}.pkl"

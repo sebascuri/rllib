@@ -223,7 +223,7 @@ def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> Non
         plt.plot(x.numpy(), pred.sample().numpy())
 
 
-def plot_pendulum_trajectories(agent):
+def plot_pendulum_trajectories(agent, episode: int):
     """Plot GP inputs and trajectory in a Pendulum environment."""
     model = agent.mppo.dynamical_model.base_model
     trajectory = stack_list_of_tuples(agent.trajectory)
@@ -254,6 +254,13 @@ def plot_pendulum_trajectories(agent):
             axes[i, 2].scatter(torch.atan2(sin, cos) * 180 / np.pi, inputs[:, 2],
                                c=inputs[:, 3], cmap='jet', vmin=-1, vmax=1)
 
+            if hasattr(model.gp[i], 'xu'):
+                inducing_points = model.gp[i].xu
+                sin, cos = inducing_points[:, 1], inducing_points[:, 0]
+                axes[i, 2].scatter(
+                    torch.atan2(sin, cos) * 180 / np.pi, inducing_points[:, 2],
+                    c=inducing_points[:, 3], cmap='jet', marker='*', vmin=-1, vmax=1)
+
         for j in range(axes.shape[-1]):
             axes[i, j].set_xlim([-180, 180])
             axes[i, j].set_ylim([-15, 15])
@@ -269,4 +276,6 @@ def plot_pendulum_trajectories(agent):
 
     for j in range(axes.shape[-1]):
         axes[-1, j].set_xlabel('Angle')
+
+    plt.suptitle(f'Episode {episode}', y=1.0)
     plt.show()
