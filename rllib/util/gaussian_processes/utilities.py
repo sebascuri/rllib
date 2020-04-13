@@ -3,40 +3,6 @@
 import gpytorch
 import torch
 from torch.distributions import Bernoulli
-import numpy as np
-
-
-def cartesian(arrays, out=None):
-    """Generate a cartesian product of input arrays.
-
-    Parameters
-    ----------
-    arrays : list of array-like
-            1-D arrays to form the cartesian product of.
-    out : ndarray
-            Array to place the cartesian product in.
-
-    Returns
-    -------
-    out : ndarray
-            2-D array of shape (M, len(arrays)) containing cartesian products
-            formed of input arrays.
-    """
-    arrays = [np.asarray(x) for x in arrays]
-    dtype = arrays[0].dtype
-
-    n = np.prod([x.size for x in arrays])
-    if out is None:
-        out = np.zeros([n, len(arrays)], dtype=dtype)
-
-    m = n / arrays[0].size
-    m = int(m)
-    out[:, 0] = np.repeat(arrays[0], m)
-    if arrays[1:]:
-        cartesian(arrays[1:], out=out[0:m, 1:])
-        for j in range(1, arrays[0].size):
-            out[j * m:(j + 1) * m, 1:] = out[0:m, 1:]
-    return out
 
 
 def add_data_to_gp(gp_model, new_inputs, new_targets):
@@ -56,7 +22,7 @@ def summarize_gp(gp_model, max_num_points: int = None, weight_function=None):
     Parameters
     ----------
     gp_model : gpytorch.models.ExactGPModel
-    max_num : int
+    max_num_points : int
         The maximum number of data points to use.
     weight_function: Callable[[torch.Tensor], torch.Tensor]
         weighing_function that computes the weight of each input.

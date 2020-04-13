@@ -30,19 +30,21 @@ for name, model in {
     'Exact': ExactGP(train_x, train_y, likelihood=likelihood),
     'RFF': RandomFeatureGP(train_x.unsqueeze(-1), train_y, likelihood=likelihood,
                            num_features=100, approximation='rff'),
+    'OFF': RandomFeatureGP(train_x.unsqueeze(-1), train_y, likelihood=likelihood,
+                           num_features=100, approximation='off'),
     'QFF': RandomFeatureGP(train_x.unsqueeze(-1), train_y, likelihood=likelihood,
-                           num_features=10, approximation='qff'),
-    # 'DTC': SparseGP(train_x, train_y, likelihood=likelihood,
-    #                 inducing_points=inducing_points, approximation='DTC'),
-    # 'SOR': SparseGP(train_x, train_y, likelihood=likelihood,
-    #                 inducing_points=inducing_points, approximation='SOR'),
-    # 'FITC': SparseGP(train_x, train_y, likelihood=likelihood,
-    #                  inducing_points=inducing_points, approximation='FITC'),
+                           num_features=50, approximation='qff'),
+    'DTC': SparseGP(train_x, train_y, likelihood=likelihood,
+                    inducing_points=inducing_points, approximation='DTC'),
+    'SOR': SparseGP(train_x, train_y, likelihood=likelihood,
+                    inducing_points=inducing_points, approximation='SOR'),
+    'FITC': SparseGP(train_x, train_y, likelihood=likelihood,
+                     inducing_points=inducing_points, approximation='FITC'),
 }.items():
     np.random.seed(0)
     model.likelihood.noise = torch.tensor([1e-2])
     model.output_scale = torch.tensor(0.1)
-    model.length_scale = torch.tensor([0.2])
+    model.length_scale = torch.tensor([0.5])
     model.eval()
     test_x = torch.arange(-10., 10., 0.01)
     with torch.no_grad(), gpytorch.settings.fast_pred_var(), \

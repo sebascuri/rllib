@@ -1,7 +1,6 @@
 """Exact GP Model."""
 import gpytorch
 from .prediction_strategies import SparsePredictionStrategy
-from .utilities import cartesian
 from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy
 from gpytorch.lazy import MatmulLazyTensor, lazify, delazify
 import torch
@@ -53,9 +52,9 @@ class ExactGP(gpytorch.models.ExactGP):
         return self.covar_module.outputscale
 
     @output_scale.setter
-    def output_scale(self, new_output_scale):
+    def output_scale(self, value):
         """Set output scale."""
-        self.covar_module.outputscale = new_output_scale
+        self.covar_module.outputscale = value
 
     @property
     def length_scale(self):
@@ -63,9 +62,9 @@ class ExactGP(gpytorch.models.ExactGP):
         return self.covar_module.base_kernel.lengthscale
 
     @length_scale.setter
-    def length_scale(self, new_length_scale):
+    def length_scale(self, value):
         """Set length scale."""
-        self.covar_module.base_kernel.lengthscale = new_length_scale
+        self.covar_module.base_kernel.lengthscale = value
 
     def forward(self, x):
         """Forward computation of GP."""
@@ -157,6 +156,8 @@ class SparseGP(ExactGP):
             elif self.approximation == 'SOR' or self.approximation == 'DTC':
                 diag = lazify(torch.eye(len(self.train_targets))
                               ).mul(1. / self.likelihood.noise)
+            else:
+                raise NotImplementedError(f"{self.approximation} Not implemented.")
 
             cov = k_uu + (k_uf @ diag) @ k_uf.transpose(-2, -1)
 
@@ -264,25 +265,13 @@ class RandomFeatureGP(ExactGP):
 
         self.dim = train_x.shape[-1]
 
-        if kernel is None:
-            length_scale, scale = 1., 1.
-        elif isinstance(kernel, gpytorch.kernels.RBFKernel):
-            length_scale, scale = kernel.lengthscale, kernel.outputscale
-        elif isinstance(kernel.base_kernel, gpytorch.kernels.RBFKernel):
-            length_scale, scale = kernel.base_kernel.lengthscale, kernel.outputscale
-        else:
-            raise NotImplementedError
-
-        self._output_scale = scale
-        self._length_scale = length_scale
-
         self.w, self.b, self._feature_scale = self.sample_features()
 
     def sample_features(self):
         """Sample a set of random features."""
         # Only squared-exponential kernels are implemented.
         if self.approximation == 'rff':
-            w = torch.randn(self.num_features, self.dim) / self.length_scale
+            w = torch.randn(self.num_features, self.dim) / torch.sqrt(self.length_scale)
             scale = torch.tensor(1. / self.num_features)
 
         elif self.approximation == 'off':
@@ -290,45 +279,34 @@ class RandomFeatureGP(ExactGP):
             diag = torch.diag(torch.tensor(
                 chi.rvs(df=self.num_features, size=self.num_features),
                 dtype=torch.get_default_dtype()))
-            w = (diag @ q) / self.length_scale
+            w = (diag @ q) / torch.sqrt(self.length_scale)
             scale = torch.tensor(1. / self.num_features)
 
         elif self.approximation == 'qff':
-            q = int(np.power(self.num_features, 1. / self.dim))
+            q = int(self.num_features ** (1. / self.dim))
             omegas, weights = np.polynomial.hermite.hermgauss(2 * q)
+            omegas = torch.tensor(omegas[:q], dtype=torch.get_default_dtype())
+            weights = torch.tensor(weights[:q], dtype=torch.get_default_dtype())
 
-            omegas = np.sqrt(2) * omegas[q:] / np.array(self.length_scale)
-            w = torch.tensor(cartesian([omegas for _ in range(self.dim)]),
-                             dtype=torch.get_default_dtype())
+            omegas = torch.sqrt(1. / self.length_scale) * omegas
+            w = torch.cartesian_prod(*[omegas.squeeze() for _ in range(self.dim)])
+            if self.dim == 1:
+                w = w.unsqueeze(-1)
 
-            weights = 2 * weights[q:] / np.sqrt(np.pi)
-            weights = np.prod(cartesian([weights for _ in range(self.dim)]), axis=1)
-            scale = torch.sqrt(torch.tensor(weights, dtype=torch.get_default_dtype()))
+            weights = 4 * weights / np.sqrt(np.pi)
+            scale = torch.cartesian_prod(*[weights for _ in range(self.dim)])
+            if self.dim > 1:
+                scale = scale.prod(dim=1)
         else:
             raise NotImplementedError(f"{self.approximation} not implemented.")
 
-        b = 2 * np.pi * torch.rand(self.num_features)
+        b = 2 * torch.tensor(np.pi) * torch.rand(self.num_features)
         return w, b, scale
 
-    @property
-    def output_scale(self):
-        """Get output scale."""
-        return self._output_scale
-
-    @output_scale.setter
-    def output_scale(self, value):
-        """Set output scale."""
-        self._output_scale = value
-
-    @property
-    def length_scale(self):
-        """Get length scale."""
-        return self._length_scale
-
-    @length_scale.setter
+    @ExactGP.length_scale.setter
     def length_scale(self, value):
         """Set length scale."""
-        self._length_scale = value
+        self.covar_module.base_kernel.lengthscale = value
         self.w, self.b, self._feature_scale = self.sample_features()
 
     @property
