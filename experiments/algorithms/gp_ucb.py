@@ -8,13 +8,12 @@ from rllib.agent.gp_ucb_agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.reward.gp_reward import GPBanditReward
 from rllib.util import rollout_agent
-from rllib.util.gaussian_processes import ExactGP
+from rllib.util.gaussian_processes import ExactGP, SparseGP, RandomFeatureGP
 from rllib.util.plotting import plot_gp
 
 
-def plot(agent, objective, axis=None):
-    if axis is None:
-        axis = plt.gca()
+def plot(agent, step, objective, axes):
+    axis = axes[step % 5][step // 5]
 
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         test_x = agent.policy.x
@@ -69,18 +68,31 @@ if __name__ == '__main__':
     plt.ylabel('Y')
     plt.show()
 
-    x0 = x[x > 0.2][[0]]
+    x0 = x[x > 0.2][[0]].unsqueeze(-1)
     y0 = objective(None, x0)[0].type(torch.get_default_dtype())
-    model = ExactGP(x0, y0, likelihood)
-    model.covar_module.base_kernel.lengthscale = 1
-    environment = BanditEnvironment(objective,
-                                    x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
-    agent = GPUCBAgent(environment.name, model, x, beta=2.0)
-    state = environment.reset()
 
-    fig, axes = plt.subplots(5, 2)
-    for i in range(STEPS):
-        plot(agent, objective, axis=axes[i % 5][i // 5])
-        rollout_agent(environment, agent, num_episodes=1, max_steps=1)
+    for key, model in {
+        'Exact': ExactGP(x0, y0, likelihood),
+        'RFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='rff'),
+        'OFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='off'),
+        'QFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='qff'),
+        'DTC': SparseGP(x0, y0, likelihood, inducing_points=x0, approximation='DTC'),
+        'SOR': SparseGP(x0, y0, likelihood, inducing_points=x0, approximation='SOR'),
+        'FITC': SparseGP(x0, y0, likelihood, inducing_points=x0, approximation='FITC')
+    }.items():
+        model.length_scale = 1
+        environment = BanditEnvironment(objective,
+                                        x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
+        agent = GPUCBAgent(environment.name, model, x, beta=2.0)
+        state = environment.reset()
 
-    plt.show()
+        fig, axes = plt.subplots(5, 2)
+        rollout_agent(environment, agent, num_episodes=STEPS, max_steps=1,
+                      plot_frequency=1,
+                      plot_callbacks=[lambda a, step: plot(a, step, objective, axes)]
+                      )
+
+        fig.suptitle(key, y=1)
+        plt.show()
+        print(agent)
+        agent.logger.export_to_json()

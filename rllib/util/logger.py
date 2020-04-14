@@ -72,6 +72,8 @@ class Logger(object):
             if isinstance(value, torch.Tensor):
                 value = value.detach().numpy()
             value = np.nan_to_num(value)
+            if isinstance(value, np.int64):
+                value = int(value)
             if key not in self.current:
                 self.current[key] = (1, value)
             else:

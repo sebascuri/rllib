@@ -94,7 +94,7 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
 
 
 def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
-                print_frequency=0, render=False, plot_callbacks=None):
+                print_frequency=0, plot_frequency=1, render=False, plot_callbacks=None):
     """Train an agent in an environment.
 
     Parameters
@@ -105,13 +105,14 @@ def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
     max_steps: int
     plot_flag: bool, optional.
     print_frequency: int, optional.
+    plot_frequency: int
     render: bool, optional.
     plot_callbacks: list, optional.
     """
     agent.train()
     rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps,
-                  print_frequency=print_frequency, render=render,
-                  plot_callbacks=plot_callbacks)
+                  print_frequency=print_frequency, plot_frequency=plot_frequency,
+                  render=render, plot_callbacks=plot_callbacks)
 
     if plot_flag:
         for key in agent.logger.keys():

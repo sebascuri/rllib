@@ -5,6 +5,9 @@ import torch
 
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
+from rllib.util.parameter_decay import ParameterDecay, Constant
+from rllib.util.gaussian_processes import SparseGP
+from rllib.util.gaussian_processes.utilities import add_data_to_gp, bkb
 
 
 class GPUCBPolicy(AbstractPolicy):
@@ -37,17 +40,23 @@ class GPUCBPolicy(AbstractPolicy):
         self.gp.eval()
         self.gp.likelihood.eval()
         self.x = x
+        if not isinstance(beta, ParameterDecay):
+            beta = Constant(beta)
         self.beta = beta
 
     def forward(self, state):
         """Call the GP-UCB algorithm."""
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             pred = self.gp(self.x)
-            ucb = pred.mean + self.beta * pred.stddev
+            ucb = pred.mean + self.beta() * pred.stddev
 
             max_id = torch.argmax(ucb)
             next_point = self.x[[[max_id]]]
             return next_point, torch.zeros(1)
+
+    def update(self):
+        """Update policy parameters."""
+        self.beta.update()
 
 
 class GPUCBAgent(AbstractAgent):
@@ -63,16 +72,30 @@ class GPUCBAgent(AbstractAgent):
     ----------
     Srinivas, N., Krause, A., Kakade, S. M., & Seeger, M. (2009).
     Gaussian process optimization in the bandit setting: No regret and experimental
-    design.
+    design. ICML.
+
+    Calandriello, D., Carratino, L., Lazaric, A., Valko, M., & Rosasco, L. (2019).
+    Gaussian process optimization with adaptive sketching: Scalable and no regret. COLT.
+
+    Chowdhury, S. R., & Gopalan, A. (2017).
+    On kernelized multi-armed bandits. JMLR.
     """
 
     def __init__(self, environment, gp, x, beta=2.0):
         self.policy = GPUCBPolicy(gp, x, beta)
         super().__init__(environment, gamma=1, exploration_episodes=0,
-                         exploration_steps=0)
+                         exploration_steps=0, comment=gp.name)
 
     def observe(self, observation) -> None:
         """Observe and update GP."""
-        super().observe(observation)
-        self.policy.gp = self.policy.gp.get_fantasy_model(observation.action,
-                                                          observation.reward)
+        super().observe(observation)  # Already calls self.policy.update()
+        add_data_to_gp(self.policy.gp, observation.action.unsqueeze(-1),
+                       observation.reward)
+        self.logger.update(num_gp_inputs=len(self.policy.gp.train_targets))
+        if isinstance(self.policy.gp, SparseGP):
+            inducing_points = torch.cat(
+                (self.policy.gp.xu, observation.action.unsqueeze(-1)), dim=-2)
+
+            inducing_points = bkb(self.policy.gp, inducing_points)
+            self.policy.gp.set_inducing_points(inducing_points)
+            self.logger.update(num_inducing_points=self.policy.gp.xu.shape[0])

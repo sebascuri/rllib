@@ -34,7 +34,8 @@ def step(environment, state, action, pi, render):
 
 
 def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
-                  print_frequency=0, milestones=None, plot_callbacks=None):
+                  print_frequency=0, plot_frequency=0, milestones=None,
+                  plot_callbacks=None):
     """Conduct a rollout of an agent in an environment.
 
     Parameters
@@ -50,7 +51,9 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     render: bool.
         Flag that indicates whether to render the environment or not.
     print_frequency: int, optional.
-        Print agent stats every `print_episodes' if > 0.
+        Print agent stats every `print_frequency' episodes if > 0.
+    plot_frequency: int, optional.
+        Plot agent callbacks every `plot_frequency' episodes if > 0.
     milestones: List[int], optional.
         List with episodes in which to save the agent.
     plot_callbacks: List[Callable[[AbstractAgent], None]], optional.
@@ -73,6 +76,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
 
         if print_frequency and episode % print_frequency == 0:
             print(agent)
+        if plot_frequency and episode % plot_frequency == 0:
             for plot_callback in plot_callbacks:
                 plot_callback(agent, episode)
 

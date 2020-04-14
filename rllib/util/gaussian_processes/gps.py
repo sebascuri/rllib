@@ -47,6 +47,11 @@ class ExactGP(gpytorch.models.ExactGP):
         self.covar_module = kernel
 
     @property
+    def name(self):
+        """Get model name."""
+        return self.__class__.__name__
+
+    @property
     def output_scale(self):
         """Get output scale."""
         return self.covar_module.outputscale
@@ -119,12 +124,17 @@ class SparseGP(ExactGP):
     """
 
     def __init__(self, train_x, train_y, likelihood, inducing_points,
-                 mean=None, kernel=None, approximation='DTC'):
+                 approximation='DTC', mean=None, kernel=None):
         super().__init__(train_x, train_y, likelihood, mean=mean, kernel=kernel)
 
         self.prediction_strategy = None
         self.xu = inducing_points
         self.approximation = approximation
+
+    @property
+    def name(self):
+        """Get model name."""
+        return f"{self.approximation} {self.__class__.__name__}"
 
     def set_inducing_points(self, inducing_points):
         """Set Inducing Points. Reset caches."""
@@ -135,6 +145,8 @@ class SparseGP(ExactGP):
         """Return GP posterior at location `x'."""
         train_inputs = self.xu
         m = train_inputs.shape[0]
+        if x.dim() == 1:
+            x = x.unsqueeze(-1)
         inputs = x
 
         if self.prediction_strategy is None:
@@ -267,8 +279,13 @@ class RandomFeatureGP(ExactGP):
 
         self.w, self.b, self._feature_scale = self.sample_features()
 
+    @property
+    def name(self):
+        """Get model name."""
+        return f"{self.approximation.upper()} GP"
+
     def sample_features(self):
-        """Sample a set of random features."""
+        """Sample a new set of random features."""
         # Only squared-exponential kernels are implemented.
         if self.approximation == 'rff':
             w = torch.randn(self.num_features, self.dim) / torch.sqrt(self.length_scale)
@@ -328,6 +345,8 @@ class RandomFeatureGP(ExactGP):
     def __call__(self, x):
         """Return GP posterior at location `x'."""
         train_inputs = torch.zeros(2 * self.num_features, 1)
+        if x.dim() == 1:
+            x = x.unsqueeze(-1)
         inputs = x
 
         if self.prediction_strategy is None:

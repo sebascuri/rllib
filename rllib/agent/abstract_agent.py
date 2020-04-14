@@ -47,10 +47,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self._training = True
 
+        self.comment = comment
+
     def __str__(self):
         """Generate string to parse the agent."""
-        opening = "===================================="
-        str_ = f"\n{opening}\n{self.name} with {self.policy.__class__.__name__}\n"
+        comment = self.comment if len(self.comment) else self.policy.__class__.__name__
+        opening = "=" * 88
+        str_ = f"\n{opening}\n{self.name} in {self.environment} with {comment}\n"
         str_ += f"Total episodes {self.counters['total_episodes']}\n"
         str_ += f"Total steps {self.counters['total_steps']}\n"
         str_ += f"{self.logger}{opening}\n"
