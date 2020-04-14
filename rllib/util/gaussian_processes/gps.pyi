@@ -47,7 +47,7 @@ class SparseGP(ExactGP):
 
 class RandomFeatureGP(ExactGP):
     def __init__(self, train_x: Tensor, train_y: Tensor, likelihood: Likelihood,
-                 num_features: int, approximation='rff',
+                 num_features: int, approximation='RFF',
                  mean: Mean = None, kernel: Kernel = None) -> None: ...
 
     @ExactGP.length_scale.setter  # type: ignore

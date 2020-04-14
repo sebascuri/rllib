@@ -30,9 +30,9 @@ def reward():
                         lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, 'DTC'),
                         lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, 'SOR'),
                         lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, 'FITC'),
-                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, 'rff'),
-                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, 'off'),
-                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 20, 'qff'),
+                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, 'RFF'),
+                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, 'OFF'),
+                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 20, 'QFF'),
                         ])
 def model_class(request):
     return request.param

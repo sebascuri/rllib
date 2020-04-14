@@ -73,9 +73,9 @@ if __name__ == '__main__':
 
     for key, model in {
         'Exact': ExactGP(x0, y0, likelihood),
-        'RFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='rff'),
-        'OFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='off'),
-        'QFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='qff'),
+        'RFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='RFF'),
+        'OFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='OFF'),
+        'QFF': RandomFeatureGP(x0, y0, likelihood, 50, approximation='QFF'),
         'DTC': SparseGP(x0, y0, likelihood, inducing_points=x0, approximation='DTC'),
         'SOR': SparseGP(x0, y0, likelihood, inducing_points=x0, approximation='SOR'),
         'FITC': SparseGP(x0, y0, likelihood, inducing_points=x0, approximation='FITC')

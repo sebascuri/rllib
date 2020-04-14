@@ -269,7 +269,7 @@ class RandomFeatureGP(ExactGP):
     Orthogonal random features. NeuRIPS.
     """
 
-    def __init__(self, train_x, train_y, likelihood, num_features, approximation='rff',
+    def __init__(self, train_x, train_y, likelihood, num_features, approximation='RFF',
                  mean=None, kernel=None):
         super().__init__(train_x, train_y, likelihood, mean=mean, kernel=kernel)
         self._num_features = num_features
@@ -287,11 +287,11 @@ class RandomFeatureGP(ExactGP):
     def sample_features(self):
         """Sample a new set of random features."""
         # Only squared-exponential kernels are implemented.
-        if self.approximation == 'rff':
+        if self.approximation == 'RFF':
             w = torch.randn(self.num_features, self.dim) / torch.sqrt(self.length_scale)
             scale = torch.tensor(1. / self.num_features)
 
-        elif self.approximation == 'off':
+        elif self.approximation == 'OFF':
             q, _ = torch.qr(torch.randn(self.num_features, self.dim))
             diag = torch.diag(torch.tensor(
                 chi.rvs(df=self.num_features, size=self.num_features),
@@ -299,7 +299,7 @@ class RandomFeatureGP(ExactGP):
             w = (diag @ q) / torch.sqrt(self.length_scale)
             scale = torch.tensor(1. / self.num_features)
 
-        elif self.approximation == 'qff':
+        elif self.approximation == 'QFF':
             q = int(self.num_features ** (1. / self.dim))
             omegas, weights = np.polynomial.hermite.hermgauss(2 * q)
             omegas = torch.tensor(omegas[:q], dtype=torch.get_default_dtype())
