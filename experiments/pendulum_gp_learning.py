@@ -22,7 +22,6 @@ from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel
 from rllib.model.pendulum_model import PendulumModel
 from rllib.model.derived_model import OptimisticModel, TransformedModel
-from rllib.model.unscaled_model import UnscaledModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
 from rllib.reward.pendulum_reward import PendulumReward
