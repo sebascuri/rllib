@@ -1,5 +1,3 @@
-import math
-
 import gpytorch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,8 +14,8 @@ from rllib.dataset.transforms import MeanFunction, StateActionNormalizer, Action
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment import SystemEnvironment, GymEnvironment
 from rllib.environment.systems import InvertedPendulum
-from rllib.model.gp_model import ExactGPModel, SparseGreedyGPModel, \
-    SparseWeightedGreedyGPModel, BKBGPModel
+from rllib.model.gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
+
 from rllib.model.nn_model import NNModel
 from rllib.model.pendulum_model import PendulumModel
 
@@ -36,7 +34,7 @@ from rllib.value_function import NNValueFunction
 hparams = {'seed': 0,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 30,
+           'train_episodes': 10,
            'test_episodes': 1,
            'action_cost_ratio': 0,
            'optimistic': True,
@@ -52,14 +50,42 @@ hparams = {'seed': 0,
            'num_simulation_trajectories': 8,
            }
 
-# model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64], 'non_linearity': 'ReLU',
-#                 'biased_head': True, 'deterministic': True}
+"""
+Models:
+    - Deterministic Ensemble
+    - Probabilistic Ensemble
+    - Exact GP
+    - Sub-sampled Exact GP
+    - RFF
+    - OFF
+    - QFF
+    - Sparse GP 
+Exploration: 
+    - Optimistic
+    - Expected
+
+"""
+# model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64],
+#                 'non_linearity': 'ReLU', 'biased_head': True, 'deterministic': True}
 # model_opt_params = {'lr': 5e-4, 'weight_decay': 0}
 # hparams.update({'num_model_iter': 25, 'num_mppo_iter': 25})
 
-model_params = {'kind': 'ExactGP', 'max_num_points': 150}
+# model_params = {'kind': 'ExactGP', 'max_num_points': int(1e10)}
+model_params = {'kind': 'ExactGP', 'max_num_points': int(1e10)}
+
+# model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
+# hparams.update({'num_model_iter': 0, 'num_mppo_iter': 100})
+
+# model_params = {'kind': 'RandomFeatureGP', 'num_features': 625,
+#                 'max_num_points': int(1e10), 'approximation': 'QFF'}
+# model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
+# hparams.update({'num_model_iter': 0, 'num_mppo_iter': 60})
+
+# model_params = {'kind': 'SparseGP',
+#                 'max_num_points': int(1e10), 'approximation': 'DTC', 'q_bar': 2}
+
 model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
-hparams.update({'num_model_iter': 0, 'num_mppo_iter': 30})
+hparams.update({'num_model_iter': 0, 'num_mppo_iter': 120})
 
 policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
                  'biased_head': False, 'deterministic': False}
@@ -81,6 +107,13 @@ class StateTransform(nn.Module):
         angle, angular_velocity = torch.split(states_, 1, dim=-1)
         states_ = torch.cat((torch.cos(angle), torch.sin(angle), angular_velocity),
                             dim=-1)
+        return states_
+
+    def inverse(self, states_):
+        """Inverse transformation of states."""
+        cos, sin, angular_velocity = torch.split(states_, 1, dim=-1)
+        angle = torch.atan2(sin, cos)
+        states_ = torch.cat((angle, angular_velocity), dim=-1)
         return states_
 
 
@@ -120,21 +153,26 @@ environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=
 
 # %% Define Model
 if hparams['learn_model']:
+    state, action = torch.tensor([[np.pi, 0.0]]), torch.tensor([[0.0]])
+    next_state = torch.tensor([[0.0, 0.0]])
     if model_params['kind'] == 'ExactGP':
-        model = SparseGreedyGPModel(torch.tensor([[np.pi, 0.0]]), torch.tensor([[0.0]]),
-                                    torch.tensor([[0.0, 0.0]]),
-                                    input_transform=StateTransform(),
-                                    approximation='rff',
-                                    max_points=None)  #model_params['max_num_points'])
-
-        model.gp[0].output_scale = torch.tensor(0.0042)
-        model.gp[0].length_scale = torch.tensor([[8.3]])
-        model.likelihood[0].noise = torch.tensor([1e-4])
-
-        model.gp[1].output_scale = torch.tensor(0.56)
-        model.gp[1].length_scale = torch.tensor([[9.0]])
-        model.likelihood[1].noise = torch.tensor([1e-4])
-
+        model = ExactGPModel(state, action, next_state,
+                             max_num_points=model_params['max_num_points'],
+                             input_transform=StateTransform())
+    elif model_params['kind'] == 'SparseGP':
+        model = SparseGPModel(state, action, next_state,
+                              approximation=model_params['approximation'],
+                              q_bar=model_params['q_bar'],
+                              max_num_points=model_params['max_num_points'],
+                              input_transform=StateTransform()
+                              )
+    elif model_params['kind'] == 'RandomFeatureGP':
+        model = RandomFeatureGPModel(state, action, next_state,
+                                     num_features=model_params['num_features'],
+                                     approximation=model_params['approximation'],
+                                     max_num_points=model_params['max_num_points'],
+                                     input_transform=StateTransform()
+                                     )
     elif model_params['kind'] == 'Ensemble':
         model = EnsembleModel(
             environment.dim_state, environment.dim_action,
@@ -143,6 +181,22 @@ if hparams['learn_model']:
             non_linearity=model_params['non_linearity'],
             input_transform=StateTransform(),
             deterministic=model_params['deterministic'])
+    else:
+        raise NotImplementedError
+
+    try:  # Select GP initial Model.
+        # model.gp[0].output_scale = torch.tensor(0.0042)
+        model.gp[0].output_scale = torch.tensor(0.1)
+        model.gp[0].length_scale = torch.tensor([[9.0]])
+        model.likelihood[0].noise = torch.tensor([1e-4])
+
+        # model.gp[1].output_scale = torch.tensor(0.56)
+        model.gp[1].output_scale = torch.tensor(0.1)
+        model.gp[1].length_scale = torch.tensor([[9.0]])
+        model.likelihood[1].noise = torch.tensor([1e-4])
+    except AttributeError:
+        pass
+
     hparams.update({f"model_{key}": value for key, value in model_params.items()})
 else:
     model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
@@ -213,9 +267,9 @@ hparams.update({f"mppo-opt-{key}": val if not isinstance(val, tuple) else list(v
                 })
 
 # %% Define Agent
-comment = model.__class__.__name__
-comment += f"{'Optimistic' if hparams['optimistic'] else 'Expected'}"
-comment += f"{'InitX' if hparams['exploratory_initial_distribution'] else 'InitF'}"
+comment = model.name
+comment += f"{' Optimistic ' if hparams['optimistic'] else ' Expected '}"
+comment += f"{' InitX' if hparams['exploratory_initial_distribution'] else ' InitF'}"
 
 agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
                     transformations=transformations,
@@ -226,6 +280,7 @@ agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
                     num_simulation_trajectories=hparams['num_simulation_trajectories'],
                     num_simulation_steps=hparams['num_simulation_steps'],
                     gamma=hparams['gamma'], comment=comment)
+print(agent)
 
 # Train Agent
 with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
