@@ -267,6 +267,10 @@ class RandomFeatureGP(ExactGP):
 
     Yu, F. et al. (2016).
     Orthogonal random features. NeuRIPS.
+
+    Mutny, M., & Krause, A. (2018).
+    Efficient high dimensional bayesian optimization with additivity and quadrature
+    fourier features. NeuRIPS.
     """
 
     def __init__(self, train_x, train_y, likelihood, num_features, approximation='RFF',
@@ -300,7 +304,8 @@ class RandomFeatureGP(ExactGP):
             scale = torch.tensor(1. / self.num_features)
 
         elif self.approximation == 'QFF':
-            q = int(self.num_features ** (1. / self.dim))
+            q = int(np.floor(np.power(self.num_features, 1. / self.dim)))
+            self._num_features = q ** self.dim
             omegas, weights = np.polynomial.hermite.hermgauss(2 * q)
             omegas = torch.tensor(omegas[:q], dtype=torch.get_default_dtype())
             weights = torch.tensor(weights[:q], dtype=torch.get_default_dtype())
