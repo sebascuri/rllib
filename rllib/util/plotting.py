@@ -233,48 +233,50 @@ def plot_pendulum_trajectories(agent, episode: int):
         trajectory = transformation(trajectory)
         sim_obs = transformation(sim_obs)
     if isinstance(model, ExactGPModel):
-        fig, axes = plt.subplots(model.dim_state, 3, sharex='col', sharey='row')
+        fig, axes = plt.subplots(1 + model.dim_state // 2, 2, sharex='col',
+                                 sharey='row')
     else:
-        fig, axes = plt.subplots(model.dim_state, 2, sharex='col', sharey='row')
+        fig, axes = plt.subplots(1, 2, sharex='col', sharey='row')
+        axes = axes[np.newaxis]
 
-    for i in range(model.dim_state):
-        sin, cos = torch.sin(trajectory.state[:, 0]), torch.cos(trajectory.state[:, 0])
-        axes[i, 0].scatter(torch.atan2(sin, cos) * 180 / np.pi, trajectory.state[:, 1],
-                           c=trajectory.action[:, 0], cmap='jet', vmin=-1, vmax=1)
+    # Plot real trajectory
+    sin, cos = torch.sin(trajectory.state[:, 0]), torch.cos(trajectory.state[:, 0])
+    axes[0, 0].scatter(torch.atan2(sin, cos) * 180 / np.pi, trajectory.state[:, 1],
+                       c=trajectory.action[:, 0], cmap='jet', vmin=-1, vmax=1)
+    axes[0, 0].set_title('Real Trajectory.')
 
-        sin = torch.sin(sim_obs.state[:, 0, :, 0])
-        cos = torch.cos(sim_obs.state[:, 0, :, 0])
-        axes[i, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi,
-                           sim_obs.state[:, 0, :, 1],
-                           c=sim_obs.action[:, 0, :, 0], cmap='jet', vmin=-1, vmax=1)
+    # Plot sim trajectory
+    sin = torch.sin(sim_obs.state[:, 0, :, 0])
+    cos = torch.cos(sim_obs.state[:, 0, :, 0])
+    axes[0, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi, sim_obs.state[:, 0, :, 1],
+                       c=sim_obs.action[:, 0, :, 0], cmap='jet', vmin=-1, vmax=1)
+    axes[0, 1].set_title('Sim Trajectory.')
 
-        if isinstance(model, ExactGPModel):
+    if isinstance(model, ExactGPModel):
+        for i in range(model.dim_state):
             inputs = model.gp[i].train_inputs[0]
             sin, cos = inputs[:, 1], inputs[:, 0]
-            axes[i, 2].scatter(torch.atan2(sin, cos) * 180 / np.pi, inputs[:, 2],
-                               c=inputs[:, 3], cmap='jet', vmin=-1, vmax=1)
+            axes[1 + i // 2, i % 2].scatter(
+                torch.atan2(sin, cos) * 180 / np.pi, inputs[:, 2],
+                c=inputs[:, 3], cmap='jet', vmin=-1, vmax=1)
+            axes[1 + i // 2, i % 2].set_title(f"GP {i} data.")
 
             if hasattr(model.gp[i], 'xu'):
                 inducing_points = model.gp[i].xu
                 sin, cos = inducing_points[:, 1], inducing_points[:, 0]
-                axes[i, 2].scatter(
+                axes[1 + i // 2, i % 2].scatter(
                     torch.atan2(sin, cos) * 180 / np.pi, inducing_points[:, 2],
                     c=inducing_points[:, 3], cmap='jet', marker='*', vmin=-1, vmax=1)
 
-        for j in range(axes.shape[-1]):
-            axes[i, j].set_xlim([-180, 180])
-            axes[i, j].set_ylim([-15, 15])
+    for ax_row in axes:
+        for ax in ax_row:
+            ax.set_xlim([-180, 180])
+            ax.set_ylim([-15, 15])
 
-    for i in range(2):
+    for i in range(axes.shape[0]):
         axes[i, 0].set_ylabel('Angular Velocity')
 
-    axes[0, 0].set_title('Last real trajectory.')
-    axes[0, 1].set_title('Last sim trajectories.')
-
-    if isinstance(model, ExactGPModel):
-        axes[0, 2].set_title('Input Data of GP.')
-
-    for j in range(axes.shape[-1]):
+    for j in range(axes.shape[1]):
         axes[-1, j].set_xlabel('Angle')
 
     plt.suptitle(f'Episode {episode}', y=1.0)
