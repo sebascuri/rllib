@@ -9,11 +9,11 @@ from tqdm import tqdm
 
 from .abstract_agent import AbstractAgent
 from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
-# from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.policy.derived_policy import DerivedPolicy
 
 from rllib.model import ExactGPModel
+from rllib.util.gaussian_processes import SparseGP
 from rllib.util.neural_networks.utilities import disable_gradient
 from rllib.util.rollout import rollout_model
 from rllib.util.training import train_model
@@ -133,6 +133,13 @@ class MBMPPOAgent(AbstractAgent):
 
                 print(colorize('Summarize GP Model', 'yellow'))
                 self.mppo.dynamical_model.base_model.summarize_gp()
+
+                for i, gp in enumerate(self.mppo.dynamical_model.base_model.gp):
+                    self.logger.update(**{f'gp{i} num inputs': len(gp.train_targets)})
+
+                    if isinstance(gp, SparseGP):
+                        self.logger.update(**{
+                            f'gp{i} num inducing inputs': gp.xu.shape[0]})
 
             self._train()
         super().end_episode()

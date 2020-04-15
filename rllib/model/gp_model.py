@@ -81,7 +81,6 @@ class ExactGPModel(AbstractModel):
             summarize_gp(
                 gp, self.max_num_points,
                 weight_function=self._transform_weight_function(weight_function))
-            print(len(gp.train_targets))
 
     def _transform_weight_function(self, weight_function=None):
         """Transform weight function according to input transform of the GP."""
@@ -156,7 +155,7 @@ class ExactGPModel(AbstractModel):
 class RandomFeatureGPModel(ExactGPModel):
     """GP Model approximated by Random Fourier Features."""
 
-    def __init__(self, state, action, next_state, num_features=1024,
+    def __init__(self, state, action, next_state, num_features, approximation='RFF',
                  mean=None, kernel=None, input_transform=None, max_num_points=None):
         super().__init__(state, action, next_state, mean, kernel, input_transform,
                          max_num_points)
@@ -164,18 +163,24 @@ class RandomFeatureGPModel(ExactGPModel):
         train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
         for train_y_i, likelihood in zip(train_y, self.likelihood):
             gp = RandomFeatureGP(train_x, train_y_i, likelihood,
-                                 num_features=num_features,
+                                 num_features=num_features, approximation=approximation,
                                  mean=mean, kernel=kernel)
             gps.append(gp)
         self.gp = torch.nn.ModuleList(gps)
+        self.approximation = approximation
+
+    @property
+    def name(self):
+        """Get Model name."""
+        return f"{self.approximation} {super().name}"
 
 
 class SparseGPModel(ExactGPModel):
     """Sparse approximation of Exact GP models."""
 
-    def __init__(self, state, action, next_state, inducing_points=None,
+    def __init__(self, state, action, next_state, inducing_points=None, q_bar=1,
                  approximation='DTC', mean=None, kernel=None, input_transform=None,
-                 max_num_points=None, max_inducing_points=None):
+                 max_num_points=None):
         super().__init__(state, action, next_state, mean, kernel, input_transform,
                          max_num_points)
         gps = []
@@ -183,20 +188,24 @@ class SparseGPModel(ExactGPModel):
         if inducing_points is None:
             inducing_points = train_x
 
-        self.max_inducing_points = max_inducing_points
-
         for train_y_i, likelihood in zip(train_y, self.likelihood):
             gp = SparseGP(train_x, train_y_i, likelihood, inducing_points,
                           approximation=approximation, mean=mean, kernel=kernel)
             gps.append(gp)
         self.gp = torch.nn.ModuleList(gps)
+        self.approximation = approximation
+        self.q_bar = q_bar
+
+    @property
+    def name(self):
+        """Get Model name."""
+        return f"{self.approximation} {super().name}"
 
     def add_data(self, state, action, next_state, weight_function=None):
         """Add Data to GP and Re-Sparsify."""
         new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
         for i, new_y_i in enumerate(new_y):
             arm_set = torch.cat((new_x, self.gp[i].train_inputs[0]), dim=0)
-            inducing_points = bkb(self.gp[i], arm_set)
-            print(len(arm_set), len(inducing_points))
+            inducing_points = bkb(self.gp[i], arm_set, q_bar=self.q_bar)
             self.gp[i].set_inducing_points(inducing_points)
             add_data_to_gp(self.gp[i], new_x, new_y_i)

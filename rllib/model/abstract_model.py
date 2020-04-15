@@ -58,3 +58,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
+
+    @property
+    def name(self):
+        """Get Model name."""
+        return self.__class__.__name__

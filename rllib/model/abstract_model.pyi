@@ -16,3 +16,6 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def __init__(self, dim_state: int, dim_action: int, dim_observation: int = -1,
                  num_states: int = -1, num_actions: int = -1,
                  num_observations: int = -1) -> None: ...
+
+    @property
+    def name(self) -> str: ...
