@@ -83,7 +83,8 @@ split = 50
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
 # %% Train a Model
-model = ExactGPModel(data.state[:split], data.action[:split], data.next_state[:split],
+model = ExactGPModel(data.state[:split, 0], data.action[:split, 0],
+                     data.next_state[:split, 0],
                      input_transform=StateTransform(), max_num_points=75)
 
 model.eval()
@@ -91,49 +92,60 @@ mean, stddev = model(torch.randn(8, 5, 2), torch.randn(8, 5, 1))
 # print(mean.shape, stddev.shape, mean, stddev)
 
 model.train()
-out = model(data.state[:split], data.action[:split])
+out = model(data.state[:split, 0], data.action[:split, 0])
 optimizer = torch.optim.Adam([
     {'params': model.parameters()},  # Includes GaussianLikelihood parameters
 ], lr=0.1)
 
 for i in range(100):
     optimizer.zero_grad()
-    output = tensor_to_distribution(model(data.state[:split], data.action[:split]))
+    output = tensor_to_distribution(model(data.state[:split, 0], data.action[:split, 0]))
 
     with gpytorch.settings.fast_pred_var():
-        loss = exact_mll(output, data.next_state[:split].T, model.gp)
+        loss = exact_mll(output, data.next_state[:split, 0].T, model.gp)
     loss.backward()
 
     optimizer.step()
     print('Iter %d/%d - Loss: %.3f' % (i + 1, 30, loss.item()))
 
 print([(n, p) for (n, p) in model.named_parameters()])
+print([(gp.output_scale, gp.length_scale) for gp in model.gp])
 
-model.add_data(data.state[split:2 * split], data.action[split:2 * split],
-               data.next_state[split:2 * split])
+model.add_data(data.state[split:2 * split, 0], data.action[split:2 * split, 0],
+               data.next_state[split:2 * split, 0])
 
 for i in range(70):
     optimizer.zero_grad()
-    output = tensor_to_distribution(model(data.state[:2 * split], data.action[:2 * split]))
+    output = tensor_to_distribution(model(data.state[:2 * split, 0],
+                                          data.action[:2 * split, 0]))
 
-    loss = exact_mll(output, data.next_state[:2 * split].T, model.gp)
+    loss = exact_mll(output, data.next_state[:2 * split, 0].T, model.gp)
     loss.backward()
 
     optimizer.step()
     print('Iter %d/%d - Loss: %.3f' % (i + 1, 100, loss.item()))
 
 print([(n, p) for (n, p) in model.named_parameters()])
+print([(gp.output_scale, gp.length_scale) for gp in model.gp])
 
-model.add_data(data.state[2 * split:], data.action[2 * split:],
-               data.next_state[2 * split:])
+model.add_data(data.state[2 * split:, 0], data.action[2 * split:, 0],
+               data.next_state[2 * split:, 0])
+
+model.gp[0].output_scale = torch.tensor(1.)
+model.gp[0].length_scale = torch.tensor([[9.0]])
+model.likelihood[0].noise = torch.tensor([1e-4])
+
+model.gp[1].output_scale = torch.tensor(1.)
+model.gp[1].length_scale = torch.tensor([[9.0]])
+model.likelihood[1].noise = torch.tensor([1e-4])
 
 model.eval()
 dynamic_model = TransformedModel(model, transformations)
 
-with gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
-    s, a = data.state.expand(15, 200, 2), data.action.expand(15, 200, 1)
-    dynamic_model(s, a)
-    dynamic_model = torch.jit.trace(dynamic_model, (s, a))
+# with gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
+#     s, a = data.state.expand(15, 200, 2), data.action.expand(15, 200, 1)
+#     dynamic_model(s, a)
+#     dynamic_model = torch.jit.trace(dynamic_model, (s, a))
 
 freeze_parameters(dynamic_model)
 value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
@@ -156,7 +168,7 @@ optimizer = optim.Adam([p for p in mppo.parameters() if p.requires_grad], lr=5e-
 # %%  Train Controller
 num_iter = 100
 num_simulation_steps = 400
-batch_size = 100
+batch_size = 64
 refresh_interval = 2
 num_inner_iterations = 30
 num_trajectories = math.ceil(num_inner_iterations * 100 / num_simulation_steps)
