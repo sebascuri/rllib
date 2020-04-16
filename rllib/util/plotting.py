@@ -279,5 +279,5 @@ def plot_pendulum_trajectories(agent, episode: int):
     for j in range(axes.shape[1]):
         axes[-1, j].set_xlabel('Angle')
 
-    plt.suptitle(f'Episode {episode}', y=1.0)
+    plt.suptitle(f'Episode {episode + 1}', y=1.0)
     plt.show()
