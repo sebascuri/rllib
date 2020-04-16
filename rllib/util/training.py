@@ -19,14 +19,19 @@ from rllib.model.nn_model import NNModel
 
 
 def _model_loss(model, state, action, next_state):
-    mean, cov = model(state, action)
+    mean, scale_tril = model(state, action)
     y = next_state
-    if torch.all(cov == 0):  # Deterministic Model
+    if torch.all(scale_tril == 0):  # Deterministic Model
         loss = ((mean - y) ** 2).sum(-1)
     else:  # Probabilistic Model
-        delta = (mean - y).unsqueeze(-1)
-        loss = (delta.transpose(-2, -1) @ torch.inverse(cov) @ delta).squeeze()
-        loss += torch.logdet(cov)
+
+        scale_tril_inv = torch.inverse(scale_tril)
+        delta = scale_tril_inv @ ((mean - y).unsqueeze(-1))
+        loss = (delta.transpose(-2, -1) @  delta).squeeze()
+
+        # log det \Sigma = 2 trace log (scale_tril)
+        idx = torch.arange(mean.shape[-1])
+        loss += 2 * torch.log(scale_tril[..., idx, idx]).sum(dim=-1).squeeze()
     return loss
 
 

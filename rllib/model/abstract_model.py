@@ -1,7 +1,7 @@
 """Interface for dynamical models."""
 
 from abc import ABCMeta
-
+import torch.jit
 import torch.nn as nn
 
 

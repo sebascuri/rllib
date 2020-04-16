@@ -80,7 +80,7 @@ class FeedForwardNN(nn.Module):
         """
         out = self.hidden_layers(x)
         if self.head.bias is not None:
-            out = torch.cat((out, torch.ones(out.shape[:-1] + (1, ))), dim=-1)
+            out = torch.cat((out, torch.ones(out.shape[:-1] + (1,))), dim=-1)
 
         return out
 
@@ -124,23 +124,6 @@ class HeteroGaussianNN(FeedForwardNN):
             mean = torch.tanh(mean)
 
         scale = torch.diag_embed(nn.functional.softplus(self._scale(x)))
-
-        # if x.dim() == 1 or x.dim() == 0:
-        #     batch_size = None
-        # else:
-        #     batch_size = x.shape[:-1]
-        # out_dim = mean.shape[-1]
-        # idx = torch.arange(out_dim)
-        # scale_tril = self._scale_tril(x)
-        # if batch_size is None:
-        #     scale_tril = scale_tril.reshape(out_dim, out_dim)
-        #     scale_tril[idx, idx] = nn.functional.softplus(scale_tril[idx, idx])
-        # else:
-        #     scale_tril = scale_tril.reshape(batch_size + (out_dim, out_dim))
-        #     scale_tril[..., idx, idx] = nn.functional.softplus(
-        #         scale_tril[..., idx, idx])
-        # scale = torch.tril(scale_tril)
-
         return mean, scale
 
 
@@ -188,7 +171,7 @@ class CategoricalNN(FeedForwardNN):
         self.kwargs.pop('squashed_output')
 
 
-class DeterministicEnsemble(FeedForwardNN):
+class Ensemble(HeteroGaussianNN):
     """Ensemble of Deterministic Neural Networks.
 
     The Ensemble shares the inner layers and then has `num_heads' different heads.
@@ -213,7 +196,7 @@ class DeterministicEnsemble(FeedForwardNN):
     head_ptr: int
 
     def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=False):
+                 biased_head=True, squashed_output=False, deterministic=True):
         super().__init__(in_dim, out_dim * num_heads, layers=layers,
                          non_linearity=non_linearity, biased_head=biased_head,
                          squashed_output=squashed_output)
@@ -221,11 +204,13 @@ class DeterministicEnsemble(FeedForwardNN):
         self.kwargs.update(out_dim=out_dim, num_heads=num_heads)
         self.num_heads = num_heads
         self.head_ptr = num_heads
+        self.deterministic = deterministic
 
     @classmethod
     def from_feedforward(cls, other, num_heads):
         """Initialize from a feed-forward network."""
-        return cls(**other.kwargs, num_heads=num_heads)
+        return cls(**other.kwargs, num_heads=num_heads,
+                   deterministic=isinstance(other, DeterministicNN))
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -248,18 +233,27 @@ class DeterministicEnsemble(FeedForwardNN):
 
         out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))
 
+        if self.deterministic:
+            scale = torch.zeros_like(out)
+        else:
+            scale = nn.functional.softplus(self._scale(x))
+            scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
+
         if self.head_ptr == self.num_heads:
+            scale = torch.diag_embed(torch.mean(scale, dim=-1))
+
             mean = torch.mean(out, dim=-1, keepdim=True)
             sigma = (mean - out) @ (mean - out).transpose(-2, -1)
             sigma += 1e-6 * torch.eye(sigma.shape[-1])  # Add some jitter.
-            covariance = torch.cholesky(sigma) / self.num_heads
+
+            scale = torch.cholesky(sigma) / self.num_heads
             mean = mean.squeeze(-1)
 
         else:
             mean = out[..., self.head_ptr]
-            covariance = torch.zeros(mean.shape + (mean.shape[-1], ))
+            scale = torch.diag_embed(scale[..., self.head_ptr])
 
-        return mean, covariance
+        return mean, scale
 
     @torch.jit.export
     def select_head(self, new_head: int):
@@ -279,13 +273,6 @@ class DeterministicEnsemble(FeedForwardNN):
         if new_head > self.num_heads:
             raise ValueError(
                 f"{new_head} has to be smaller or equal to {self.num_heads}.")
-
-
-class ProbabilisticEnsemble(FeedForwardNN):
-    """Ensemble of Probabilistic Neural Networks."""
-
-    def __init__(self):
-        pass
 
 
 class MultiHeadNN(FeedForwardNN):

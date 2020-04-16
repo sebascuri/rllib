@@ -44,17 +44,17 @@ class HeteroGaussianNN(FeedForwardNN):
 class HomoGaussianNN(FeedForwardNN):
     _scale: nn.Parameter
 
-
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
 
-class DeterministicEnsemble(FeedForwardNN):
+class Ensemble(HeteroGaussianNN):
     num_heads: int
     head_ptr: int
+    deterministic: bool
 
     def __init__(self, in_dim: int, out_dim: int, num_heads: int, layers: List[int] = None,
                  non_linearity: str = 'ReLU', biased_head: bool = True,
-                 squashed_output: bool = False) -> None: ...
+                 squashed_output: bool = False, deterministic: bool = True) -> None: ...
 
     @classmethod
     def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int) -> T: ...

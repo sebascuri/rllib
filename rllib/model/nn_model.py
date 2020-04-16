@@ -71,3 +71,8 @@ class NNModel(AbstractModel):
         if self.deterministic:
             return next_state[0], torch.zeros_like(next_state[1])
         return next_state
+
+    @property
+    def name(self):
+        """Get Model name."""
+        return f"{'Deterministic' if self.deterministic else 'Probabilistic'} Ensemble"
