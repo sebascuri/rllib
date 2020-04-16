@@ -9,9 +9,8 @@ import torch
 class Logger(object):
     statistics: List[Dict[str, float]]
     current: Dict[str, Tuple[int, float]]
-    name: str
     writer: tensorboardX.SummaryWriter
-    start: float
+    episode: int
 
     def __init__(self, name: str, comment: str = '') -> None: ...
 

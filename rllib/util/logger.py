@@ -23,6 +23,7 @@ class Logger(object):
         self.writer = SummaryWriter(
             f"runs/{name}/{comment + '_' + current_time if comment else current_time}"
         )
+        self.episode = 0
 
     def __len__(self):
         """Return the number of episodes."""
@@ -82,7 +83,9 @@ class Logger(object):
                 new_value = old_value + (value - old_value) * (1 / new_count)
                 self.current[key] = (new_count, new_value)
 
-            self.writer.add_scalar(f"current/{key}", self.current[key][1])
+            self.writer.add_scalar(f"current_{self.episode}/{key}",
+                                   self.current[key][1],
+                                   global_step=self.current[key][0])
 
     def end_episode(self, **kwargs):
         """Finalize collected data and add final fixed values.
@@ -100,10 +103,12 @@ class Logger(object):
 
         for key, value in data.items():
             if isinstance(value, float) or isinstance(value, int):
-                self.writer.add_scalar(f"episode/{key}", value)
+                self.writer.add_scalar(f"episode/{key}", value,
+                                       global_step=self.episode)
 
         self.statistics.append(data)
         self.current = dict()
+        self.episode += 1
 
     def export_to_json(self, hparams=None):
         """Save the statistics (and hparams) to a json file."""
