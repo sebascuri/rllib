@@ -206,9 +206,9 @@ class MPPO(nn.Module):
         pi_dist_old = tensor_to_distribution(self.old_policy(state))
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
+            kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
         else:
-            kl_mean = torch.distributions.kl_divergence(pi_dist, pi_dist_old).mean()
+            kl_mean = torch.distributions.kl_divergence(p=pi_dist_old, q=pi_dist).mean()
             kl_var = torch.zeros_like(kl_mean)
 
         return kl_mean, kl_var, pi_dist
@@ -350,7 +350,7 @@ class MBMPPO(nn.Module):
 
         pi_dist = tensor_to_distribution(self.policy(states))
         pi_dist_old = tensor_to_distribution(self.old_policy(states))
-        kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
+        kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
 
         with torch.no_grad():
             dyna_return = dyna_rollout(state=states,
