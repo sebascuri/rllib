@@ -56,26 +56,33 @@ policy = NNPolicy(dim_state=2, dim_action=1, layers=[64, 64], biased_head=False,
                   squashed_output=True, input_transform=StateTransform())
 
 dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005)
-init_distribution = torch.distributions.Uniform(torch.tensor([-np.pi, -0.05]),
-                                                torch.tensor([np.pi, 0.05]))
+init_distribution = torch.distributions.Uniform(
+    torch.tensor([np.pi, 0.0]),
+    torch.tensor([np.pi, 0.0])
+)
+
+# init_distribution = torch.distributions.Uniform(
+#     torch.tensor([np.pi * (1 - 1 / 3), -0.05]),
+#     torch.tensor([np.pi * (1 + 1 / 3), 0.05])
+# )
 
 # states = torch.randn(5, 20, 2)
 # actions = torch.randn(5, 20, 1)
 value_function = torch.jit.script(value_function)
-policy = torch.jit.script(policy) #, (states,))
+policy = torch.jit.script(policy)  # , (states,))
 dynamic_model = torch.jit.script(dynamic_model)
 
 # Initialize MPPO and optimizer.
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
-              epsilon=0.1, epsilon_mean=0.01, epsilon_var=0.00, gamma=0.99,
+              epsilon=0.1, epsilon_mean=0.01, epsilon_var=0.001, gamma=0.99,
               num_action_samples=15)
 optimizer = optim.Adam(mppo.parameters(), lr=5e-4)
 
 # %%  Train Controller
-num_iter = 100
+num_iter = 200
 num_simulation_steps = 400
 batch_size = 100
-refresh_interval = 5
+refresh_interval = 2
 num_trajectories = 8  #math.ceil(num_inner_iterations * 100 / num_simulation_steps)
 num_subsample = 1
 
