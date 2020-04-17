@@ -220,11 +220,11 @@ def separated_kl(p, q):
     kl_mean: torch.Tensor
     kl_var: torch.Tensor
     """
-    q_mean = torch.distributions.MultivariateNormal(q.loc, scale_tril=p.scale_tril)
-    q_var = torch.distributions.MultivariateNormal(p.loc, scale_tril=q.scale_tril)
+    p_mean = torch.distributions.MultivariateNormal(q.loc, scale_tril=p.scale_tril)
+    p_var = torch.distributions.MultivariateNormal(p.loc, scale_tril=q.scale_tril)
 
-    kl_mean = torch.distributions.kl_divergence(p=p, q=q_mean).mean()
-    kl_var = torch.distributions.kl_divergence(p=p, q=q_var).mean()
+    kl_mean = torch.distributions.kl_divergence(p=p_mean, q=q).mean()
+    kl_var = torch.distributions.kl_divergence(p=p_var, q=q).mean()
 
     return kl_mean, kl_var
 
