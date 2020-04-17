@@ -79,24 +79,17 @@ class MBMPPOAgent(AbstractAgent):
 
         layout = {
             'Model Training': {
-                'current': ['Multiline',
-                            [f"current/model-{i}" for i in range(num_heads)] + [
-                                "current/model_loss"]],
-                'episode': ['Multiline',
-                            [f"episode/model-{i}" for i in range(num_heads)] + [
-                                "episode/model_loss"]],
+                'average': ['Multiline',
+                            [f"average/model-{i}" for i in range(num_heads)] + [
+                                "average/model_loss"]],
             },
             'Policy Training': {
-                'current': ['Multiline', ["current/value_loss", "current/policy_loss",
-                                          "current/eta_loss"]],
-                'episode': ['Multiline', ["episode/value_loss", "episode/policy_loss",
-                                          "episode/eta_loss"]],
+                'average': ['Multiline', ["average/value_loss", "average/policy_loss",
+                                          "average/eta_loss"]],
             },
             'Returns': {
-                'current': ['Multiline', ["current/rewards",
-                                          "current/model_return"]],
-                'episode': ['Multiline', ["episode/environment_return",
-                                          "episode/model_return"]]
+                'average': ['Multiline', ["average/environment_return",
+                                          "average/model_return"]]
             }
         }
         self.logger.writer.add_custom_scalars(layout)
@@ -165,7 +158,7 @@ class MBMPPOAgent(AbstractAgent):
         print(colorize('Optimizing Policy with Model Data', 'yellow'))
         self.mppo.dynamical_model.eval()
         with disable_gradient(self.mppo.dynamical_model), \
-                gpytorch.settings.fast_pred_var():
+             gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.num_mppo_iter)):
                 # Compute the state distribution
                 if i % self.state_refresh_interval == 0:

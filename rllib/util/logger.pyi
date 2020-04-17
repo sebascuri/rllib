@@ -6,6 +6,7 @@ import tensorboardX
 import numpy as np
 import torch
 
+
 class Logger(object):
     statistics: List[Dict[str, float]]
     current: Dict[str, Tuple[int, float]]
@@ -31,3 +32,5 @@ class Logger(object):
     def end_episode(self, **kwargs) -> None: ...
 
     def export_to_json(self, hparams: dict = None) -> None: ...
+
+    def log_hparams(self, hparams: dict, metrics: dict = None) -> None: ...

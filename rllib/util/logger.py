@@ -83,7 +83,7 @@ class Logger(object):
                 new_value = old_value + (value - old_value) * (1 / new_count)
                 self.current[key] = (new_count, new_value)
 
-            self.writer.add_scalar(f"current_{self.episode}/{key}",
+            self.writer.add_scalar(f"episode_{self.episode}/{key}",
                                    self.current[key][1],
                                    global_step=self.current[key][0])
 
@@ -103,7 +103,7 @@ class Logger(object):
 
         for key, value in data.items():
             if isinstance(value, float) or isinstance(value, int):
-                self.writer.add_scalar(f"episode/{key}", value,
+                self.writer.add_scalar(f"average/{key}", value,
                                        global_step=self.episode)
 
         self.statistics.append(data)
@@ -117,3 +117,8 @@ class Logger(object):
         if hparams is not None:
             with open(f"{self.writer.logdir}/hparams.json", "w") as f:
                 json.dump(hparams, f)
+
+    def log_hparams(self, hparams, metrics=None):
+        """Log hyper parameters together with a metric dictionary."""
+        self.writer.add_hparams(hparam_dict=hparams, metric_dict=metrics,
+                                name='hparams', global_step=1)
