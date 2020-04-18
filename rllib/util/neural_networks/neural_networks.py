@@ -123,7 +123,13 @@ class HeteroGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)))
+        # TODO: Verify if this is useful or is just the action sample that gets big.
+        # If the latter is the case, consider a tanh/sigmoid constrained multivariate
+        # normal distribution.
+        # NOTE: if this is not clamped, then MBMPPO does not work
+        # (maybe it is the termination) maybe consider doing it directly at MBMPPO?
+        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)
+                                                        ).clamp(1e-2, 1.))
         return mean, scale
 
 
@@ -236,17 +242,17 @@ class Ensemble(HeteroGaussianNN):
         if self.deterministic:
             scale = torch.zeros_like(out)
         else:
-            scale = nn.functional.softplus(self._scale(x))
+            scale = nn.functional.softplus(self._scale(x)).clamp(1e-3, 1.)
             scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
-        if self.head_ptr == self.num_heads:
+        if self.head_ptr == self.num_heads and self.num_heads:
+            dim, num_samples = out.shape[-2:]
             scale = torch.diag_embed(torch.mean(scale, dim=-1))
 
             mean = torch.mean(out, dim=-1, keepdim=True)
             sigma = (mean - out) @ (mean - out).transpose(-2, -1)
-            sigma += 1e-6 * torch.eye(sigma.shape[-1])  # Add some jitter.
-
-            scale = torch.cholesky(sigma) / self.num_heads
+            sigma += 1e-6 * torch.eye(dim)  # Add some jitter.
+            scale += torch.cholesky(sigma / (num_samples - 1))
             mean = mean.squeeze(-1)
 
         else:
