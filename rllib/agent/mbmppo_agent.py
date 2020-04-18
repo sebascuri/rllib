@@ -34,7 +34,8 @@ class MBMPPOAgent(AbstractAgent):
     """
 
     def __init__(self, environment, mppo,
-                 model_optimizer, mppo_optimizer, transformations,
+                 model_optimizer, mppo_optimizer,
+                 delta_initial_distribution=None, transformations=None,
                  max_memory=10000, batch_size=64,
                  num_model_iter=30,
                  num_mppo_iter=100,
@@ -73,6 +74,7 @@ class MBMPPOAgent(AbstractAgent):
         self.state_refresh_interval = state_refresh_interval
 
         self.initial_states = torch.tensor(float('nan'))
+        self.delta_initial_distribution = delta_initial_distribution
         self.new_episode = True
         self.trajectory = []
         self.sim_trajectory = []
@@ -163,9 +165,13 @@ class MBMPPOAgent(AbstractAgent):
                 # Compute the state distribution
                 if i % self.state_refresh_interval == 0:
                     with torch.no_grad():
-                        idx = torch.randint(self.initial_states.shape[0],
-                                            (1, self.num_simulation_trajectories,))
+                        num_t = self.num_simulation_trajectories
+                        idx = torch.randint(self.initial_states.shape[0], (1, num_t,))
                         initial_states = self.initial_states[idx]
+                        if self.delta_initial_distribution is not None:
+                            delta = self.delta_initial_distribution.sample(
+                                (1, num_t // 2,))
+                            initial_states[:, num_t // 2:] += delta
                         trajectory = rollout_model(self.mppo.dynamical_model,
                                                    reward_model=self.mppo.reward_model,
                                                    policy=self.mppo.policy,

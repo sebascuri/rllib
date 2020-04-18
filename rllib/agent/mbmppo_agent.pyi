@@ -1,7 +1,8 @@
 """Model-Based MPPO Agent."""
-from typing import List
+from typing import List, Union
 
 import torch
+from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
 from .abstract_agent import AbstractAgent
@@ -15,7 +16,7 @@ from rllib.dataset.datatypes import Observation
 class MBMPPOAgent(AbstractAgent):
     mppo: MBMPPO
     mppo_optimizer: Optimizer
-    model_optimizer: Optimizer
+    model_optimizer: Union[Optimizer, None]
     dataset: ExperienceReplay
     sim_dataset: ExperienceReplay
 
@@ -25,12 +26,15 @@ class MBMPPOAgent(AbstractAgent):
     num_simulation_trajectories: int
     state_refresh_interval: int
     initial_states: torch.Tensor
+    delta_initial_distribution: Union[Distribution, None]
     new_episode: bool
     trajectory: List[Observation]
     sim_trajectory: Observation
 
     def __init__(self, environment: str, mppo: MBMPPO,
-                 transformations: List[AbstractTransform],
+                 model_optimizer: Union[Optimizer, None], mppo_optimizer: Optimizer,
+                 delta_initial_distribution: Distribution = None,
+                 transformations: List[AbstractTransform] = None,
                  max_memory: int = 10000, batch_size: int = 64,
                  num_model_iter: int = 30,
                  num_mppo_iter: int = 100,
