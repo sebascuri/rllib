@@ -34,24 +34,26 @@ from rllib.value_function import NNValueFunction
 hparams = {'seed': 0,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 10,
+           'train_episodes': 5,
            'test_episodes': 1,
-           'action_cost_ratio': 0,
+           'action_cost_ratio': 0.2,
            'optimistic': True,
            'learn_model': True,
            'exploratory_initial_distribution': False,
            'beta': 1.0,
-           'max_memory': 1000,
-           'batch_size': 100,
+           'max_memory': 10000,
+           'batch_size': 64,
            'num_model_iter': 0,
-           'num_mppo_iter': 30,
+           'num_mppo_iter': 200,
            'num_simulation_steps': 400,
            'state_refresh_interval': 2,
            'num_simulation_trajectories': 8,
            }
-
+torch.manual_seed(hparams['seed'])
+np.random.seed(hparams['seed'])
 """
 Models:
+    - Probabilistic NN
     - Deterministic Ensemble
     - Probabilistic Ensemble
     - Exact GP
@@ -65,38 +67,40 @@ Exploration:
     - Expected
 
 """
-# model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64],
-#                 'non_linearity': 'ReLU', 'biased_head': True, 'deterministic': True}
-# model_opt_params = {'lr': 5e-4, 'weight_decay': 0}
-# hparams.update({'num_model_iter': 25, 'num_mppo_iter': 25})
+# model_params = {'kind': 'NN', 'heads': 5, 'layers': [64],
+#                 'non_linearity': 'ReLU', 'biased_head': True, 'deterministic': False}
 
-# model_params = {'kind': 'ExactGP', 'max_num_points': int(1e10)}
+# model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64],
+#                 'non_linearity': 'ReLU', 'biased_head': True, 'deterministic': False}
+# model_opt_params = {'lr': 5e-4, 'weight_decay': 0}
+# hparams.update({'num_model_iter': 30, 'num_mppo_iter': 30})
+
+# hparams.update({'num_model_iter': 50, 'num_mppo_iter': 150})
+
 model_params = {'kind': 'ExactGP', 'max_num_points': int(1e10)}
 
-# model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
-# hparams.update({'num_model_iter': 0, 'num_mppo_iter': 100})
+model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
+hparams.update({'num_model_iter': 0, 'num_mppo_iter': 50})
 
 # model_params = {'kind': 'RandomFeatureGP', 'num_features': 625,
-#                 'max_num_points': int(1e10), 'approximation': 'QFF'}
+#                 'max_num_points': int(1e10), 'approximation': 'RFF'}
 # model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
 # hparams.update({'num_model_iter': 0, 'num_mppo_iter': 60})
 
 # model_params = {'kind': 'SparseGP',
 #                 'max_num_points': int(1e10), 'approximation': 'DTC', 'q_bar': 2}
 
-model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
-hparams.update({'num_model_iter': 0, 'num_mppo_iter': 120})
+# model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
+# hparams.update({'num_model_iter': 0, 'num_mppo_iter': 120})
 
 policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
                  'biased_head': False, 'deterministic': False}
 policy_opt_params = {'lr': 5e-4, 'weight_decay': 0}
-mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.00,
+
+mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.001,
                'num_action_samples': 15}
 vf_params = {'layers': [64, 64], 'non_linearity': 'ReLU',
              'biased_head': False}
-
-torch.manual_seed(hparams['seed'])
-np.random.seed(hparams['seed'])
 
 
 class StateTransform(nn.Module):
@@ -123,7 +127,7 @@ def termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return torch.any(torch.abs(state) > 15) or torch.any(torch.abs(action) > 15)
+    return torch.any(torch.abs(state) > 200) or torch.any(torch.abs(action) > 15)
 
 
 transformations = [
@@ -134,16 +138,10 @@ transformations = [
 
 # %% Define Environment.
 reward_model = PendulumReward(action_cost_ratio=hparams['action_cost_ratio'])
-if hparams['exploratory_initial_distribution']:
-    initial_distribution = torch.distributions.Uniform(
-        torch.tensor([-np.pi, -0.05]),
-        torch.tensor([np.pi, 0.05])
-    )
-else:
-    initial_distribution = torch.distributions.Uniform(
-        torch.tensor([np.pi, 0.0]),
-        torch.tensor([np.pi, +0.0])
-    )
+initial_distribution = torch.distributions.Uniform(
+    torch.tensor([np.pi, -0.0]),
+    torch.tensor([np.pi, +0.0])
+)
 
 environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
                                                  step_size=1 / 80),
@@ -181,19 +179,25 @@ if hparams['learn_model']:
             non_linearity=model_params['non_linearity'],
             input_transform=StateTransform(),
             deterministic=model_params['deterministic'])
+    elif model_params['kind'] == 'NN':
+        model = NNModel(
+            environment.dim_state, environment.dim_action,
+            layers=model_params['layers'],
+            biased_head=model_params['biased_head'],
+            non_linearity=model_params['non_linearity'],
+            input_transform=StateTransform(),
+            deterministic=model_params['deterministic']
+        )
     else:
         raise NotImplementedError
 
     try:  # Select GP initial Model.
+        for i in range(model.dim_state):
+            model.gp[i].output_scale = torch.tensor(0.1)
+            model.gp[i].length_scale = torch.tensor([[4.0]])
+            model.likelihood[i].noise = torch.tensor([1e-4])
         # model.gp[0].output_scale = torch.tensor(0.0042)
-        model.gp[0].output_scale = torch.tensor(0.1)
-        model.gp[0].length_scale = torch.tensor([[9.0]])
-        model.likelihood[0].noise = torch.tensor([1e-4])
-
         # model.gp[1].output_scale = torch.tensor(0.56)
-        model.gp[1].output_scale = torch.tensor(0.1)
-        model.gp[1].length_scale = torch.tensor([[9.0]])
-        model.likelihood[1].noise = torch.tensor([1e-4])
     except AttributeError:
         pass
 
@@ -212,7 +216,7 @@ else:
     dynamic_model = TransformedModel(model, transformations)
     dim_policy_action = environment.dim_action
 hparams.update({"dynamic_model": dynamic_model.__class__.__name__})
-
+model_name = model.name
 # with gpytorch.settings.fast_pred_var(), gpytorch.settings.trace_mode():
 #     dynamic_model.eval()
 #     s, a = torch.randn(15, 200, 2), torch.randn(15, 200, dim_policy_action)
@@ -227,6 +231,7 @@ if hparams['learn_model']:
                     for key, val in model_optimizer.defaults.items()
                     })
 else:
+    model = torch.jit.script(dynamic_model)
     model_optimizer = None
 
 # %% Define Policy
@@ -238,6 +243,7 @@ policy = NNPolicy(
     input_transform=StateTransform(), deterministic=policy_params['deterministic'])
 hparams.update({"policy": policy.__class__.__name__})
 hparams.update({f"policy_{key}": value for key, value in policy_params.items()})
+policy = torch.jit.script(policy)
 
 # %% Define Value Function
 value_function = NNValueFunction(dim_state=environment.dim_state,
@@ -246,6 +252,7 @@ value_function = NNValueFunction(dim_state=environment.dim_state,
                                  input_transform=StateTransform())
 hparams.update({"value_function": value_function.__class__.__name__})
 hparams.update({f"value_function_{key}": value for key, value in vf_params.items()})
+value_function = torch.jit.script(value_function)
 
 # %% Define MPPO
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
@@ -267,11 +274,13 @@ hparams.update({f"mppo-opt-{key}": val if not isinstance(val, tuple) else list(v
                 })
 
 # %% Define Agent
-comment = model.name
+comment = model_name
 comment += f"{' Optimistic ' if hparams['optimistic'] else ' Expected '}"
 comment += f"{' InitX' if hparams['exploratory_initial_distribution'] else ' InitF'}"
 
 agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
+                    delta_initial_distribution=torch.distributions.Uniform(
+                        torch.tensor([-2 * np.pi, -0.005]), torch.tensor([0, +0.005])),
                     transformations=transformations,
                     max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
                     num_model_iter=hparams['num_model_iter'],
@@ -299,7 +308,7 @@ evaluate_agent(agent, environment, num_episodes=hparams['test_episodes'],
                max_steps=hparams['horizon'], render=True)
 
 returns = np.mean(agent.logger.get('environment_return')[-hparams['test_episodes']:])
-agent.logger.writer.add_hparams(hparams, {"test/environment_returns": returns})
+agent.logger.log_hparams(hparams, {"test/environment_returns": returns})
 
 # %% Test controller on Sampled Model.
 sampled_model = TransformedModel(model, transformations)
