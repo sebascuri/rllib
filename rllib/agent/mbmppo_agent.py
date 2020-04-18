@@ -160,7 +160,7 @@ class MBMPPOAgent(AbstractAgent):
         print(colorize('Optimizing Policy with Model Data', 'yellow'))
         self.mppo.dynamical_model.eval()
         with disable_gradient(self.mppo.dynamical_model), \
-             gpytorch.settings.fast_pred_var():
+                gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.num_mppo_iter)):
                 # Compute the state distribution
                 if i % self.state_refresh_interval == 0:
