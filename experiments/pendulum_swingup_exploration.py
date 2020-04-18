@@ -24,20 +24,6 @@ from rllib.value_function import NNValueFunction
 torch.manual_seed(0)
 np.random.seed(0)
 
-# %% Reward Function
-reward_model = PendulumReward()
-bounds = [(-np.pi, np.pi), (-2, 2)]
-plot_on_grid(lambda x: reward_model(x, action=torch.tensor([0]))[0], bounds,
-             num_entries=[100, 100])
-plt.title('Reward function')
-plt.xlabel('Angle')
-plt.ylabel('Angular velocity')
-plt.show()
-
-
-# %% Define Policy, Value function, Model, Initial Distribution, Optimizer.
-
-
 class StateTransform(nn.Module):
     extra_dim = 1
 
@@ -48,6 +34,7 @@ class StateTransform(nn.Module):
                             dim=-1)
         return states_
 
+# %% Define Policy, Value function, Model.
 
 value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
                                  input_transform=StateTransform())
@@ -55,42 +42,95 @@ value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False
 policy = NNPolicy(dim_state=2, dim_action=1, layers=[64, 64], biased_head=False,
                   squashed_output=True, input_transform=StateTransform())
 
-dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005)
+dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
 init_distribution = torch.distributions.Uniform(
-    torch.tensor([np.pi, 0.0]),
+    torch.tensor([-np.pi, 0.0]),
     torch.tensor([np.pi, 0.0])
 )
 
-# init_distribution = torch.distributions.Uniform(
-#     torch.tensor([np.pi * (1 - 1 / 3), -0.05]),
-#     torch.tensor([np.pi * (1 + 1 / 3), 0.05])
-# )
-
-# states = torch.randn(5, 20, 2)
-# actions = torch.randn(5, 20, 1)
 value_function = torch.jit.script(value_function)
-policy = torch.jit.script(policy)  # , (states,))
+policy = torch.jit.script(policy)
 dynamic_model = torch.jit.script(dynamic_model)
 
-# Initialize MPPO and optimizer.
+
+# %%  Define EnvironmentDefine Environment
+reward_model = PendulumReward(action_cost_ratio=0.2)
+
+test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
+environment = SystemEnvironment(
+    InvertedPendulum(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80),
+    reward=reward_model)
+environment.state = test_state.numpy()
+environment.initial_state = lambda: test_state.numpy()
+
+
+# %% Initialialize MB-MPPO and Optimizer
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
               epsilon=0.1, epsilon_mean=0.01, epsilon_var=0.001, gamma=0.99,
               num_action_samples=15)
 optimizer = optim.Adam(mppo.parameters(), lr=5e-4)
 
 # %%  Train Controller
-num_iter = 200
+num_iter = 50
 num_simulation_steps = 400
 batch_size = 100
 refresh_interval = 2
-num_trajectories = 8  #math.ceil(num_inner_iterations * 100 / num_simulation_steps)
+num_trajectories = 8  # math.ceil(num_inner_iterations * 100 / num_simulation_steps)
 num_subsample = 1
 
-value_losses, policy_losses, policy_returns, eta_parameters, kl_div = train_mppo(
-    mppo, init_distribution, optimizer,
-    num_iter=num_iter, num_trajectories=num_trajectories,
-    num_simulation_steps=num_simulation_steps, refresh_interval=refresh_interval,
-    batch_size=batch_size, num_subsample=num_subsample)
+num_episodes = 4
+policy_losses, value_losses, policy_returns = [], [], []
+for _ in range(num_episodes):
+    value_losses_, policy_losses_, policy_returns_, eta_parameters, kl_div = train_mppo(
+        mppo, init_distribution, optimizer,
+        num_iter=num_iter, num_trajectories=num_trajectories,
+        num_simulation_steps=num_simulation_steps, refresh_interval=refresh_interval,
+        batch_size=batch_size, num_subsample=num_subsample)
+
+    policy_losses += policy_losses_
+    value_losses += value_losses_
+    policy_returns += policy_returns_
+
+    # %% Test controller on Model.
+    with torch.no_grad():
+        trajectory = rollout_model(mppo.dynamical_model, mppo.reward_model, policy,
+                                   initial_state=test_state,
+                                   max_steps=400)
+
+        trajectory = Observation(*stack_list_of_tuples(trajectory))
+
+    states = trajectory.state
+    rewards = trajectory.reward
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
+
+    plt.sca(ax1)
+    plt.plot(states[:, 0], states[:, 1], 'x')
+    plt.plot(states[-1, 0], states[-1, 1], 'x')
+    plt.xlabel('Angle [rad]')
+    plt.ylabel('Angular velocity [rad/s]')
+
+    plt.sca(ax2)
+    plt.plot(rewards)
+    plt.xlabel('Time step')
+    plt.ylabel('Instantaneous reward')
+    plt.show()
+    print(f'System Cumulative Reward: {torch.sum(rewards):.2f}')
+
+    bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
+    ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds,
+                                                 [200, 200])
+    ax_value.plot(states[:, 0], states[:, 1], color='C1')
+    ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
+    plt.show()
+
+    # %% Test controller on Environment.
+    policy.deterministic = True
+    trajectory = rollout_policy(environment, policy, max_steps=400, render=True)
+    trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
+    print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
+
+    policy.deterministic = False
+
 
 plt.plot(refresh_interval * np.arange(len(policy_returns)), policy_returns)
 plt.xlabel('Iteration')
@@ -99,49 +139,3 @@ plt.show()
 
 plot_learning_losses(policy_losses, value_losses, horizon=20)
 plt.show()
-
-# %% Test controller on Model.
-test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
-with torch.no_grad():
-    trajectory = rollout_model(mppo.dynamical_model, mppo.reward_model, policy,
-                               initial_state=test_state,
-                               max_steps=400)
-
-    trajectory = Observation(*stack_list_of_tuples(trajectory))
-
-states = trajectory.state
-rewards = trajectory.reward
-fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
-
-plt.sca(ax1)
-plt.plot(states[:, 0], states[:, 1], 'x')
-plt.plot(states[-1, 0], states[-1, 1], 'x')
-plt.xlabel('Angle [rad]')
-plt.ylabel('Angular velocity [rad/s]')
-
-plt.sca(ax2)
-plt.plot(rewards)
-plt.xlabel('Time step')
-plt.ylabel('Instantaneous reward')
-plt.show()
-print(f'System Cumulative Reward: {torch.sum(rewards):.2f}')
-
-bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
-ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds, [200, 200])
-ax_value.plot(states[:, 0], states[:, 1], color='C1')
-ax_value.plot(states[-1, 0], states[-1, 1], 'x', color='C1')
-plt.show()
-
-# %% Test controller on Environment.
-environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                                                 step_size=1 / 80),
-                                reward=PendulumReward())
-environment.state = test_state.numpy()
-environment.initial_state = lambda: test_state.numpy()
-policy.deterministic = True
-trajectory = rollout_policy(environment, policy, max_steps=400, render=True)
-
-# trajectory = rollout_policy(environment, lambda x: (policy(x)[0], torch.zeros(1)),
-#                             max_steps=400, render=True)
-trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
-print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
