@@ -184,6 +184,12 @@ class MPPO(nn.Module):
         When the policy is a Categorical distribution, it computes the divergence and
         assigns it to the mean component. The variance component is kept to zero.
 
+        Note to future self: MPPO uses the reversed mode-seeking KL-divergence.
+        Don't change the next direction of the KL divergence.
+
+        TRPO/PPO use the forward mean-seeking KL-divergence.
+        kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
+
         Parameters
         ----------
         state: torch.Tensor
@@ -206,9 +212,9 @@ class MPPO(nn.Module):
         pi_dist_old = tensor_to_distribution(self.old_policy(state))
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
+            kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
         else:
-            kl_mean = torch.distributions.kl_divergence(p=pi_dist_old, q=pi_dist).mean()
+            kl_mean = torch.distributions.kl_divergence(p=pi_dist, q=pi_dist_old).mean()
             kl_var = torch.zeros_like(kl_mean)
 
         return kl_mean, kl_var, pi_dist
@@ -326,6 +332,12 @@ class MBMPPO(nn.Module):
     def forward(self, states):
         """Compute the losses for one step of MPO.
 
+        Note to future self: MPPO uses the reversed mode-seeking KL-divergence.
+        Don't change the next direction of the KL divergence.
+
+        TRPO/PPO use the forward mean-seeking KL-divergence.
+        kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
+
         Parameters
         ----------
         states : torch.Tensor
@@ -350,8 +362,8 @@ class MBMPPO(nn.Module):
 
         pi_dist = tensor_to_distribution(self.policy(states))
         pi_dist_old = tensor_to_distribution(self.old_policy(states))
-        kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
 
+        kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
         with torch.no_grad():
             dyna_return = dyna_rollout(state=states,
                                        model=self.dynamical_model, policy=self.policy,
