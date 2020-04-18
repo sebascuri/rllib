@@ -28,7 +28,7 @@ class PendulumReward(AbstractReward):
         state_cost = angle_tolerance * velocity_tolerance
 
         action_tolerance = tolerance(action[..., 0], lower=-0.1, upper=0.1, margin=0.1)
-        action_cost = self.action_cost_ratio * action_tolerance
+        action_cost = self.action_cost_ratio * (action_tolerance-1)
 
         cost = state_cost + action_cost
 
