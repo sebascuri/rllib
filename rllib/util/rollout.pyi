@@ -37,5 +37,4 @@ def rollout_model(dynamical_model: AbstractModel, reward_model: AbstractReward,
 
 def rollout_actions(dynamical_model: AbstractModel, reward_model: AbstractReward,
                     action_sequence: Action, initial_state: State,
-                    termination: Callable[[State, Action], bool] = None,
-                    max_steps: int = 1000) -> Trajectory: ...
+                    termination: Callable[[State, Action], bool] = None) -> Trajectory: ...

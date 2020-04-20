@@ -157,6 +157,8 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
     """
     trajectory = list()
     state = initial_state
+    done = torch.full(state.shape[:-1], False, dtype=torch.bool)
+
     assert max_steps > 0
     for _ in range(max_steps):
         # Sample actions
@@ -187,29 +189,32 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             next_state = next_state_distribution.sample()
 
         # Check for termination.
-        if termination is not None and termination(state, action):
-            done = True
-        else:
-            done = False
+        if termination is not None:
+            done = termination(state, action)
 
         trajectory.append(
-            RawObservation(state, action, reward, next_state, done,
+            RawObservation(state, action, reward, next_state, done.float(),
                            log_prob_action=pi.log_prob(action),
                            entropy=pi.entropy(),
                            next_state_scale_tril=next_state_tril).to_torch()
         )
 
-        # Update state
-        state = next_state
+        # Update state.
+        # state[~done] modifies the old state reference in the trajectory hence create a
+        # new tensor for state.
+        old_state = state
+        state = torch.zeros_like(state)
+        state[~done] = next_state[~done]
+        state[done] = old_state[done]
 
-        if done:
+        if torch.all(done):
             break
 
     return trajectory
 
 
 def rollout_actions(dynamical_model, reward_model, action_sequence, initial_state,
-                    termination=None, max_steps=1000):
+                    termination=None):
     """Conduct a rollout of an action sequence interacting with a model.
 
     Parameters
@@ -226,8 +231,6 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
         The dimensions are [1 x num_samples x dim_state].
     termination: Callable.
         Termination condition to finish the rollout.
-    max_steps: int.
-        Maximum number of steps per episode.
 
     Returns
     -------
@@ -240,10 +243,10 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
     """
     trajectory = list()
     state = initial_state
-    assert max_steps > 0
-    for t in range(max_steps):
+    done = torch.full(state.shape[:-1], False, dtype=torch.bool)
+
+    for action in action_sequence:
         # Sample actions
-        action = action_sequence[t]
 
         # % Sample a reward
         reward_distribution = tensor_to_distribution(reward_model(state, action))
@@ -266,20 +269,23 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
             next_state = next_state_distribution.sample()
 
         # Check for termination.
-        if termination is not None and termination(state, action):
-            done = True
-        else:
-            done = False
+        if termination is not None:
+            done = termination(state, action)
 
         trajectory.append(
-            RawObservation(state, action, reward, next_state, done,
+            RawObservation(state, action, reward, next_state, done.float(),
                            next_state_scale_tril=next_state_tril).to_torch()
         )
 
-        # Update state
-        state = next_state
+        # Update state.
+        # state[~done] modifies the old state reference in the trajectory hence create a
+        # new tensor for state.
+        old_state = state
+        state = torch.zeros_like(state)
+        state[~done] = next_state[~done]
+        state[done] = old_state[done]
 
-        if done:
+        if torch.all(done):
             break
 
     return trajectory

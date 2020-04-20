@@ -127,7 +127,8 @@ def termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return torch.any(torch.abs(state) > 200) or torch.any(torch.abs(action) > 15)
+    return (torch.any(torch.abs(state) > 15, dim=-1) | torch.any(
+        torch.abs(action) > 15, dim=-1))
 
 
 transformations = [
