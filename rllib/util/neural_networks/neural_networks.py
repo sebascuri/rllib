@@ -126,8 +126,6 @@ class HeteroGaussianNN(FeedForwardNN):
         # TODO: Verify if this is useful or is just the action sample that gets big.
         # If the latter is the case, consider a tanh/sigmoid constrained multivariate
         # normal distribution.
-        # NOTE: if this is not clamped, then MBMPPO does not work
-        # (maybe it is the termination) maybe consider doing it directly at MBMPPO?
         scale = torch.diag_embed(nn.functional.softplus(self._scale(x)
                                                         ).clamp(1e-2, 1.))
         return mean, scale

@@ -43,7 +43,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          tau=TARGET_UPDATE_TAU)
 memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
-policy = torch.jit.script(policy)
+# policy = torch.jit.script(policy)
 # q_function = torch.jit.script(q_function)
 
 actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
@@ -55,7 +55,7 @@ criterion = torch.nn.MSELoss
 agent = TD3Agent(
     environment.name, q_function, policy, noise, criterion, critic_optimizer,
     actor_optimizer, memory, batch_size=BATCH_SIZE,
-    target_update_frequency=TARGET_UPDATE_FREQUENCY,
+    target_update_frequency=TARGET_UPDATE_FREQUENCY, exploration_episodes=1,
     gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)

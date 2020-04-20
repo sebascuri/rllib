@@ -4,7 +4,6 @@ import numpy as np
 import scipy.signal
 import torch
 import torch.distributions
-from gpytorch.distributions import MultitaskMultivariateNormal
 from .distributions import Delta
 from torch.distributions import Categorical, MultivariateNormal
 
@@ -196,12 +195,9 @@ def tensor_to_distribution(args):
     if not isinstance(args, tuple):
         return Categorical(logits=args)
     elif torch.all(args[1] == 0):
-        return Delta(args[0])
+        return Delta(args[0], event_dim=args[0].dim() - 1)
     else:
-        if args[0].shape[-1] == args[1].shape[-1]:
-            return MultivariateNormal(args[0], scale_tril=args[1])
-        else:
-            return MultitaskMultivariateNormal(*args)
+        return MultivariateNormal(args[0], scale_tril=args[1])
 
 
 def separated_kl(p, q):

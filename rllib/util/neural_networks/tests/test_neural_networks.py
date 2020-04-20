@@ -300,9 +300,8 @@ class TestEnsembleNN(object):
         o = tensor_to_distribution(net(t))
         if deterministic:
             assert isinstance(o, Delta)
-            print(o.batch_shape)
             assert o.batch_shape == torch.Size(
-                [batch_size, 2, out_dim] if batch_size is not None else [out_dim])
+                [batch_size] if batch_size is not None else [out_dim])
         else:
             assert isinstance(o, torch.distributions.MultivariateNormal)
             assert o.batch_shape == torch.Size(

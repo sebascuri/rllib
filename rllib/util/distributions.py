@@ -1,7 +1,12 @@
 """Useful distributions for the library."""
 
+import math
+
 import gpytorch
 import torch
+from torch.distributions.transforms import Transform
+from torch.distributions import constraints
+from torch.nn.functional import softplus
 
 
 class Delta(gpytorch.distributions.Delta):
@@ -13,59 +18,55 @@ class Delta(gpytorch.distributions.Delta):
 
     def entropy(self):
         """Return entropy of distribution."""
-        return torch.zeros_like(self.v)
+        return torch.zeros(self.batch_shape)
 
 
-class MultivariateNormal(gpytorch.distributions.MultivariateNormal):
-    """Multivariate Normal with extra __algebraic__ methods."""
+class TanhTransform(Transform):
+    r"""Transform via the mapping :math:`y = \tanh(x)`.
 
-    def __add__(self, other):
-        """Add to other."""
-        if isinstance(other, torch.Tensor):
-            MultivariateNormal(self.loc + other, self.covariance_matrix)
-        else:
-            super().__add__(other)
+    It is equivalent to
+    ```
+    ComposeTransform([AffineTransform(0., 2.),
+                      SigmoidTransform(),
+                      AffineTransform(-1., 2.)
+                      ])
+    ```
+    However this might not be numerically stable, thus it is recommended to use
+    `TanhTransform` instead.
+    Note that one should use `cache_size=1` when it comes to `NaN/Inf` values.
 
-    def __radd__(self, other):
-        """Reverse add to other."""
-        return self.__add__(other)
+    Notes
+    -----
+    This class should be released in the next version of pytorch.
+    """
 
-    def __mul__(self, other):
-        """Multiply with other."""
-        if isinstance(other, torch.Tensor):
-            # TODO: what when other is a matrix?
-            MultivariateNormal(self.loc * other,
-                               self.covariance_matrix * other ** 2)
-        else:
-            return super().__mul__(other)
+    domain = constraints.real
+    codomain = constraints.interval(-1.0, 1.0)
+    bijective = True
+    sign = +1
 
-    def __rmul__(self, other):
-        """Reverse Multiply with other."""
-        return super().__mul__(other)
+    @staticmethod
+    def atanh(x):
+        """Compute arctanh."""
+        return 0.5 * (x.log1p() - (-x).log1p())
 
-    def __neg__(self):
-        """Negate."""
-        return MultivariateNormal(-self.loc, self.lazy_covariance_matrix)
+    def __eq__(self, other):
+        """Check if transforms are equal."""
+        return isinstance(other, TanhTransform)
 
-    def __sub__(self, other):
-        """Subtract other from self."""
-        return self + (-other)
+    def _call(self, x):
+        return x.tanh()
 
-    def __rsub__(self, other):
-        """Reverse subtract other from self."""
-        return (-self) + other
+    def _inverse(self, y):
+        # We do not clamp to the boundary here as it may degrade the performance of
+        # certain algorithms. One should use `cache_size=1` instead
+        return self.atanh(y)
 
+    def log_abs_det_jacobian(self, x, y):
+        """Compute the log det jacobian `log |dy/dx|` given input and output.
 
-class MultitaskMultivariateNormal(gpytorch.distributions.MultitaskMultivariateNormal):
-    """Multitask Multivariate Normal with extra __algebraic__ methods."""
-
-    def get_task_mvn(self, task_idx):
-        """Get the multivariate-normal associated with task task_idx."""
-        loc = self.mean[..., task_idx]  # get the last idx of mean.
-        num_points = loc.shape[-1]
-        cov = self.lazy_covariance_matrix[
-              ...,
-              task_idx * num_points:(task_idx + 1) * num_points,
-              task_idx * num_points:(task_idx + 1) * num_points]
-
-        return MultivariateNormal(loc, cov)
+        References
+        ----------
+        https://github.com/tensorflow/probability/blob/master/tensorflow_probability/python/bijectors/tanh.py#L69-L80
+        """
+        return 2. * (math.log(2.) - x - softplus(-2. * x))

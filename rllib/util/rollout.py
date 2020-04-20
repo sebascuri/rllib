@@ -24,8 +24,8 @@ def step(environment, state, action, pi, render):
                                  reward=reward,
                                  next_state=next_state,
                                  done=done,
-                                 entropy=pi.entropy(),
-                                 log_prob_action=pi.log_prob(action)
+                                 entropy=pi.entropy().squeeze(),
+                                 log_prob_action=pi.log_prob(action).squeeze()
                                  ).to_torch()
     state = next_state
     if render:
