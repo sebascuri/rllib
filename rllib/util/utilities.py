@@ -174,7 +174,7 @@ def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
     if value_function is not None:
         final_state = trajectory[-1].next_state
         is_terminal = trajectory[-1].done
-        value += discount * value_function(final_state) * (1 - is_terminal)
+        value += discount * value_function(final_state) * (1. - is_terminal)
     return value
 
 

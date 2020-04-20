@@ -166,12 +166,21 @@ class MBMPPOAgent(AbstractAgent):
                 if i % self.state_refresh_interval == 0:
                     with torch.no_grad():
                         num_t = self.num_simulation_trajectories
-                        idx = torch.randint(self.initial_states.shape[0], (1, num_t,))
+                        idx = torch.randint(self.initial_states.shape[0], (num_t,))
                         initial_states = self.initial_states[idx]
                         if self.delta_initial_distribution is not None:
-                            delta = self.delta_initial_distribution.sample(
-                                (1, num_t // 2,))
-                            initial_states[:, num_t // 2:] += delta
+                            initial_states += self.delta_initial_distribution.sample(
+                                (num_t,))
+
+                        else:  # Sample from Replay buffer.
+                            obs, *_ = self.dataset.get_batch(num_t)
+                            for transform in self.dataset.transformations:
+                                obs = transform.inverse(obs)
+                            delta = obs.state[:, 0, :]
+                            initial_states = torch.cat((initial_states, delta), dim=0
+                                                       ).unsqueeze(0)
+                        initial_states = initial_states.unsqueeze(0)
+
                         trajectory = rollout_model(self.mppo.dynamical_model,
                                                    reward_model=self.mppo.reward_model,
                                                    policy=self.mppo.policy,
