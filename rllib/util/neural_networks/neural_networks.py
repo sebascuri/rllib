@@ -99,7 +99,7 @@ class HeteroGaussianNN(FeedForwardNN):
         super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
                          biased_head=biased_head, squashed_output=squashed_output)
         in_dim = self.head.in_features
-        self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
+        self._scale = nn.Linear(in_dim, out_dim)
         # self._scale_tril = nn.Linear(in_dim, out_dim * out_dim, bias=biased_head)
 
     def forward(self, x):
@@ -126,8 +126,7 @@ class HeteroGaussianNN(FeedForwardNN):
         # TODO: Verify if this is useful or is just the action sample that gets big.
         # If the latter is the case, consider a tanh/sigmoid constrained multivariate
         # normal distribution.
-        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)
-                                                        ).clamp(1e-2, 1.))
+        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)).clamp_max(1.))
         return mean, scale
 
 
