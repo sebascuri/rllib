@@ -70,9 +70,10 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
     optimizer.zero_grad()
     model.training = True
 
-    output = tensor_to_distribution(model(observation.state, observation.action))
+    output = tensor_to_distribution(model(observation.state[:, 0],
+                                          observation.action[:, 0]))
     with gpytorch.settings.fast_pred_var():
-        loss = exact_mll(output, observation.next_state.T, model.gp)
+        loss = exact_mll(output, observation.next_state[:, 0].T, model.gp)
     loss.backward()
     optimizer.step()
 
@@ -83,7 +84,7 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
 def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
     """Train a Dynamical Model."""
     if logger is None:
-        logger = Logger('model_training')
+        logger = Logger(f"{model.name}_training")
     for i_epoch in tqdm(range(max_iter)):
         for observation, idx, mask in train_loader:
             if isinstance(model, EnsembleModel):
