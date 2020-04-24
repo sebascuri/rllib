@@ -70,13 +70,10 @@ class AbstractAgent(object, metaclass=ABCMeta):
             policy = self.policy(state)
 
         self.pi = tensor_to_distribution(policy)
-        if self._training:
-            action = self.pi.sample()
+        if not self._training and self.pi.has_enumerate_support:
+            action = torch.argmax(self.pi.probs)
         else:
-            if self.pi.has_enumerate_support:
-                action = torch.argmax(self.pi.probs)
-            else:
-                action = self.pi.mean
+            action = self.pi.sample()
 
         return action.detach().numpy()
 

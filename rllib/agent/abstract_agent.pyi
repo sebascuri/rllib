@@ -17,6 +17,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     exploration_steps: int
     exploration_episodes: int
     _training: bool
+    comment: str
 
     def __init__(self, environment: str, gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0, comment: str = '') -> None: ...
