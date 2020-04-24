@@ -2,135 +2,75 @@ import gpytorch
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn as nn
 from torch.distributions import Uniform
 import torch.optim as optim
+
+import argparse
 
 from rllib.agent.mbmppo_agent import MBMPPOAgent
 from rllib.algorithms.mppo import MBMPPO
 from rllib.dataset.datatypes import Observation
-from rllib.dataset.transforms import MeanFunction, StateActionNormalizer, ActionClipper, \
-    DeltaState
+from rllib.dataset.transforms import MeanFunction, ActionClipper, DeltaState
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment import SystemEnvironment, GymEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
-
 from rllib.model.nn_model import NNModel
-from rllib.model.pendulum_model import PendulumModel
-
-from rllib.model.derived_model import TransformedModel, OptimisticModel, ExpectedModel
+from rllib.model.derived_model import TransformedModel, OptimisticModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
-from rllib.reward.pendulum_reward import PendulumReward
 
-from rllib.util.plotting import plot_learning_losses, plot_values_and_policy, \
-    plot_pendulum_trajectories
-from rllib.util.rollout import rollout_model, rollout_policy
+from rllib.util.plotting import plot_values_and_policy
+from rllib.util.rollout import rollout_model
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNValueFunction
 
+from experiments.gpucrl_inverted_pendulum.util import plot_pendulum_trajectories
+from experiments.gpucrl_inverted_pendulum.util import StateTransform, termination
+from experiments.gpucrl_inverted_pendulum.util import PendulumModel, PendulumReward
+
+# %% Define and parse arguments.
+parser = argparse.ArgumentParser(
+    description='Run Swing-up Pendulum using Model-Based RL.')
+parser.add_argument('--optimistic', action='store_true',
+                    help='activate optimistic exploration.')
+parser.add_argument('--seed', type=int, default=0,
+                    help='initial random seed (default: 0).')
+parser.add_argument('--model', type=str, default='ExactGP',
+                    choices=['ExactGP', 'SparseGP', 'FeatureGP', 'NN', 'Ensemble'])
+parser.add_argument('--sparse-approximation', type=str, default='DTC',
+                    choices=['DTC', 'SOR', 'FITC'])
+parser.add_argument('--feature-approximation', type=str, default='QFF',
+                    choices=['QFF', 'RFF', 'OFF'])
+parser.add_argument('--probabilistic-ensemble',
+                    action='store_true')
+
+
+args = parser.parse_args()
+
 # %% Define Experiment Parameters.
-hparams = {'seed': 0,
+hparams = {'seed': args.seed,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 5,
+           'train_episodes': 15,
            'test_episodes': 1,
            'action_cost_ratio': 0.2,
-           'optimistic': True,
+           'optimistic': args.optimistic,
            'learn_model': True,
-           'exploratory_initial_distribution': False,
            'beta': 1.0,
            'max_memory': 10000,
            'batch_size': 64,
-           'num_model_iter': 0,
-           'num_mppo_iter': 200,
+           'num_model_iter': 30,
+           'num_mppo_iter': 50,
            'num_simulation_steps': 400,
            'state_refresh_interval': 2,
            'num_simulation_trajectories': 8,
            }
 torch.manual_seed(hparams['seed'])
 np.random.seed(hparams['seed'])
-"""
-Models:
-    - Probabilistic NN
-    - Deterministic Ensemble
-    - Probabilistic Ensemble
-    - Exact GP
-    - Sub-sampled Exact GP
-    - RFF
-    - OFF
-    - QFF
-    - Sparse GP 
-Exploration: 
-    - Optimistic
-    - Expected
-
-"""
-# model_params = {'kind': 'NN', 'heads': 5, 'layers': [64],
-#                 'non_linearity': 'ReLU', 'biased_head': True, 'deterministic': False}
-
-# model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64],
-#                 'non_linearity': 'ReLU', 'biased_head': True, 'deterministic': False}
-# model_opt_params = {'lr': 5e-4, 'weight_decay': 0}
-# hparams.update({'num_model_iter': 30, 'num_mppo_iter': 30})
-
-# hparams.update({'num_model_iter': 50, 'num_mppo_iter': 150})
-
-model_params = {'kind': 'ExactGP', 'max_num_points': int(1e10)}
-
-model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
-hparams.update({'num_model_iter': 0, 'num_mppo_iter': 50})
-
-# model_params = {'kind': 'RandomFeatureGP', 'num_features': 625,
-#                 'max_num_points': int(1e10), 'approximation': 'RFF'}
-# model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
-# hparams.update({'num_model_iter': 0, 'num_mppo_iter': 60})
-
-# model_params = {'kind': 'SparseGP',
-#                 'max_num_points': int(1e10), 'approximation': 'DTC', 'q_bar': 2}
-
-# model_opt_params = {'lr': 1e-1, 'weight_decay': 0}
-# hparams.update({'num_model_iter': 0, 'num_mppo_iter': 120})
-
-policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
-                 'biased_head': False, 'deterministic': False}
-policy_opt_params = {'lr': 5e-4, 'weight_decay': 0}
-
-mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.001,
-               'num_action_samples': 15}
-vf_params = {'layers': [64, 64], 'non_linearity': 'ReLU',
-             'biased_head': False}
 
 
-class StateTransform(nn.Module):
-    extra_dim = 1
-
-    def forward(self, states_):
-        """Transform state before applying function approximation."""
-        angle, angular_velocity = torch.split(states_, 1, dim=-1)
-        states_ = torch.cat((torch.cos(angle), torch.sin(angle), angular_velocity),
-                            dim=-1)
-        return states_
-
-    def inverse(self, states_):
-        """Inverse transformation of states."""
-        cos, sin, angular_velocity = torch.split(states_, 1, dim=-1)
-        angle = torch.atan2(sin, cos)
-        states_ = torch.cat((angle, angular_velocity), dim=-1)
-        return states_
-
-
-def termination(state, action, next_state=None):
-    if not isinstance(state, torch.Tensor):
-        state = torch.tensor(state)
-    if not isinstance(action, torch.Tensor):
-        action = torch.tensor(action)
-
-    return (torch.any(torch.abs(state) > 15, dim=-1) | torch.any(
-        torch.abs(action) > 15, dim=-1))
-
-
+# %% Define Helper modules
 transformations = [
     ActionClipper(-1, 1),
     MeanFunction(DeltaState()),
@@ -151,6 +91,32 @@ environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=
                                 termination=termination)
 
 # %% Define Model
+model_opt_params = {'lr': 5e-4, 'weight_decay': 0}
+if args.model == 'ExactGP':
+    model_params = {'kind': 'ExactGP', 'max_num_points': int(1e10)}
+    hparams.update({'num_model_iter': 0})
+
+elif args.model == 'SparseGP':
+    model_params = {'kind': 'SparseGP', 'max_num_points': int(1e10),
+                    'approximation': args.sparse_approximation, 'q_bar': 2}
+    hparams.update({'num_model_iter': 0})
+
+elif args.model == 'FeatureGP':
+    model_params = {'kind': 'RandomFeatureGP', 'max_num_points': int(1e10),
+                    'approximation': args.feature_approximation, 'num_features': 625}
+    hparams.update({'num_model_iter': 0})
+
+elif args.model == 'NN':
+    model_params = {'kind': 'NN', 'heads': 5, 'layers': [64],
+                    'non_linearity': 'ReLU', 'biased_head': True,
+                    'deterministic': False}
+elif args.model == 'Ensemble':
+    model_params = {'kind': 'Ensemble', 'heads': 5, 'layers': [64],
+                    'non_linearity': 'ReLU', 'biased_head': True,
+                    'deterministic': not args.probabilistic_ensemble}
+else:
+    raise NotImplementedError
+
 if hparams['learn_model']:
     state, action = torch.tensor([[np.pi, 0.0]]), torch.tensor([[0.0]])
     next_state = torch.tensor([[0.0, 0.0]])
@@ -236,6 +202,9 @@ else:
     model_optimizer = None
 
 # %% Define Policy
+policy_params = {'layers': [64, 64], 'non_linearity': 'ReLU', 'squashed_output': True,
+                 'biased_head': False, 'deterministic': False}
+
 policy = NNPolicy(
     dim_state=environment.dim_state, dim_action=dim_policy_action,
     layers=policy_params['layers'], biased_head=policy_params['biased_head'],
@@ -247,6 +216,9 @@ hparams.update({f"policy_{key}": value for key, value in policy_params.items()})
 policy = torch.jit.script(policy)
 
 # %% Define Value Function
+vf_params = {'layers': [64, 64], 'non_linearity': 'ReLU',
+             'biased_head': False}
+
 value_function = NNValueFunction(dim_state=environment.dim_state,
                                  layers=vf_params['layers'],
                                  biased_head=vf_params['biased_head'],
@@ -256,6 +228,10 @@ hparams.update({f"value_function_{key}": value for key, value in vf_params.items
 value_function = torch.jit.script(value_function)
 
 # %% Define MPPO
+mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.001,
+               'num_action_samples': 15}
+mppo_opt_params = {'lr': 5e-4, 'weight_decay': 0}
+
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
               epsilon=mppo_params['epsilon'], epsilon_mean=mppo_params['epsilon_mean'],
               epsilon_var=mppo_params['epsilon_var'], gamma=hparams['gamma'],
@@ -263,8 +239,8 @@ mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
               termination=termination)
 
 mppo_optimizer = optim.Adam([p for name, p in mppo.named_parameters()
-                             if 'model' not in name], lr=policy_opt_params['lr'],
-                            weight_decay=model_opt_params['weight_decay'])
+                             if 'model' not in name], lr=mppo_opt_params['lr'],
+                            weight_decay=mppo_opt_params['weight_decay'])
 hparams.update(mppo_params)
 
 hparams.update({
@@ -276,23 +252,23 @@ hparams.update({f"mppo-opt-{key}": val if not isinstance(val, tuple) else list(v
 
 # %% Define Agent
 comment = model_name
-comment += f"{' Optimistic ' if hparams['optimistic'] else ' Expected '}"
-comment += f"{' InitX' if hparams['exploratory_initial_distribution'] else ' InitF'}"
+comment += f"{' Optimistic' if hparams['optimistic'] else ' Expected'}"
 
-agent = MBMPPOAgent(environment.name, mppo, model_optimizer, mppo_optimizer,
-                    delta_initial_distribution=torch.distributions.Uniform(
-                        torch.tensor([-2 * np.pi, -0.005]), torch.tensor([0, +0.005])),
-                    transformations=transformations,
-                    max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
-                    num_model_iter=hparams['num_model_iter'],
-                    num_mppo_iter=hparams['num_mppo_iter'],
-                    state_refresh_interval=hparams['state_refresh_interval'],
-                    num_simulation_trajectories=hparams['num_simulation_trajectories'],
-                    num_simulation_steps=hparams['num_simulation_steps'],
-                    gamma=hparams['gamma'], comment=comment)
-print(agent)
+agent = MBMPPOAgent(
+    environment.name, mppo, model_optimizer, mppo_optimizer,
+    initial_distribution=torch.distributions.Uniform(
+        torch.tensor([-np.pi, -0.005]), torch.tensor([np.pi, +0.005])),
+    transformations=transformations,
+    max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
+    num_model_iter=hparams['num_model_iter'],
+    num_mppo_iter=hparams['num_mppo_iter'],
+    state_refresh_interval=hparams['state_refresh_interval'],
+    num_simulation_trajectories=hparams['num_simulation_trajectories'] // 2,
+    num_distribution_trajectories=hparams['num_simulation_trajectories'] // 2,
+    num_simulation_steps=hparams['num_simulation_steps'],
+    gamma=hparams['gamma'], comment=comment)
 
-# Train Agent
+# %% Train Agent
 with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
      gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
     train_agent(agent, environment, num_episodes=hparams['train_episodes'],
@@ -320,7 +296,7 @@ with torch.no_grad():
                                initial_state=test_state.unsqueeze(0),
                                max_steps=hparams['horizon'])
 
-trajectory = Observation(*stack_list_of_tuples(trajectory))
+trajectory = stack_list_of_tuples(trajectory)
 
 states = trajectory.state[0]
 rewards = trajectory.reward
