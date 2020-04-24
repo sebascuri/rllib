@@ -401,6 +401,7 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
     policy_losses = []
     policy_returns = []
     kl_div = []
+    entropy = []
     for i in tqdm(range(num_iter)):
         # Compute the state distribution
         if i % refresh_interval == 0:
@@ -411,9 +412,9 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
                                            policy=mppo.policy,
                                            initial_state=initial_states,
                                            max_steps=num_simulation_steps)
-                trajectory = Observation(*stack_list_of_tuples(trajectory))
+                trajectory = stack_list_of_tuples(trajectory)
                 policy_returns.append(trajectory.reward.sum(dim=0).mean().item())
-
+                entropy.append(trajectory.entropy.mean())
                 # Shuffle to get a state distribution
                 states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
                 np.random.shuffle(states.numpy())
@@ -445,4 +446,4 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
              'eta' in name])
         kl_div.append(episode_kl_div)
 
-    return value_losses, policy_losses, policy_returns, eta_parameters, kl_div
+    return value_losses, policy_losses, policy_returns, entropy, eta_parameters, kl_div
