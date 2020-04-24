@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import gpytorch
 import torch
-from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.model.gp_model import ExactGPModel
 
 
 def moving_average_filter(x, y, horizon):

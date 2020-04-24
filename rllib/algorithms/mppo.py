@@ -9,7 +9,6 @@ import torch.nn as nn
 from tqdm import tqdm
 
 from rllib.algorithms.dyna import dyna_rollout
-from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import freeze_parameters
 from rllib.util.rollout import rollout_model

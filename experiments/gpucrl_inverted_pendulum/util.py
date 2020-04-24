@@ -216,7 +216,7 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
                                     # policy=policy
                                     )
 
-        trajectory = Observation(*stack_list_of_tuples(trajectory[0]))
+        trajectory = stack_list_of_tuples(trajectory[0])
         print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
 
     # %% Plot returns and losses.

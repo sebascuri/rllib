@@ -2,7 +2,6 @@
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.reinforce import REINFORCE
-from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
@@ -59,8 +58,7 @@ class REINFORCEAgent(AbstractAgent):
 
     def _train(self):
         """See `AbstractAgent.train_agent'."""
-        trajectories = [Observation(*stack_list_of_tuples(t))
-                        for t in self.trajectories]
+        trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
 
         for _ in range(self.num_iter):
             # Update actor.

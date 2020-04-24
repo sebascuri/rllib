@@ -2,7 +2,6 @@
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.esarsa import ESARSA
-from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
@@ -71,7 +70,7 @@ class ExpectedSARSAAgent(AbstractAgent):
 
     def _train(self):
         """Train the SARSA agent."""
-        trajectory = Observation(*stack_list_of_tuples(self.trajectory))
+        trajectory = stack_list_of_tuples(self.trajectory)
 
         for _ in range(self.num_iter):
             # Update critic
