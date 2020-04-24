@@ -35,12 +35,14 @@ class MBMPPOAgent(AbstractAgent):
 
     def __init__(self, environment, mppo,
                  model_optimizer, mppo_optimizer,
-                 delta_initial_distribution=None, transformations=None,
+                 initial_distribution=None, transformations=None,
                  max_memory=10000, batch_size=64,
                  num_model_iter=30,
                  num_mppo_iter=100,
                  num_simulation_steps=200,
                  num_simulation_trajectories=8,
+                 num_distribution_trajectories=0,
+                 num_dataset_trajectories=0,
                  state_refresh_interval=2,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
@@ -74,7 +76,10 @@ class MBMPPOAgent(AbstractAgent):
         self.state_refresh_interval = state_refresh_interval
 
         self.initial_states = torch.tensor(float('nan'))
-        self.delta_initial_distribution = delta_initial_distribution
+        self.initial_distribution = initial_distribution
+        self.num_distribution_trajectories = num_distribution_trajectories
+        self.num_dataset_trajectories = num_dataset_trajectories
+
         self.new_episode = True
         self.trajectory = []
         self.sim_trajectory = []
@@ -160,25 +165,33 @@ class MBMPPOAgent(AbstractAgent):
         print(colorize('Optimizing Policy with Model Data', 'yellow'))
         self.mppo.dynamical_model.eval()
         with disable_gradient(self.mppo.dynamical_model), \
-                gpytorch.settings.fast_pred_var():
+             gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.num_mppo_iter)):
                 # Compute the state distribution
                 if i % self.state_refresh_interval == 0:
                     with torch.no_grad():
-                        num_t = self.num_simulation_trajectories
-                        idx = torch.randint(self.initial_states.shape[0], (num_t,))
+                        # Samples from empirical initial state distribution.
+                        idx = torch.randint(self.initial_states.shape[0],
+                                            (self.num_simulation_trajectories,))
                         initial_states = self.initial_states[idx]
-                        if self.delta_initial_distribution is not None:
-                            initial_states += self.delta_initial_distribution.sample(
-                                (num_t,))
 
-                        else:  # Sample from Replay buffer.
-                            obs, *_ = self.dataset.get_batch(num_t)
+                        # Samples from initial distribution.
+                        if self.initial_distribution is not None:
+                            initial_states_ = self.initial_distribution.sample((
+                                self.num_distribution_trajectories,))
+                            initial_states = torch.cat(
+                                (initial_states, initial_states_), dim=0)
+
+                        # Samples from experience replay empirical distribution.
+                        if self.num_dataset_trajectories:
+                            obs, *_ = self.dataset.get_batch(
+                                self.num_dataset_trajectories)
                             for transform in self.dataset.transformations:
                                 obs = transform.inverse(obs)
-                            delta = obs.state[:, 0, :]
-                            initial_states = torch.cat((initial_states, delta), dim=0
-                                                       ).unsqueeze(0)
+                            initial_states_ = obs.state[:, 0, :]
+                            initial_states = torch.cat(
+                                (initial_states, initial_states_), dim=0)
+
                         initial_states = initial_states.unsqueeze(0)
 
                         trajectory = rollout_model(self.mppo.dynamical_model,
@@ -204,6 +217,8 @@ class MBMPPOAgent(AbstractAgent):
                         np.random.shuffle(states.numpy())
                         state_batches = torch.split(states, self.batch_size)
 
+                if self.logger.current['model_return'][-1] > 200:
+                    break
                 # Copy over old policy for KL divergence
                 self.mppo.reset()
 

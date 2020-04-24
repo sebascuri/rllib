@@ -25,15 +25,18 @@ class MBMPPOAgent(AbstractAgent):
     num_simulation_steps: int
     num_simulation_trajectories: int
     state_refresh_interval: int
+    num_distribution_trajectories: int
+    num_dataset_trajectories: int
+
     initial_states: torch.Tensor
-    delta_initial_distribution: Union[Distribution, None]
+    initial_distribution: Union[Distribution, None]
     new_episode: bool
     trajectory: List[Observation]
     sim_trajectory: Observation
 
     def __init__(self, environment: str, mppo: MBMPPO,
                  model_optimizer: Union[Optimizer, None], mppo_optimizer: Optimizer,
-                 delta_initial_distribution: Distribution = None,
+                 initial_distribution: Distribution = None,
                  transformations: List[AbstractTransform] = None,
                  max_memory: int = 10000, batch_size: int = 64,
                  num_model_iter: int = 30,
@@ -41,5 +44,7 @@ class MBMPPOAgent(AbstractAgent):
                  num_simulation_steps: int = 200,
                  num_simulation_trajectories: int =8,
                  state_refresh_interval: int = 2,
+                 num_distribution_trajectories: int = 0,
+                 num_dataset_trajectories: int=0,
                  gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0,
                  comment: str = '') -> None: ...
