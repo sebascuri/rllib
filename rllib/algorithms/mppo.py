@@ -14,6 +14,7 @@ from rllib.util.neural_networks import freeze_parameters
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import separated_kl, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, repeat_along_dimension
+from rllib.util.parameter_decay import Learnable, Constant, ParameterDecay
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
@@ -46,23 +47,49 @@ class MPPOLoss(nn.Module):
 
     # __constants__ = ['epsilon', 'epsilon_mean', 'epsilon_var']
 
-    def __init__(self, epsilon, epsilon_mean, epsilon_var):
+    def __init__(self, epsilon=None, epsilon_mean=None, epsilon_var=None,
+                 eta=None, eta_mean=None, eta_var=None):
         super().__init__()
 
-        self.eta = nn.Parameter(torch.tensor(1.), requires_grad=True)
-        self.eta_mean = nn.Parameter(torch.tensor(1.), requires_grad=True)
-        self.eta_var = nn.Parameter(torch.tensor(1.), requires_grad=True)
+        assert (epsilon is not None) ^ (eta is not None), "XOR(eps, eta)."
+        assert (epsilon_mean is not None) ^ (eta_mean is not None), "XOR(eps_m, eta_m)."
 
-        self.epsilon = torch.tensor(epsilon)
-        self.epsilon_mean = torch.tensor(epsilon_mean)
-        self.epsilon_var = torch.tensor(epsilon_var)
+        if eta is not None:  # Regularization: \eta KL(q || \pi)
+            if not isinstance(eta, ParameterDecay):
+                eta = Constant(eta)
+            self.eta = eta
+            self.epsilon = torch.tensor(0.)
+        else:  # Trust-Region: || KL(q || \pi_old) || < \epsilon
+            self.eta = Learnable(1.)
+            self.epsilon = torch.tensor(epsilon)
+
+        if eta_mean is not None:  # Regularization: \eta_m KL_m(\pi_old || \pi)
+            if not isinstance(eta_mean, ParameterDecay):
+                eta_mean = Constant(eta_mean)
+            self.eta_mean = eta_mean
+            self.epsilon_mean = torch.tensor(0.)
+        else:  # Trust-Region: || KL_m(\pi_old || \pi) || < \epsilon_m
+            self.eta_mean = Learnable(1.)
+            self.epsilon_mean = torch.tensor(epsilon_mean)
+
+        if eta_var is not None:  # Regularization: \eta_var KL_var(\pi_old || \pi)
+            if not isinstance(eta_var, ParameterDecay):
+                eta_var = Constant(eta_var)
+            self.eta_var = eta_var
+            self.epsilon_var = torch.tensor(0.)
+        elif epsilon_var is not None:  # Trust-Region:
+            self.eta_var = Learnable(1.)
+            self.epsilon_var = torch.tensor(epsilon_var)
+        else:  # KL-DIV not separated into mean and var components.
+            self.eta_var = Learnable(1.)
+            self.epsilon_var = torch.tensor(0.)
 
     def project_etas(self):
         """Project the etas to be positive inplace."""
         # Since we divide by eta, make sure it doesn't go to zero.
-        self.eta.data.clamp_(min=1e-5)
-        self.eta_mean.data.clamp_(min=1e-5)
-        self.eta_var.data.clamp_(min=1e-5)
+        self.eta.start.data.clamp_min_(1e-5)
+        self.eta_mean.start.data.clamp_min_(1e-5)
+        self.eta_var.start.data.clamp_min_(1e-5)
 
     def forward(self, q_values, action_log_probs, kl_mean, kl_var):
         """Return primal and dual loss terms from MMPO.
@@ -86,12 +113,11 @@ class MPPOLoss(nn.Module):
         # E-step: Solve Problem (7).
         # Create a weighed, sample-based representation of the optimal policy q Eq(8).
         # Compute the dual loss for the constraint KL(q || old_pi) < eps.
-        q_values = q_values.detach() * (torch.tensor(1.) / self.eta)
+        q_values = q_values.detach() * (torch.tensor(1.) / self.eta())
         normalizer = torch.logsumexp(q_values, dim=0)
-        num_actions_ = action_log_probs.shape[0]
-        num_actions = torch.tensor(1.0 * num_actions_)
+        num_actions = torch.tensor(1. * action_log_probs.shape[0])
 
-        dual_loss = self.eta * (
+        dual_loss = self.eta() * (
                 self.epsilon + torch.mean(normalizer) - torch.log(num_actions))
         # non-parametric representation of the optimal policy.
         weights = torch.exp(q_values - normalizer.detach())
@@ -104,11 +130,11 @@ class MPPOLoss(nn.Module):
         weighted_log_prob = torch.sum(weights * action_log_probs, dim=0)
         log_likelihood = torch.mean(weighted_log_prob)
 
-        kl_loss = self.eta_mean.detach() * kl_mean + self.eta_var.detach() * kl_var
+        kl_loss = self.eta_mean().detach() * kl_mean + self.eta_var().detach() * kl_var
         primal_loss = -log_likelihood + kl_loss
 
-        eta_mean_loss = self.eta_mean * (self.epsilon_mean - kl_mean.detach())
-        eta_var_loss = self.eta_var * (self.epsilon_var - kl_var.detach())
+        eta_mean_loss = self.eta_mean() * (self.epsilon_mean - kl_mean.detach())
+        eta_var_loss = self.eta_var() * (self.epsilon_var - kl_var.detach())
 
         dual_loss = dual_loss + eta_mean_loss + eta_var_loss
 
@@ -154,7 +180,8 @@ class MPPO(nn.Module):
     """
 
     def __init__(self, policy, q_function, num_action_samples,
-                 epsilon, epsilon_mean, epsilon_var, gamma):
+                 epsilon=None, epsilon_mean=None, epsilon_var=None,
+                 eta=None, eta_mean=None, eta_var=None, gamma=0.99):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
@@ -165,7 +192,8 @@ class MPPO(nn.Module):
         self.num_action_samples = num_action_samples
         self.gamma = gamma
 
-        self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var)
+        self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var,
+                                  eta, eta_mean, eta_var)
         self.value_loss = nn.MSELoss(reduction='mean')
 
     def reset(self):
@@ -267,7 +295,7 @@ class MPPO(nn.Module):
             next_action = next_pi.sample()
 
             next_values = self.q_function(next_state, next_action)
-            value_target = reward + self.gamma * next_values * (1 - done)
+            value_target = reward + self.gamma * next_values * (1. - done)
 
         value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
         combined_loss = value_loss + losses.primal_loss.mean() + losses.dual_loss.mean()
@@ -304,8 +332,9 @@ class MBMPPO(nn.Module):
     """
 
     def __init__(self, dynamical_model, reward_model, policy, value_function,
-                 epsilon, epsilon_mean, epsilon_var, gamma, num_action_samples=15,
-                 entropy_reg=0., termination=None):
+                 epsilon=None, epsilon_mean=None, epsilon_var=None,
+                 eta=None, eta_mean=None, eta_var=None, gamma=0.99,
+                 num_action_samples=15, entropy_reg=0., termination=None):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
@@ -317,7 +346,8 @@ class MBMPPO(nn.Module):
         self.value_function = value_function
         self.gamma = gamma
 
-        self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var)
+        self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var,
+                                  eta, eta_mean, eta_var)
         self.value_loss = nn.MSELoss(reduction='mean')
         self.num_action_samples = num_action_samples
         self.entropy_reg = entropy_reg
@@ -392,57 +422,72 @@ class MBMPPO(nn.Module):
 
 
 def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
-               num_iter, num_trajectories, num_simulation_steps, refresh_interval,
+               num_iter, num_trajectories, num_simulation_steps, num_gradient_steps,
                batch_size, num_subsample):
     """Train MPPO policy."""
     value_losses = []
-    eta_parameters = []
     policy_losses = []
-    policy_returns = []
+    returns = []
     kl_div = []
     entropy = []
     for i in tqdm(range(num_iter)):
         # Compute the state distribution
-        if i % refresh_interval == 0:
-            with torch.no_grad():
-                initial_states = initial_distribution.sample((1, num_trajectories,))
-                trajectory = rollout_model(mppo.dynamical_model,
-                                           reward_model=mppo.reward_model,
-                                           policy=mppo.policy,
-                                           initial_state=initial_states,
-                                           max_steps=num_simulation_steps)
-                trajectory = stack_list_of_tuples(trajectory)
-                policy_returns.append(trajectory.reward.sum(dim=0).mean().item())
-                entropy.append(trajectory.entropy.mean())
-                # Shuffle to get a state distribution
-                states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
-                np.random.shuffle(states.numpy())
-                state_batches = torch.split(states, batch_size)[::num_subsample]
+        state_batches = _simulate_model(
+            mppo, initial_distribution, num_trajectories, num_simulation_steps,
+            batch_size, num_subsample, returns, entropy)
 
-        policy_episode_loss = 0.
-        value_episode_loss = 0.
-        episode_kl_div = 0.
-
-        # Copy over old policy for KL divergence
-        mppo.reset()
-
-        # Iterate over state batches in the state distribution
-        for states in state_batches:
-            optimizer.zero_grad()
-            losses = mppo(states)
-            losses.loss.backward()
-            optimizer.step()
-
-            # Track statistics
-            value_episode_loss += losses.value_loss.item()
-            policy_episode_loss += losses.policy_loss.item()
-            episode_kl_div += losses.kl_div.item()
+        policy_episode_loss, value_episode_loss, episode_kl_div = _optimize_policy(
+            mppo, state_batches, optimizer, num_gradient_steps
+        )
 
         value_losses.append(value_episode_loss / len(state_batches))
         policy_losses.append(policy_episode_loss / len(state_batches))
-        eta_parameters.append(
-            [eta.detach().clone().numpy() for name, eta in mppo.named_parameters() if
-             'eta' in name])
         kl_div.append(episode_kl_div)
 
-    return value_losses, policy_losses, policy_returns, entropy, eta_parameters, kl_div
+    return value_losses, policy_losses, kl_div, returns, entropy
+
+
+def _simulate_model(mppo, initial_distribution, num_trajectories, num_simulation_steps,
+                    batch_size, num_subsample, returns, entropy):
+    with torch.no_grad():
+        initial_states = initial_distribution.sample((num_trajectories,))
+
+        trajectory = rollout_model(mppo.dynamical_model,
+                                   reward_model=mppo.reward_model,
+                                   policy=mppo.policy,
+                                   initial_state=initial_states,
+                                   max_steps=num_simulation_steps)
+        trajectory = stack_list_of_tuples(trajectory)
+        returns.append(trajectory.reward.sum(dim=0).mean().item())
+        entropy.append(trajectory.entropy.mean())
+        # Shuffle to get a state distribution
+        states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
+        np.random.shuffle(states.numpy())
+        state_batches = torch.split(states, batch_size)[::num_subsample]
+
+    return state_batches
+
+
+def _optimize_policy(mppo, state_batches, optimizer, num_gradient_steps):
+    policy_episode_loss = 0.
+    value_episode_loss = 0.
+    episode_kl_div = 0.
+
+    # Copy over old policy for KL divergence
+    mppo.reset()
+
+    # Iterate over state batches in the state distribution
+    for _ in range(num_gradient_steps):
+        idx = np.random.choice(len(state_batches))
+        states = state_batches[idx]
+        optimizer.zero_grad()
+        losses = mppo(states)
+        losses.loss.backward()
+        optimizer.step()
+
+        # Track statistics
+        value_episode_loss += losses.value_loss.item()
+        policy_episode_loss += losses.policy_loss.item()
+        episode_kl_div += losses.kl_div.item()
+
+    return policy_episode_loss, value_episode_loss, episode_kl_div

@@ -1,6 +1,6 @@
 """Python Script Template."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from typing import NamedTuple, Callable
 
 import torch.nn as nn
@@ -12,11 +12,13 @@ from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction, AbstractQFunction
+from rllib.util.parameter_decay import ParameterDecay
 
 
 class MPOLosses(NamedTuple):
     primal_loss: Tensor
     dual_loss: Tensor
+
 
 class MPOReturn(NamedTuple):
     loss: Tensor
@@ -27,15 +29,20 @@ class MPOReturn(NamedTuple):
 
 
 class MPPOLoss(nn.Module):
-    eta: nn.Parameter
-    eta_mean: nn.Parameter
-    eta_var: nn.Parameter
+    eta: ParameterDecay
+    eta_mean: ParameterDecay
+    eta_var: ParameterDecay
 
     epsilon: Tensor
     epsilon_mean: Tensor
     epsilon_var: Tensor
 
-    def __init__(self, epsilon: float, epsilon_mean: float, epsilon_var: float
+    def __init__(self, epsilon: Union[ParameterDecay, float] = None,
+                 epsilon_mean: Union[ParameterDecay, float] = None,
+                 epsilon_var: Union[ParameterDecay, float] = None,
+                 eta: Union[ParameterDecay, float] = None,
+                 eta_mean: Union[ParameterDecay, float] = None,
+                 eta_var: Union[ParameterDecay, float] = None
                  ) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs: Tensor) -> MPOLosses: ...
@@ -53,7 +60,13 @@ class MPPO(nn.Module):
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
                  num_action_samples: int,
-                 epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float
+                 epsilon: Union[ParameterDecay, float] = None,
+                 epsilon_mean: Union[ParameterDecay, float] = None,
+                 epsilon_var: Union[ParameterDecay, float] = None,
+                 eta: Union[ParameterDecay, float] = None,
+                 eta_mean: Union[ParameterDecay, float] = None,
+                 eta_var: Union[ParameterDecay, float] = None,
+                 gamma: float = 0.99
                  ) -> None: ...
 
     def reset(self) -> None: ...
@@ -77,8 +90,15 @@ class MBMPPO(nn.Module):
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
-                 epsilon: float, epsilon_mean: float, epsilon_var: float, gamma: float,
-                 num_action_samples: int = 15, entropy_reg: float = 0.,
+                 epsilon: Union[ParameterDecay, float] = None,
+                 epsilon_mean: Union[ParameterDecay, float] = None,
+                 epsilon_var: Union[ParameterDecay, float] = None,
+                 eta: Union[ParameterDecay, float] = None,
+                 eta_mean: Union[ParameterDecay, float] = None,
+                 eta_var: Union[ParameterDecay, float] = None,
+                 gamma: float = 0.99,
+                 num_action_samples: int = 15,
+                 entropy_reg: float = 0.,
                  termination: Callable[[Tensor, Tensor], Tensor] = None) -> None: ...
 
     def reset(self) -> None: ...
@@ -88,5 +108,6 @@ class MBMPPO(nn.Module):
 
 def train_mppo(mppo: MBMPPO, initial_distribution: Distribution, optimizer: Optimizer,
                num_iter: int, num_trajectories: int, num_simulation_steps: int,
-               refresh_interval: int,
-               batch_size: int, num_subsample: int) -> Tuple[List, List, List, List, List, List]: ...
+               num_gradient_steps: int,
+               batch_size: int, num_subsample: int
+               ) -> Tuple[List, List, List, List, List]: ...
