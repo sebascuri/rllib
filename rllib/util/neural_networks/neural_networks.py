@@ -126,7 +126,7 @@ class HeteroGaussianNN(FeedForwardNN):
         # TODO: Verify if this is useful or is just the action sample that gets big.
         # If the latter is the case, consider a tanh/sigmoid constrained multivariate
         # normal distribution.
-        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)).clamp_max(1.))
+        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)).clamp(1e-2, 1.))
         return mean, scale
 
 
