@@ -46,7 +46,7 @@ class Learnable(ParameterDecay):
 
     def forward(self):
         """See `ParameterDecay.__call__'."""
-        return self.param
+        return self.start
 
 
 class ExponentialDecay(ParameterDecay):
