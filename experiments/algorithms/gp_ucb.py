@@ -9,7 +9,31 @@ from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.reward.gp_reward import GPBanditReward
 from rllib.util import rollout_agent
 from rllib.util.gaussian_processes import ExactGP, SparseGP, RandomFeatureGP
-from rllib.util.plotting import plot_gp
+
+
+def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> None:
+    """Plot 1-D GP.
+
+    Parameters
+    ----------
+    x: points to plot.
+    model: GP model.
+    num_samples: number of random samples from gp.
+    """
+    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+        pred = model(x)
+        mean = pred.mean.numpy()
+        error = 2 * pred.stddev.numpy()
+
+    # Plot GP
+    plt.fill_between(x, mean - error, mean + error, lw=0, alpha=0.4, color='C0')
+
+    # Plot mean
+    plt.plot(x, mean, color='C0')
+
+    # Plot samples.
+    for _ in range(num_samples):
+        plt.plot(x.numpy(), pred.sample().numpy())
 
 
 def plot(agent, step, objective, axes):
