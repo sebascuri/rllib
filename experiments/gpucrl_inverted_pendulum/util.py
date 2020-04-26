@@ -9,6 +9,7 @@ import torch
 from torch.distributions import MultivariateNormal
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.rmsprop import RMSprop
 
 from rllib.algorithms.mppo import MBMPPO, train_mppo
 from rllib.dataset.utilities import stack_list_of_tuples
@@ -16,14 +17,15 @@ from rllib.dataset.datatypes import Observation
 from rllib.environment.system_environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.abstract_model import AbstractModel
-from rllib.model.gp_model import ExactGPModel
 from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
 from rllib.reward.abstract_reward import AbstractReward
 from rllib.reward.utilities import tolerance
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.neural_networks.utilities import freeze_parameters
-from rllib.util.plotting import plot_learning_losses, plot_values_and_policy
+
+from experiments.gpucrl_inverted_pendulum.plotters import plot_learning_losses, \
+    plot_trajectory_states_and_rewards, plot_values_and_policy
 
 
 class StateTransform(nn.Module):
@@ -129,8 +131,8 @@ class PendulumModel(AbstractModel):
 
 
 def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_size,
-              refresh_interval, num_trajectories, num_action_samples, num_episodes,
-              epsilon, epsilon_mean, epsilon_var, lr):
+              num_gradient_steps, num_trajectories, num_action_samples, num_episodes,
+              epsilon, epsilon_mean, epsilon_var, eta, eta_mean, eta_var, lr):
     reward_model = PendulumReward(action_cost_ratio)
     freeze_parameters(dynamic_model)
     value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
@@ -146,6 +148,7 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
     # %% Define MPC solver.
     mppo = MBMPPO(dynamic_model, reward_model, policy, value_function, gamma=0.99,
                   epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
+                  eta=eta, eta_mean=eta_mean, eta_var=eta_var,
                   num_action_samples=num_action_samples)
 
     optimizer = optim.Adam([p for p in mppo.parameters() if p.requires_grad], lr=lr)
@@ -153,20 +156,20 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
     # %% Train Controller
     test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 
-    policy_losses, value_losses, policy_returns, entropy, kl_div = [], [], [], [], []
+    policy_losses, value_losses, kl_div, returns, entropy = [], [], [], [], []
 
-    for _ in tqdm(range(num_episodes)):
+    for _ in range(num_episodes):
         with gpytorch.settings.fast_pred_var(), gpytorch.settings.detach_test_caches():
-            vloss_, ploss_, preturn_, entropy_, _, kl_div_ = train_mppo(
+            vloss_, ploss_, kl_div_, return_, entropy_, = train_mppo(
                 mppo, init_distribution, optimizer,
                 num_iter=num_iter, num_trajectories=num_trajectories,
                 num_simulation_steps=num_sim_steps,
-                refresh_interval=refresh_interval,
+                num_gradient_steps=num_gradient_steps,
                 batch_size=batch_size, num_subsample=1)
 
         policy_losses += ploss_
         value_losses += vloss_
-        policy_returns += preturn_
+        returns += return_
         entropy += entropy_
         kl_div += kl_div_
 
@@ -183,18 +186,7 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
 
         states = trajectory.state[:, 0]
         rewards = trajectory.reward
-        fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
-
-        plt.sca(ax1)
-        plt.plot(states[:, 0, 0], states[:, 0, 1], 'x')
-        plt.plot(states[-1, 0, 0], states[-1, 0, 1], 'x')
-        plt.xlabel('Angle [rad]')
-        plt.ylabel('Angular velocity [rad/s]')
-
-        plt.sca(ax2)
-        plt.plot(rewards[:, 0, 0])
-        plt.xlabel('Time step')
-        plt.ylabel('Instantaneous reward')
+        plot_trajectory_states_and_rewards(states, rewards)
         plt.show()
         print(f'Model Cumulative reward: {torch.sum(rewards):.2f}')
 
@@ -221,81 +213,23 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
 
     # %% Plot returns and losses.
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-    ax1.plot(refresh_interval * np.arange(len(policy_returns)), policy_returns)
+    ax1.plot(np.arange(len(returns)), returns)
     ax1.set_xlabel('Iteration')
     ax1.set_ylabel('Returns')
-    ax1.set_ylim([0, 350])
+    # ax1.set_ylim([0, 350])
 
-    ax2.plot(refresh_interval * np.arange(len(entropy)), entropy)
+    ax2.plot(np.arange(len(entropy)), entropy)
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Entropy')
+    # ax2.set_ylim([-5, 2])
 
-    ax3.plot(refresh_interval * np.arange(len(kl_div)), kl_div)
+    ax3.plot(np.arange(len(kl_div)), kl_div)
     ax3.set_xlabel('Iteration')
     ax3.set_ylabel('KL')
     plt.show()
 
     # %% Plot losses.
-    # plot_learning_losses(policy_losses, value_losses, horizon=20)
-    # plt.show()
+    plot_learning_losses(policy_losses, value_losses, horizon=20)
+    plt.show()
 
-
-def plot_pendulum_trajectories(agent, episode: int):
-    """Plot GP inputs and trajectory in a Pendulum environment."""
-    model = agent.mppo.dynamical_model.base_model
-    trajectory = stack_list_of_tuples(agent.trajectory)
-    sim_obs = agent.sim_trajectory
-
-    for transformation in agent.dataset.transformations:
-        trajectory = transformation(trajectory)
-        sim_obs = transformation(sim_obs)
-    if isinstance(model, ExactGPModel):
-        fig, axes = plt.subplots(1 + model.dim_state // 2, 2, sharex='col',
-                                 sharey='row')
-    else:
-        fig, axes = plt.subplots(1, 2, sharex='col', sharey='row')
-        axes = axes[np.newaxis]
-
-    # Plot real trajectory
-    sin, cos = torch.sin(trajectory.state[:, 0]), torch.cos(trajectory.state[:, 0])
-    axes[0, 0].scatter(torch.atan2(sin, cos) * 180 / np.pi, trajectory.state[:, 1],
-                       c=trajectory.action[:, 0], cmap='jet', vmin=-1, vmax=1)
-    axes[0, 0].set_title('Real Trajectory.')
-
-    # Plot sim trajectory
-    sin = torch.sin(sim_obs.state[:, 0, :, 0])
-    cos = torch.cos(sim_obs.state[:, 0, :, 0])
-    axes[0, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi, sim_obs.state[:, 0, :, 1],
-                       c=sim_obs.action[:, 0, :, 0], cmap='jet', vmin=-1, vmax=1)
-    axes[0, 1].set_title('Sim Trajectory.')
-
-    if isinstance(model, ExactGPModel):
-        for i in range(model.dim_state):
-            inputs = model.gp[i].train_inputs[0]
-            sin, cos = inputs[:, 1], inputs[:, 0]
-            axes[1 + i // 2, i % 2].scatter(
-                torch.atan2(sin, cos) * 180 / np.pi, inputs[:, 2],
-                c=inputs[:, 3], cmap='jet', vmin=-1, vmax=1)
-            axes[1 + i // 2, i % 2].set_title(f"GP {i} data.")
-
-            if hasattr(model.gp[i], 'xu'):
-                inducing_points = model.gp[i].xu
-                sin, cos = inducing_points[:, 1], inducing_points[:, 0]
-                axes[1 + i // 2, i % 2].scatter(
-                    torch.atan2(sin, cos) * 180 / np.pi, inducing_points[:, 2],
-                    c=inducing_points[:, 3], cmap='jet', marker='*', vmin=-1, vmax=1)
-
-    for ax_row in axes:
-        for ax in ax_row:
-            ax.set_xlim([-180, 180])
-            ax.set_ylim([-15, 15])
-
-    for i in range(axes.shape[0]):
-        axes[i, 0].set_ylabel('Angular Velocity')
-
-    for j in range(axes.shape[1]):
-        axes[-1, j].set_xlabel('Angle')
-
-    plt.suptitle(f'{agent.comment.capitalize()} Episode {episode + 1}', y=1.0)
-    plt.savefig(f'{agent.logger.log_dir}/{episode+1}.png')
-    # plt.show()
+    return torch.sum(trajectory.reward)

@@ -1,6 +1,8 @@
+from itertools import product
+
 import numpy as np
 import torch.distributions
-
+from tqdm import tqdm
 
 from experiments.gpucrl_inverted_pendulum.util import PendulumModel
 from experiments.gpucrl_inverted_pendulum.util import solve_mpc
@@ -12,19 +14,29 @@ dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 
 
 action_cost_ratio = 0.2
 
-num_iter = 100
-num_sim_steps = 200
-batch_size = 128
-refresh_interval = 1
-num_trajectories = 16
+batch_size = 32
+num_action_samples = 16
+num_trajectories = 8
 num_episodes = 1
-num_action_samples = 8
-epsilon, epsilon_mean, epsilon_var = 0.1, 1., 0.001
+epsilon, epsilon_mean, epsilon_var = None, None, None
+eta, eta_mean, eta_var = 1., 1.7, 1.1
+
 lr = 5e-4
 
-solve_mpc(dynamic_model, action_cost_ratio=action_cost_ratio,
-          num_iter=num_iter, num_sim_steps=num_sim_steps, batch_size=batch_size,
-          refresh_interval=refresh_interval, num_trajectories=num_trajectories,
-          num_action_samples=num_action_samples, num_episodes=num_episodes,
-          epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
-          lr=lr)
+num_iter = 100
+num_sim_steps = 400
+num_gradient_steps = 50
+# (1.0, 1.9000000000000004, 0.5000000000000001)
+
+best_returns = -float('Inf')
+best_params = None
+results = {}
+returns = solve_mpc(
+    dynamic_model, action_cost_ratio=action_cost_ratio,
+    num_iter=num_iter, num_sim_steps=num_sim_steps, batch_size=batch_size,
+    num_gradient_steps=num_gradient_steps, num_trajectories=num_trajectories,
+    num_action_samples=num_action_samples, num_episodes=num_episodes,
+    epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
+    eta=eta, eta_mean=eta_mean, eta_var=eta_var,
+    lr=lr)
+

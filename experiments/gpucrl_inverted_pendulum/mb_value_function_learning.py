@@ -15,6 +15,9 @@ from rllib.policy import NNPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
 from rllib.value_function import NNValueFunction
 
+from experiments.gpucrl_inverted_pendulum.plotters import plot_values_and_policy, \
+    plot_learning_losses, plot_combinations_as_grid
+
 num_steps = 1
 discount = 1.
 batch_size = 40
@@ -54,7 +57,9 @@ policy_optimizer = optim.Adam(policy.parameters(), lr=5e-3)
 policy_losses = []
 value_losses = []
 torch.autograd.set_detect_anomaly(True)
-for i in tqdm(range(10000)):
+
+num_iter = 10000
+for i in tqdm(range(num_iter)):
     value_optimizer.zero_grad()
     policy_optimizer.zero_grad()
 
@@ -62,7 +67,7 @@ for i in tqdm(range(10000)):
     with rllib.util.neural_networks.disable_gradient(value_function):
         dyna_return = dyna_rollout(state=states, model=model, policy=policy,
                                    reward=reward_model, steps=0, gamma=gamma,
-                                   value_function=value_function, num_samples=5)
+                                   value_function=value_function, num_samples=15)
     prediction = value_function(states)
     value_loss = loss_function(prediction, dyna_return.q_target.mean(dim=0))
     policy_loss = -dyna_return.q_target.mean()
@@ -76,46 +81,21 @@ for i in tqdm(range(10000)):
     value_losses.append(value_loss.item())
 
 horizon = 20
-smoothing_weights = np.ones(horizon) / horizon
-t = np.arange(len(policy_losses))
-t_smooth = t[horizon // 2:-horizon // 2 + 1]
-
-plt.plot(t, policy_losses)
-plt.plot(t_smooth, np.convolve(policy_losses, smoothing_weights, 'valid'),
-         label='smoothed')
-plt.xlabel('Iteration')
-plt.ylabel('Policy loss')
-plt.legend()
-plt.show()
-
-plt.plot(t, value_losses)
-plt.plot(t_smooth, np.convolve(value_losses, smoothing_weights, 'valid'),
-         label='smoothed')
-plt.xlabel('Iteration')
-plt.ylabel('Value loss')
-plt.legend()
+plot_learning_losses(policy_losses, value_losses, horizon)
 plt.show()
 
 print(f'optimal: {K}')
 print(f'learned: {policy.nn.head.weight}')
-# print(f'learned: {policy.weight}')
 
 bounds = [(-0.5, 0.5), (-0.5, 0.5)]
 num_entries = [100, 100]
-optimal_value = lambda x: rllib.util.neural_networks.torch_quadratic(x, matrix=-P)
 
-states = rllib.util.linearly_spaced_combinations(bounds, num_entries)
-
-values = optimal_value(torch.from_numpy(states).type(torch.get_default_dtype()))
-img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
-                                           num_entries, bounds)
-plt.colorbar(img)
+plot_values_and_policy(
+    lambda x: rllib.util.neural_networks.torch_quadratic(x, matrix=-P),
+    lambda x: (x @ K, 0), bounds, num_entries)
 plt.title('True value function')
 plt.show()
 
-values = value_function(torch.from_numpy(states).type(torch.get_default_dtype()))
-img = rllib.util.plot_combinations_as_grid(plt.gca(), values.detach().numpy(),
-                                           num_entries, bounds)
-plt.colorbar(img)
+plot_values_and_policy(value_function, policy, bounds, num_entries)
 plt.title('Learned value function')
 plt.show()

@@ -20,12 +20,13 @@ from rllib.model.derived_model import TransformedModel, OptimisticModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.policy import NNPolicy
 
-from rllib.util.plotting import plot_values_and_policy
 from rllib.util.rollout import rollout_model
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNValueFunction
 
-from experiments.gpucrl_inverted_pendulum.util import plot_pendulum_trajectories
+from experiments.gpucrl_inverted_pendulum.plotters import plot_pendulum_trajectories, \
+    plot_values_and_policy
+
 from experiments.gpucrl_inverted_pendulum.util import StateTransform, termination
 from experiments.gpucrl_inverted_pendulum.util import PendulumModel, PendulumReward
 

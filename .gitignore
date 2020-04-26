@@ -12,6 +12,7 @@ __pycache__/
 
 # Reproducible files
 *.pkl
+*.pk
 *.pth
 
 # Distribution / packaging

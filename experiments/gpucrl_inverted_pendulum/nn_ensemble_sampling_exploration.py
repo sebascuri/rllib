@@ -6,7 +6,6 @@ import torch
 from torch.utils.data import DataLoader
 from torch.distributions import Uniform
 
-
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.transforms import MeanFunction, DeltaState, ActionClipper
 from rllib.model.ensemble_model import EnsembleModel
@@ -20,7 +19,6 @@ from experiments.gpucrl_inverted_pendulum.util import solve_mpc
 
 torch.manual_seed(0)
 np.random.seed(0)
-
 
 # %% Collect Data.
 num_data = 200
@@ -54,10 +52,30 @@ ensemble = EnsembleModel(2, 1, num_heads=ensemble_size, layers=[64], biased_head
 optimizer = torch.optim.Adam(ensemble.parameters(), lr=0.01, weight_decay=1e-5)
 train_model(ensemble, dataloader, max_iter=150, optimizer=optimizer)
 
-
 # %% Define dynamical model.
 ensemble.eval()
 dynamic_model = TransformedModel(ensemble, transformations)
 
 # %% SOLVE MPC
-solve_mpc(dynamic_model, action_cost_ratio=0)
+action_cost_ratio = 0.2
+
+batch_size = 32
+num_action_samples = 16
+num_trajectories = 8
+num_episodes = 1
+epsilon, epsilon_mean, epsilon_var = None, None, None
+eta, eta_mean, eta_var = 1., 1.7, 1.1
+lr = 5e-4
+
+num_iter = 50
+num_sim_steps = 400
+num_gradient_steps = 50
+
+solve_mpc(dynamic_model,
+          action_cost_ratio=action_cost_ratio,
+          num_iter=num_iter, num_sim_steps=num_sim_steps, batch_size=batch_size,
+          num_gradient_steps=num_gradient_steps, num_trajectories=num_trajectories,
+          num_action_samples=num_action_samples, num_episodes=num_episodes,
+          epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
+          eta=eta, eta_mean=eta_mean, eta_var=eta_var,
+          lr=lr)

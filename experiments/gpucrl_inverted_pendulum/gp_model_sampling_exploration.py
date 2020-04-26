@@ -84,18 +84,24 @@ dynamic_model = TransformedModel(model, transformations)
 # %% SOLVE MPC
 action_cost_ratio = 0.2
 
-num_iter = 100
-num_sim_steps = 400
-batch_size = 100
-refresh_interval = 2
+batch_size = 32
+num_action_samples = 16
 num_trajectories = 8
 num_episodes = 1
-num_action_samples = 15
-epsilon, epsilon_mean, epsilon_var = 0.1, 0.01, 0.
+epsilon, epsilon_mean, epsilon_var = None, None, None
+eta, eta_mean, eta_var = 1., 1.7, 1.1
+lr = 5e-4
 
+num_iter = 50
+num_sim_steps = 400
+num_gradient_steps = 50
 
-solve_mpc(dynamic_model, action_cost_ratio=action_cost_ratio,
+solve_mpc(dynamic_model,
+          action_cost_ratio=action_cost_ratio,
           num_iter=num_iter, num_sim_steps=num_sim_steps, batch_size=batch_size,
-          refresh_interval=refresh_interval, num_trajectories=num_trajectories,
+          num_gradient_steps=num_gradient_steps, num_trajectories=num_trajectories,
           num_action_samples=num_action_samples, num_episodes=num_episodes,
-          epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var)
+          epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
+          eta=eta, eta_mean=eta_mean, eta_var=eta_var,
+          lr=lr)
+
