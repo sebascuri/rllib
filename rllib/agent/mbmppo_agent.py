@@ -236,7 +236,3 @@ class MBMPPOAgent(AbstractAgent):
 
                 # Step 2b: Optimize policy
                 self._optimize_policy(state_batches)
-
-                current_steps, current_avg_returns = self.logger.current['model_return']
-                if current_steps > 10 and current_avg_returns > 200:
-                    break
