@@ -54,7 +54,7 @@ args = parser.parse_args()
 hparams = {'seed': args.seed,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 1,  # 15,
+           'train_episodes': 15,
            'test_episodes': 1,
            'action_cost_ratio': 0.2,
            'optimistic': args.optimistic,
@@ -63,7 +63,7 @@ hparams = {'seed': args.seed,
            'max_memory': 10000,
            'batch_size': 32,
            'num_model_iter': 30,
-           'num_mppo_iter': 100,
+           'num_mppo_iter': 50,  # 100,
            'num_simulation_steps': 400,
            'num_gradient_steps': 50,
            'num_simulation_trajectories': 8,
@@ -160,7 +160,8 @@ if hparams['learn_model']:
     try:  # Select GP initial Model.
         for i in range(model.dim_state):
             model.gp[i].output_scale = torch.tensor(0.1)
-            model.gp[i].length_scale = torch.tensor([[4.0]])
+            # model.gp[i].length_scale = torch.tensor([[4.0]])
+            model.gp[i].length_scale = torch.tensor([[9.0]])
             model.likelihood[i].noise = torch.tensor([1e-4])
         # model.gp[0].output_scale = torch.tensor(0.0042)
         # model.gp[1].output_scale = torch.tensor(0.56)
@@ -271,6 +272,8 @@ agent = MBMPPOAgent(
     num_distribution_trajectories=hparams['num_simulation_trajectories'] // 2,
     num_simulation_steps=hparams['num_simulation_steps'],
     gamma=hparams['gamma'], comment=comment)
+
+print(agent)
 
 # %% Train Agent
 with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
