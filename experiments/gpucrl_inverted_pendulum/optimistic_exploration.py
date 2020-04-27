@@ -9,10 +9,9 @@ import argparse
 
 from rllib.agent.mbmppo_agent import MBMPPOAgent
 from rllib.algorithms.mppo import MBMPPO
-from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import MeanFunction, ActionClipper, DeltaState
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.environment import SystemEnvironment, GymEnvironment
+from rllib.environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
 from rllib.model.nn_model import NNModel
@@ -35,6 +34,8 @@ parser = argparse.ArgumentParser(
     description='Run Swing-up Pendulum using Model-Based RL.')
 parser.add_argument('--optimistic', action='store_true',
                     help='activate optimistic exploration.')
+parser.add_argument('--exact-model', action='store_true', help='Use exact model.')
+
 parser.add_argument('--seed', type=int, default=0,
                     help='initial random seed (default: 0).')
 parser.add_argument('--model', type=str, default='ExactGP',
@@ -53,30 +54,27 @@ args = parser.parse_args()
 hparams = {'seed': args.seed,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 15,
+           'train_episodes': 1,  # 15,
            'test_episodes': 1,
            'action_cost_ratio': 0.2,
            'optimistic': args.optimistic,
-           'learn_model': True,
+           'learn_model': not args.exact_model,
            'beta': 1.0,
            'max_memory': 10000,
-           'batch_size': 64,
+           'batch_size': 32,
            'num_model_iter': 30,
-           'num_mppo_iter': 50,
+           'num_mppo_iter': 100,
            'num_simulation_steps': 400,
-           'state_refresh_interval': 2,
+           'num_gradient_steps': 50,
            'num_simulation_trajectories': 8,
+           'num_subsample': 1,
            }
 torch.manual_seed(hparams['seed'])
 np.random.seed(hparams['seed'])
 
 
 # %% Define Helper modules
-transformations = [
-    ActionClipper(-1, 1),
-    MeanFunction(DeltaState()),
-    # StateActionNormalizer()
-]
+transformations = [ActionClipper(-1, 1), MeanFunction(DeltaState())]
 
 # %% Define Environment.
 reward_model = PendulumReward(action_cost_ratio=hparams['action_cost_ratio'])
@@ -229,13 +227,17 @@ hparams.update({f"value_function_{key}": value for key, value in vf_params.items
 value_function = torch.jit.script(value_function)
 
 # %% Define MPPO
-mppo_params = {'epsilon': 0.1, 'epsilon_mean': 0.01, 'epsilon_var': 0.001,
-               'num_action_samples': 15}
+mppo_params = {'eta': 1., 'eta_mean': 1.7, 'eta_var': 1.1, 'num_action_samples': 16}
 mppo_opt_params = {'lr': 5e-4, 'weight_decay': 0}
 
 mppo = MBMPPO(dynamic_model, reward_model, policy, value_function,
-              epsilon=mppo_params['epsilon'], epsilon_mean=mppo_params['epsilon_mean'],
-              epsilon_var=mppo_params['epsilon_var'], gamma=hparams['gamma'],
+              eta=mppo_params.get('eta', None),
+              eta_mean=mppo_params.get('eta_mean', None),
+              eta_var=mppo_params.get('eta_var', None),
+              epsilon=mppo_params.get('epsilon', None),
+              epsilon_mean=mppo_params.get('epsilon_mean', None),
+              epsilon_var=mppo_params.get('epsilon_var', None),
+              gamma=hparams['gamma'],
               num_action_samples=mppo_params['num_action_samples'],
               termination=termination)
 
@@ -263,7 +265,8 @@ agent = MBMPPOAgent(
     max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
     num_model_iter=hparams['num_model_iter'],
     num_mppo_iter=hparams['num_mppo_iter'],
-    state_refresh_interval=hparams['state_refresh_interval'],
+    num_gradient_steps=hparams['num_gradient_steps'],
+    num_subsample=hparams['num_subsample'],
     num_simulation_trajectories=hparams['num_simulation_trajectories'] // 2,
     num_distribution_trajectories=hparams['num_simulation_trajectories'] // 2,
     num_simulation_steps=hparams['num_simulation_steps'],

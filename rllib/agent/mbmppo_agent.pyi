@@ -24,9 +24,10 @@ class MBMPPOAgent(AbstractAgent):
     batch_size: int
     num_simulation_steps: int
     num_simulation_trajectories: int
-    state_refresh_interval: int
+    num_gradient_steps: int
     num_distribution_trajectories: int
     num_dataset_trajectories: int
+    num_subsample: int
 
     initial_states: torch.Tensor
     initial_distribution: Union[Distribution, None]
@@ -43,7 +44,8 @@ class MBMPPOAgent(AbstractAgent):
                  num_mppo_iter: int = 100,
                  num_simulation_steps: int = 200,
                  num_simulation_trajectories: int =8,
-                 state_refresh_interval: int = 2,
+                 num_gradient_steps: int = 50,
+                 num_subsample: int = 1,
                  num_distribution_trajectories: int = 0,
                  num_dataset_trajectories: int=0,
                  gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0,

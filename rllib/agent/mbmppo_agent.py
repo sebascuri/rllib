@@ -42,8 +42,9 @@ class MBMPPOAgent(AbstractAgent):
                  num_simulation_steps=200,
                  num_simulation_trajectories=8,
                  num_distribution_trajectories=0,
+                 num_gradient_steps=50,
                  num_dataset_trajectories=0,
-                 state_refresh_interval=2,
+                 num_subsample=1,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
@@ -73,7 +74,8 @@ class MBMPPOAgent(AbstractAgent):
         self.batch_size = batch_size
         self.num_simulation_steps = num_simulation_steps
         self.num_simulation_trajectories = num_simulation_trajectories
-        self.state_refresh_interval = state_refresh_interval
+        self.num_gradient_steps = num_gradient_steps
+        self.num_subsample = num_subsample
 
         self.initial_states = torch.tensor(float('nan'))
         self.initial_distribution = initial_distribution
@@ -144,6 +146,52 @@ class MBMPPOAgent(AbstractAgent):
             self._train()
         super().end_episode()
 
+    def _simulate_model(self):
+        # Samples from empirical initial state distribution.
+        idx = torch.randint(self.initial_states.shape[0],
+                            (self.num_simulation_trajectories,))
+        initial_states = self.initial_states[idx]
+
+        # Samples from initial distribution.
+        if self.initial_distribution is not None:
+            initial_states_ = self.initial_distribution.sample((
+                self.num_distribution_trajectories,))
+            initial_states = torch.cat((initial_states, initial_states_), dim=0)
+
+        # Samples from experience replay empirical distribution.
+        if self.num_dataset_trajectories > 0:
+            obs, *_ = self.dataset.get_batch(self.num_dataset_trajectories)
+            for transform in self.dataset.transformations:
+                obs = transform.inverse(obs)
+            initial_states_ = obs.state[:, 0, :]  # obs is an n-step return.
+            initial_states = torch.cat((initial_states, initial_states_), dim=0)
+
+        initial_states = initial_states.unsqueeze(0)
+
+        trajectory = rollout_model(self.mppo.dynamical_model,
+                                   reward_model=self.mppo.reward_model,
+                                   policy=self.mppo.policy,
+                                   initial_state=initial_states,
+                                   max_steps=self.num_simulation_steps,
+                                   termination=self.mppo.termination)
+        return stack_list_of_tuples(trajectory)
+
+    def _optimize_policy(self, state_batches):
+        # Copy over old policy for KL divergence
+        self.mppo.reset()
+
+        # Iterate over state batches in the state distribution
+        for _ in range(self.num_gradient_steps):
+            idx = np.random.choice(len(state_batches))
+            states = state_batches[idx]
+
+            self.mppo_optimizer.zero_grad()
+            losses = self.mppo(states)
+            losses.loss.backward()
+            self.mppo_optimizer.step()
+
+            self.logger.update(**losses._asdict())
+
     def _train(self) -> None:
         # Step 1: Train Model with new data.
         print(colorize('Training Model', 'yellow'))
@@ -157,76 +205,38 @@ class MBMPPOAgent(AbstractAgent):
             self.mppo.dynamical_model.base_model.select_head(
                 self.mppo.dynamical_model.base_model.num_heads)
 
-        # Step 2: Optimize Policy with model.
         if self.total_steps < self.exploration_steps or (
                 self.total_episodes < self.exploration_episodes):
             return
 
+        # Step 2: Optimize policy with simulated data.
         print(colorize('Optimizing Policy with Model Data', 'yellow'))
         self.mppo.dynamical_model.eval()
         with disable_gradient(self.mppo.dynamical_model), \
                 gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.num_mppo_iter)):
-                # Compute the state distribution
-                if i % self.state_refresh_interval == 0:
-                    with torch.no_grad():
-                        # Samples from empirical initial state distribution.
-                        idx = torch.randint(self.initial_states.shape[0],
-                                            (self.num_simulation_trajectories,))
-                        initial_states = self.initial_states[idx]
+                # Step 2a: Compute the state distribution
+                with torch.no_grad():
+                    self.sim_trajectory = self._simulate_model()
 
-                        # Samples from initial distribution.
-                        if self.initial_distribution is not None:
-                            initial_states_ = self.initial_distribution.sample((
-                                self.num_distribution_trajectories,))
-                            initial_states = torch.cat(
-                                (initial_states, initial_states_), dim=0)
+                # Sum along trajectory, average across samples
+                average_return = self.sim_trajectory.reward.sum(dim=0).mean()
+                self.logger.update(model_return=average_return.item())
 
-                        # Samples from experience replay empirical distribution.
-                        if self.num_dataset_trajectories:
-                            obs, *_ = self.dataset.get_batch(
-                                self.num_dataset_trajectories)
-                            for transform in self.dataset.transformations:
-                                obs = transform.inverse(obs)
-                            initial_states_ = obs.state[:, 0, :]
-                            initial_states = torch.cat(
-                                (initial_states, initial_states_), dim=0)
+                self.logger.update(total_scale=(torch.diagonal(
+                    self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2)
+                ).sum(dim=0).mean())
 
-                        initial_states = initial_states.unsqueeze(0)
+                # Shuffle to get a state distribution
+                states = self.sim_trajectory.state.reshape(
+                    -1, self.mppo.dynamical_model.dim_state)
+                np.random.shuffle(states.numpy())
+                state_batches = torch.split(states, self.batch_size
+                                            )[::self.num_subsample]
 
-                        trajectory = rollout_model(self.mppo.dynamical_model,
-                                                   reward_model=self.mppo.reward_model,
-                                                   policy=self.mppo.policy,
-                                                   initial_state=initial_states,
-                                                   max_steps=self.num_simulation_steps,
-                                                   termination=self.mppo.termination)
-                        self.sim_trajectory = stack_list_of_tuples(trajectory)
+                # Step 2b: Optimize policy
+                self._optimize_policy(state_batches)
 
-                        # Sum along trajectory, average across samples
-                        average_return = self.sim_trajectory.reward.sum(dim=0).mean()
-                        self.logger.update(model_return=average_return.item())
-
-                        self.logger.update(total_scale=(
-                            torch.diagonal(self.sim_trajectory.next_state_scale_tril,
-                                           dim1=-1, dim2=-2)
-                        ).sum(dim=0).mean())
-
-                        # Shuffle to get a state distribution
-                        states = self.sim_trajectory.state.reshape(
-                            -1, self.mppo.dynamical_model.dim_state)
-                        np.random.shuffle(states.numpy())
-                        state_batches = torch.split(states, self.batch_size)
-
-                if self.logger.current['model_return'][-1] > 200:
+                current_steps, current_avg_returns = self.logger.current['model_return']
+                if current_steps > 10 and current_avg_returns > 200:
                     break
-                # Copy over old policy for KL divergence
-                self.mppo.reset()
-
-                # Iterate over state batches in the state distribution
-                for states in state_batches:
-                    self.mppo_optimizer.zero_grad()
-                    losses = self.mppo(states)
-                    losses.loss.backward()
-                    self.mppo_optimizer.step()
-
-                    self.logger.update(**losses._asdict())
