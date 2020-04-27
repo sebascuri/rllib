@@ -24,6 +24,7 @@ class Logger(object):
             f"runs/{name}/{comment + '_' + current_time if comment else current_time}"
         )
         self.episode = 0
+        self.keys = set()
 
     def __len__(self):
         """Return the number of episodes."""
@@ -40,7 +41,7 @@ class Logger(object):
     def __str__(self):
         """Return parameter string of logger."""
         str_ = ""
-        for key in self.keys():
+        for key in self.keys:
             values = self.get(key)
             key = ' '.join(key.split('_')).title()
             str_ += f"{key} Last: {values[-1]:.2g}. "
@@ -53,13 +54,6 @@ class Logger(object):
         """Return the statistics of a specific key."""
         return [statistic[key] for statistic in self.statistics if key in statistic]
 
-    def keys(self):
-        """Return iterator of stored keys."""
-        if len(self.statistics):
-            return self.statistics[-1].keys()
-        else:
-            return []
-
     def update(self, **kwargs):
         """Update the statistics for the current episode.
 
@@ -70,6 +64,7 @@ class Logger(object):
             over the course of an episode.
         """
         for key, value in kwargs.items():
+            self.keys.add(key)
             if isinstance(value, torch.Tensor):
                 value = value.detach().numpy()
             value = np.nan_to_num(value)
@@ -77,6 +72,7 @@ class Logger(object):
                 value = float(value)
             if isinstance(value, np.int64):
                 value = int(value)
+
             if key not in self.current:
                 self.current[key] = (1, value)
             else:
@@ -104,6 +100,7 @@ class Logger(object):
         data.update(kwargs)
 
         for key, value in data.items():
+            self.keys.add(key)
             if isinstance(value, float) or isinstance(value, int):
                 self.writer.add_scalar(f"average/{key}", value,
                                        global_step=self.episode)

@@ -121,7 +121,7 @@ def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
                   render=render, plot_callbacks=plot_callbacks)
 
     if plot_flag:
-        for key in agent.logger.keys():
+        for key in agent.logger.keys:
             plt.plot(agent.logger.get(key))
             plt.xlabel("Episode")
             plt.ylabel(" ".join(key.split('_')).title())

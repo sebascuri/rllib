@@ -12,6 +12,7 @@ class Logger(object):
     current: Dict[str, Tuple[int, float]]
     writer: tensorboardX.SummaryWriter
     episode: int
+    keys: set
 
     def __init__(self, name: str, comment: str = '') -> None: ...
 
@@ -24,8 +25,6 @@ class Logger(object):
     def __str__(self) -> str: ...
 
     def get(self, key: str) -> List[float]: ...
-
-    def keys(self) -> Iterator[str]: ...
 
     def update(self, **kwargs) -> None: ...
 
