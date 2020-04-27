@@ -15,6 +15,9 @@ __pycache__/
 *.pk
 *.pth
 
+# Scratch Files
+scratch/
+
 # Distribution / packaging
 .Python
 build/

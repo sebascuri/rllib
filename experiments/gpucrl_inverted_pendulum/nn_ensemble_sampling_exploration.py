@@ -67,7 +67,7 @@ epsilon, epsilon_mean, epsilon_var = None, None, None
 eta, eta_mean, eta_var = 1., 1.7, 1.1
 lr = 5e-4
 
-num_iter = 50
+num_iter = 100
 num_sim_steps = 400
 num_gradient_steps = 50
 

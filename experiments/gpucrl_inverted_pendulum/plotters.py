@@ -7,6 +7,7 @@ import torch
 
 from rllib.model.gp_model import ExactGPModel
 from rllib.util.utilities import moving_average_filter
+from rllib.dataset.utilities import stack_list_of_tuples
 
 
 def combinations(arrays):
@@ -242,5 +243,5 @@ def plot_pendulum_trajectories(agent, episode: int):
         axes[-1, j].set_xlabel('Angle')
 
     plt.suptitle(f'{agent.comment.capitalize()} Episode {episode + 1}', y=1.0)
-    plt.savefig(f'{agent.logger.log_dir}/{episode+1}.png')
-    # plt.show()
+    # plt.savefig(f'{agent.logger.log_dir}/{episode+1}.png')
+    plt.show()
