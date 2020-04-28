@@ -1,7 +1,7 @@
 """Implementation of REPS Agent."""
-from torch.utils.data import DataLoader
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.util.neural_networks.utilities import deep_copy_module
 
 
 class REPSAgent(AbstractAgent):
@@ -17,16 +17,18 @@ class REPSAgent(AbstractAgent):
     """
 
     def __init__(self, environment, reps_loss, optimizer, memory,
-                 num_iter, num_rollouts, batch_size,
+                 num_rollouts, batch_size, num_dual_iter, num_policy_iter=0,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
 
         self.policy = reps_loss.policy
         self.reps = reps_loss
+
         self.optimizer = optimizer
         self.memory = memory
-        self.num_iter = num_iter
+        self.num_dual_iter = num_dual_iter
+        self.num_policy_iter = num_policy_iter
         self.num_rollouts = num_rollouts
         self.batch_size = batch_size
 
@@ -45,32 +47,37 @@ class REPSAgent(AbstractAgent):
 
     def _train(self):
         """See `AbstractAgent.train_agent'."""
-        data_loader = DataLoader(self.memory, batch_size=self.batch_size, shuffle=True)
-        self._optimizer_dual(data_loader)
-        self._fit_policy(data_loader)
-        self.memory.reset()  # Empty memory.
+        old_policy = deep_copy_module(self.policy)
+        self._optimizer_dual()
+
+        self.policy.prior = old_policy
+        self._fit_policy()
+
+        self.memory.reset()  # Erase memory.
         self.reps.update_eta()  # Step the etas in REPS.
 
-    def _optimizer_dual(self, data_loader):
-        self._optimize_loss(data_loader, loss='dual')
+    def _optimizer_dual(self):
+        """Optimize the dual function."""
+        self._optimize_loss(self.num_dual_iter, loss_name='dual')
 
-    def _fit_policy(self, data_loader):
-        self._optimize_loss(data_loader, loss='policy')
+    def _fit_policy(self):
+        """Fit the policy optimizing the weighted negative log-likelihood."""
+        self._optimize_loss(self.num_policy_iter, loss_name='policy_nll')
 
-    def _optimize_loss(self, data_loader, loss='dual'):
-        for i in range(self.num_iter):
-            for obs, idx, weight in data_loader:
+    def _optimize_loss(self, num_iter, loss_name='dual'):
+        """Optimize the loss performing `num_iter' gradient steps."""
+        for i in range(num_iter):
+            obs, idx, weight = self.memory.get_batch(self.batch_size)
+
+            def closure():
+                """Gradient calculation."""
+                self.optimizer.zero_grad()
                 losses = self.reps(obs.state, obs.action, obs.reward, obs.next_state,
                                    obs.done)
                 self.optimizer.zero_grad()
-                if loss == 'dual':
-                    losses.dual.backward()
-                elif loss == 'policy':
-                    losses.policy_nll.backward()
-                elif loss == 'combined':
-                    (losses.dual + losses.policy_nll).backward()
-                else:
-                    raise NotImplementedError(f"{loss} not implemented.")
-                self.optimizer.step()
+                loss_ = getattr(losses, loss_name)
+                loss_.backward()
+                return loss_
 
-                self.logger.update(**losses._asdict())
+            loss = self.optimizer.step(closure=closure).item()
+            self.logger.update(**{loss_name: loss})

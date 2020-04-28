@@ -11,18 +11,20 @@ class REPSAgent(AbstractAgent):
     reps: REPS
     optimizer: Optimizer
     memory: ExperienceReplay
-    num_iter: int
+    num_dual_iter: int
+    num_policy_iter: int
+
     num_rollouts: int
     batch_size: int
 
-    def __init__(self, environment: str, reps_loss: REPS,
-                 optimizer: Optimizer, memory: ExperienceReplay,
-                 num_iter: int, num_rollouts: int, batch_size: int,
+    def __init__(self, environment: str, reps_loss: REPS, optimizer: Optimizer,
+                 memory: ExperienceReplay, num_rollouts: int, batch_size: int,
+                 num_dual_iter: int, num_policy_iter: int = 0,
                  gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0, comment: str = '') -> None: ...
 
-    def _optimizer_dual(self, data_loader: DataLoader) -> None: ...
+    def _optimizer_dual(self) -> None: ...
 
-    def _fit_policy(self, data_loader: DataLoader) -> None: ...
+    def _fit_policy(self) -> None: ...
 
-    def _optimize_loss(self, data_loader: DataLoader, loss: str = 'dual') -> None: ...
+    def _optimize_loss(self, num_iter: int, loss_name: str = 'dual') -> None: ...
