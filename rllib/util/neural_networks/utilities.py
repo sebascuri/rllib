@@ -224,11 +224,11 @@ def get_batch_size(tensor):
         return None
     elif tensor.dim() == 1:
         if tensor.dtype is torch.long:
-            return len(tensor)
+            return len(tensor),
         else:
             return None
     else:
-        return tensor.shape[0]
+        return tensor.shape[:-1]
 
 
 def random_tensor(discrete, dim, batch_size=None):

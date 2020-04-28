@@ -26,7 +26,11 @@ class EpsGreedy(AbstractQFunctionPolicy):
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
         batch_size = get_batch_size(state)
-        aux_size = 1 if not batch_size else batch_size
+        aux_size = (1,) if not batch_size else batch_size
+        if len(aux_size) > 1:
+            raise NotImplementedError
+        else:
+            aux_size = aux_size[0]
 
         # Epsilon part.
         probs = self.epsilon / self.num_actions * torch.ones((aux_size,

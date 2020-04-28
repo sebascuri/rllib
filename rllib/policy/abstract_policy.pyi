@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Iterator
+from typing import Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -23,7 +23,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 
-    def random(self, batch_size: int = None) -> TupleDistribution: ...
+    def random(self, batch_size: Tuple[int] = None) -> TupleDistribution: ...
 
     def update(self) -> None: ...
 

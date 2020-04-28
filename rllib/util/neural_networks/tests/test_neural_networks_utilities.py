@@ -137,16 +137,18 @@ class TestGetBatchSize(object):
     def test_discrete(self, batch_size):
         size = (batch_size,) if batch_size else ()
         tensor = torch.randint(4, size)
-
-        assert batch_size == get_batch_size(tensor)
+        if batch_size:
+            assert (batch_size,) == get_batch_size(tensor)
+        else:
+            assert get_batch_size(tensor) is None
 
     def test_continuous(self, batch_size):
         if batch_size:
             tensor = torch.randn(batch_size, 4)
+            assert (batch_size,) == get_batch_size(tensor)
         else:
             tensor = torch.randn(4)
-
-        assert batch_size == get_batch_size(tensor)
+            assert get_batch_size(tensor) is None
 
 
 class TestRandomTensor(object):

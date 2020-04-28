@@ -65,7 +65,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
         Parameters
         ----------
-        batch_size: int, optional
+        batch_size: tuple, optional
 
         Returns
         -------
@@ -77,14 +77,14 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             if batch_size is None:
                 return torch.ones(self.num_actions)
             else:
-                return torch.ones(batch_size, self.num_actions)
+                return torch.ones(*batch_size, self.num_actions)
         else:
             cov = torch.eye(self.dim_action)
             if batch_size is None:
                 return torch.zeros(self.dim_action), cov
             else:
-                return torch.zeros(batch_size, self.dim_action), \
-                       cov.expand(batch_size, self.dim_action, self.dim_action)
+                return torch.zeros(*batch_size, self.dim_action), \
+                       cov.expand(*batch_size, self.dim_action, self.dim_action)
 
     @torch.jit.export
     def update(self):
