@@ -1,1 +1,1 @@
-"""Python Script Template."""
+"""Module for GP-UCRL experiments."""

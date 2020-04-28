@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Maximum a Posterior Policy Optimization algorithm stub."""
 
 from typing import List, Tuple, Union
 from typing import NamedTuple, Callable

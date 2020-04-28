@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Implementation of cached prediction strategies for Sparse GPs."""
 import functools
 
 from gpytorch import settings

@@ -1,3 +1,5 @@
+"""Working example of Generalized Advantage Actor Critic."""
+
 import numpy as np
 import torch
 import torch.nn.modules.loss as loss

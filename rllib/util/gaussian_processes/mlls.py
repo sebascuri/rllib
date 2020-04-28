@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Implementation of MLL loss for multi-output GPs."""
 
 import torch.nn as nn
 

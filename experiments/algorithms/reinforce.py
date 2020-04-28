@@ -1,3 +1,5 @@
+"""Working example of REINFORCE."""
+
 import numpy as np
 import torch
 

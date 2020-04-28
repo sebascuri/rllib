@@ -1,3 +1,4 @@
+"""Working example of Q-LEARNING."""
 import numpy as np
 import torch.jit
 import torch.nn.functional as func

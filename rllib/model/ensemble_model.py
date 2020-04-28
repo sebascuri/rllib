@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Dynamical Model parametrized with a (P or D) ensemble of Neural Networks."""
 
 import torch
 import torch.jit

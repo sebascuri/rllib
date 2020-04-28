@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Maximum a Posterior Policy Optimization algorithm."""
 
 from collections import namedtuple
 

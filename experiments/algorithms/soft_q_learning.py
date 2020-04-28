@@ -1,3 +1,5 @@
+"""Working example of Soft Q-Learning."""
+
 import numpy as np
 import torch.nn.functional as func
 import torch.optim

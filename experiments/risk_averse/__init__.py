@@ -1,1 +1,1 @@
-"""Python Script Template."""
+"""Module for Risk-Averse experiments."""

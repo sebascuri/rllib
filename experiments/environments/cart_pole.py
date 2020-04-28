@@ -1,21 +1,20 @@
-"""Python Script Template."""
+"""CartPole solution."""
 import pickle
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-from rllib.agent import QLearningAgent
-from rllib.algorithms import DDQN
+from rllib.agent import DDQNAgent
 from rllib.dataset import PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
-from rllib.util import rollout_agent
 from rllib.value_function import NNQFunction
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.training import train_agent, evaluate_agent
 
 ENVIRONMENT = 'CartPole-v0'
 NUM_EPISODES = 50
-MILESTONES = [0, 20, NUM_EPISODES-1]
+MILESTONES = [0, 20, NUM_EPISODES - 1]
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.99
@@ -40,27 +39,18 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-policy = EpsGreedy(q_function, EPS_START, EPS_END, EPS_DECAY)
-
+policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
-memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
-# memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
+agent = DDQNAgent(
+    environment.name, q_function, policy, criterion, optimizer, memory,
+    batch_size=BATCH_SIZE, target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
-agent = QLearningAgent(DDQN, q_function, policy, criterion, optimizer, memory,
-                  target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
-              milestones=MILESTONES)
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=True)
+evaluate_agent(agent, environment, 1, MAX_STEPS)
 
-with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
-    pickle.dump(agent, file)
-
-plt.plot(agent.logs['rewards'].episode_log)
-plt.xlabel('Episode')
-plt.ylabel('Rewards')
-plt.title('{} in {}'.format(agent.name, environment.name))
-plt.show()
-
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=1, render=True)
+# with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
+#     pickle.dump(agent, file)

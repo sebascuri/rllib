@@ -1,4 +1,5 @@
-"""Python Script Template."""
+"""Working example of MPPO."""
+
 from rllib.agent.mppo_agent import MPPOAgent
 from rllib.algorithms.mppo import MPPO
 from rllib.dataset.experience_replay import ExperienceReplay

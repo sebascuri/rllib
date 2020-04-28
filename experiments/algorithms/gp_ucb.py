@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Working example of GP-UCB."""
 
 import gpytorch
 import matplotlib.pyplot as plt

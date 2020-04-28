@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Utilities for vectorized environments.."""
 
 import numpy as np
 from rllib.util.utilities import get_backend

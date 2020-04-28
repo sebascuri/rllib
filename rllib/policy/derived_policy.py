@@ -1,10 +1,13 @@
-"""Python Script Template."""
+"""Policy derived from an optimistic policy.."""
 
 from .abstract_policy import AbstractPolicy
 
 
 class DerivedPolicy(AbstractPolicy):
-    """Derived policy."""
+    """Policy derived from an optimistic policy.
+
+    It gets the first `dim_action' components of the base_policy.
+    """
 
     def __init__(self, base_policy: AbstractPolicy):
         super().__init__(

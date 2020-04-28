@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Working example of REPS."""
 from rllib.agent.reps_agent import REPSAgent
 from rllib.algorithms.reps import REPS, QREPS
 from rllib.environment import GymEnvironment

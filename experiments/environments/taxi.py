@@ -1,18 +1,15 @@
-"""Python Script Template."""
+"""Taxi solution."""
 import pickle
-
-import matplotlib.pyplot as plt
 import torch
 
 from rllib.agent import QLearningAgent
-from rllib.algorithms import SemiGQLearning
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
-from rllib.util import rollout_agent
+from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNQFunction
 
-ENVIRONMENT = 'Taxi-v2'
+ENVIRONMENT = 'Taxi-v3'
 NUM_EPISODES = 200
 MILESTONES = [0, 50, NUM_EPISODES - 1]
 MAX_STEPS = 2000
@@ -40,20 +37,16 @@ policy = EpsGreedy(q_function, EPSILON)
 optimizer = torch.optim.SGD(q_function.parameters(), lr=LEARNING_RATE,
                             momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
-agent = QLearningAgent(SemiGQLearning, q_function, policy, criterion, optimizer, memory,
-                       target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
-              milestones=MILESTONES)
+agent = QLearningAgent(
+    environment.name, q_function, policy, criterion, optimizer,  memory,
+    batch_size=BATCH_SIZE, target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 
-plt.plot(agent.logs['rewards'].episode_log)
-plt.xlabel('Episode')
-plt.ylabel('Rewards')
-plt.title('{} in {}'.format(agent.name, environment.name))
-plt.show()
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=True)
+train_agent(agent, environment, 1, MAX_STEPS, render=True, plot_flag=True)
 
-with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
-    pickle.dump(agent, file)
+# evaluate_agent(agent, environment, 1, MAX_STEPS)
 
-rollout_agent(environment, agent, num_episodes=1, render=True)
+# with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
+#     pickle.dump(agent, file)

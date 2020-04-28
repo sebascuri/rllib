@@ -1,4 +1,5 @@
-"""Python Script Template."""
+"""Solution of Cart 1-d with DDPG."""
+
 import torch.nn.functional as func
 import torch.optim
 import numpy as np

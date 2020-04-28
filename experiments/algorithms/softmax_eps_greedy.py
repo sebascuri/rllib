@@ -1,3 +1,5 @@
+"""Working example of Softmax vs Eps Greedy Policies."""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn.functional as func

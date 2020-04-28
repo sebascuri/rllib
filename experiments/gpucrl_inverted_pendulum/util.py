@@ -1,4 +1,4 @@
-"""Python Script Template."""
+"""Utilities for inverted pendulum experiments."""
 import math
 
 from tqdm import tqdm

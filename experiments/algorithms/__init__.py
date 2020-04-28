@@ -1,1 +1,1 @@
-"""Python Script Template."""
+"""Working examples of algorithms."""

@@ -1,3 +1,5 @@
+"""Working example of DDPG."""
+
 import numpy as np
 import torch.nn.functional as func
 import torch.optim

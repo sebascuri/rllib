@@ -11,7 +11,9 @@ from rllib.dataset import PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
-from rllib.util import rollout_agent
+from rllib.util.training import train_agent, evaluate_agent
+from rllib.util.parameter_decay import ExponentialDecay
+
 from rllib.value_function import NNQFunction
 
 ENVIRONMENT = 'MountainCarContinuous-v0'
@@ -37,38 +39,27 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-policy = FelixPolicy(environment.dim_state, environment.dim_action,
-                     tau=TARGET_UPDATE_TAU, deterministic=True)
-noise = GaussianNoise(EPS_START, EPS_END, EPS_DECAY)
+policy = FelixPolicy(environment.dim_state, environment.dim_action, deterministic=True,
+                     tau=TARGET_UPDATE_TAU)
+noise = GaussianNoise(ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-# memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
-memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
+
 actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
                                    weight_decay=WEIGHT_DECAY)
 critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_RATE,
                                     weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
 
-agent = TD3Agent(q_function, policy, noise, criterion, critic_optimizer,
-                 actor_optimizer, memory,
-                 target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                 gamma=GAMMA, exploration_steps=0,
-                 policy_noise=0.2
-                 )
-rollout_agent(environment, agent, max_steps=MAX_STEPS, num_episodes=NUM_EPISODES,
-              milestones=MILESTONES, render=False)
+agent = TD3Agent(
+    environment.name, q_function, policy, noise, criterion, critic_optimizer,
+    actor_optimizer, memory, batch_size=BATCH_SIZE,
+    target_update_frequency=TARGET_UPDATE_FREQUENCY, exploration_episodes=1,
+    gamma=GAMMA)
 
-with open('{}_{}.pkl'.format(environment.name, agent.name), 'wb') as file:
-    pickle.dump(agent, file)
-
-plt.plot(agent.logs['rewards'].episode_log)
-plt.xlabel('Episode')
-plt.ylabel('Rewards')
-plt.title('{} in {}'.format(agent.__class__.__name__, ENVIRONMENT))
-plt.show()
-
-rollout_agent(environment, agent, num_episodes=1, render=True)
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
+evaluate_agent(agent, environment, 1, MAX_STEPS)

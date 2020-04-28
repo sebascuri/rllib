@@ -114,6 +114,9 @@ def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
     plot_frequency: int
     render: bool, optional.
     plot_callbacks: list, optional.
+
+    # TODO: Add MILESTONES
+
     """
     agent.train()
     rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps,
