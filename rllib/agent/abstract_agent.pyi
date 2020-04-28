@@ -19,6 +19,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
     _training: bool
     comment: str
 
+    last_trajectory: List[Observation]
+
     def __init__(self, environment: str, gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0, comment: str = '') -> None: ...
 

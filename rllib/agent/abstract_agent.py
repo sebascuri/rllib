@@ -48,6 +48,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self._training = True
 
         self.comment = comment
+        self.last_trajectory = []
 
     def __str__(self):
         """Generate string to parse the agent."""
@@ -94,9 +95,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.logger.update(rewards=observation.reward.item())
         self.logger.update(entropy=observation.entropy.item())
 
+        self.last_trajectory.append(observation)
+
     def start_episode(self):
         """Start a new episode."""
         self.episode_steps.append(0)
+        self.last_trajectory = []
 
     def end_episode(self):
         """End an episode."""
