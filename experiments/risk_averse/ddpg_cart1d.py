@@ -17,12 +17,15 @@ from rllib.value_function import NNQFunction
 from experiments.risk_averse.util import Cart1dReward, Cart1dTermination, \
     plot_cart_trajectories
 
+torch.manual_seed(0)
+np.random.seed(0)
+
 # %% Define Environment.
 goal_x = 2.0
 dt = .1
 reward_goal = 100.
-prob_reward_high_v = 0.5
-reward_high_v = -10.
+prob_reward_high_v = .2
+reward_high_v = -20.
 
 initial_state = Uniform(torch.tensor([0.0, 0.0]), torch.tensor([0.0, 0.0]))
 environment = SystemEnvironment(
@@ -35,7 +38,7 @@ environment = SystemEnvironment(
 )
 
 # %% Define Training algorithm.
-NUM_EPISODES = 50
+NUM_EPISODES = 100
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 2
 TARGET_UPDATE_TAU = 0.99
@@ -81,3 +84,4 @@ agent = TD3Agent(
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=True,
             plot_callbacks=[plot_cart_trajectories], plot_frequency=5)
 evaluate_agent(agent, environment, 1, MAX_STEPS)
+plot_cart_trajectories(agent, NUM_EPISODES+1)

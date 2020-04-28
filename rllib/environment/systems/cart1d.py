@@ -13,12 +13,6 @@ class Cart1d(ODESystem):
     The action is an acceleration. The state dynamics is given by:
 
     ..math :: dx/dt = [v, a]
-
-
-     is to reach a goal position.
-
-    Parameters
-    ----------
     """
 
     def __init__(self, step_size=0.01, max_action=1.):
@@ -48,14 +42,13 @@ class Cart1d(ODESystem):
         """
         bk = get_backend(state)
         # Physical dynamics
-        x, v = state[..., 0], state[..., 1]
-
-        x_dot = v
+        velocity = state[..., 1]
+        x_dot = velocity
         if bk == np:
-            acc = bk.clip(action[..., 0], -self.max_action, self.max_action)
+            acceleration = bk.clip(action[..., 0], -self.max_action, self.max_action)
         else:
-            acc = bk.clamp(action[..., 0], -self.max_action, self.max_action)
-        v_dot = acc
+            acceleration = bk.clamp(action[..., 0], -self.max_action, self.max_action)
+        v_dot = acceleration
 
         return bk.stack((x_dot, v_dot), -1)
 
