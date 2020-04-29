@@ -85,6 +85,88 @@ class TestUpdateParams(object):
                 assert not (torch.allclose(param2.data, param1c.data))
 
 
+class TestTileCode(object):
+    @pytest.fixture(params=[True, False], scope="class")
+    def one_hot(self, request):
+        return request.param
+
+    def test_1d(self, one_hot):
+        encoding = TileCode([-1.], [1.], bins=10, one_hot=one_hot)
+        encoding = torch.jit.script(encoding)
+        t_in = torch.linspace(-1., 1., 11).unsqueeze(-1)
+        code = encoding(t_in)
+
+        if one_hot:
+            assert encoding.extra_dims == 10
+            torch.testing.assert_allclose(code, torch.eye(11))
+        else:
+            assert encoding.extra_dims == 0
+            torch.testing.assert_allclose(code, torch.arange(11).long())
+
+        t_in_eps = t_in + 0.2 * (torch.rand_like(t_in) - 0.5)
+        code_eps = encoding(t_in_eps)
+
+        torch.testing.assert_allclose(code, code_eps)
+
+        torch.testing.assert_allclose(
+            encoding.tiles[..., 0], torch.linspace(-.9, .9, 10))
+
+    def test_2d(self, one_hot):
+        encoding = TileCode([-1., -2.], [1., 2.], bins=10, one_hot=one_hot)
+        encoding = torch.jit.script(encoding)
+
+        t_in = torch.cartesian_prod(torch.linspace(-1., 1., 11),
+                                    torch.linspace(-2., 2., 11))
+        code = encoding(t_in)
+
+        if one_hot:
+            assert encoding.extra_dims == 11 * 11 - 2
+            torch.testing.assert_allclose(code, torch.eye(11 * 11))
+        else:
+            assert encoding.extra_dims == -1
+            torch.testing.assert_allclose(code, torch.arange(11 * 11).long())
+
+        t_in_eps = t_in + (torch.rand_like(t_in) - 0.5) @ torch.diag(
+            torch.tensor([0.2, 0.4]))
+        code_eps = encoding(t_in_eps)
+
+        torch.testing.assert_allclose(code, code_eps)
+
+        torch.testing.assert_allclose(
+            encoding.tiles[..., 0], torch.linspace(-.9, .9, 10))
+        torch.testing.assert_allclose(
+            encoding.tiles[..., 1], torch.linspace(-1.8, 1.8, 10))
+
+    def test_3d(self, one_hot):
+        encoding = TileCode([-1., -5., -3.], [1., 5., 5.], bins=5, one_hot=one_hot)
+        encoding = torch.jit.script(encoding)
+
+        t_in = torch.cartesian_prod(torch.linspace(-1., 1., 6),
+                                    torch.linspace(-5., 5., 6),
+                                    torch.linspace(-3., 5., 6))
+        code = encoding(t_in)
+
+        if one_hot:
+            assert encoding.extra_dims == 6 ** 3 - 3
+            torch.testing.assert_allclose(code, torch.eye(6 ** 3))
+        else:
+            assert encoding.extra_dims == -2
+            torch.testing.assert_allclose(code, torch.arange(6 ** 3))
+
+        t_in_eps = t_in + (torch.rand_like(t_in) - 0.5) @ torch.diag(
+            torch.tensor([0.2, 1.0, 0.8]))
+        code_eps = encoding(t_in_eps)
+
+        torch.testing.assert_allclose(code, code_eps)
+
+        torch.testing.assert_allclose(
+            encoding.tiles[..., 0], torch.linspace(-.8, .8, 5))
+        torch.testing.assert_allclose(
+            encoding.tiles[..., 1], torch.linspace(-4, 4, 5))
+        torch.testing.assert_allclose(
+            encoding.tiles[..., 2], torch.linspace(-2.2, 4.2, 5))
+
+
 class TestOneHotEncode(object):
     @pytest.fixture(params=[None, 1, 16], scope="class")
     def batch_size(self, request):
@@ -118,13 +200,13 @@ class TestOneHotEncode(object):
                                                                 [0., 1., 0., 0.]]))
 
     def test_output_sum_one(self, batch_size):
-            num_classes = 4
-            tensor = torch.randint(4, torch.Size([batch_size] if batch_size else []))
-            out_tensor = one_hot_encode(tensor, num_classes)
-            torch.testing.assert_allclose(
-                out_tensor.sum(dim=-1),
-                torch.ones(batch_size if batch_size else 1).squeeze(-1)
-            )
+        num_classes = 4
+        tensor = torch.randint(4, torch.Size([batch_size] if batch_size else []))
+        out_tensor = one_hot_encode(tensor, num_classes)
+        torch.testing.assert_allclose(
+            out_tensor.sum(dim=-1),
+            torch.ones(batch_size if batch_size else 1).squeeze(-1)
+        )
 
     def test_indexing(self, batch_size):
         num_classes = 4
@@ -173,7 +255,7 @@ class TestRandomTensor(object):
         assert tensor.dtype is torch.long
         if batch_size:
             assert tensor.dim() == 1
-            assert tensor.shape == (batch_size, )
+            assert tensor.shape == (batch_size,)
         else:
             assert tensor.dim() == 0
             assert tensor.shape == ()

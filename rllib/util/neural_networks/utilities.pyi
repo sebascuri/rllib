@@ -1,8 +1,8 @@
-from typing import Iterator, Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 
+import numpy as np
 import torch.nn as nn
 from torch import Tensor
-from torch.nn import Parameter
 
 
 def deep_copy_module(module: nn.Module) -> nn.Module: ...
@@ -26,6 +26,23 @@ def zero_bias(module: nn.Module) -> None: ...
 
 
 def inverse_softplus(x: Tensor) -> Tensor: ...
+
+
+class TileCode(nn.Module):
+    tiles: Tensor
+    bins: Tensor
+    num_outputs: int
+    extra_dims: int
+    one_hot: bool
+
+    def __init__(self, low: List[float], high: List[float], bins: int, one_hot: bool = True) -> None: ...
+
+    def _tuple_to_int(self, tuple_: Union[Tensor, Tuple[Tensor]]) -> Tensor: ...
+
+    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+
+
+def digitize(tensor: Tensor, bin_boundaries: Tensor) -> Tensor: ...
 
 
 class OneHotEncode(nn.Module):

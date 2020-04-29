@@ -72,6 +72,9 @@ def update_parameters(target_module, new_module, tau=0.0):
                 target_state_dict[name].data.mul_(tau)
                 target_state_dict[name].data.add_((1 - tau) * new_state_dict[name].data)
 
+        # It is not necessary to load the dict again as it modifies the pointer.
+        # target_module.load_state_dict(target_state_dict)
+
 
 def count_vars(module):
     """Count the number of variables in a module."""
@@ -165,6 +168,76 @@ def inverse_softplus(x):
     output : torch.Tensor
     """
     return torch.log(torch.exp(x) - 1.)
+
+
+class TileCode(nn.Module):
+    """Tile coding implementation.
+
+    A tile code discretizes the environment into bins.
+    Given a continuous tensor, it encodes the output as the closest tile index per dim.
+    The output can be either an integer or a one-hot encode vector.
+
+    Parameters
+    ----------
+    low: array_like
+        Array of lower value of bins (per dimension).
+    high: array_like
+        Array of higher value of bins (per dimesnion)
+    bins: int
+        Number of bins per dimension.
+    one_hot: bool, optional (default = True).
+        Flag that indicates if output is one-hot encoded or not.
+
+    Notes
+    -----
+    Only a same number of bins is implemented as this makes compilation easier.
+    """
+
+    def __init__(self, low, high, bins, one_hot=True):
+        super().__init__()
+        dim = len(low)
+        assert dim == len(high)
+
+        self.tiles = torch.stack([
+            torch.linspace(low_, high_, bins + 1)[1:] - (high_ - low_) / (2 * bins)
+            for low_, high_ in zip(low, high)], dim=-1)
+
+        bins = torch.tensor([bins] * dim)
+        self.bins = bins + 1
+        self.num_outputs = self._tuple_to_int(bins).item() + 1
+
+        if one_hot:
+            self.extra_dims = -dim + self.num_outputs
+        else:
+            self.extra_dims = -dim + 1
+        self.one_hot = one_hot
+
+    def _tuple_to_int(self, tuple_):
+        """Convert tuple of ints into a single integer."""
+        out, tuple_ = tuple_[..., 0], tuple_[..., 1:]
+        i = 1
+        while tuple_.shape[-1] > 0:
+            out = self.bins[i] * out + tuple_[..., 0]
+            tuple_ = tuple_[..., 1:]
+            i += 1
+        return out
+
+    def forward(self, x):
+        """Encode a vector using tile-coding."""
+        if x.dim() == 0 or (x.dim() == 1 and len(self.bins) == 1):
+            x = x.unsqueeze(-1)
+        code = self._tuple_to_int(digitize(x, self.tiles))
+        if self.one_hot:
+            return one_hot_encode(code, self.num_outputs)
+        return code
+
+
+def digitize(tensor, bin_boundaries):
+    """Implementation of numpy digitize."""
+    result = torch.zeros(tensor.shape).long()
+    for boundary in bin_boundaries:
+        result += (tensor > boundary).long()
+    return result
 
 
 class OneHotEncode(nn.Module):
