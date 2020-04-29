@@ -31,7 +31,7 @@ class NNPolicy(AbstractPolicy):
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
                  layers=None, biased_head=True, non_linearity='ReLU',
                  squashed_output=True,
-                 tau=1.0, deterministic=False, input_transform=None):
+                 tau=0.0, deterministic=False, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau,
                          deterministic)
         if self.discrete_state:
@@ -65,7 +65,7 @@ class NNPolicy(AbstractPolicy):
 
     @classmethod
     def from_nn(cls, module, dim_state, dim_action, num_states=-1, num_actions=-1,
-                tau=1.0, deterministic=False, input_transform=None):
+                tau=0.0, deterministic=False, input_transform=None):
         """Create new NN Policy from a Neural Network Implementation."""
         new = cls(dim_state=dim_state, dim_action=dim_action,
                   num_states=num_states, num_actions=num_actions,
@@ -120,7 +120,7 @@ class FelixPolicy(NNPolicy):
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 tau=1.0, deterministic=False, input_transform=None):
+                 tau=0.0, deterministic=False, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau=tau,
                          deterministic=deterministic, input_transform=input_transform)
         self.nn = FelixNet(self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'])

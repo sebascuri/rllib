@@ -42,8 +42,7 @@ class FeedForwardNN(nn.Module):
         """Initialize Feedforward NN from other NN Network."""
         out = cls(**other.kwargs)
         if copy:
-            update_parameters(target_params=out.parameters(),
-                              new_params=other.parameters())
+            update_parameters(target_module=out, new_module=other)
         return out
 
     def forward(self, x):

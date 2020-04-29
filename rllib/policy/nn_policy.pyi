@@ -17,7 +17,7 @@ class NNPolicy(AbstractPolicy):
                  num_states: int = -1, num_actions: int = -1,
                  layers: List[int] = None, biased_head: bool = True,
                  non_linearity: str = 'ReLU', squashed_output: bool = True,
-                 tau: float = 1., deterministic: bool = False,
+                 tau: float = 0., deterministic: bool = False,
                  input_transform: torch.nn.Module = None) -> None: ...
 
     @classmethod
@@ -26,7 +26,7 @@ class NNPolicy(AbstractPolicy):
     @classmethod
     def from_nn(cls: Type[T], module: torch.nn.Module, dim_state: int, dim_action: int,
                 num_states: int = -1, num_actions: int = -1,
-                tau: float = 1.0, deterministic: bool = False,
+                tau: float = 0.0, deterministic: bool = False,
                 input_transform: torch.nn.Module = None): ...
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
@@ -38,4 +38,4 @@ class FelixPolicy(AbstractPolicy):
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = -1, num_actions: int = -1,
-                 tau: float = 1., deterministic: bool = False) -> None: ...
+                 tau: float = 0., deterministic: bool = False) -> None: ...

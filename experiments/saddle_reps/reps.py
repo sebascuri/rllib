@@ -17,13 +17,11 @@ from rllib.value_function import NNValueFunction, NNQFunction
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.util.training import train_agent, evaluate_agent
 
-# ETA = 2.
-ETA = 2.
-ALGORITHM = 'Q-REPS'
+ETA = 1.
+ALGORITHM = 'REPS'
 NUM_EPISODES = 100
 BATCH_SIZE = 100
 LR = 1e-4
-NUM_DUAL_ITER = 2000
 NUM_ROLLOUTS = 15
 MEMORY_SIZE = 3500
 
@@ -42,14 +40,17 @@ value_function = NNValueFunction(environment.dim_state, environment.num_states,
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          environment.num_states, environment.num_actions,
                          layers=[64, 64])
-policy = NNPolicy(environment.dim_state, environment.dim_action,
-                  environment.num_states, environment.num_actions,
-                  layers=[64, 64])
+
 if ALGORITHM.upper() == 'REPS':
+    policy = NNPolicy(environment.dim_state, environment.dim_action,
+                      environment.num_states, environment.num_actions,
+                      layers=[64, 64])
     reps_loss = REPS(policy, value_function, eta=ETA, gamma=GAMMA)
     NUM_POLICY_ITER = 2000
+    NUM_DUAL_ITER = 2000
 elif ALGORITHM.upper() == 'Q-REPS':
     NUM_POLICY_ITER = 0
+    NUM_DUAL_ITER = 2000
     reps_loss = QREPS(value_function, q_function, eta=ETA, gamma=GAMMA)
 else:
     raise NotImplementedError(f"{ALGORITHM} not implemented.")

@@ -14,7 +14,7 @@ NUM_EPISODES = 200
 MILESTONES = [0, 50, NUM_EPISODES - 1]
 MAX_STEPS = 2000
 TARGET_UPDATE_FREQUENCY = 1
-TARGET_UPDATE_TAU = 1
+TARGET_UPDATE_TAU = 0
 MEMORY_MAX_SIZE = 2000
 BATCH_SIZE = 16
 LEARNING_RATE = 0.5
@@ -30,7 +30,7 @@ environment = GymEnvironment(ENVIRONMENT, SEED)
 q_function = NNQFunction(
     dim_state=environment.dim_state, dim_action=environment.dim_action,
     num_states=environment.num_states, num_actions=environment.num_actions,
-    layers=LAYERS, biased_head=False, tau=1)
+    layers=LAYERS, biased_head=False, tau=0)
 q_function.nn.head.weight.data = torch.ones_like(q_function.nn.head.weight)
 
 policy = EpsGreedy(q_function, EPSILON)

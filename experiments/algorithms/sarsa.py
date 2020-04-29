@@ -16,7 +16,7 @@ ENVIRONMENT = 'CartPole-v0'
 NUM_EPISODES = 500
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 1
-TARGET_UPDATE_TAU = 0.99
+TARGET_UPDATE_TAU = 0.01
 BATCH_SIZE = 1  # Batch size doesn't bring much because the data is heavily correlated.
 LEARNING_RATE = 1e-3
 

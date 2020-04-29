@@ -67,8 +67,7 @@ class SARSA(nn.Module):
 
     def update(self):
         """Update the target network."""
-        update_parameters(self.q_target.parameters(), self.q_function.parameters(),
-                          tau=self.q_function.tau)
+        update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
 
 
 class GradientSARSA(SARSA):

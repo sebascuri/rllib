@@ -15,8 +15,7 @@ def parse_layers(layers: Optional[List[int]], in_dim: int, non_linearity: str
                  ) -> Tuple[nn.Sequential, int]: ...
 
 
-def update_parameters(target_params: Iterator[Parameter],
-                      new_params: Iterator[Parameter], tau: float = 1.0
+def update_parameters(target_module: nn.Module, new_module: nn.Module, tau: float = 0.
                       ) -> None: ...
 
 

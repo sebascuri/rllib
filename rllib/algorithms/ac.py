@@ -103,7 +103,5 @@ class ActorCritic(nn.Module):
 
     def update(self):
         """Update the baseline network."""
-        update_parameters(self.policy_target.parameters(), self.policy.parameters(),
-                          tau=self.policy.tau)
-        update_parameters(self.critic_target.parameters(), self.critic.parameters(),
-                          tau=self.critic.tau)
+        update_parameters(self.policy_target, self.policy, tau=self.policy.tau)
+        update_parameters(self.critic_target, self.critic, tau=self.critic.tau)

@@ -27,7 +27,7 @@ class NNValueFunction(AbstractValueFunction):
     """
 
     def __init__(self, dim_state, num_states=-1, layers=None, biased_head=True,
-                 non_linearity='ReLU', tau=1.0, input_transform=None):
+                 non_linearity='ReLU', tau=0.0, input_transform=None):
         super().__init__(dim_state, num_states, tau=tau)
 
         if self.discrete_state:
@@ -52,7 +52,7 @@ class NNValueFunction(AbstractValueFunction):
         return new
 
     @classmethod
-    def from_nn(cls, module, dim_state, num_states=-1, tau=1.0, input_transform=None):
+    def from_nn(cls, module, dim_state, num_states=-1, tau=0.0, input_transform=None):
         """Create new Value Function from a Neural Network Implementation."""
         new = cls(dim_state=dim_state, num_states=num_states, tau=tau,
                   input_transform=input_transform)
@@ -99,7 +99,7 @@ class NNQFunction(AbstractQFunction):
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
                  layers=None, biased_head=True, non_linearity='ReLU',
-                 tau=1.0, input_transform=None):
+                 tau=0.0, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions,
                          tau=tau)
 
@@ -134,7 +134,7 @@ class NNQFunction(AbstractQFunction):
 
     @classmethod
     def from_nn(cls, module, dim_state, dim_action, num_states=-1, num_actions=-1,
-                tau=1.0, input_transform=None):
+                tau=0.0, input_transform=None):
         """Create new Value Function from a Neural Network Implementation."""
         new = cls(dim_state=dim_state, dim_action=dim_action,
                   num_states=num_states, num_actions=num_actions, tau=tau,

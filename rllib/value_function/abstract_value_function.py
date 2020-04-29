@@ -29,7 +29,7 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 tau=1.):
+                 tau=0.):
         super().__init__()
         self.dim_action = dim_action
         self.num_actions = num_actions if num_actions is not None else -1
@@ -58,5 +58,5 @@ class AbstractValueFunction(AbstractQFunction):
         Low-pass filter parameter to update the value function.
     """
 
-    def __init__(self, dim_state, num_states=-1, tau=1.0):
+    def __init__(self, dim_state, num_states=-1, tau=0.0):
         super().__init__(dim_state, dim_action=0, num_states=num_states, tau=tau)

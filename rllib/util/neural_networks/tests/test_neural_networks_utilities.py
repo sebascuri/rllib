@@ -3,7 +3,8 @@ import torch
 import torch.functional
 import torch.testing
 
-from rllib.util.neural_networks import DeterministicNN
+from rllib.util.neural_networks import DeterministicNN, FelixNet, \
+    CategoricalNN, Ensemble, MultiHeadNN, HomoGaussianNN, HeteroGaussianNN
 from rllib.util.neural_networks.utilities import *
 
 
@@ -25,56 +26,63 @@ def test_zero_bias():
 
 
 class TestUpdateParams(object):
-    @pytest.fixture(params=[1., 0.9, 0.5, 0.2], scope="class")
+    @pytest.fixture(params=[1., 0.9, 0.5, 0.2, 0.], scope="class")
     def tau(self, request):
         return request.param
 
-    def test_network(self, tau):
+    @pytest.fixture(params=[DeterministicNN, FelixNet, CategoricalNN, Ensemble,
+                            MultiHeadNN, HomoGaussianNN, HeteroGaussianNN],
+                    scope="class")
+    def network(self, request):
+        return request.param
+
+    def test_network(self, tau, network):
+        class_ = network
         in_dim = 16
         out_dim = 4
         layers = [32, 4]
-        net1 = DeterministicNN(in_dim, out_dim, layers)
-        net1c = DeterministicNN(in_dim, out_dim, layers)
-        net1c.load_state_dict(net1.state_dict())
+        if class_ is MultiHeadNN or class_ is Ensemble:
+            net1 = class_(in_dim, out_dim, num_heads=5, layers=layers)
+            net1c = class_(in_dim, out_dim, num_heads=5, layers=layers)
+            net2 = class_(in_dim, out_dim, num_heads=5, layers=layers)
+            net2c = class_(in_dim, out_dim, num_heads=5, layers=layers)
+        elif class_ is FelixNet:
+            net1 = class_(in_dim, out_dim)
+            net1c = class_(in_dim, out_dim)
+            net2 = class_(in_dim, out_dim)
+            net2c = class_(in_dim, out_dim)
+        else:
+            net1 = class_(in_dim, out_dim, layers)
+            net1c = class_(in_dim, out_dim, layers)
+            net2 = class_(in_dim, out_dim, layers)
+            net2c = class_(in_dim, out_dim, layers)
 
-        net2 = DeterministicNN(in_dim, out_dim, layers)
-        net2c = DeterministicNN(in_dim, out_dim, layers)
+        net1c.load_state_dict(net1.state_dict())
         net2c.load_state_dict(net2.state_dict())
 
-        update_parameters(net1.parameters(), net2.parameters(), tau)
+        update_parameters(net1, net2, tau)
 
-        for param1, param1c, param2, param2c in zip(net1.parameters(),
-                                                    net1c.parameters(),
-                                                    net2.parameters(),
-                                                    net2c.parameters()
-                                                    ):
-            torch.testing.assert_allclose(
-                param1.data, tau * param2c.data + (1-tau) * param1c.data
-            )
+        for name, _ in net1.named_parameters():
+            param1 = net1.state_dict()[name]
+            param1c = net1c.state_dict()[name]
+
+            param2 = net2.state_dict()[name]
+            param2c = net2c.state_dict()[name]
 
             torch.testing.assert_allclose(
-                param2.data, param2c.data
+                param1.data, tau * param1c.data + (1 - tau) * param2c.data
             )
-            if tau < 1:
+
+            torch.testing.assert_allclose(param2.data, param2c.data)
+
+            assert param1 is not param1c
+            if tau == 0:
+                assert (torch.allclose(param1.data, param2c.data))
+            elif tau == 1:
+                assert (torch.allclose(param1.data, param1c.data))
+            elif not torch.allclose(param1.data, torch.zeros_like(param1.data)):
                 assert not (torch.allclose(param1.data, param1c.data))
-
-    def test_parameter(self, tau):
-        t1_data = [32, 16, 0.3]
-        t2_data = [0., 0., 0.5]
-        t1 = nn.Parameter(torch.tensor(t1_data))
-        t2 = nn.Parameter(torch.tensor(t2_data))
-
-        update_parameters([t1], [t2], tau)
-        torch.testing.assert_allclose(t1, nn.Parameter(
-            tau * torch.tensor(t2_data) + (1-tau) * torch.tensor(t1_data)))
-
-        torch.testing.assert_allclose(t2, nn.Parameter(torch.tensor(t2_data)))
-
-        update_parameters([t1], [t1], tau)
-        torch.testing.assert_allclose(t1, nn.Parameter(
-            tau * torch.tensor(t2_data) + (1 - tau) * torch.tensor(t1_data)))
-
-        torch.testing.assert_allclose(t2, nn.Parameter(torch.tensor(t2_data)))
+                assert not (torch.allclose(param2.data, param1c.data))
 
 
 class TestOneHotEncode(object):

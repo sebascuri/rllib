@@ -49,7 +49,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 tau=1.0, deterministic=False):
+                 tau=0.0, deterministic=False):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action

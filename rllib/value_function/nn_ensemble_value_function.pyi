@@ -14,7 +14,7 @@ class NNEnsembleValueFunction(NNValueFunction):
 
     def __init__(self, dim_state: int,  num_heads: int, num_states: int = -1,
                  layers: List[int] = None,
-                 biased_head: bool=True, non_linearity: str = 'ReLU', tau: float = 1.0,
+                 biased_head: bool=True, non_linearity: str = 'ReLU', tau: float = 0.0,
                  input_transform: torch.nn.Module = None) -> None: ...
 
     @classmethod
@@ -31,7 +31,7 @@ class NNEnsembleQFunction(NNQFunction):
     def __init__(self, dim_state: int, dim_action: int, num_heads: int,
                  num_states: int = -1, num_actions: int = -1,
                  layers: List[int] = None, biased_head: bool=True,
-                 non_linearity: str = 'ReLU',  tau: float = 1.0,
+                 non_linearity: str = 'ReLU',  tau: float = 0.0,
                  input_transform: torch.nn.Module = None
                  ) -> None: ...
 

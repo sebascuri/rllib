@@ -45,7 +45,7 @@ def parse_layers(layers, in_dim, non_linearity):
     return nn.Sequential(*layers_), in_dim
 
 
-def update_parameters(target_params, new_params, tau=1.0):
+def update_parameters(target_module, new_module, tau=0.0):
     """Update the parameters of target_params by those of new_params (softly).
 
     The parameters of target_nn are replaced by:
@@ -53,8 +53,8 @@ def update_parameters(target_params, new_params, tau=1.0):
 
     Parameters
     ----------
-    target_params: iter
-    new_params: iter
+    target_module: nn.Module
+    new_module: nn.Module
     tau: float, optional
 
     Returns
@@ -62,13 +62,15 @@ def update_parameters(target_params, new_params, tau=1.0):
     None.
     """
     with torch.no_grad():
-        for target_param, new_param in zip(target_params, new_params):
-            if target_param is new_param:
+        target_state_dict = target_module.state_dict()
+        new_state_dict = new_module.state_dict()
+
+        for name in target_state_dict.keys():
+            if target_state_dict[name] is new_state_dict[name]:
                 continue
             else:
-                # Do in-place for efficiency.
-                target_param.data.mul_(1.0 - tau)
-                target_param.data.add_(tau * new_param.data)
+                target_state_dict[name].data.mul_(tau)
+                target_state_dict[name].data.add_((1 - tau) * new_state_dict[name].data)
 
 
 def count_vars(module):

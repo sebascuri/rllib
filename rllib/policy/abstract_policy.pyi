@@ -18,7 +18,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     discrete_action: bool
 
     def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = -1, num_actions: int = -1, tau: float = 1.0,
+                 num_states: int = -1, num_actions: int = -1, tau: float = 0.0,
                  deterministic: bool = False) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...

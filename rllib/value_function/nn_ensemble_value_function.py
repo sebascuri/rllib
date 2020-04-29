@@ -25,7 +25,7 @@ class NNEnsembleValueFunction(NNValueFunction):
     """
 
     def __init__(self, dim_state, num_heads, num_states=-1, layers=None,
-                 biased_head=True, non_linearity='ReLU', tau=1.0, input_transform=None):
+                 biased_head=True, non_linearity='ReLU', tau=0.0, input_transform=None):
         assert num_heads > 0
         self.num_heads = num_heads
 
@@ -79,7 +79,7 @@ class NNEnsembleQFunction(NNQFunction):
 
     def __init__(self, dim_state, dim_action, num_heads, num_states=-1, num_actions=-1,
                  layers=None, biased_head=True, non_linearity='ReLU',
-                 tau=1.0, input_transform=None):
+                 tau=0.0, input_transform=None):
         self.num_heads = num_heads
         assert num_heads > 0
         # Initialize from q-function.

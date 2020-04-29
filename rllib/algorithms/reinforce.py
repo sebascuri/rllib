@@ -90,6 +90,4 @@ class REINFORCE(nn.Module):
     def update(self):
         """Update the baseline network."""
         if self.baseline is not None:
-            update_parameters(self.baseline_target.parameters(),
-                              self.baseline.parameters(),
-                              self.baseline.tau)
+            update_parameters(self.baseline_target, self.baseline, self.baseline.tau)

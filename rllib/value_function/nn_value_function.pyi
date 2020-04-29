@@ -14,7 +14,7 @@ class NNValueFunction(AbstractValueFunction):
     nn: torch.nn.Module
 
     def __init__(self, dim_state: int, num_states: int = -1, layers: List[int] = None,
-                 biased_head: bool=True, non_linearity: str = 'ReLU', tau: float = 1.0,
+                 biased_head: bool=True, non_linearity: str = 'ReLU', tau: float = 0.0,
                  input_transform: torch.nn.Module = None) -> None: ...
 
     @classmethod
@@ -22,7 +22,7 @@ class NNValueFunction(AbstractValueFunction):
 
     @classmethod
     def from_nn(cls: Type[T], module: torch.nn.Module, dim_state: int, num_states: int=-1,
-                tau: float = 1.0, input_transform: torch.nn.Module = None) -> T: ...
+                tau: float = 0.0, input_transform: torch.nn.Module = None) -> T: ...
 
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
 
@@ -36,7 +36,7 @@ class NNQFunction(AbstractQFunction):
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = -1, num_actions: int = -1,
                  layers: List[int] = None, biased_head: bool=True,
-                 non_linearity: str = 'ReLU',  tau: float = 1.0,
+                 non_linearity: str = 'ReLU',  tau: float = 0.0,
                  input_transform: torch.nn.Module = None
                  ) -> None: ...
 
@@ -45,7 +45,7 @@ class NNQFunction(AbstractQFunction):
 
     @classmethod
     def from_nn(cls: Type[T], module: torch.nn.Module, dim_state: int, dim_action: int,
-                num_states: int = -1, num_actions: int = -1, tau: float = 1.0,
+                num_states: int = -1, num_actions: int = -1, tau: float = 0.0,
                 input_transform: torch.nn.Module = None) -> T: ...
 
 

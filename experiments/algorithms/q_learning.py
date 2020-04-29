@@ -18,7 +18,7 @@ ENVIRONMENT = 'CartPole-v0'
 NUM_EPISODES = 50
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
-TARGET_UPDATE_TAU = 0.99
+TARGET_UPDATE_TAU = 0.01
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-2
@@ -51,8 +51,8 @@ criterion = torch.nn.MSELoss
 # memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE,
 #                                      beta=LinearGrowth(0.8, 1., 0.001))
 
-memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, eta=0.1, gamma=0.6)
-# memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
+# memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, eta=0.1, gamma=0.6)
+memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 agent = DDQNAgent(
     environment.name, q_function, policy, criterion, optimizer, memory, num_iter=1,

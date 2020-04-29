@@ -48,9 +48,11 @@ def _test_from_other(object_, class_):
 
     assert isinstance(other, class_)
     assert other is not object_
-    for p1, p2 in zip(object_.parameters(), other.parameters()):
-        if not torch.allclose(p1, p1[0]):
-            assert not torch.allclose(p1, p2)
+
+    other_state_dict = other.state_dict()
+    for name, param in object_.named_parameters():
+        if not torch.allclose(param, torch.zeros_like(param)):
+            assert not torch.allclose(param, other_state_dict[name])
     assert count_vars(other) == count_vars(object_)
 
 
@@ -59,8 +61,10 @@ def _test_from_other_with_copy(object_, class_):
 
     assert isinstance(other, class_)
     assert other is not object_
-    for p1, p2 in zip(object_.parameters(), other.parameters()):
-        assert torch.allclose(p1, p2)
+    other_state_dict = other.state_dict()
+
+    for name, param in object_.named_parameters():
+        assert torch.allclose(param, other_state_dict[name])
     assert count_vars(other) == count_vars(object_)
 
 
