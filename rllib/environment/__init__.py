@@ -1,3 +1,4 @@
+import rllib.environment.mujoco
 from .abstract_environment import AbstractEnvironment
 from .grid_world import *
 from .gym_environment import *

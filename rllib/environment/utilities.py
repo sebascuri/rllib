@@ -103,3 +103,33 @@ def kernelreward2transitions(kernel, reward):
                 )
 
     return transitions
+
+
+def mujoco_observation_to_state(observation, environment):
+    """Transform an observation of the mujoco environment to a qpos, qvel tuple."""
+    q_pos, q_vel = environment.env.init_qpos, environment.env.init_qvel
+    no, nq, nv = len(observation), len(q_pos), len(q_vel)
+
+    if no == nq + nv:
+        return observation[:nq], observation[nq:]
+    if environment.name in ['HalfCheetahEnv', 'HopperEnv', 'Walker2dEnv']:
+        q_pos[1:], q_vel = observation[:nq - 1], observation[nq - 1:nq - 1 + nv]
+    elif environment.name == ['AntEnv', 'HumanoidEnv', 'HumanoidStandupEnv',
+                              'SwimmerEnv']:
+        q_pos[2:], q_vel = observation[:nq - 2], observation[nq - 2:nq - 2 + nv]
+    elif environment.name in ['InvertedDoublePendulumEnv']:
+        q_pos[:1] = observation[:1]
+        q_pos[1:3] = np.arctan2(observation[1:3], observation[3:5])
+        q_vel = observation[5:5 + nv]
+    elif environment.name in ['InvertedPendulumEnv']:
+        pass
+    elif environment.name in ['PusherEnv']:
+        q_pos[-2:] = observation[-2:]  # goal position.
+
+    elif environment.name in ['ReacherEnv', 'StrikerEnv', 'ThrowerEnv', 'PusherEnv']:
+        raise NotImplementedError(f"{environment.name} not implemented.")
+
+    else:
+        raise NotImplementedError(f"{environment.name} not implemented.")
+
+    return q_pos, q_vel

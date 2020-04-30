@@ -50,7 +50,7 @@ class SystemEnvironment(AbstractEnvironment):
         state = self.system.state  # this might be noisy.
         reward = float('nan')
         if self.reward is not None:
-            reward = tensor_to_distribution(self.reward(state, action)).sample()
+            reward = tensor_to_distribution(self.reward(state, action, None)).sample()
 
         next_state = self.system.step(action)
         if self.termination is not None:

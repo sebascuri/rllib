@@ -17,8 +17,8 @@ class GymEnvironment(AbstractEnvironment):
 
     """
 
-    def __init__(self, env_name, seed=None):
-        self.env = gym.make(env_name).unwrapped
+    def __init__(self, env_name, seed=None, **kwargs):
+        self.env = gym.make(env_name, **kwargs).unwrapped
         self.env.seed(seed)
         try:
             dim_action = self.env.action_space.shape[0]
@@ -70,10 +70,14 @@ class GymEnvironment(AbstractEnvironment):
     @property
     def state(self):
         """See `AbstractEnvironment.state'."""
-        try:
+        if hasattr(self.env, 'state'):
             return self.env.state
-        except AttributeError:
+        elif hasattr(self.env, 's'):
             return self.env.s
+        elif hasattr(self.env, '_get_obs'):
+            return getattr(self.env, '_get_obs')()
+        else:
+            raise NotImplementedError('Strange state')
 
     @state.setter
     def state(self, value):
@@ -81,6 +85,8 @@ class GymEnvironment(AbstractEnvironment):
             self.env.state = value
         elif hasattr(self.env, 's'):
             self.env.s = value
+        elif hasattr(self.env, 'set_state'):
+            pass
         else:
             raise NotImplementedError('Strange state')
 

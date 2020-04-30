@@ -43,7 +43,8 @@ class BanditEnvironment(AbstractEnvironment):
     def step(self, action):
         """Get reward of a given action."""
         self.t += 1
-        reward_distribution = tensor_to_distribution(self.reward(self.state, action))
+        reward_distribution = tensor_to_distribution(
+            self.reward(self.state, action, None))
         return self.state, reward_distribution.sample().numpy(), False, {}
 
     def reset(self):
