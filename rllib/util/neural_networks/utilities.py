@@ -233,7 +233,7 @@ class TileCode(nn.Module):
 
 
 def digitize(tensor, bin_boundaries):
-    """Implementation of numpy digitize."""
+    """Implement numpy digitize using torch."""
     result = torch.zeros(tensor.shape).long()
     for boundary in bin_boundaries:
         result += (tensor > boundary).long()

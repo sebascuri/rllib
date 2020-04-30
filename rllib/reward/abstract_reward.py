@@ -21,6 +21,6 @@ class AbstractReward(nn.Module, metaclass=ABCMeta):
         super().__init__()
 
     @abstractmethod
-    def forward(self, state, action):
+    def forward(self, state, action, next_state):
         """Get reward distribution at current state and action."""
         raise NotImplementedError

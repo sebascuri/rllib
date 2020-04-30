@@ -168,13 +168,6 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         else:
             action = pi.sample()
 
-        # % Sample a reward
-        reward_distribution = tensor_to_distribution(reward_model(state, action))
-        if reward_distribution.has_rsample:
-            reward = reward_distribution.rsample()
-        else:
-            reward = reward_distribution.sample()
-
         # Sample next states
         next_state_out = dynamical_model(state, action)
         next_state_distribution = tensor_to_distribution(next_state_out)
@@ -187,6 +180,14 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             next_state = next_state_distribution.rsample()
         else:
             next_state = next_state_distribution.sample()
+
+        # % Sample a reward
+        reward_distribution = tensor_to_distribution(
+            reward_model(state, action, next_state))
+        if reward_distribution.has_rsample:
+            reward = reward_distribution.rsample()
+        else:
+            reward = reward_distribution.sample()
 
         # Check for termination.
         if termination is not None:
@@ -245,15 +246,7 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
     state = initial_state
     done = torch.full(state.shape[:-1], False, dtype=torch.bool)
 
-    for action in action_sequence:
-        # Sample actions
-
-        # % Sample a reward
-        reward_distribution = tensor_to_distribution(reward_model(state, action))
-        if reward_distribution.has_rsample:
-            reward = reward_distribution.rsample()
-        else:
-            reward = reward_distribution.sample()
+    for action in action_sequence:  # Sampled actions
 
         # Sample next states
         next_state_out = dynamical_model(state, action)
@@ -267,6 +260,14 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
             next_state = next_state_distribution.rsample()
         else:
             next_state = next_state_distribution.sample()
+
+        # % Sample a reward
+        reward_distribution = tensor_to_distribution(
+            reward_model(state, action, next_state))
+        if reward_distribution.has_rsample:
+            reward = reward_distribution.rsample()
+        else:
+            reward = reward_distribution.sample()
 
         # Check for termination.
         if termination is not None:

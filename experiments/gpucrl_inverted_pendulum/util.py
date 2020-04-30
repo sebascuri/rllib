@@ -65,7 +65,7 @@ class PendulumReward(AbstractReward):
         super().__init__()
         self.action_cost_ratio = action_cost_ratio
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state):
         """See `abstract_reward.forward'."""
         if not isinstance(state, torch.Tensor):
             state = torch.tensor(state, dtype=torch.get_default_dtype())

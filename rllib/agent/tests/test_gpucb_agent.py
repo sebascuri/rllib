@@ -42,7 +42,7 @@ def test_GPUCB(reward, model_class):
     torch.manual_seed(SEED)
     x = torch.linspace(-1, 6, NUM_POINTS)
     x0 = x[x > 0.2][[0]].unsqueeze(-1)
-    y0 = reward(None, x0)[0]
+    y0 = reward(None, x0, None)[0]
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     likelihood.noise_covar.noise = 0.1 ** 2
     model = model_class(x0, y0, likelihood)

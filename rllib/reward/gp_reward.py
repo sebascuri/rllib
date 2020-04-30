@@ -13,7 +13,7 @@ class GPBanditReward(AbstractReward):
         super().__init__()
         self.model = model
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state):
         """Compute the reward for a given state, action pairs."""
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
             if type(action) is not torch.Tensor:

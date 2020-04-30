@@ -14,7 +14,7 @@ class EnvironmentReward(AbstractReward):
 
         self.environment = environment
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state):
         """Get Reward distribution."""
         self.environment.state = state
         next_state, reward, done, _ = self.environment.step(action)

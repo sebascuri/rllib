@@ -15,7 +15,7 @@ class QuadraticReward(AbstractReward):
         self.q = q
         self.r = r
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state):
         """See `abstract_reward.forward'."""
         state_cost = torch_quadratic(state, self.q)
         action_cost = torch_quadratic(action, self.r)
