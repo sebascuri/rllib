@@ -5,6 +5,11 @@ import os
 import numpy as np
 from gym.spaces import Box
 
+try:
+    from gym.envs.classic_control import rendering
+except Exception:  # No display.
+    pass
+
 from rllib.environment.systems.ode_system import ODESystem
 from rllib.util.utilities import get_backend
 
@@ -45,8 +50,6 @@ class InvertedPendulum(ODESystem):
 
     def render(self, mode='human'):
         """Render pendulum."""
-        from gym.envs.classic_control import rendering
-
         if self.viewer is None:
             self.viewer = rendering.Viewer(500, 500)
             self.viewer.set_bounds(-2.2, 2.2, -2.2, 2.2)

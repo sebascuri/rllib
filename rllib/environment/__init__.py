@@ -1,4 +1,8 @@
-import rllib.environment.mujoco
+"""Import environments."""
+try:
+    import rllib.environment.mujoco
+except Exception:  # Mujoco not installed.
+    pass
 from .abstract_environment import AbstractEnvironment
 from .grid_world import *
 from .gym_environment import *
