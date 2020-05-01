@@ -1,63 +1,89 @@
 """Implementation of an EXP3 Experience Replay Buffer."""
 
-import numpy as np
 import torch
-from torch.utils.data._utils.collate import default_collate
 
-from .experience_replay import ExperienceReplay
-from rllib.util.parameter_decay import Constant
+from .prioritized_experience_replay import PrioritizedExperienceReplay
 
 
-class EXP3ExperienceReplay(ExperienceReplay):
-    """Sampler for EXP3-Sampler."""
+class EXP3ExperienceReplay(PrioritizedExperienceReplay):
+    r"""Sampler for EXP3-Sampler.
 
-    def __init__(self, max_len, eta=0.1, gamma=0.1, max_priority=1.,
-                 transformations=None):
-        super().__init__(max_len, transformations)
-        if isinstance(eta, float):
-            eta = Constant(eta)
-        self.eta = eta
+    The exp-3 algorithm maintains a sampling distribution over the index set of size K.
+    The sampling probability at time t of index k is proportional to:
 
-        if isinstance(gamma, float):
-            gamma = Constant(gamma)
-        self.gamma = gamma
+    ..math :: p_{k, t} = (1-\beta) w_{k, t} / \sum_k w_{k, t} + \beta / K,
 
-        self.max_priority = max_priority
-        self.priorities = torch.zeros(self.max_len)
-        self.weights = torch.zeros(self.max_len)
+    where \beta is a mixing parameter and w_{:,t} is a vector of weights computed as.
 
-    def append(self, observation):
-        """Append new observations."""
-        self.priorities[self._ptr] = self.max_priority
-        super().append(observation)
-        self._update_weights()
+    ..math :: w_{k, t} = w_{k, 0} \exp^{\alpha \sum_{t'=0}^t r_{k, t'}},
+    where r_{k, t} is an unbiased estimate of the reward obtained at time t at index k,
+    and \alpha is the learning rate of the algorithm.
 
-    def update(self, indexes, td_error):
+    Usually, the parameter r_{k, t} is not observed but only a (batch of) index(es)
+    is (are) sampled.
+    Let I_{t} be a sample from p_{k, t} at time t, and only r_t is observed.
+
+    Then the following estimator is used as an unbiased estimate of r_{k, t}.
+
+    ..math :: r_{t} / p_{:, t} 1[I_{t} = k]
+
+    Parameters
+    ----------
+    max_len: int.
+        Maximum length of Buffer.
+    alpha: float, ParameterDecay, optional.
+        Learning rate of Exp-3 algorithm.
+    beta: float, ParameterDecay, optional.
+        Mixing parameter with uniform distribution.
+    epsilon: float, optional.
+        Minimum sampling probability.
+    max_priority: float, optional.
+        Maximum value for the priorities.
+        New observations are initialized with this value.
+    transformations: list of transforms.AbstractTransform, optional.
+        A sequence of transformations to apply to the dataset, each of which is a
+        callable that takes an observation as input and returns a modified observation.
+        If they have an `update` method it will be called whenever a new trajectory
+        is added to the dataset.
+
+    References
+    ----------
+    Auer, P., Cesa-Bianchi, N., Freund, Y., & Schapire, R. E. (2002).
+    The nonstochastic multiarmed bandit problem. SIAM journal on computing.
+
+    Lattimore, T., & Szepesvári, C. (2018).
+    Bandit algorithms. Preprint.
+
+    Bubeck, S., & Cesa-Bianchi, N. (2012).
+    Regret analysis of stochastic and nonstochastic multi-armed bandit problems.
+    Foundations and Trends® in Machine Learning.
+    """
+
+    @property
+    def probabilities(self):
+        """Get list of probabilities."""
+        probs = self.weights[:len(self)].reciprocal()
+        return probs / torch.sum(probs)
+
+    def update(self, indexes, td):
         """Update experience replay sampling distribution with set of weights."""
         idx, inverse_idx, counts = torch.unique(indexes, return_counts=True,
                                                 return_inverse=True)
 
-        td = torch.abs(td_error)
-        inv_prob = self.weights[indexes]
-        self.priorities[indexes] += self.eta() * td * inv_prob * counts[inverse_idx]
+        inv_prob = self.probabilities[indexes].reciprocal()
+        self._priorities[indexes] += self.alpha() * td * inv_prob * counts[inverse_idx]
 
         self.max_priority = max(self.max_priority,
-                                torch.max(self.priorities[idx]).item())
-        self.eta.update()
-        self.gamma.update()
+                                torch.max(self._priorities[idx]).item())
+        self.alpha.update()
+        self.beta.update()
         self._update_weights()
 
     def _update_weights(self):
         """Update priorities and weights."""
         num = len(self)
-        probs = torch.exp(self.priorities[:num] - self.max_priority)
-        probs = (1 - self.gamma()) * probs / torch.sum(probs) + self.gamma() / num
-        weights = 1. / (num * probs)
+        probs = torch.exp(self._priorities[:num] - self.max_priority)
+        probs = (1 - self.beta()) * probs / torch.sum(probs) + self.beta() / num
+        # assert torch.all(probs * num > self.beta() - 1e-4)
+        weights = 1. / (probs * num)
         self.weights[:num] = weights
-
-    def get_batch(self, batch_size):
-        """Get a batch of data."""
-        probs = 1. / self.weights[:len(self)].numpy()
-        # assert np.all(probs + 1e-3 >= self.gamma().data.item())
-        indices = np.random.choice(len(self), batch_size, p=probs / np.sum(probs))
-        return default_collate([self[i] for i in indices])

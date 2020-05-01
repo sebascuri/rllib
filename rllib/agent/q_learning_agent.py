@@ -82,7 +82,7 @@ class QLearningAgent(AbstractAgent):
             self.optimizer.step()
 
             # Update memory
-            self.memory.update(idx, losses.td_error.detach())
+            self.memory.update(idx, losses.td_error.abs().detach())
 
             # Update loss
             self.logger.update(critic_losses=loss.item(),

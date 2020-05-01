@@ -27,16 +27,26 @@ class ExperienceReplay(data.Dataset):
 
     Methods
     -------
-    append(observation):
+    append(observation) -> None:
         append an observation to the dataset.
-    shuffle():
-        shuffle the dataset.
     is_full: bool
         check if buffer is full.
-    has_batch: bool
-        check if buffer has at least a batch.
-    update(observation, indexes, priority):
-        update experience replay sampling distribution with priority.
+    update(indexes, td_error):
+        update experience replay sampling distribution with td_error feedback.
+    all_data:
+        Get all the transformed data.
+    get_batch(batch_size):
+        Get a batch of data.
+    reset():
+        Reset the memory to zero.
+    get_observation(idx):
+        Get the observation at a given index.
+
+    References
+    ----------
+    Lin, L. J. (1992).
+    Self-improving reactive agents based on reinforcement learning, planning and
+    teaching. Machine learning.
 
     """
 
@@ -85,9 +95,9 @@ class ExperienceReplay(data.Dataset):
         weight: torch.tensor.
 
         """
-        return self.get_observation(idx), idx, self.weights[idx]
+        return self._get_observation(idx), idx, self.weights[idx]
 
-    def get_observation(self, idx):
+    def _get_observation(self, idx):
         """Return any desired observation.
 
         Parameters

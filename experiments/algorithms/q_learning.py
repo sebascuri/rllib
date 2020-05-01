@@ -51,8 +51,9 @@ criterion = torch.nn.MSELoss
 # memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE,
 #                                      beta=LinearGrowth(0.8, 1., 0.001))
 
-# memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, eta=0.1, gamma=0.6)
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
+# memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
+memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, alpha=0.001, beta=0.1)
+# memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 agent = DDQNAgent(
     environment.name, q_function, policy, criterion, optimizer, memory, num_iter=1,

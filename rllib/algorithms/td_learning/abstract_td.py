@@ -93,7 +93,7 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
                     td = td * td2
 
                 self._update(td, phi, next_phi, weight)
-                self.sampler.update(idx, td.detach().numpy())
+                self.sampler.update(idx, td.abs().detach().numpy())
 
         self.value_function.value_function.head.weight.data = self.theta
         return mspbe

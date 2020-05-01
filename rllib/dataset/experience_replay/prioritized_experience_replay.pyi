@@ -1,6 +1,7 @@
 from typing import List, Union
 
 from torch import Tensor
+
 from rllib.dataset.transforms import AbstractTransform
 from rllib.util.parameter_decay import ParameterDecay
 from .experience_replay import ExperienceReplay
@@ -11,7 +12,8 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     beta: ParameterDecay
     epsilon: Tensor
     max_priority: float
-    priorities: Tensor
+    _priorities: Tensor
+    priors: Tensor
 
     def __init__(self, max_len: int, alpha: Union[float, ParameterDecay] = 0.6,
                  beta: Union[float, ParameterDecay] = 0.4,
@@ -19,3 +21,12 @@ class PrioritizedExperienceReplay(ExperienceReplay):
                  transformations: List[AbstractTransform] = None) -> None: ...
 
     def _update_weights(self) -> None: ...
+
+    @property
+    def priorities(self) -> Tensor: ...
+
+    @priorities.setter
+    def priorities(self, value: Tensor) -> None: ...
+
+    @property
+    def probabilities(self) -> Tensor: ...

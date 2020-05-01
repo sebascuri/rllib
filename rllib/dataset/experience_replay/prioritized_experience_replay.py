@@ -4,8 +4,9 @@ import numpy as np
 import torch
 from torch.utils.data._utils.collate import default_collate
 
+from rllib.dataset.datatypes import Observation
 from .experience_replay import ExperienceReplay
-from rllib.util.parameter_decay import Constant
+from rllib.util.parameter_decay import Constant, ParameterDecay
 
 
 class PrioritizedExperienceReplay(ExperienceReplay):
@@ -36,28 +37,71 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     max_priority: float, optional.
         Maximum value for the priorities.
         New observations are initialized with this value.
+    transformations: list of transforms.AbstractTransform, optional.
+        A sequence of transformations to apply to the dataset, each of which is a
+        callable that takes an observation as input and returns a modified observation.
+        If they have an `update` method it will be called whenever a new trajectory
+        is added to the dataset.
 
     References
     ----------
-    Schaul, Tom, et al. "PRIORITIZED EXPERIENCE REPLAY." ICLR 2016.
-
+    Schaul, T., Quan, J., Antonoglou, I., & Silver, D. (2015).
+    Prioritized experience replay. ICLR.
     """
 
     def __init__(self, max_len, alpha=0.6, beta=0.4, epsilon=0.01, max_priority=10.,
                  transformations=None):
         super().__init__(max_len, transformations)
-        if isinstance(alpha, float):
+        if not isinstance(alpha, ParameterDecay):
             alpha = Constant(alpha)
         self.alpha = alpha
 
-        if isinstance(beta, float):
+        if not isinstance(beta, ParameterDecay):
             beta = Constant(beta)
         self.beta = beta
 
-        self.epsilon = torch.tensor(epsilon)
+        if not isinstance(epsilon, torch.Tensor):
+            epsilon = torch.tensor(epsilon)
+        self.epsilon = epsilon
+
         self.max_priority = max_priority
-        self.priorities = torch.zeros(self.max_len)
+        self._priorities = torch.zeros(self.max_len)
         self.weights = torch.zeros(self.max_len)
+
+    @classmethod
+    def from_other(cls, other):
+        """Initialize EXP3Experience Replay from another one."""
+        new = cls(max_len=other.max_len, alpha=other.alpha, beta=other.beta,
+                  epsilon=other.epsilon, max_priority=other.max_priority,
+                  transformations=other.transformations)
+
+        for observation in other.memory:
+            if isinstance(observation, Observation):
+                new.append(observation)
+        return new
+
+    @property
+    def priorities(self):
+        """Get list of priorities."""
+        return self._priorities
+
+    @priorities.setter
+    def priorities(self, value):
+        """Set list of priorities."""
+        self._priorities = value
+        self._update_weights()
+
+    @property
+    def probabilities(self):
+        """Get list of probabilities."""
+        num = len(self)
+        return self._priorities[:num] / torch.sum(self._priorities[:num])
+
+    def get_batch(self, batch_size):
+        """Get a batch of data."""
+        probs = self.probabilities.numpy()
+        indices = np.random.choice(len(self), batch_size, p=probs / np.sum(probs))
+        return default_collate([self[i] for i in indices])
 
     def append(self, observation):
         """Append new observation to the dataset.
@@ -71,27 +115,19 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         TypeError
             If the new observation is not of type Observation.
         """
-        self.priorities[self._ptr] = self.max_priority
+        self._priorities[self._ptr] = self.max_priority
         super().append(observation)
+        self._update_weights()
+
+    def update(self, indexes, td_error):
+        """Update experience replay sampling distribution with set of weights."""
+        self._priorities[indexes] = (td_error + self.epsilon) ** self.alpha()
+        self.alpha.update()
+        self.beta.update()
         self._update_weights()
 
     def _update_weights(self):
         """Update priorities and weights."""
         num = len(self)
-        probs = self.priorities[:num] / torch.sum(self.priorities[:num])
-
-        weights = torch.pow(probs * num, -self.beta())
+        weights = torch.pow(self.probabilities * num, -self.beta())
         self.weights[:num] = weights
-
-    def update(self, indexes, td_error):
-        """Update experience replay sampling distribution with set of weights."""
-        self.priorities[indexes] = (torch.abs(td_error) + self.epsilon) ** self.alpha()
-        self.alpha.update()
-        self.beta.update()
-        self._update_weights()
-
-    def get_batch(self, batch_size):
-        """Get a batch of data."""
-        probs = self.priorities[:len(self)].numpy()
-        indices = np.random.choice(len(self), batch_size, p=probs / np.sum(probs))
-        return default_collate([self[i] for i in indices])
