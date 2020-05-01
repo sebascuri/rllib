@@ -1,10 +1,13 @@
 """Utilities for vectorized environments.."""
+from abc import ABCMeta
 
 import numpy as np
+from gym import Env
+
 from rllib.util.utilities import get_backend
 
 
-class VectorizedEnv(object):
+class VectorizedEnv(Env, metaclass=ABCMeta):
     """Vectorized implementation of Acrobot."""
 
     @property
@@ -32,6 +35,32 @@ class VectorizedEnv(object):
             return np.random.randn() * (max_val - min_val) + min_val
         else:
             return self.bk.rand(min_val, max_val)
+
+    def step(self, action):
+        """Run one timestep of the environment's dynamics.
+
+        When end of episode is reached, you are responsible for calling `reset()` to
+        reset this environment's state.
+
+        Accepts an action and returns a tuple (observation, reward, done, info).
+
+        Parameters
+        ----------
+        action: np.ndarray
+            An action provided by the agent.
+
+        Returns
+        -------
+        observation: np.ndarray
+            Agent's observation of the current environment.
+        reward: float
+            Amount of reward returned after previous action.
+        done: bool
+            Whether the episode has ended.
+        info: dict
+            Contains auxiliary diagnostic information.
+        """
+        raise NotImplementedError
 
 
 def rk4(derivs, y0, t, *args, **kwargs):

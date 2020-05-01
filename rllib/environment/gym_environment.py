@@ -50,7 +50,7 @@ class GymEnvironment(AbstractEnvironment):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         next_state, reward, done, info = self.env.step(action)
-        if done and self.num_states > 0:
+        if self.num_states > 0 and done:
             next_state = self.num_states - 1
         return next_state, reward, done, info
 

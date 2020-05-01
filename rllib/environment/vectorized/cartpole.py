@@ -30,7 +30,10 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         x, x_dot = self.state[..., 0], self.state[..., 1]
         theta, theta_dot = self.state[..., 2], self.state[..., 3]
 
-        force = self.force_mag * action[..., 0]
+        try:
+            force = self.force_mag * action[..., 0]
+        except IndexError:
+            force = self.force_mag * action
 
         cos = bk.cos(theta)
         sin = bk.sin(theta)
