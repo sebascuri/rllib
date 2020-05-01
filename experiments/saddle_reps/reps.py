@@ -1,17 +1,13 @@
 """Vanilla REPS/Q-REPS experiments."""
-from itertools import chain
 
 import numpy as np
 import torch
-from torch.optim.lbfgs import LBFGS
 from torch.optim.adam import Adam
 
 from rllib.agent.reps_agent import REPSAgent
 from rllib.algorithms.reps import REPS, QREPS
 from rllib.environment import GymEnvironment
-from rllib.policy import NNPolicy, SoftMax
-
-from rllib.util.parameter_decay import Constant
+from rllib.policy import NNPolicy
 
 from rllib.value_function import NNValueFunction, NNQFunction
 from rllib.dataset.experience_replay import ExperienceReplay
@@ -27,7 +23,7 @@ MEMORY_SIZE = 3500
 
 GAMMA = 1
 SEED = 0
-ENVIRONMENT = 'CartPole-v0'
+ENVIRONMENT = 'VDiscrete-CartPole-v0'
 MAX_STEPS = 200
 
 torch.manual_seed(SEED)
