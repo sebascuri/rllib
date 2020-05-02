@@ -268,10 +268,11 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
             reward = reward_distribution.rsample()
         else:
             reward = reward_distribution.sample()
+        reward *= (~done).float()
 
         # Check for termination.
         if termination is not None:
-            done = termination(state, action)
+            done += termination(state, action)
 
         trajectory.append(
             RawObservation(state, action, reward, next_state, done.float(),

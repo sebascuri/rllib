@@ -143,7 +143,9 @@ def discount_sum(rewards, gamma=1.0):
                 ).sum()
     else:
         steps = rewards.shape[0]
-        return torch.pow(gamma * torch.ones(steps), torch.arange(steps)) @ rewards
+        return torch.einsum('i,i...->...',
+                            torch.pow(gamma * torch.ones(steps), torch.arange(steps)),
+                            rewards)
 
 
 def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
