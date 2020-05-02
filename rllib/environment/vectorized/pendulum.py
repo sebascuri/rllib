@@ -21,7 +21,8 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
 
         u = self.clip(action, -self.max_torque, self.max_torque)[..., 0]
 
-        self.last_u = u[0]  # for rendering
+        if not u.shape:
+            self.last_u = u  # for rendering
         costs = angle_normalize(theta) ** 2 + .1 * theta_dot ** 2 + .001 * (u ** 2)
 
         theta_d_dot = -3 * g / (2 * length) * bk.sin(theta + np.pi) + 3. / inertia * u
@@ -31,7 +32,7 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
 
         self.state = self.bk.stack((new_theta, new_theta_dot), -1)
 
-        done = bk.full_like(costs, False)
+        done = bk.zeros_like(costs, dtype=bk.bool)
         return self._get_obs(), -costs, done, {}
 
     def _get_obs(self):
