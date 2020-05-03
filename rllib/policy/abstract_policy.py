@@ -87,6 +87,11 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
                        cov.expand(*batch_size, self.dim_action, self.dim_action)
 
     @torch.jit.export
+    def reset(self):
+        """Reset policy parameters (for example internal states)."""
+        pass
+
+    @torch.jit.export
     def update(self):
         """Update policy parameters."""
         pass

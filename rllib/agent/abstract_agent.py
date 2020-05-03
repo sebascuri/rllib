@@ -99,6 +99,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def start_episode(self):
         """Start a new episode."""
+        self.policy.reset()
         self.episode_steps.append(0)
         self.last_trajectory = []
 
