@@ -95,9 +95,9 @@ num_entries = [100, 100]
 plot_values_and_policy(
     lambda x: rllib.util.neural_networks.torch_quadratic(x, matrix=-P),
     lambda x: (x @ K, 0), bounds, num_entries)
-plt.title('True value function')
+plt.suptitle('Exact', y=1)
 plt.show()
 
 plot_values_and_policy(value_function, policy, bounds, num_entries)
-plt.title('Learned value function')
+plt.suptitle('Learnt', y=1)
 plt.show()

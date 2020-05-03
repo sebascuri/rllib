@@ -167,18 +167,18 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries):
     ax_value
     ax_policy
     """
-    fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True, figsize=(15, 10))
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey='col', figsize=(20, 8))
 
     plt.sca(ax1)
     plot_on_grid(value_function, bounds=bounds, num_entries=num_entries)
-    plt.title('Learned value function')
+    plt.title('Value function')
     plt.xlabel('Angle[rad]')
     plt.ylabel('Angular velocity [rad/s]')
     plt.axis('tight')
 
     plt.sca(ax2)
     plot_on_grid(lambda x: policy(x)[0], bounds=bounds, num_entries=num_entries)
-    plt.title('Learned policy')
+    plt.title('Policy')
     plt.xlabel('Angle [rad]')
     plt.ylabel('Angular velocity [rad/s]')
     plt.axis('tight')
