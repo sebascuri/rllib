@@ -1,11 +1,11 @@
 """Utilities for the rllib library."""
 
 import numpy as np
-import scipy.signal
 import torch
 import torch.distributions
-from .distributions import Delta
 from torch.distributions import Categorical, MultivariateNormal
+
+from rllib.util.distributions import Delta
 
 
 def get_backend(array):
@@ -79,105 +79,6 @@ def mellow_max(values, omega=1.):
     """
     n = torch.tensor(values.shape[-1], dtype=torch.get_default_dtype())
     return (torch.logsumexp(omega * values, dim=-1) - torch.log(n)) / omega
-
-
-def discount_cumsum(rewards, gamma=1.0):
-    r"""Get discounted cumulative sum of an array.
-
-    Given a vector [r0, r1, r2], the discounted cum sum is another vector:
-    .. math:: [r0 + gamma r1 + gamma^2 r2, r1 + gamma r2, r2].
-
-
-    Parameters
-    ----------
-    rewards: Array.
-        Array of rewards
-    gamma: float, optional.
-        Discount factor.
-
-    Returns
-    -------
-    discounted_returns: Array.
-        Sum of discounted returns.
-
-    References
-    ----------
-    From rllab.
-    """
-    if type(rewards) is np.ndarray:
-        # The copy is for future transforms to pytorch
-        return scipy.signal.lfilter([1], [1, -float(gamma)], rewards[::-1]
-                                    )[::-1].copy()
-
-    val = torch.zeros_like(rewards)
-    r = 0
-    for i, reward in enumerate(reversed(rewards)):
-        r = reward + gamma * r
-        val[-1 - i] = r
-    return val
-
-
-def discount_sum(rewards, gamma=1.0):
-    r"""Get discounted sum of returns.
-
-    Given a vector [r0, r1, r2], the discounted sum is tensor:
-    .. math:: r0 + gamma r1 + gamma^2 r2
-
-    Parameters
-    ----------
-    rewards: Tensor.
-        Array of rewards. Either 1-d or 2-d. When 2-d, [trajectory x num_samples].
-    gamma: float, optional.
-        Discount factor.
-
-    Returns
-    -------
-    cum_sum: tensor.
-        Cumulative sum of returns.
-    """
-    if rewards.dim() == 0:
-        return rewards
-    elif rewards.dim() == 1:
-        steps = len(rewards)
-        return (torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards
-                ).sum()
-    else:
-        steps = rewards.shape[0]
-        return torch.einsum('i,i...->...',
-                            torch.pow(gamma * torch.ones(steps), torch.arange(steps)),
-                            rewards)
-
-
-def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
-    r"""Calculate n-step MC return from the trajectory.
-
-    The N-step return of a trajectory is calculated as:
-    .. math:: V(s) = \sum_{t=0}^T \gamma^t (r + \lambda H) + \gamma^{T+1} V(s_{T+1}).
-
-    Parameters
-    ----------
-    trajectory: List[Observation]
-        List of observations to compute the n-step return.
-    gamma: float, optional.
-        Discount factor.
-    value_function: AbstractValueFunction, optional.
-        Value function to bootstrap the value of the final state.
-    entropy_reg: float, optional.
-        Entropy regularization coefficient.
-    """
-    if len(trajectory) == 0:
-        return 0.
-    discount = 1.
-    value = torch.zeros_like(trajectory[0].reward)
-    for observation in trajectory:
-        value += discount * (observation.reward + entropy_reg * observation.entropy)
-        discount *= gamma
-
-    if value_function is not None:
-        final_state = trajectory[-1].next_state
-        is_terminal = trajectory[-1].done
-        value += discount * value_function(final_state) * (1. - is_terminal)
-    return value
 
 
 def tensor_to_distribution(args):

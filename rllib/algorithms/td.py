@@ -5,8 +5,7 @@ import torch
 import torch.nn as nn
 
 from rllib.util.neural_networks import update_parameters
-from rllib.util.utilities import discount_sum
-from rllib.algorithms.dyna import dyna_rollout
+from rllib.util import discount_sum, mb_return
 from .q_learning import QLearningLoss
 
 
@@ -93,22 +92,27 @@ class ModelBasedTDLearning(TDLearning):
         Criterion to optimize.
     gamma: float
         Discount factor.
-    n_steps: int, optional.
+    num_steps: int, optional.
         Number of steps to optimize.
 
     References
     ----------
     Sutton, R. S. (1988).
     Learning to predict by the methods of temporal differences. Machine learning.
+
+    Lowrey, K., Rajeswaran, A., Kakade, S., Todorov, E., & Mordatch, I. (2018).
+    Plan online, learn offline: Efficient learning and exploration via model-based
+    control. ICLR.
+
     """
 
     def __init__(self, value_function, criterion, policy, dynamical_model, reward_model,
-                 termination=None, n_steps=1, gamma=0.99):
+                 termination=None, num_steps=1, gamma=0.99):
         super().__init__(value_function, gamma=gamma, criterion=criterion)
         self.policy = policy
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
-        self.n_steps = n_steps
+        self.num_steps = num_steps
         self.termination = termination
 
     def forward(self, state, *args):
@@ -117,10 +121,10 @@ class ModelBasedTDLearning(TDLearning):
         pred_v = self.value_function(state)
 
         with torch.no_grad():
-            dyna_return = dyna_rollout(
-                state, self.dynamical_model, self.policy, self.reward_model,
-                self.n_steps, value_function=self.value_target,
-                gamma=self.gamma, termination=self.termination)
-            target = dyna_return.q_target
+            value_estimate, trajectory = mb_return(
+                state, dynamical_model=self.dynamical_model, policy=self.policy,
+                reward_model=self.reward_model, num_steps=self.num_steps,
+                value_function=self.value_target, gamma=self.gamma,
+                termination=self.termination)
 
-        return self._build_return(pred_v, target)
+        return self._build_return(pred_v, value_estimate)

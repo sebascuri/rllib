@@ -7,13 +7,13 @@ from tqdm import tqdm
 
 import rllib.algorithms.control
 import rllib.util.neural_networks
-from rllib.algorithms.dyna import dyna_rollout
 from rllib.environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model import LinearModel
 from rllib.policy import NNPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
 from rllib.value_function import NNValueFunction
+from rllib.util import mb_return
 
 from experiments.gpucrl_inverted_pendulum.plotters import plot_values_and_policy, \
     plot_learning_losses, plot_combinations_as_grid
@@ -65,12 +65,14 @@ for i in tqdm(range(num_iter)):
 
     states = 0.5 * torch.randn(batch_size, 2)
     with rllib.util.neural_networks.disable_gradient(value_function):
-        dyna_return = dyna_rollout(state=states, model=model, policy=policy,
-                                   reward=reward_model, steps=0, gamma=gamma,
-                                   value_function=value_function, num_samples=15)
+        value_estimate, trajectory = mb_return(
+            state=states, dynamical_model=model, policy=policy,
+            reward_model=reward_model, num_steps=1, gamma=gamma,
+            value_function=value_function, num_samples=15)
+
     prediction = value_function(states)
-    value_loss = loss_function(prediction, dyna_return.q_target.mean(dim=0))
-    policy_loss = -dyna_return.q_target.mean()
+    value_loss = loss_function(prediction, value_estimate.mean(dim=0))
+    policy_loss = -value_estimate.mean()
 
     loss = policy_loss + value_loss
     loss.backward()

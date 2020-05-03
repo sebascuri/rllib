@@ -5,7 +5,7 @@ from torch.distributions import MultivariateNormal
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_actions
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.utilities import discount_sum, sample_mean_and_cov
+from rllib.util import discount_sum, sample_mean_and_cov
 
 
 # TODO: ADD WARM STARTING through the mean.

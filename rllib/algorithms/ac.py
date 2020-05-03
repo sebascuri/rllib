@@ -5,7 +5,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 
-from rllib.util.utilities import integrate, discount_sum, tensor_to_distribution
+from rllib.util import integrate, discount_sum, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 
 

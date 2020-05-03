@@ -8,11 +8,11 @@ import torch.distributions
 import torch.nn as nn
 from tqdm import tqdm
 
-from rllib.algorithms.dyna import dyna_rollout
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import freeze_parameters
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import separated_kl, tensor_to_distribution
+from rllib.util.value_estimation import mb_return
 from rllib.util.neural_networks import deep_copy_module, repeat_along_dimension
 from rllib.util.parameter_decay import Learnable, Constant, ParameterDecay
 
@@ -394,17 +394,13 @@ class MBMPPO(nn.Module):
 
         kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
         with torch.no_grad():
-            dyna_return = dyna_rollout(state=states,
-                                       model=self.dynamical_model, policy=self.policy,
-                                       reward=self.reward_model, steps=0,
-                                       gamma=self.gamma,
-                                       value_function=self.value_function,
-                                       num_samples=self.num_action_samples,
-                                       entropy_reg=self.entropy_reg,
-                                       termination=self.termination,
-                                       )
-        q_values = dyna_return.q_target
-        action_log_probs = pi_dist.log_prob(dyna_return.trajectory[0].action)
+            value_estimate, trajectory = mb_return(
+                state=states, dynamical_model=self.dynamical_model, policy=self.policy,
+                reward_model=self.reward_model, num_steps=1, gamma=self.gamma,
+                value_function=self.value_function, num_samples=self.num_action_samples,
+                entropy_reg=self.entropy_reg, termination=self.termination)
+        q_values = value_estimate
+        action_log_probs = pi_dist.log_prob(trajectory[0].action)
 
         # Since actions come from policy, value is the expected q-value
         value_loss = self.value_loss(value_prediction, q_values.mean(dim=0))

@@ -1,7 +1,7 @@
 """Expected Actor-Critic Algorithm."""
 import torch
 
-from rllib.util.utilities import integrate, discount_sum, tensor_to_distribution
+from rllib.util import integrate, discount_sum, tensor_to_distribution
 from .ac import PGLoss, ActorCritic
 
 
