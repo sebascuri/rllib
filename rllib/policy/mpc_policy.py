@@ -10,7 +10,7 @@ class MPCPolicy(AbstractPolicy):
 
     def __init__(self, dynamic_model, reward_model, horizon, terminal_reward=None,
                  termination=None, gamma=1, num_samples=400, num_iter=5,
-                 num_elites=None, solver='CEM'):
+                 num_elites=None, solver='CEM', warm_start=False):
         super().__init__(dynamic_model.dim_state, dynamic_model.dim_action)
         self.dynamic_model = dynamic_model
         self.reward_model = reward_model
@@ -24,6 +24,7 @@ class MPCPolicy(AbstractPolicy):
 
         self.solver = solver
         self.last_actions = None
+        self.warm_start = warm_start
 
     def forward(self, state):
         """Solve the MPC problem."""
@@ -45,8 +46,12 @@ class MPCPolicy(AbstractPolicy):
         else:
             raise NotImplementedError
 
-        action = actions[..., 0, :]
-        # self.last_actions = torch.cat((actions[..., 1:, :],
-        #                                torch.zeros_like(actions[..., :1, :])),
-        #                               dim=-2)
-        return action, torch.zeros(1)  # Return first Step.
+        if self.warm_start:  # Warm start
+            self.last_actions = torch.cat((actions[..., 1:, :],
+                                           torch.zeros_like(actions[..., :1, :])),
+                                          dim=-2)
+        return actions[..., 0, :], torch.zeros(1)  # Return first Step.
+
+    def reset(self):
+        """Re-set last_action to None."""
+        self.last_actions = None

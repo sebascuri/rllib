@@ -2,6 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
+
 
 import numpy as np
 
@@ -42,12 +44,13 @@ dynamical_model = EnvironmentModel(env_model)
 reward_model = EnvironmentReward(env_model)
 termination = EnvironmentTermination(env_model)
 GAMMA = 0.99
-NUM_ITER = 20
-horizon = 10
+NUM_ITER = 200
+horizon = 40
 num_iter = 5
-num_samples = 50
+num_samples = 500
 num_steps = horizon
 solver = 'random_shooting'
+warm_start = False
 
 memory = ExperienceReplay(max_len=2000, num_steps=1)
 
@@ -56,17 +59,18 @@ optimizer = optim.Adam(value_function.parameters(), lr=1e-4)
 policy = MPCPolicy(dynamical_model, reward_model, horizon, termination=termination,
                    terminal_reward=value_function,
                    num_iter=num_iter, num_samples=num_samples, solver=solver,
-                   gamma=0.9)
+                   gamma=1.0, warm_start=warm_start)
 value_learning = ModelBasedTDLearning(
     value_function, criterion=nn.MSELoss(reduction='none'), policy=policy,
     dynamical_model=dynamical_model, reward_model=reward_model,
-    termination=termination, n_steps=num_steps, gamma=GAMMA)
+    termination=termination, num_steps=num_steps, gamma=GAMMA)
 
 total_td = []
 total_rewards = []
 
 for _ in range(10):
     state = env.reset()
+    policy.reset()
     # env.state = np.array([0 + 0.1 * np.random.randn(), 0])
     # state = env.env._get_obs()
 
@@ -88,21 +92,20 @@ for _ in range(10):
             break
     total_rewards.append(rewards)
     print(rewards)
-    for i in range(NUM_ITER):
-        optimizer.zero_grad()
-        observation, idx, weights = memory.get_batch(64)
-        loss = value_learning(observation.state, observation.action, observation.reward,
-                              observation.next_state, observation.done)
-
-        loss.loss.mean().backward()
-        optimizer.step()
-        total_td.append(loss.td_error.abs().mean())
-
-        value_learning.update()
-
-    memory.reset()
-
-import matplotlib.pyplot as plt
-
-plt.plot(total_td)
-plt.show()
+#     policy.reset()
+#     for i in range(NUM_ITER):
+#         optimizer.zero_grad()
+#         observation, idx, weights = memory.get_batch(64)
+#         loss = value_learning(observation.state, observation.action, observation.reward,
+#                               observation.next_state, observation.done)
+#
+#         loss.loss.mean().backward()
+#         optimizer.step()
+#         total_td.append(loss.td_error.abs().mean())
+#
+#         value_learning.update()
+#
+#     memory.reset()
+#
+# plt.plot(total_td)
+# plt.show()
