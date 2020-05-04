@@ -167,8 +167,7 @@ def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1
     Sample-based learning and search with permanent and transient memories. ICML.
     """
     # Repeat states to get a better estimate of the expected value
-    if num_samples > 1:
-        state = repeat_along_dimension(state, number=num_samples, dim=0)
+    state = repeat_along_dimension(state, number=num_samples, dim=0)
     trajectory = rollout_model(dynamical_model, reward_model, policy, state,
                                max_steps=num_steps, termination=termination)
     value = mc_return(trajectory, gamma=gamma, value_function=value_function,
