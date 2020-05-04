@@ -262,7 +262,7 @@ agent = MBMPPOAgent(
     environment.name, mppo, model_optimizer, mppo_optimizer,
     initial_distribution=torch.distributions.Uniform(
         torch.tensor([-np.pi, -0.005]), torch.tensor([np.pi, +0.005])),
-    transformations=transformations,
+    plan_horizon=1, plan_samples=8, plan_elite=1,
     max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
     num_model_iter=hparams['num_model_iter'],
     num_mppo_iter=hparams['num_mppo_iter'],

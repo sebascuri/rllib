@@ -189,7 +189,7 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries):
 def plot_pendulum_trajectories(agent, episode: int):
     """Plot GP inputs and trajectory in a Pendulum environment."""
     model = agent.mppo.dynamical_model.base_model
-    trajectory = stack_list_of_tuples(agent.trajectory)
+    trajectory = stack_list_of_tuples(agent.last_trajectory)
     sim_obs = agent.sim_trajectory
 
     for transformation in agent.dataset.transformations:
