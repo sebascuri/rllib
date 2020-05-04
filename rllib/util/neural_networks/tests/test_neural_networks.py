@@ -299,7 +299,7 @@ class TestEnsembleNN(object):
         assert o.batch_shape == torch.Size(
             [batch_size, 2] if batch_size is not None else [])
 
-        net.select_head(0)
+        net.set_head(0)
         o = tensor_to_distribution(net(t))
         if deterministic:
             assert isinstance(o, Delta)

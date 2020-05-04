@@ -53,7 +53,7 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
     ensemble_loss = 0
     for i in range(model.num_heads):
         optimizer.zero_grad()
-        model.select_head(i)
+        model.set_head(i)
         loss = (mask[:, i] * _model_loss(
             model, observation.state, observation.action, observation.next_state)
                 ).mean()
@@ -88,8 +88,10 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
     for i_epoch in tqdm(range(max_iter)):
         for observation, idx, mask in train_loader:
             if isinstance(model, EnsembleModel):
+                current_head = model.get_head()
                 model_loss = train_ensemble_step(model, observation, mask, optimizer,
                                                  logger)
+                model.set_head(current_head)
             elif isinstance(model, NNModel):
                 model_loss = train_nn_step(model, observation, optimizer)
             elif isinstance(model, ExactGPModel):

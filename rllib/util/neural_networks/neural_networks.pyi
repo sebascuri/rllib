@@ -52,18 +52,19 @@ class Ensemble(HeteroGaussianNN):
     head_ptr: int
     deterministic: bool
 
-    def __init__(self, in_dim: int, out_dim: int, num_heads: int, layers: List[int] = None,
+    def __init__(self, in_dim: int, out_dim: int, num_heads: int,
+                 layers: List[int] = None,
                  non_linearity: str = 'ReLU', biased_head: bool = True,
                  squashed_output: bool = False, deterministic: bool = True) -> None: ...
 
     @classmethod
     def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int) -> T: ...
 
-
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
-    def select_head(self, new_head: int) -> None: ...
+    def set_head(self, new_head: int) -> None: ...
 
+    def get_head(self) -> int: ...
 
 
 class MultiHeadNN(FeedForwardNN):
@@ -71,7 +72,8 @@ class MultiHeadNN(FeedForwardNN):
     num_heads: int
     head_ptr: int
 
-    def __init__(self, in_dim: int, out_dim: int, num_heads: int, layers: List[int] = None,
+    def __init__(self, in_dim: int, out_dim: int, num_heads: int,
+                 layers: List[int] = None,
                  non_linearity: str = 'ReLU', biased_head: bool = True,
                  squashed_output: bool = False) -> None: ...
 
@@ -79,9 +81,6 @@ class MultiHeadNN(FeedForwardNN):
     def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int) -> T: ...
 
     def forward(self, *x: Tensor, **kwargs) -> Tensor: ...
-
-    def select_head(self, new_head: int) -> None: ...
-
 
 
 class FelixNet(FeedForwardNN):

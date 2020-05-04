@@ -258,8 +258,8 @@ class Ensemble(HeteroGaussianNN):
         return mean, scale
 
     @torch.jit.export
-    def select_head(self, new_head: int):
-        """Select the Ensemble head.
+    def set_head(self, new_head: int):
+        """Set the Ensemble head.
 
         Parameters
         ----------
@@ -275,6 +275,11 @@ class Ensemble(HeteroGaussianNN):
         if new_head > self.num_heads:
             raise ValueError(
                 f"{new_head} has to be smaller or equal to {self.num_heads}.")
+
+    @torch.jit.export
+    def get_head(self) -> int:
+        """Get current head."""
+        return self.head_ptr
 
 
 class MultiHeadNN(FeedForwardNN):

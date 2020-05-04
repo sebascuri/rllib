@@ -39,9 +39,14 @@ class EnsembleModel(NNModel):
         return next_state[0], next_state[1]
 
     @torch.jit.export
-    def select_head(self, head_ptr: int):
-        """Select head of ensemble."""
-        self.nn.select_head(head_ptr)
+    def set_head(self, head_ptr: int):
+        """Set ensemble head."""
+        self.nn.set_head(head_ptr)
+
+    @torch.jit.export
+    def get_head(self):
+        """Get ensemble head."""
+        return self.nn.get_head()
 
     @property
     def name(self):
