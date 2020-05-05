@@ -67,19 +67,19 @@ def collect_model_transitions(state_dist, policy, dynamic_model, reward_model,
         List of 1-step transitions.
 
     """
-    states = state_dist.sample((num_samples,))
+    state = state_dist.sample((num_samples,))
     if isinstance(policy, AbstractPolicy):
-        action_dist = tensor_to_distribution(policy(states))
-        actions = action_dist.sample()
+        action_dist = tensor_to_distribution(policy(state))
+        action = action_dist.sample()
     else:  # action_distribution
         action_dist = policy
-        actions = action_dist.sample((num_samples,))
+        action = action_dist.sample((num_samples,))
 
-    next_states = tensor_to_distribution(dynamic_model(states, actions)).sample()
-    rewards = tensor_to_distribution(reward_model(states, actions)).sample()
+    next_state = tensor_to_distribution(dynamic_model(state, action)).sample()
+    reward = tensor_to_distribution(reward_model(state, action, next_state)).sample()
 
     transitions = []
-    for state, action, reward, next_state in zip(states, actions, rewards, next_states):
+    for state_, action_, reward_, next_state_ in zip(state, action, reward, next_state):
         transitions.append(
-            RawObservation(state, action, reward, next_state).to_torch())
+            RawObservation(state_, action_, reward_, next_state_).to_torch())
     return transitions
