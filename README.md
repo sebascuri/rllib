@@ -1,6 +1,6 @@
 # rllib
 
-[![CircleCI](https://circleci.com/gh/sebascuri/rllib/master.svg?style=shield&circle-token=25c056fd6b7e322c55dd48fd0c6052b1f8800919)](https://app.circleci.com/pipelines/github/sebascuri/rllib)
+[![CircleCI](https://img.shields.io/circleci/build/github/sebascuri/rllib/master?label=build%20and%20test&token=25c056fd6b7e322c55dd48fd0c6052b1f8800919)](https://app.circleci.com/pipelines/github/sebascuri/rllib)
 
 To install on clusters do:
 conda create -n rllib python=3.6
