@@ -38,11 +38,39 @@ jobs:
 
       - run:
           name: Run Style Tests
-          command: flake8 $module --exclude '__init__.py' --show-source || { exit 1; }
+          command: flake8 $MODULE --exclude '__init__.py' --show-source || { exit 1; }
 
       - run:
-          name: Run tests
-          command: xvfb-run -a bash scripts/test_code.sh
+          name: Run Docstring Tests
+          command: pydocstyle $MODULE || { exit 1; }
+
+      - run:
+          name: Run Typing Tests
+          command: mypy $MODULE || { exit 1; }
+
+      - run:
+          name: Run Unit Tests
+          command: |
+            mkdir test-results
+            xvfb-run -a pytest $MODULE --junitxml=test-results/junit.xml
+
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+#command: |
+#            . venv/bin/activate
+#            mkdir test-results
+#            pytest --junitxml=test-results/junit.xml
+
+
+
+
+
+
+
+
+
 
 workflows:
   version: 2
