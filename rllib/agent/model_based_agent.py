@@ -16,8 +16,10 @@ from .abstract_agent import AbstractAgent
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.policy.derived_policy import DerivedPolicy
 
-from rllib.model import ExactGPModel
+
+from rllib.model import ExactGPModel, TransformedModel
 from rllib.util.gaussian_processes import SparseGP
 from rllib.util.neural_networks.utilities import disable_gradient
 from rllib.util.rollout import rollout_model
@@ -113,6 +115,8 @@ class ModelBasedAgent(AbstractAgent):
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
+        if not isinstance(dynamical_model, TransformedModel):
+            dynamical_model = TransformedModel(dynamical_model, [])
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
         self.termination = termination
@@ -122,7 +126,9 @@ class ModelBasedAgent(AbstractAgent):
         self.model_learn_num_iter = model_learn_num_iter
         self.model_learn_batch_size = model_learn_batch_size
 
-        self.policy = policy
+        self.plan_policy = policy
+        self.policy = DerivedPolicy(policy, self.dynamical_model.base_model.dim_action)
+
         self.plan_horizon = plan_horizon
         self.plan_samples = plan_samples
         self.plan_elite = plan_elite
@@ -166,11 +172,11 @@ class ModelBasedAgent(AbstractAgent):
         else:
             if not isinstance(state, torch.Tensor):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
-            policy = tensor_to_distribution(self.policy(state))
+            policy = tensor_to_distribution(self.plan_policy(state))
             self.pi = policy
             action = self._plan(state).detach().numpy()
 
-        return action[..., :self.dynamical_model.dim_action]
+        return action[..., :self.dynamical_model.base_model.dim_action]
 
     def observe(self, observation):
         """Observe a new transition.
@@ -232,13 +238,14 @@ class ModelBasedAgent(AbstractAgent):
         self.dynamical_model.eval()
         value, trajectory = mb_return(
             state, dynamical_model=self.dynamical_model,
-            reward_model=self.reward_model, policy=self.policy,
+            reward_model=self.reward_model, policy=self.plan_policy,
             num_steps=self.plan_horizon, gamma=self.gamma,
             num_samples=self.plan_samples, value_function=self.value_function,
             termination=self.termination)
         actions = stack_list_of_tuples(trajectory).action
         idx = torch.topk(value, k=self.plan_elite, largest=True)[1]
-        return actions[0, idx].mean(0)  # Return first action.
+        # Return first action and the mean over the elite samples.
+        return actions[0, idx].mean(0)
 
     def _train(self) -> None:
         """Train the agent.
@@ -346,7 +353,7 @@ class ModelBasedAgent(AbstractAgent):
 
         trajectory = rollout_model(dynamical_model=self.dynamical_model,
                                    reward_model=self.reward_model,
-                                   policy=self.policy,
+                                   policy=self.plan_policy,
                                    initial_state=initial_states,
                                    max_steps=self.sim_num_steps,
                                    termination=self.termination)
