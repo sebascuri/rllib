@@ -4,7 +4,7 @@ import torch
 
 from rllib.dataset import TrajectoryDataset
 from rllib.dataset.datatypes import RawObservation, Observation
-from rllib.dataset.transforms import *
+from rllib.dataset.transforms import MeanFunction, StateNormalizer, ActionNormalizer
 
 
 @pytest.fixture(params=[(10, 200, 3, 2, 4, 2), (10, 200, 3, 2, 4, 8),
@@ -62,8 +62,8 @@ def test_shuffle(dataset):
 
 def test_append_error(dataset):
     dataset = TrajectoryDataset(sequence_length=10)
-    trajectory = [RawObservation(np.random.randn(4), np.random.randn(2), 1,
-                              np.random.randn(4), True).to_torch()]
+    trajectory = [RawObservation(
+        np.random.randn(4), np.random.randn(2), 1, np.random.randn(4), True).to_torch()]
     with pytest.raises(ValueError):
         dataset.append(trajectory)
 
@@ -100,8 +100,8 @@ def test_sequence_length_setter(dataset, new_seq_len):
         assert sub_trajectory.reward.shape == torch.Size([batch_len, ])
         assert sub_trajectory.done.shape == torch.Size([batch_len, ])
 
-    assert i == (
-                num_episodes * episode_length // new_seq_len) if new_seq_len else num_episodes
+    assert i == (num_episodes * episode_length // new_seq_len
+                 ) if new_seq_len else num_episodes
 
 
 def test_initial_states(dataset):

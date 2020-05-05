@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
-import scipy
 import torch
 import torch.testing
 from torch.distributions import kl_divergence, MultivariateNormal, Categorical
-from rllib.dataset.datatypes import RawObservation
 from rllib.util.distributions import Delta
 from rllib.util.utilities import separated_kl, integrate, mellow_max, get_backend, \
     tensor_to_distribution
@@ -22,18 +20,27 @@ class TestGetBackend(object):
 class TestIntegrate(object):
     def test_discrete_distribution(self):
         d = Categorical(torch.tensor([0.1, 0.2, 0.3, 0.4]))
-        function = lambda a: 2 * a
-        torch.testing.assert_allclose(integrate(function, d), 4.0)
+
+        def _function(a):
+            return 2 * a
+
+        torch.testing.assert_allclose(integrate(_function, d), 4.0)
 
     def test_delta(self):
         d = Delta(torch.tensor([0.2]))
-        function = lambda a: 2 * a
-        torch.testing.assert_allclose(integrate(function, d, num_samples=10), 0.4)
+
+        def _function(a):
+            return 2 * a
+
+        torch.testing.assert_allclose(integrate(_function, d, num_samples=10), 0.4)
 
     def test_multivariate_normal(self):
         d = MultivariateNormal(torch.tensor([0.2]), scale_tril=1e-6 * torch.eye(1))
-        function = lambda a: 2 * a
-        torch.testing.assert_allclose(integrate(function, d, num_samples=100), 0.4,
+
+        def _function(a):
+            return 2 * a
+
+        torch.testing.assert_allclose(integrate(_function, d, num_samples=100), 0.4,
                                       rtol=1e-3, atol=1e-3)
 
 

@@ -3,7 +3,9 @@ import torch
 import torch.distributions
 import torch.testing
 
-from rllib.util.neural_networks import *
+from rllib.util.neural_networks import CategoricalNN, DeterministicNN, FelixNet, \
+    HomoGaussianNN, HeteroGaussianNN, Ensemble
+from rllib.util.neural_networks.utilities import count_vars
 from rllib.util.utilities import tensor_to_distribution
 from rllib.util.distributions import Delta
 

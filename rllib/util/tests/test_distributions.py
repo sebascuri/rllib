@@ -1,6 +1,4 @@
-import numpy as np
 import pytest
-import scipy
 import torch
 import torch.testing
 from torch.distributions import MultivariateNormal, ComposeTransform, \

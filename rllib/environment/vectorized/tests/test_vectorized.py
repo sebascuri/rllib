@@ -1,6 +1,8 @@
 import numpy as np
 import torch
-from rllib.environment.vectorized import *
+from rllib.environment.vectorized import VectorizedAcrobotEnv, \
+    DiscreteVectorizedCartPoleEnv, DiscreteVectorizedAcrobotEnv, \
+    VectorizedCartPoleEnv, VectorizedPendulumEnv
 from gym.envs.classic_control import AcrobotEnv, CartPoleEnv, PendulumEnv
 
 

@@ -56,8 +56,10 @@ class TestMLPPolicy(object):
     def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
                                 dim_action):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
-        assert (self.num_states if self.num_states is not None else -1) == self.policy.num_states
-        assert (self.num_actions if self.num_actions is not None else -1) == self.policy.num_actions
+        assert (self.num_states if self.num_states is not None else -1
+                ) == self.policy.num_states
+        assert (self.num_actions if self.num_actions is not None else -1
+                ) == self.policy.num_actions
         assert discrete_state == self.policy.discrete_state
         assert discrete_action == self.policy.discrete_action
 
@@ -104,7 +106,6 @@ class TestMLPPolicy(object):
                 assert distribution.covariance_matrix.shape == (self.dim_action,
                                                                 self.dim_action)
                 assert sample.shape == (dim_action,)
-
 
 
 class TestFelixNet(object):

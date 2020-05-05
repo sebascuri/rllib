@@ -82,12 +82,12 @@ class TestNNValueFunction(object):
 
     def test_compile(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
-        value_function = torch.jit.script(self.value_function)
+        torch.jit.script(self.value_function)
 
     def test_num_states(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
-        assert (
-                   self.num_states if self.num_states is not None else -1) == self.value_function.num_states
+        assert (self.num_states if self.num_states is not None else -1
+                ) == self.value_function.num_states
         assert discrete_state == self.value_function.discrete_state
 
     def test_dim_states(self, discrete_state, dim_state):
@@ -122,7 +122,8 @@ class TestNNValueFunction(object):
         value_function = torch.jit.script(NNValueFunction.from_nn(
             DeterministicNN(
                 self.value_function.nn.kwargs['in_dim'],
-                self.value_function.nn.kwargs['out_dim'], layers=[20, 20], biased_head=False),
+                self.value_function.nn.kwargs['out_dim'], layers=[20, 20],
+                biased_head=False),
             dim_state, num_states=self.num_states))
 
         state = random_tensor(discrete_state, dim_state, batch_size)
@@ -159,7 +160,7 @@ class TestNNQFunction(object):
         if discrete_state and not discrete_action:
             return
         self.init(discrete_state, discrete_action, dim_state, dim_action)
-        q_function = torch.jit.script(self.q_function)
+        torch.jit.script(self.q_function)
 
     def test_init(self, discrete_state, discrete_action, dim_state, dim_action):
         if discrete_state and not discrete_action:
@@ -178,10 +179,10 @@ class TestNNQFunction(object):
                                 dim_action):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
-            assert (
-                       self.num_states if self.num_states is not None else -1) == self.q_function.num_states
-            assert (
-                       self.num_actions if self.num_actions is not None else -1) == self.q_function.num_actions
+            assert (self.num_states if self.num_states is not None else -1
+                    ) == self.q_function.num_states
+            assert (self.num_actions if self.num_actions is not None else -1
+                    ) == self.q_function.num_actions
 
             assert discrete_state == self.q_function.discrete_state
             assert discrete_action == self.q_function.discrete_action

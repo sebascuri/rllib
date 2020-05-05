@@ -3,7 +3,9 @@ import torch
 import torch.testing
 
 from rllib.dataset.datatypes import RawObservation
-from rllib.dataset.transforms import *
+from rllib.dataset.transforms import ActionNormalizer, StateNormalizer, DeltaState, \
+    ActionClipper, RewardClipper, ActionScaler, RewardScaler, MeanFunction
+
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
@@ -62,6 +64,7 @@ class TestMeanFunction(object):
             mean = observation.state
             torch.testing.assert_allclose(transformed_observation.next_state,
                                           observation.next_state - mean)
+
     def test_inverse(self, trajectory):
         transformer = torch.jit.script(MeanFunction(DeltaState()))
         for observation in trajectory:
@@ -129,7 +132,7 @@ class TestActionClipper(object):
 
     def test_compile(self, trajectory):
         transformer = ActionClipper(min_action=0., max_action=1.)
-        transformer = torch.jit.script(transformer)
+        torch.jit.script(transformer)
 
     def test_call(self, trajectory):
         transformer = torch.jit.script(ActionClipper(min_action=0., max_action=1.))

@@ -1,5 +1,4 @@
 import pytest
-import torch.nn.functional as func
 import torch.optim
 import torch.testing
 import torch

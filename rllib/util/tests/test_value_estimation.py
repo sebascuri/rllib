@@ -3,9 +3,7 @@ import pytest
 import scipy
 import torch
 import torch.testing
-from torch.distributions import kl_divergence, MultivariateNormal, Categorical
 from rllib.dataset.datatypes import RawObservation
-from rllib.util.distributions import Delta
 from rllib.util.value_estimation import discount_cumsum, discount_sum, mc_return
 
 
@@ -84,4 +82,3 @@ class TestMCReturn(object):
             reward, r0 + r1 * gamma + r2 * gamma ** 2 + r3 * gamma ** 3 + v * gamma ** 4
         )
         assert mc_return([], gamma, value_function, entropy_reg) == 0
-

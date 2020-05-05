@@ -4,7 +4,8 @@ import torch
 
 from rllib.dataset import ExperienceReplay
 from rllib.dataset.datatypes import RawObservation, Observation
-from rllib.dataset.transforms import *
+from rllib.dataset.transforms import MeanFunction, RewardClipper, StateNormalizer, \
+    ActionNormalizer
 
 
 @pytest.fixture(params=[(10000, 1000), (10000, 100), (100, 101)])
@@ -94,9 +95,13 @@ def test_n_steps(n_steps):
             assert observation.action.shape == torch.Size([n_steps, 2])
             assert observation.next_state.shape == torch.Size([n_steps, 3])
         else:
-            assert observation.state.shape == torch.Size([len(er) % n_steps + n_steps, 3])
-            assert observation.action.shape == torch.Size([len(er) % n_steps + n_steps, 2])
-            assert observation.next_state.shape == torch.Size([len(er) % n_steps + n_steps, 3])
+            assert observation.state.shape == torch.Size(
+                [len(er) % n_steps + n_steps, 3])
+            assert observation.action.shape == torch.Size(
+                [len(er) % n_steps + n_steps, 2])
+            assert observation.next_state.shape == torch.Size(
+                [len(er) % n_steps + n_steps, 3])
+
 
 def test_iter(memory):
     memory, max_len, number_of_samples = memory
