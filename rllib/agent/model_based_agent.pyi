@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Callable
 
-
 from torch import Tensor
 from torch.optim.optimizer import Optimizer
 from torch.distributions import Distribution
@@ -13,6 +12,7 @@ from rllib.dataset.experience_replay import BootstrapExperienceReplay, Experienc
 from rllib.model.derived_model import TransformedModel
 from rllib.reward import AbstractReward
 from rllib.policy import AbstractPolicy
+from rllib.policy.derived_policy import DerivedPolicy
 from rllib.value_function import AbstractValueFunction
 
 
@@ -35,6 +35,8 @@ class ModelBasedAgent(AbstractAgent, metaclass=ABCMeta):
     plan_samples: int
     plan_elite: int
 
+    policy: DerivedPolicy
+    plan_policy: AbstractPolicy
     policy_opt_num_iter: int
     policy_opt_batch_size: int
 
