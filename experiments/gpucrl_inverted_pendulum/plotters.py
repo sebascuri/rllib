@@ -1,9 +1,14 @@
 """Plotters for gp_ucrl pendulum experiments."""
 import itertools
+import os
+import io
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import PIL.Image
+from torchvision.transforms import ToTensor
+
 
 from rllib.model.gp_model import ExactGPModel
 from rllib.util.utilities import moving_average_filter
@@ -80,6 +85,31 @@ def plot_combinations_as_grid(axis, values, num_entries, bounds=None, **kwargs):
     return axis.imshow(values.reshape(*num_entries).T, **kwargs)
 
 
+def plot_on_grid(function, bounds, num_entries):
+    """Plot function values on a grid.
+
+    Parameters
+    ----------
+    function : callable
+    bounds : list
+    num_entries : list
+
+    Returns
+    -------
+    axis
+    """
+    axis = plt.gca()
+    states = linearly_spaced_combinations(bounds, num_entries)
+    values = function(torch.tensor(states, dtype=torch.get_default_dtype()))
+    values = values.detach().numpy()
+
+    img = plot_combinations_as_grid(axis, values, num_entries, bounds)
+    plt.colorbar(img)
+    axis.set_xlim(bounds[0])
+    axis.set_ylim(bounds[1])
+    return axis
+
+
 def plot_learning_losses(policy_losses, value_losses, horizon):
     """Plot the losses encountnered during learning.
 
@@ -110,33 +140,12 @@ def plot_learning_losses(policy_losses, value_losses, horizon):
     plt.ylabel('Value loss')
     plt.legend()
 
-
-def plot_on_grid(function, bounds, num_entries):
-    """Plot function values on a grid.
-
-    Parameters
-    ----------
-    function : callable
-    bounds : list
-    num_entries : list
-
-    Returns
-    -------
-    axis
-    """
-    axis = plt.gca()
-    states = linearly_spaced_combinations(bounds, num_entries)
-    values = function(torch.tensor(states, dtype=torch.get_default_dtype()))
-    values = values.detach().numpy()
-
-    img = plot_combinations_as_grid(axis, values, num_entries, bounds)
-    plt.colorbar(img)
-    axis.set_xlim(bounds[0])
-    axis.set_ylim(bounds[1])
-    return axis
+    if 'DISPLAY' in os.environ:
+        plt.show()
 
 
 def plot_trajectory_states_and_rewards(states, rewards):
+    """Plot the states and rewards from a trajectory."""
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
 
     plt.sca(ax1)
@@ -149,10 +158,13 @@ def plot_trajectory_states_and_rewards(states, rewards):
     plt.plot(rewards[:, 0, 0])
     plt.xlabel('Time step')
     plt.ylabel('Instantaneous reward')
-    plt.show()
+
+    if 'DISPLAY' in os.environ:
+        plt.show()
 
 
-def plot_values_and_policy(value_function, policy, bounds, num_entries):
+def plot_values_and_policy(value_function, policy, bounds, num_entries, trajectory=None,
+                           suptitle=None):
     """Plot the value and policy function over a grid.
 
     Parameters
@@ -171,6 +183,12 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries):
 
     plt.sca(ax1)
     plot_on_grid(value_function, bounds=bounds, num_entries=num_entries)
+    if trajectory is not None:
+        plt.plot(trajectory.state[:, 0, 0, 0], trajectory.state[:, 0, 0, 1],
+                 color='C1')
+        plt.plot(trajectory.state[-1, 0, 0, 0], trajectory.state[-1, 0, 0, 1], 'x',
+                 color='C1')
+
     plt.title('Value function')
     plt.xlabel('Angle[rad]')
     plt.ylabel('Angular velocity [rad/s]')
@@ -178,12 +196,42 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries):
 
     plt.sca(ax2)
     plot_on_grid(lambda x: policy(x)[0], bounds=bounds, num_entries=num_entries)
+    if trajectory is not None:
+        plt.plot(trajectory.state[:, 0, 0, 0], trajectory.state[:, 0, 0, 1],
+                 color='C1')
+        plt.plot(trajectory.state[-1, 0, 0, 0], trajectory.state[-1, 0, 0, 1], 'x',
+                 color='C1')
     plt.title('Policy')
     plt.xlabel('Angle [rad]')
     plt.ylabel('Angular velocity [rad/s]')
     plt.axis('tight')
 
-    return ax1, ax2
+    if suptitle:
+        plt.suptitle(suptitle, y=1)
+
+    if 'DISPLAY' in os.environ:
+        plt.show()
+
+
+def plot_returns_entropy_kl(returns, entropy, kl_div):
+    """Plot returns, entropy and KL Divergence."""
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    ax1.plot(np.arange(len(returns)), returns)
+    ax1.set_xlabel('Iteration')
+    ax1.set_ylabel('Returns')
+    # ax1.set_ylim([0, 350])
+
+    ax2.plot(np.arange(len(entropy)), entropy)
+    ax2.set_xlabel('Iteration')
+    ax2.set_ylabel('Entropy')
+    # ax2.set_ylim([-5, 2])
+
+    ax3.plot(np.arange(len(kl_div)), kl_div)
+    ax3.set_xlabel('Iteration')
+    ax3.set_ylabel('KL')
+
+    if 'DISPLAY' in os.environ:
+        plt.show()
 
 
 def plot_pendulum_trajectories(agent, episode: int):
@@ -242,6 +290,17 @@ def plot_pendulum_trajectories(agent, episode: int):
     for j in range(axes.shape[1]):
         axes[-1, j].set_xlabel('Angle')
 
-    plt.suptitle(f'{agent.comment.capitalize()} Episode {episode + 1}', y=1.0)
-    # plt.savefig(f'{agent.logger.log_dir}/{episode+1}.png')
-    plt.show()
+    img_name = f"{agent.comment.title()}"
+    plt.suptitle(f'{img_name} Episode {episode + 1}', y=1.0)
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='jpeg')
+    buf.seek(0)
+
+    image = PIL.Image.open(buf)
+    image = ToTensor()(image)
+
+    agent.logger.writer.add_image(img_name, image, episode)
+
+    if 'DISPLAY' in os.environ:
+        plt.show()

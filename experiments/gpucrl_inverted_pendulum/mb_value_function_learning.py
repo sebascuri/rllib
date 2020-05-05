@@ -84,7 +84,6 @@ for i in tqdm(range(num_iter)):
 
 horizon = 20
 plot_learning_losses(policy_losses, value_losses, horizon)
-plt.show()
 
 print(f'optimal: {K}')
 print(f'learned: {policy.nn.head.weight}')
@@ -94,10 +93,6 @@ num_entries = [100, 100]
 
 plot_values_and_policy(
     lambda x: rllib.util.neural_networks.torch_quadratic(x, matrix=-P),
-    lambda x: (x @ K, 0), bounds, num_entries)
-plt.suptitle('Exact', y=1)
-plt.show()
+    lambda x: (x @ K, 0), bounds, num_entries, suptitle='Exact')
 
-plot_values_and_policy(value_function, policy, bounds, num_entries)
-plt.suptitle('Learnt', y=1)
-plt.show()
+plot_values_and_policy(value_function, policy, bounds, num_entries, suptitle='Learnt')

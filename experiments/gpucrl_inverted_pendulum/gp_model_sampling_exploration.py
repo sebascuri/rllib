@@ -20,12 +20,12 @@ np.random.seed(0)
 # %% Collect Data.
 num_data = 200
 reward_model = PendulumReward()
-dynamic_model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
+dynamical_model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
 
 transitions = collect_model_transitions(
     Uniform(torch.tensor([-2 * np.pi, -12]), torch.tensor([2 * np.pi, 12])),
     Uniform(torch.tensor([-1.]), torch.tensor([1.])),
-    dynamic_model, reward_model, num_data)
+    dynamical_model, reward_model, num_data)
 
 # %% Bootstrap into different trajectories.
 transformations = [
@@ -79,10 +79,10 @@ for gp in model.gp:
     gp.prediction_strategy = None
 
 model.eval()
-dynamic_model = TransformedModel(model, transformations)
+dynamical_model = TransformedModel(model, transformations)
 
 # %% SOLVE MPC
-action_cost_ratio = 0.2
+action_cost = 0.2
 
 batch_size = 32
 num_action_samples = 16
@@ -96,8 +96,8 @@ num_iter = 100
 num_sim_steps = 400
 num_gradient_steps = 50
 
-solve_mpc(dynamic_model,
-          action_cost_ratio=action_cost_ratio,
+solve_mpc(dynamical_model,
+          action_cost=action_cost,
           num_iter=num_iter, num_sim_steps=num_sim_steps, batch_size=batch_size,
           num_gradient_steps=num_gradient_steps, num_trajectories=num_trajectories,
           num_action_samples=num_action_samples, num_episodes=num_episodes,

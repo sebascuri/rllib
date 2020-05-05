@@ -1,19 +1,14 @@
 """Utilities for inverted pendulum experiments."""
-import math
 
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 import numpy as np
 import gpytorch
 import torch
 from torch.distributions import MultivariateNormal
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.rmsprop import RMSprop
 
 from rllib.algorithms.mppo import MBMPPO, train_mppo
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.dataset.datatypes import Observation
 from rllib.environment.system_environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.abstract_model import AbstractModel
@@ -25,7 +20,7 @@ from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.neural_networks.utilities import freeze_parameters
 
 from experiments.gpucrl_inverted_pendulum.plotters import plot_learning_losses, \
-    plot_trajectory_states_and_rewards, plot_values_and_policy
+    plot_trajectory_states_and_rewards, plot_values_and_policy, plot_returns_entropy_kl
 
 
 class StateTransform(nn.Module):
@@ -61,9 +56,9 @@ def termination(state, action, next_state=None):
 class PendulumReward(AbstractReward):
     """Reward for Inverted Pendulum."""
 
-    def __init__(self, action_cost_ratio=0):
+    def __init__(self, action_cost=0):
         super().__init__()
-        self.action_cost_ratio = action_cost_ratio
+        self.action_cost = action_cost
 
     def forward(self, state, action, next_state):
         """See `abstract_reward.forward'."""
@@ -80,7 +75,7 @@ class PendulumReward(AbstractReward):
         state_cost = angle_tolerance * velocity_tolerance
 
         action_tolerance = tolerance(action[..., 0], lower=-0.1, upper=0.1, margin=0.1)
-        action_cost = self.action_cost_ratio * (action_tolerance-1)
+        action_cost = self.action_cost * (action_tolerance - 1)
 
         cost = state_cost + action_cost
 
@@ -130,11 +125,41 @@ class PendulumModel(AbstractModel):
             return next_state + self.noise.mean, self.noise.covariance_matrix
 
 
-def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_size,
+def test_policy_on_model(dynamical_model, reward_model, policy, test_state,
+                         policy_str='Sampled Policy'):
+    with torch.no_grad():
+        trajectory = rollout_model(dynamical_model, reward_model, policy, max_steps=400,
+                                   initial_state=test_state.unsqueeze(0).unsqueeze(1))
+        trajectory = stack_list_of_tuples(trajectory)
+
+    states = trajectory.state[:, 0]
+    rewards = trajectory.reward
+    plot_trajectory_states_and_rewards(states, rewards)
+
+    model_rewards = torch.sum(rewards)
+    print(f"Model with {policy_str} Cumulative reward: {model_rewards:.2f}")
+
+    return model_rewards, trajectory
+
+
+def test_policy_on_environment(environment, policy, test_state,
+                               policy_str='Sampled Policy'):
+    environment.state = test_state.numpy()
+    environment.initial_state = lambda: test_state.numpy()
+    trajectory = rollout_policy(environment, policy, max_steps=400, render=False)[0]
+
+    trajectory = stack_list_of_tuples(trajectory)
+    env_rewards = torch.sum(trajectory.reward)
+    print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
+
+    return env_rewards, trajectory
+
+
+def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
               num_gradient_steps, num_trajectories, num_action_samples, num_episodes,
               epsilon, epsilon_mean, epsilon_var, eta, eta_mean, eta_var, lr):
-    reward_model = PendulumReward(action_cost_ratio)
-    freeze_parameters(dynamic_model)
+    reward_model = PendulumReward(action_cost)
+    freeze_parameters(dynamical_model)
     value_function = NNValueFunction(dim_state=2, layers=[64, 64], biased_head=False,
                                      input_transform=StateTransform())
 
@@ -146,7 +171,7 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
                                                     torch.tensor([np.pi, 0.05]))
 
     # %% Define MPC solver.
-    mppo = MBMPPO(dynamic_model, reward_model, policy, value_function, gamma=0.99,
+    mppo = MBMPPO(dynamical_model, reward_model, policy, value_function, gamma=0.99,
                   epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
                   eta=eta, eta_mean=eta_mean, eta_var=eta_var,
                   num_action_samples=num_action_samples)
@@ -157,6 +182,7 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
     test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 
     policy_losses, value_losses, kl_div, returns, entropy = [], [], [], [], []
+    environment_rewards, trajectory = 0, None
 
     for _ in range(num_episodes):
         with gpytorch.settings.fast_pred_var(), gpytorch.settings.detach_test_caches():
@@ -174,62 +200,36 @@ def solve_mpc(dynamic_model, action_cost_ratio, num_iter, num_sim_steps, batch_s
         kl_div += kl_div_
 
         # %% Test controller on Model.
-        with torch.no_grad():
-            trajectory = rollout_model(
-                mppo.dynamical_model, mppo.reward_model,
-                # policy,
-                lambda x: (policy(x)[0], torch.zeros(1)),
-                initial_state=test_state.unsqueeze(0).unsqueeze(1),
-                max_steps=400)
-
-            trajectory = stack_list_of_tuples(trajectory)
-
-        states = trajectory.state[:, 0]
-        rewards = trajectory.reward
-        plot_trajectory_states_and_rewards(states, rewards)
-        plt.show()
-        print(f'Model Cumulative reward: {torch.sum(rewards):.2f}')
-
-        bounds = [(-2 * np.pi, 2 * np.pi), (-12, 12)]
-        ax_value, ax_policy = plot_values_and_policy(value_function, policy, bounds,
-                                                     [200, 200])
-        ax_value.plot(states[:, 0, 0], states[:, 0, 1], color='C1')
-        ax_value.plot(states[-1, 0, 0], states[-1, 0, 1], 'x', color='C1')
-        plt.show()
+        test_policy_on_model(mppo.dynamical_model, mppo.reward_model, mppo.policy,
+                             test_state)
+        _, trajectory = test_policy_on_model(
+            mppo.dynamical_model, mppo.reward_model,
+            lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
+                       torch.zeros(1)),
+            test_state, policy_str='Expected Policy')
 
         # %% Test controller on Environment.
         environment = SystemEnvironment(
             InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
                              step_size=1 / 80), reward=reward_model)
-        environment.state = test_state.numpy()
-        environment.initial_state = lambda: test_state.numpy()
-        trajectory = rollout_policy(environment, max_steps=400, render=False,
-                                    policy=lambda x: (policy(x)[0], torch.zeros(1)),
-                                    # policy=policy
-                                    )
+        test_policy_on_environment(environment, mppo.policy, test_state)
 
-        trajectory = stack_list_of_tuples(trajectory[0])
-        print(f'Environment Cumulative reward: {torch.sum(trajectory.reward):.2f}')
+        environment_rewards, _ = test_policy_on_environment(
+            environment,
+            lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
+                       torch.zeros(1)),
+            test_state, policy_str='Expected Policy')
 
-    # %% Plot returns and losses.
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-    ax1.plot(np.arange(len(returns)), returns)
-    ax1.set_xlabel('Iteration')
-    ax1.set_ylabel('Returns')
-    # ax1.set_ylim([0, 350])
+    # %% Plots
+    # Plot value funciton and policy.
+    plot_values_and_policy(value_function, policy, trajectory=trajectory,
+                           num_entries=[200, 200],
+                           bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)])
 
-    ax2.plot(np.arange(len(entropy)), entropy)
-    ax2.set_xlabel('Iteration')
-    ax2.set_ylabel('Entropy')
-    # ax2.set_ylim([-5, 2])
+    # Plot returns and losses.
+    plot_returns_entropy_kl(returns, entropy, kl_div)
 
-    ax3.plot(np.arange(len(kl_div)), kl_div)
-    ax3.set_xlabel('Iteration')
-    ax3.set_ylabel('KL')
-    plt.show()
-
-    # %% Plot losses.
+    # Plot losses.
     plot_learning_losses(policy_losses, value_losses, horizon=20)
-    plt.show()
 
-    return torch.sum(trajectory.reward)
+    return environment_rewards
