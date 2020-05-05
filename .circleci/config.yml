@@ -1,15 +1,6 @@
-version: 2
-jobs:
+version: 2.1
+commands:
   build:
-    docker:
-      - image: python:3.6
-
-    environment:
-      MODULE: rllib
-      OPENBLAS_NUM_THREADS: 2
-      OMP_NUM_THREADS: 2
-      MKL_NUM_THREADS: 2
-
     steps:
       - checkout
 
@@ -36,6 +27,27 @@ jobs:
           paths:
             - ~/.cache/pip
 
+executors:
+  python36:
+    docker:
+      - image: python:3.6
+
+jobs:
+  build:
+    executor: python36
+    steps:
+      - build
+  test:
+    executor: python36
+    environment:
+      MODULE: rllib
+      OPENBLAS_NUM_THREADS: 2
+      OMP_NUM_THREADS: 2
+      MKL_NUM_THREADS: 2
+    parallelism: 4
+    steps:
+      - build
+
       - run:
           name: Run Style Tests
           command: flake8 $MODULE --exclude '__init__.py' --show-source || { exit 1; }
@@ -58,18 +70,6 @@ jobs:
           path: test-results
       - store_artifacts:
           path: test-results
-#command: |
-#            . venv/bin/activate
-#            mkdir test-results
-#            pytest --junitxml=test-results/junit.xml
-
-
-
-
-
-
-
-
 
 
 workflows:
@@ -77,6 +77,7 @@ workflows:
   commit:
     jobs:
       - build
+      - test
   weekly:
     triggers:
       - schedule:
@@ -86,4 +87,5 @@ workflows:
               only: master
     jobs:
       - build
+      - test
 
