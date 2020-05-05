@@ -9,7 +9,6 @@ import torch
 import PIL.Image
 from torchvision.transforms import ToTensor
 
-
 from rllib.model.gp_model import ExactGPModel
 from rllib.util.utilities import moving_average_filter
 from rllib.dataset.utilities import stack_list_of_tuples
@@ -69,14 +68,14 @@ def plot_combinations_as_grid(axis, values, num_entries, bounds=None, **kwargs):
 
     Parameters
     ----------
-    axis : matplotlib.axis
-    values : ndarray
-    num_entries : array_like
+    axis: matplotlib.AxesSubplot.
+    values: ndarray.
+    num_entries: array_like.
         Number of samples to use for every dimension.
         Used for reshaping
-    bounds : sequence of tuples
+    bounds: sequence of tuples.
         The bounds for the variables, [(x1_min, x1_max), (x2_min, x2_max), ...]
-    kwargs : dict
+    kwargs: dict.
         Passed to axis.imshow
     """
     kwargs['origin'] = 'lower'
@@ -85,29 +84,40 @@ def plot_combinations_as_grid(axis, values, num_entries, bounds=None, **kwargs):
     return axis.imshow(values.reshape(*num_entries).T, **kwargs)
 
 
-def plot_on_grid(function, bounds, num_entries):
+def plot_on_grid(function, bounds, num_entries, axis):
     """Plot function values on a grid.
 
     Parameters
     ----------
-    function : callable
-    bounds : list
-    num_entries : list
+    function: callable.
+    bounds: list.
+    num_entries: list.
+    axis: matplotlib.AxesSubplot.
+
 
     Returns
     -------
     axis
     """
-    axis = plt.gca()
     states = linearly_spaced_combinations(bounds, num_entries)
     values = function(torch.tensor(states, dtype=torch.get_default_dtype()))
     values = values.detach().numpy()
 
     img = plot_combinations_as_grid(axis, values, num_entries, bounds)
-    plt.colorbar(img)
+    plt.colorbar(img, ax=axis)
     axis.set_xlim(bounds[0])
     axis.set_ylim(bounds[1])
     return axis
+
+
+def plot_state_trajectory(state, axis):
+    """Plot state trajectory."""
+    if state.dim() == 4:
+        axis.plot(state[:, 0, 0, 0], state[:, 0, 0, 1], color='C1')
+        axis.plot(state[-1, 0, 0, 0], state[-1, 0, 0, 1], 'x', color='C1')
+    else:
+        axis.plot(state[:, 0], state[:, 1], color='C1')
+        axis.plot(state[-1,  0], state[-1, 1], 'x', color='C1')
 
 
 def plot_learning_losses(policy_losses, value_losses, horizon):
@@ -122,23 +132,21 @@ def plot_learning_losses(policy_losses, value_losses, horizon):
     """
     t = np.arange(len(policy_losses))
 
-    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
+    fig, axes = plt.subplots(ncols=2, figsize=(15, 5))
 
-    plt.sca(ax1)
-    plt.plot(t, policy_losses)
-    plt.plot(*moving_average_filter(t, policy_losses, horizon),
+    axes[0].plot(t, policy_losses)
+    axes[0].plot(*moving_average_filter(t, policy_losses, horizon),
              label='smoothed')
-    plt.xlabel('Iteration')
-    plt.ylabel('Policy loss')
-    plt.legend()
+    axes[0].set_xlabel('Iteration')
+    axes[0].set_ylabel('Policy loss')
+    axes[0].legend()
 
-    plt.sca(ax2)
-    plt.plot(t, value_losses)
-    plt.plot(*moving_average_filter(t, value_losses, horizon),
+    axes[1].plot(t, value_losses)
+    axes[1].plot(*moving_average_filter(t, value_losses, horizon),
              label='smoothed')
-    plt.xlabel('Iteration')
-    plt.ylabel('Value loss')
-    plt.legend()
+    axes[1].set_xlabel('Iteration')
+    axes[1].set_ylabel('Value loss')
+    axes[1].legend()
 
     if 'DISPLAY' in os.environ:
         plt.show()
@@ -146,18 +154,16 @@ def plot_learning_losses(policy_losses, value_losses, horizon):
 
 def plot_trajectory_states_and_rewards(states, rewards):
     """Plot the states and rewards from a trajectory."""
-    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(15, 5))
+    fig, axes = plt.subplots(ncols=2, figsize=(15, 5))
 
-    plt.sca(ax1)
-    plt.plot(states[:, 0, 0], states[:, 0, 1], 'x')
-    plt.plot(states[-1, 0, 0], states[-1, 0, 1], 'x')
-    plt.xlabel('Angle [rad]')
-    plt.ylabel('Angular velocity [rad/s]')
+    axes[0].plot(states[:, 0, 0], states[:, 0, 1], 'x')
+    axes[0].plot(states[-1, 0, 0], states[-1, 0, 1], 'x')
+    axes[0].set_xlabel('Angle [rad]')
+    axes[0].set_ylabel('Angular velocity [rad/s]')
 
-    plt.sca(ax2)
-    plt.plot(rewards[:, 0, 0])
-    plt.xlabel('Time step')
-    plt.ylabel('Instantaneous reward')
+    axes[1].plot(rewards[:, 0, 0])
+    axes[1].set_xlabel('Time step')
+    axes[1].set_ylabel('Instantaneous reward')
 
     if 'DISPLAY' in os.environ:
         plt.show()
@@ -173,38 +179,28 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries, trajecto
     policy : torch.nn.Module
     bounds : list
     num_entries : list
+    trajectory : Observation
+    suptitle : str, optional.
 
-    Returns
-    -------
-    ax_value
-    ax_policy
     """
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey='col', figsize=(20, 8))
+    fig, axes = plt.subplots(nrows=1, ncols=2, sharey='col', figsize=(20, 8))
 
-    plt.sca(ax1)
-    plot_on_grid(value_function, bounds=bounds, num_entries=num_entries)
+    plot_on_grid(value_function, bounds=bounds, num_entries=num_entries, axis=axes[0])
     if trajectory is not None:
-        plt.plot(trajectory.state[:, 0, 0, 0], trajectory.state[:, 0, 0, 1],
-                 color='C1')
-        plt.plot(trajectory.state[-1, 0, 0, 0], trajectory.state[-1, 0, 0, 1], 'x',
-                 color='C1')
+        plot_state_trajectory(trajectory.state, axes[0])
+    axes[0].set_title('Value function')
+    axes[0].set_xlabel('Angle[rad]')
+    axes[0].set_ylabel('Angular velocity [rad/s]')
+    axes[0].axis('tight')
 
-    plt.title('Value function')
-    plt.xlabel('Angle[rad]')
-    plt.ylabel('Angular velocity [rad/s]')
-    plt.axis('tight')
-
-    plt.sca(ax2)
-    plot_on_grid(lambda x: policy(x)[0], bounds=bounds, num_entries=num_entries)
+    plot_on_grid(lambda x: policy(x)[0], bounds=bounds, num_entries=num_entries,
+                 axis=axes[1])
     if trajectory is not None:
-        plt.plot(trajectory.state[:, 0, 0, 0], trajectory.state[:, 0, 0, 1],
-                 color='C1')
-        plt.plot(trajectory.state[-1, 0, 0, 0], trajectory.state[-1, 0, 0, 1], 'x',
-                 color='C1')
-    plt.title('Policy')
-    plt.xlabel('Angle [rad]')
-    plt.ylabel('Angular velocity [rad/s]')
-    plt.axis('tight')
+        plot_state_trajectory(trajectory.state, axes[1])
+    axes[1].set_title('Policy')
+    axes[1].set_xlabel('Angle [rad]')
+    axes[1].set_ylabel('Angular velocity [rad/s]')
+    axes[1].axis('tight')
 
     if suptitle:
         plt.suptitle(suptitle, y=1)
@@ -215,20 +211,17 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries, trajecto
 
 def plot_returns_entropy_kl(returns, entropy, kl_div):
     """Plot returns, entropy and KL Divergence."""
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-    ax1.plot(np.arange(len(returns)), returns)
-    ax1.set_xlabel('Iteration')
-    ax1.set_ylabel('Returns')
-    # ax1.set_ylim([0, 350])
+    fig, axes = plt.subplots(3, 1)
+    axes[0].plot(np.arange(len(returns)), returns)
+    axes[0].set_xlabel('Iteration')
+    axes[0].set_ylabel('Returns')
 
-    ax2.plot(np.arange(len(entropy)), entropy)
-    ax2.set_xlabel('Iteration')
-    ax2.set_ylabel('Entropy')
-    # ax2.set_ylim([-5, 2])
+    axes[1].plot(np.arange(len(entropy)), entropy)
+    axes[1].set_xlabel('Iteration')
+    axes[1].set_ylabel('Entropy')
 
-    ax3.plot(np.arange(len(kl_div)), kl_div)
-    ax3.set_xlabel('Iteration')
-    ax3.set_ylabel('KL')
+    axes[2].plot(np.arange(len(kl_div)), kl_div)
+    axes[2].set_xlabel('Iteration')
 
     if 'DISPLAY' in os.environ:
         plt.show()

@@ -9,6 +9,7 @@ import argparse
 from rllib.agent.mbmppo_agent import MBMPPOAgent
 from rllib.algorithms.mppo import MBMPPO
 from rllib.dataset.transforms import MeanFunction, ActionClipper, DeltaState
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model.gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
@@ -51,7 +52,7 @@ print(args)
 hparams = {'seed': args.seed,
            'gamma': 0.99,
            'horizon': 400,
-           'train_episodes': 0,  # 15,
+           'train_episodes': 15,
            'test_episodes': 1,
            'action_cost': 0.2,
            'optimistic': args.optimistic,
@@ -190,7 +191,8 @@ model_name = model.name
 #     dynamical_model = torch.jit.trace(dynamical_model, (s, a))
 
 if hparams['learn_model']:
-    model_optimizer = optim.Adam(dynamical_model.parameters(), lr=model_opt_params['lr'],
+    model_optimizer = optim.Adam(dynamical_model.parameters(),
+                                 lr=model_opt_params['lr'],
                                  weight_decay=model_opt_params['weight_decay'])
     hparams.update({"model-opt": model_optimizer.__class__.__name__})
     hparams.update({f"model-opt-{key}": val if not isinstance(val, tuple) else list(val)
@@ -288,19 +290,21 @@ agent.logger.export_to_json(hparams)
 metrics = dict()
 test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 
-# environment.state = test_state.numpy()
-# environment.initial_state = lambda: test_state.numpy()
-# evaluate_agent(agent, environment, num_episodes=hparams['test_episodes'],
-#                max_steps=hparams['horizon'], render=True)
+environment.state = test_state.numpy()
+environment.initial_state = lambda: test_state.numpy()
+evaluate_agent(agent, environment, num_episodes=hparams['test_episodes'],
+               max_steps=hparams['horizon'], render=True)
 
-# returns = np.mean(agent.logger.get('environment_return')[-hparams['test_episodes']:])
-# metrics.update({"test/environment_returns": returns})
+returns = np.mean(agent.logger.get('environment_return')[-hparams['test_episodes']:])
+metrics.update({"test/environment_returns": returns})
 
 # Test Policy on Environment and Model.
+dynamical_model.eval()
 returns, _ = test_policy_on_environment(environment, agent.policy, test_state)
 metrics.update({"test/policy_environment": returns})
 
-returns, _ = test_policy_on_model(dynamical_model, reward_model, agent.policy, test_state)
+returns, _ = test_policy_on_model(dynamical_model, reward_model, agent.plan_policy,
+                                  test_state)
 metrics.update({"test/policy_model": returns})
 
 # Test Mean Policy on Environment and Model.
@@ -312,11 +316,11 @@ metrics.update({"test/expected_policy_environment": returns})
 
 returns, _ = test_policy_on_model(
     dynamical_model, reward_model,
-    lambda x: (agent.policy(x)[0], torch.zeros(1)),
+    lambda x: (agent.plan_policy(x)[0], torch.zeros(1)),
     test_state, policy_str='Expected Policy')
 metrics.update({"test/expected_policy_model": returns})
 
-# %% Test Policy on Sampled Model.
+# Test Policy on Sampled Model.
 sampled_model = TransformedModel(model, transformations)
 returns, _ = test_policy_on_model(sampled_model, reward_model, agent.policy, test_state)
 metrics.update({"test/policy_sampled_model": returns})
@@ -327,8 +331,9 @@ returns, _ = test_policy_on_model(
                torch.zeros(1)), test_state, policy_str='Expected Policy')
 metrics.update({"test/expected_policy_sampled_model": returns})
 
-# plot_values_and_policy(mppo.value_function, mppo.policy, trajectory=trajectory,
-#                        num_entries=[200, 200],
-#                        bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)])
+plot_values_and_policy(agent.value_function, agent.policy,
+                       trajectory=stack_list_of_tuples(agent.last_trajectory),
+                       num_entries=[200, 200],
+                       bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)])
 
 agent.logger.log_hparams(hparams, metrics)

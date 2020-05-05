@@ -136,7 +136,7 @@ def test_policy_on_model(dynamical_model, reward_model, policy, test_state,
     rewards = trajectory.reward
     plot_trajectory_states_and_rewards(states, rewards)
 
-    model_rewards = torch.sum(rewards)
+    model_rewards = torch.sum(rewards).item()
     print(f"Model with {policy_str} Cumulative reward: {model_rewards:.2f}")
 
     return model_rewards, trajectory
@@ -149,7 +149,7 @@ def test_policy_on_environment(environment, policy, test_state,
     trajectory = rollout_policy(environment, policy, max_steps=400, render=False)[0]
 
     trajectory = stack_list_of_tuples(trajectory)
-    env_rewards = torch.sum(trajectory.reward)
+    env_rewards = torch.sum(trajectory.reward).item()
     print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
 
     return env_rewards, trajectory
