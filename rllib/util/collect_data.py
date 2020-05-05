@@ -44,7 +44,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
     return transitions
 
 
-def collect_model_transitions(state_dist, policy, dynamic_model, reward_model,
+def collect_model_transitions(state_dist, policy, dynamical_model, reward_model,
                               num_samples):
     """Collect transitions by interacting with an environment.
 
@@ -54,7 +54,7 @@ def collect_model_transitions(state_dist, policy, dynamic_model, reward_model,
         State distribution.
     policy: AbstractPolicy or Distribution.
         Policy to interact with the environment.
-    dynamic_model: AbstractModel.
+    dynamical_model: AbstractModel.
         Model with which to interact.
     reward_model: AbstractReward.
         Reward model with which to interact.
@@ -75,7 +75,7 @@ def collect_model_transitions(state_dist, policy, dynamic_model, reward_model,
         action_dist = policy
         action = action_dist.sample((num_samples,))
 
-    next_state = tensor_to_distribution(dynamic_model(state, action)).sample()
+    next_state = tensor_to_distribution(dynamical_model(state, action)).sample()
     reward = tensor_to_distribution(reward_model(state, action, next_state)).sample()
 
     transitions = []

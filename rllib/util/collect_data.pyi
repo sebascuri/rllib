@@ -16,5 +16,6 @@ def collect_environment_transitions(state_dist: Distribution,
 
 def collect_model_transitions(state_dist: Distribution,
                               policy: Union[Distribution, AbstractPolicy],
-                              dynamic_model: AbstractModel, reward_model:AbstractReward,
+                              dynamical_model: AbstractModel,
+                              reward_model: AbstractReward,
                               num_samples: int) -> List[Observation]: ...

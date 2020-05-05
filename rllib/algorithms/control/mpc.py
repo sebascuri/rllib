@@ -104,7 +104,7 @@ def cem_shooting(dynamical_model, reward_model, horizon, x0, gamma=1, num_sample
     if warm_start is not None:
         mean = warm_start
     else:
-        mean = torch.zeros(*state.shape[:-1], horizon, dynamical_model.dim_action)
+        mean = torch.zeros(*state.shape[:-1], horizon, dim_action)
 
     covariance = 0.3 * torch.eye(dim_action).repeat(*state.shape[:-1], horizon, 1, 1)
 

@@ -59,6 +59,7 @@ class OptimisticModel(TransformedModel):
 
     def __init__(self, base_model, transformations, beta=1.0):
         super().__init__(base_model, transformations)
+        self.dim_action = self.dim_action + self.dim_state
         self.beta = beta
 
     def forward(self, state, action):
