@@ -1,6 +1,6 @@
 """Model-Based MPPO Agent."""
 
-from .abstract_model_based_agent import ModelBasedAgent
+from .model_based_agent import ModelBasedAgent
 import numpy as np
 import torch
 

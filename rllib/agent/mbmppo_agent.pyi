@@ -4,7 +4,7 @@ from typing import Union
 from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
-from .abstract_model_based_agent import ModelBasedAgent
+from .model_based_agent import ModelBasedAgent
 from rllib.algorithms.mppo import MBMPPO
 
 

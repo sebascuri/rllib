@@ -1,4 +1,10 @@
-"""Model Based Agent."""
+"""Template for a Model Based Agent.
+
+A model based agent has three behaviors:
+- It learns models from data collected from the environment.
+- It optimizes policies with simulated data from the models.
+- It plans with the model and policies (as guiding sampler).
+"""
 
 import gpytorch
 from gym.utils import colorize
