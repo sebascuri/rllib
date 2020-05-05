@@ -44,7 +44,7 @@ jobs:
       OPENBLAS_NUM_THREADS: 2
       OMP_NUM_THREADS: 2
       MKL_NUM_THREADS: 2
-    parallelism: 4
+    parallelism: 1  # change this with a payed plan.
     steps:
       - build
 
