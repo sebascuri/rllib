@@ -41,7 +41,7 @@ class Logger(object):
     def __str__(self):
         """Return parameter string of logger."""
         str_ = ""
-        for key in self.keys:
+        for key in sorted(self.keys):
             values = self.get(key)
             key = ' '.join(key.split('_')).title()
             str_ += f"{key} Last: {values[-1]:.2g}. "
