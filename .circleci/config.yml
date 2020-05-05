@@ -5,10 +5,10 @@ jobs:
       - image: python:3.6
 
     environment:
-      - MODULE: rllib
-      - OPENBLAS_NUM_THREADS: 2
-      - OMP_NUM_THREADS: 2
-      - MKL_NUM_THREADS: 2
+      MODULE: rllib
+      OPENBLAS_NUM_THREADS: 2
+      OMP_NUM_THREADS: 2
+      MKL_NUM_THREADS: 2
 
     steps:
       - checkout
