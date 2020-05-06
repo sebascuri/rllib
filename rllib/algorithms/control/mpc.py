@@ -10,20 +10,7 @@ from rllib.util.rollout import rollout_actions
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util import discount_sum, sample_mean_and_cov
 from rllib.util.parameter_decay import ParameterDecay, Constant
-
-
-def _eval_mpc(dynamical_model, reward_model, horizon, state, gamma,
-              action_sequence, termination=None, terminal_reward=None):
-    trajectory = rollout_actions(dynamical_model, reward_model, action_sequence, state,
-                                 termination)
-
-    trajectory = stack_list_of_tuples(trajectory)
-    returns = discount_sum(trajectory.reward, gamma)
-
-    if terminal_reward:
-        final_state = trajectory.next_state[-1]
-        returns = returns + gamma ** horizon * terminal_reward(final_state)
-    return returns
+from rllib.util.multiprocessing import modify_parallel
 
 
 class MPCSolver(nn.Module, metaclass=ABCMeta):
@@ -54,12 +41,14 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         Whether or not to start the optimization with a warm start.
     default_action: str, optional.
          Default action behavior.
-
+    num_cpu: int, optional.
+        Number of CPUs to run the solver.
     """
 
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1.,
                  num_iter=1, num_samples=None, termination=None, scale=0.3,
-                 terminal_reward=None, warm_start=False, default_action='zero'):
+                 terminal_reward=None, warm_start=False, default_action='zero',
+                 num_cpu=1):
         super().__init__()
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
@@ -68,23 +57,26 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
         self.num_iter = num_iter
         self.num_samples = 10 * horizon if not num_samples else num_samples
+        self.num_samples = self.num_samples // num_cpu
         self.termination = termination
         self.terminal_reward = terminal_reward
         self.warm_start = warm_start
         self.default_action = default_action
+        self.dim_action = self.dynamical_model.dim_action
 
         self.mean = None
         self._scale = scale
-        self.covariance = (scale ** 2) * torch.eye(
-            self.dynamical_model.dim_action).repeat(self.horizon, 1, 1)
+        self.covariance = (scale ** 2) * torch.eye(self.dim_action).repeat(
+            self.horizon, 1, 1)
+
+        self.num_cpu = num_cpu
 
     def evaluate_action_sequence(self, action_sequence, state):
         """Evaluate action sequence by performing a rollout."""
-        trajectory = rollout_actions(
+        trajectory = stack_list_of_tuples(rollout_actions(
             self.dynamical_model, self.reward_model, action_sequence, state,
-            self.termination)
+            self.termination))
 
-        trajectory = stack_list_of_tuples(trajectory)
         returns = discount_sum(trajectory.reward, self.gamma)
 
         if self.terminal_reward:
@@ -121,14 +113,26 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
                 raise NotImplementedError
             self.mean = torch.cat((next_mean, final_action), dim=-2)
         else:
-            self.mean = torch.zeros(self.horizon, self.dynamical_model.dim_action)
-        self.covariance = (self._scale ** 2) * torch.eye(
-            self.dynamical_model.dim_action).repeat(self.horizon, 1, 1)
+            self.mean = torch.zeros(self.horizon, self.dim_action)
+        self.covariance = (self._scale ** 2) * torch.eye(self.dim_action).repeat(
+            self.horizon, 1, 1)
 
         if self.mean.shape[:-2] != batch_shape:
             self.mean = self.mean.repeat(*batch_shape, 1, 1)
         if self.covariance.shape[:-3] != batch_shape:
             self.covariance = self.covariance.repeat(*batch_shape, 1, 1, 1)
+
+    def get_action_sequence_and_returns(self, state, action_sequence, returns,
+                                        process_nr=0):
+        """Get action_sequence and returns associated.
+
+        These are bundled for parallel execution.
+
+        The data inside action_sequence and returns will get modified.
+        """
+        torch.manual_seed(process_nr)
+        action_sequence[:] = self.get_candidate_action_sequence()
+        returns[:] = self.evaluate_action_sequence(action_sequence, state)
 
     def forward(self, state):
         """Return action that solves the MPC problem."""
@@ -137,9 +141,22 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
         state = repeat_along_dimension(state, number=self.num_samples, dim=-2)
 
+        batch_actions = [torch.randn(
+            (self.horizon,) + batch_shape + (self.num_samples, self.dim_action))
+            for _ in range(self.num_cpu)]
+        batch_returns = [
+            torch.randn(batch_shape + (self.num_samples,)) for _ in range(self.num_cpu)]
+        for action_, return_ in zip(batch_actions, batch_returns):
+            action_.share_memory_()
+            return_.share_memory_()
+
         for i in range(self.num_iter):
-            action_sequence = self.get_candidate_action_sequence()
-            returns = self.evaluate_action_sequence(action_sequence, state)
+            modify_parallel(self.get_action_sequence_and_returns,
+                            [(state, batch_actions[rank], batch_returns[rank], rank)
+                             for rank in range(self.num_cpu)],
+                            num_cpu=self.num_cpu)
+            action_sequence = torch.cat(batch_actions, dim=-2)
+            returns = torch.cat(batch_returns, dim=-1)
             elite_actions = self.get_best_action(action_sequence, returns)
             self.update_sequence_generation(elite_actions)
 
@@ -191,12 +208,12 @@ class CEMShooting(MPCSolver):
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1., scale=0.3,
                  num_iter=5, num_samples=None, num_elites=None, termination=None,
                  terminal_reward=None, warm_start=False,
-                 default_action='zero'):
+                 default_action='zero', num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
             num_iter=num_iter, num_samples=num_samples,
             termination=termination, terminal_reward=terminal_reward,
-            warm_start=warm_start, default_action=default_action)
+            warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
         self.num_elites = max(1, num_samples // 10) if not num_elites else num_elites
 
     def get_candidate_action_sequence(self):
@@ -209,8 +226,8 @@ class CEMShooting(MPCSolver):
         """Get best action by averaging the num_elites samples."""
         idx = torch.topk(returns, k=self.num_elites, largest=True, dim=-1)[1]
         idx = idx.unsqueeze(0).unsqueeze(-1)  # Expand dims to action_sequence.
-        idx = idx.repeat_interleave(
-            self.horizon, 0).repeat_interleave(self.dynamical_model.dim_action, 1)
+        idx = idx.repeat_interleave(self.horizon, 0).repeat_interleave(
+            self.dim_action, 1)
         return torch.gather(action_sequence, -2, idx)
 
     def update_sequence_generation(self, elite_actions):
@@ -265,12 +282,12 @@ class RandomShooting(CEMShooting):
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1, scale=0.3,
                  num_samples=None, num_elites=None, termination=None,
                  terminal_reward=None, warm_start=False,
-                 default_action='zero'):
+                 default_action='zero', num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
             num_iter=1, num_elites=num_elites, num_samples=num_samples,
             termination=termination, terminal_reward=terminal_reward,
-            warm_start=warm_start, default_action=default_action)
+            warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
 
 
 class MPPIShooting(MPCSolver):
@@ -293,12 +310,12 @@ class MPPIShooting(MPCSolver):
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1., scale=.3,
                  num_iter=1, kappa=1., filter_coefficients=[1.], num_samples=None,
                  termination=None, terminal_reward=None, warm_start=False,
-                 default_action='zero'):
+                 default_action='zero', num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
             num_iter=num_iter, num_samples=num_samples,
             termination=termination, terminal_reward=terminal_reward,
-            warm_start=warm_start, default_action=default_action)
+            warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
 
         if not isinstance(kappa, ParameterDecay):
             kappa = Constant(kappa)

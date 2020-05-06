@@ -16,7 +16,8 @@ class MPCPolicy(AbstractPolicy):
     def forward(self, state):
         """Solve the MPC problem."""
         action_sequence = self.solver(state)
-        return action_sequence[..., 0, :], torch.zeros(1)  # Return first Step.
+        # Return first Step.
+        return action_sequence[..., 0, :], torch.zeros(self.dim_action, self.dim_action)
 
     def reset(self):
         """Re-set last_action to None."""

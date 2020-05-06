@@ -8,8 +8,12 @@ from .expected_actor_critic_agent import ExpectedActorCriticAgent
 from .expected_sarsa_agent import ExpectedSARSAAgent
 from .generalized_advantage_actor_critic_agent import GAACAgent
 from .gp_ucb_agent import GPUCBAgent
+from .mbmppo_agent import MBMPPOAgent
+from .model_based_agent import ModelBasedAgent
+from .mpc_agent import MPCAgent
 from .q_learning_agent import QLearningAgent
 from .random_agent import RandomAgent
+from .reps_agent import REPSAgent
 from .reinforce_agent import REINFORCEAgent
 from .sarsa_agent import SARSAAgent
 from .soft_q_learning_agent import SoftQLearningAgent

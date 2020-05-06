@@ -273,12 +273,15 @@ class ModelBasedAgent(AbstractAgent):
             Step 2: TODO Train the reward model.
             Step 3: TODO Train the initial distribution model.
         """
-        print(colorize('Training Model', 'yellow'))
-        loader = DataLoader(self.dataset, batch_size=self.model_learn_batch_size,
-                            shuffle=True)
-        train_model(self.dynamical_model.base_model, train_loader=loader,
-                    max_iter=self.model_learn_num_iter, optimizer=self.model_optimizer,
-                    logger=self.logger)
+        if self.model_learn_num_iter > 0:
+            print(colorize('Training Model', 'yellow'))
+
+            loader = DataLoader(self.dataset, batch_size=self.model_learn_batch_size,
+                                shuffle=True)
+            train_model(self.dynamical_model.base_model, train_loader=loader,
+                        max_iter=self.model_learn_num_iter,
+                        optimizer=self.model_optimizer,
+                        logger=self.logger)
 
     def _simulate_and_optimize_policy(self):
         """Simulate the model and optimize the policy with the learned data.

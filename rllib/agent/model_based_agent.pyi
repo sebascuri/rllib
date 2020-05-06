@@ -10,6 +10,7 @@ from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
 
 from rllib.model.derived_model import TransformedModel
+from rllib.model import AbstractModel
 from rllib.reward import AbstractReward
 from rllib.policy import AbstractPolicy
 from rllib.policy.derived_policy import DerivedPolicy
@@ -52,10 +53,10 @@ class ModelBasedAgent(AbstractAgent, metaclass=ABCMeta):
 
     def __init__(self,
                  env_name: str,
-                 dynamical_model: TransformedModel,
+                 dynamical_model: AbstractModel,
                  reward_model: AbstractReward,
-                 model_optimizer: Optimizer,
                  policy: AbstractPolicy,
+                 model_optimizer: Optimizer = None,
                  value_function: AbstractValueFunction = None,
                  termination: Callable = None,
                  plan_horizon: int = 1,
@@ -86,5 +87,4 @@ class ModelBasedAgent(AbstractAgent, metaclass=ABCMeta):
 
     def _simulate_model(self): ...
 
-    @abstractmethod
     def _optimize_policy(self) -> None: ...

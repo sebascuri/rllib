@@ -75,6 +75,7 @@ class MBMPPOAgent(ModelBasedAgent):
         self.logger.writer.add_custom_scalars(layout)
 
     def _optimize_policy(self):
+        """Optimize guiding policy using Model-Based MPPO."""
         # Copy over old policy for KL divergence
         self.mppo.reset()
 
