@@ -2,11 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
 
-
-import numpy as np
-
+from rllib.algorithms.control.mpc import RandomShooting, CEMShooting, MPPIShooting
 from rllib.environment import GymEnvironment
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.model.environment_model import EnvironmentModel
@@ -17,6 +14,7 @@ from rllib.util.utilities import tensor_to_distribution
 from rllib.util.rollout import step
 
 from rllib.algorithms.td import ModelBasedTDLearning
+import copy
 
 
 class EnvironmentTermination(nn.Module):
@@ -28,9 +26,6 @@ class EnvironmentTermination(nn.Module):
         self.environment.state = state
         next_state, reward, done, _ = self.environment.step(action)
         return done
-
-
-import copy
 
 SEED = 0
 MAX_ITER = 200
@@ -45,21 +40,44 @@ reward_model = EnvironmentReward(env_model)
 termination = EnvironmentTermination(env_model)
 GAMMA = 0.99
 NUM_ITER = 200
-horizon = 40
-num_iter = 5
-num_samples = 500
+horizon = 32
+num_iter = 1
+num_samples = 100
+num_elites = 5
 num_steps = horizon
-solver = 'random_shooting'
-warm_start = False
+solver = 'mppi_shooting'
+kappa = 1.
+betas = [0.25, 0.8, 0]
+warm_start = True
 
 memory = ExperienceReplay(max_len=2000, num_steps=1)
 
-value_function = NNValueFunction(env.dim_state, layers=[64, 64])
-optimizer = optim.Adam(value_function.parameters(), lr=1e-4)
-policy = MPCPolicy(dynamical_model, reward_model, horizon, termination=termination,
-                   terminal_reward=value_function,
-                   num_iter=num_iter, num_samples=num_samples, solver=solver,
-                   gamma=1.0, warm_start=warm_start)
+value_function = None  # NNValueFunction(env.dim_state, layers=[64, 64])
+# optimizer = optim.Adam(value_function.parameters(), lr=1e-4)
+
+if solver == 'random_shooting':
+    mpc_solver = RandomShooting(
+        dynamical_model, reward_model, horizon, gamma=1.0,
+        num_samples=num_samples, num_elites=num_elites,
+        termination=termination, terminal_reward=value_function,
+        warm_start=warm_start, default_action='mean')
+elif solver == 'cem_shooting':
+    mpc_solver = CEMShooting(
+        dynamical_model, reward_model, horizon, gamma=1.0,
+        num_iter=num_iter, num_samples=num_samples, num_elites=num_elites,
+        termination=termination, terminal_reward=value_function,
+        warm_start=warm_start, default_action='mean')
+elif solver == 'mppi_shooting':
+    mpc_solver = MPPIShooting(
+        dynamical_model, reward_model, horizon, gamma=1.0, num_iter=num_iter,
+        kappa=kappa, filter_coefficients=betas, num_samples=num_samples,
+        termination=termination, terminal_reward=value_function,
+        warm_start=warm_start, default_action='mean'
+    )
+else:
+    raise NotImplementedError
+
+policy = MPCPolicy(mpc_solver)
 value_learning = ModelBasedTDLearning(
     value_function, criterion=nn.MSELoss(reduction='none'), policy=policy,
     dynamical_model=dynamical_model, reward_model=reward_model,
