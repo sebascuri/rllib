@@ -84,3 +84,18 @@ def concatenate_observations(observation, new_observation):
     """Concatenate observations and return a new observation."""
     return Observation(*[torch.cat((a, b.unsqueeze(0)), dim=0)
                          for a, b in zip(observation, new_observation)])
+
+
+def gather_trajectories(trajectories, gather_dim=1):
+    """Gather parallel trajectories.
+
+    Parameters
+    ----------
+    trajectories: List[Trajectory].
+    gather_dim: int, optional. (default=1).
+    """
+    batch_trajectories = [stack_list_of_tuples(traj) for traj in trajectories]
+    trajectory = Observation(
+        *map(lambda args: torch.cat(args, dim=gather_dim)
+             if args[0].dim() > 1 else torch.stack(args, -1), zip(*batch_trajectories)))
+    return trajectory
