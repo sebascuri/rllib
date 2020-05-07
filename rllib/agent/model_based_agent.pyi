@@ -1,12 +1,11 @@
-from abc import ABCMeta, abstractmethod
-from typing import Callable
+from typing import Optional
 
 from torch import Tensor
 from torch.optim.optimizer import Optimizer
 from torch.distributions import Distribution
 
 from .abstract_agent import AbstractAgent
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import Observation, Termination
 from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
 
 from rllib.model.derived_model import TransformedModel
@@ -17,10 +16,10 @@ from rllib.policy.derived_policy import DerivedPolicy
 from rllib.value_function import AbstractValueFunction
 
 
-class ModelBasedAgent(AbstractAgent, metaclass=ABCMeta):
+class ModelBasedAgent(AbstractAgent):
     dynamical_model: TransformedModel
     reward_model: AbstractReward
-    termination: Callable
+    termination: Optional[Termination]
     value_function: AbstractValueFunction
 
     model_optimizer: Optimizer
@@ -58,7 +57,7 @@ class ModelBasedAgent(AbstractAgent, metaclass=ABCMeta):
                  policy: AbstractPolicy,
                  model_optimizer: Optimizer = None,
                  value_function: AbstractValueFunction = None,
-                 termination: Callable = None,
+                 termination: Termination = None,
                  plan_horizon: int = 1,
                  plan_samples: int = 1,
                  plan_elite: int = 1,

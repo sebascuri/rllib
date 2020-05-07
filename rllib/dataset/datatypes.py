@@ -1,9 +1,10 @@
 """Project Data-types."""
-from typing import NamedTuple, Union, Tuple, List
+from typing import NamedTuple, Union, Tuple, List, Callable
 from collections import namedtuple
 
 import numpy as np
 import torch
+import torch.nn as nn
 from gpytorch.distributions import Delta
 from torch import Tensor
 from torch.distributions import Categorical, Uniform, MultivariateNormal
@@ -18,6 +19,7 @@ Gaussian = Union[MultivariateNormal, Delta]
 Distribution = Union[MultivariateNormal, Delta, Categorical, Uniform]
 TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
+Termination = Union[nn.Module, Callable[[State, Action, State], Done]]
 NaN = float('nan')
 
 Observation = namedtuple('Observation',

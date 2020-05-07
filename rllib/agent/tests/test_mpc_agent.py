@@ -1,15 +1,8 @@
-import numpy as np
 import pytest
-import torch
 
-from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent, ExpectedActorCriticAgent
-from rllib.environment import GymEnvironment
-from rllib.policy import NNPolicy
-from rllib.util.training import train_agent, evaluate_agent
-from rllib.value_function import NNValueFunction, NNQFunction
 import torch.nn as nn
 
-from rllib.algorithms.control.mpc import RandomShooting, CEMShooting, MPPIShooting
+from rllib.algorithms.mpc import RandomShooting, CEMShooting, MPPIShooting
 from rllib.environment import GymEnvironment
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.model.environment_model import EnvironmentModel
@@ -19,7 +12,6 @@ from rllib.util.training import evaluate_agent
 
 from rllib.agent import MPCAgent
 
-from rllib.algorithms.td import ModelBasedTDLearning
 import copy
 
 

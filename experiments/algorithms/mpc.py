@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from rllib.algorithms.control.mpc import RandomShooting, CEMShooting, MPPIShooting
+from rllib.algorithms.mpc import RandomShooting, CEMShooting, MPPIShooting
 from rllib.environment import GymEnvironment
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.model.environment_model import EnvironmentModel

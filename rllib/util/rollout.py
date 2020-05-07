@@ -191,7 +191,7 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
 
         # Check for termination.
         if termination is not None:
-            done = termination(state, action)
+            done = termination(state, action, next_state)
 
         trajectory.append(
             RawObservation(state, action, reward, next_state, done.float(),
@@ -272,7 +272,7 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
 
         # Check for termination.
         if termination is not None:
-            done += termination(state, action)
+            done += termination(state, action, next_state)
 
         trajectory.append(
             RawObservation(state, action, reward, next_state, done.float(),

@@ -3,7 +3,8 @@ from typing import List, Union, Tuple, Callable
 from numpy import ndarray
 
 from rllib.agent import AbstractAgent
-from rllib.dataset.datatypes import Observation, State, Action, Distribution, Trajectory
+from rllib.dataset.datatypes import Observation, State, Action, Distribution, \
+    Trajectory, Termination
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
@@ -31,10 +32,10 @@ def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
 def rollout_model(dynamical_model: AbstractModel, reward_model: AbstractReward,
                   policy: AbstractPolicy,
                   initial_state: State,
-                  termination: Callable[[State, Action], bool] = None,
+                  termination: Termination = None,
                   max_steps: int = 1000) -> Trajectory: ...
 
 
 def rollout_actions(dynamical_model: AbstractModel, reward_model: AbstractReward,
                     action_sequence: Action, initial_state: State,
-                    termination: Callable[[State, Action], bool] = None) -> Trajectory: ...
+                    termination: Termination = None) -> Trajectory: ...

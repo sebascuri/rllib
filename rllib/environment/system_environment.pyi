@@ -1,22 +1,23 @@
-from typing import Tuple, Callable, Union
+from typing import Tuple, Callable, Union, Optional
 
-from rllib.dataset.datatypes import State, Action, Reward, Done
+from rllib.dataset.datatypes import State, Action, Reward, Done, Termination
 from .abstract_environment import AbstractEnvironment
 from .systems.abstract_system import AbstractSystem
+from rllib.reward import AbstractReward
 
 
 class SystemEnvironment(AbstractEnvironment):
-    reward: Callable[..., Reward]
+    reward: AbstractReward
     system: AbstractSystem
-    termination: Callable[..., Done]
+    termination: Optional[Termination]
     initial_state: Callable[..., State]
     _time: float
 
 
     def __init__(self, system: AbstractSystem,
                  initial_state: Union[State, Callable[..., State]] = None,
-                 reward: Callable[..., Reward] = None,
-                 termination: Callable[..., Done] = None) -> None: ...
+                 reward: AbstractReward = None,
+                 termination: Termination = None) -> None: ...
 
     def step(self, action: Action) -> Tuple[State, Reward, Done, dict]: ...
 

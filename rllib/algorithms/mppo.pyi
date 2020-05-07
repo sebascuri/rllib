@@ -1,13 +1,13 @@
 """Maximum a Posterior Policy Optimization algorithm stub."""
 
-from typing import List, Tuple, Union
-from typing import NamedTuple, Callable
+from typing import List, Tuple, Union, Optional, NamedTuple
 
 import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
+from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
@@ -86,7 +86,7 @@ class MBMPPO(nn.Module):
     value_loss: nn.modules.loss._Loss
     num_action_samples: int
     entropy_reg: float
-    termination: Callable[[Tensor, Tensor], Tensor]
+    termination: Optional[Termination]
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
@@ -99,7 +99,7 @@ class MBMPPO(nn.Module):
                  gamma: float = 0.99,
                  num_action_samples: int = 15,
                  entropy_reg: float = 0.,
-                 termination: Callable[[Tensor, Tensor], Tensor] = None) -> None: ...
+                 termination: Termination = None) -> None: ...
 
     def reset(self) -> None: ...
 

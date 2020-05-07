@@ -5,8 +5,9 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from typing import Callable, List, Union
+from typing import List, Union, Optional
 
+from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
@@ -20,7 +21,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     gamma: float
     num_iter: int
     num_samples: int
-    termination: Callable
+    termination: Optional[Termination]
     terminal_reward: AbstractValueFunction
     warm_start: bool
     default_action: str
@@ -32,7 +33,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  horizon: int, gamma: float = 1., scale: float = 0.3,
                  num_iter: int = 1, num_samples: int = None,
-                 termination: Callable = None,
+                 termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
@@ -64,7 +65,7 @@ class CEMShooting(MPCSolver):
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  horizon: int, gamma: float = 1., scale: float = 0.3,
                  num_iter: int = 1, num_samples: int = None, num_elites: int = None,
-                 termination: Callable = None,
+                 termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
@@ -81,7 +82,7 @@ class RandomShooting(CEMShooting):
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  horizon: int, gamma: float = 1., scale: float = 0.3,
                  num_samples: int = None, num_elites: int = None,
-                 termination: Callable = None,
+                 termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
@@ -95,7 +96,7 @@ class MPPIShooting(MPCSolver):
                  horizon: int, gamma: float = 1., scale: float = 0.3,
                  num_iter: int = 1, num_samples: int = None,
                  kappa: Union[float, ParameterDecay] = 1., filter_coefficients: List[float] = [1.],
-                 termination: Callable = None,
+                 termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
