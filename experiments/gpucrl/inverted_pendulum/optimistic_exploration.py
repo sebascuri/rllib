@@ -21,13 +21,13 @@ from rllib.policy import NNPolicy
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.value_function import NNValueFunction
 
-from experiments.gpucrl_inverted_pendulum.plotters import plot_pendulum_trajectories, \
+from experiments.gpucrl.inverted_pendulum.plotters import plot_pendulum_trajectories, \
     plot_values_and_policy
 
-from experiments.gpucrl_inverted_pendulum.util import StateTransform, termination
-from experiments.gpucrl_inverted_pendulum.util import test_policy_on_model, \
-    test_policy_on_environment
-from experiments.gpucrl_inverted_pendulum.util import PendulumModel, PendulumReward
+from experiments.gpucrl.inverted_pendulum.util import StateTransform, termination
+from experiments.gpucrl.inverted_pendulum.util import test_policy_on_model, \
+    gpucrl
+from experiments.gpucrl.inverted_pendulum.util import PendulumModel, PendulumReward
 
 # %% Define and parse arguments.
 parser = argparse.ArgumentParser(

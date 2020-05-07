@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,8 +14,8 @@ from rllib.reward.quadratic_reward import QuadraticReward
 from rllib.value_function import NNValueFunction
 from rllib.util import mb_return
 
-from experiments.gpucrl_inverted_pendulum.plotters import plot_values_and_policy, \
-    plot_learning_losses, plot_combinations_as_grid
+from experiments.gpucrl.inverted_pendulum.plotters import plot_values_and_policy, \
+    plot_learning_losses
 
 num_steps = 1
 discount = 1.

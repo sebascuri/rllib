@@ -2,8 +2,8 @@
 import numpy as np
 import torch.distributions
 
-from experiments.gpucrl_inverted_pendulum.util import PendulumModel
-from experiments.gpucrl_inverted_pendulum.util import solve_mpc
+from experiments.gpucrl.inverted_pendulum.util import PendulumModel
+from experiments.gpucrl.inverted_pendulum.util import solve_mpc
 
 torch.manual_seed(0)
 np.random.seed(0)
