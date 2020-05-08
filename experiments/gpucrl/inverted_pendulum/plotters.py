@@ -117,7 +117,7 @@ def plot_state_trajectory(state, axis):
         axis.plot(state[-1, 0, 0, 0], state[-1, 0, 0, 1], 'x', color='C1')
     else:
         axis.plot(state[:, 0], state[:, 1], color='C1')
-        axis.plot(state[-1,  0], state[-1, 1], 'x', color='C1')
+        axis.plot(state[-1, 0], state[-1, 1], 'x', color='C1')
 
 
 def plot_learning_losses(policy_losses, value_losses, horizon):
@@ -136,14 +136,14 @@ def plot_learning_losses(policy_losses, value_losses, horizon):
 
     axes[0].plot(t, policy_losses)
     axes[0].plot(*moving_average_filter(t, policy_losses, horizon),
-             label='smoothed')
+                 label='smoothed')
     axes[0].set_xlabel('Iteration')
     axes[0].set_ylabel('Policy loss')
     axes[0].legend()
 
     axes[1].plot(t, value_losses)
     axes[1].plot(*moving_average_filter(t, value_losses, horizon),
-             label='smoothed')
+                 label='smoothed')
     axes[1].set_xlabel('Iteration')
     axes[1].set_ylabel('Value loss')
     axes[1].legend()
@@ -188,19 +188,19 @@ def plot_values_and_policy(value_function, policy, bounds, num_entries, trajecto
     plot_on_grid(value_function, bounds=bounds, num_entries=num_entries, axis=axes[0])
     if trajectory is not None:
         plot_state_trajectory(trajectory.state, axes[0])
-    axes[0].set_title('Value function')
-    axes[0].set_xlabel('Angle[rad]')
-    axes[0].set_ylabel('Angular velocity [rad/s]')
-    axes[0].axis('tight')
-
     plot_on_grid(lambda x: policy(x)[0], bounds=bounds, num_entries=num_entries,
                  axis=axes[1])
     if trajectory is not None:
         plot_state_trajectory(trajectory.state, axes[1])
+    axes[0].set_title('Value function')
     axes[1].set_title('Policy')
-    axes[1].set_xlabel('Angle [rad]')
-    axes[1].set_ylabel('Angular velocity [rad/s]')
-    axes[1].axis('tight')
+
+    for ax in axes:
+        ax.set_xlabel('Angle[rad]')
+        ax.set_ylabel('Angular velocity [rad/s]')
+        ax.axis('tight')
+        ax.set_xlim(bounds[0])
+        ax.set_ylim(bounds[1])
 
     if suptitle:
         plt.suptitle(suptitle, y=1)
@@ -297,3 +297,5 @@ def plot_pendulum_trajectories(agent, episode: int):
 
     if 'DISPLAY' in os.environ:
         plt.show()
+    else:
+        plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")

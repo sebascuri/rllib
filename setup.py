@@ -29,6 +29,9 @@ setup(
         ],
         'logging': [
             'tensorboard>=2.0,<3',
+        ],
+        'experiments': [
+            'lsf_runner>=0.0.2',
         ]
     },
     classifiers=[
