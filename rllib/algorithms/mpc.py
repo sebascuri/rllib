@@ -1,5 +1,6 @@
 """MPC Algorithms."""
 from abc import ABCMeta, abstractmethod
+import time
 
 import torch
 import torch.nn as nn
@@ -130,7 +131,10 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
         The data inside action_sequence and returns will get modified.
         """
-        torch.manual_seed(process_nr)
+        if self.num_cpu > 1:
+            # Multi-Processing inherits random state.
+            torch.manual_seed(int(1000 * time.time()))
+
         action_sequence[:] = self.get_candidate_action_sequence()
         returns[:] = self.evaluate_action_sequence(action_sequence, state)
 
