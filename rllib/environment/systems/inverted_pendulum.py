@@ -93,6 +93,12 @@ class InvertedPendulum(ODESystem):
         length = self.length
         friction = self.friction
         inertia = self.inertia
+
+        if bk == np:
+            action = action.clip(-1., 1.)
+        else:
+            action = action.clamp(-1., 1.)
+
         self.last_action = action[0]
 
         angle, angular_velocity = state
