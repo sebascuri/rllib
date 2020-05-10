@@ -27,6 +27,7 @@ class MPCAgent(ModelBasedAgent):
                  sim_initial_dist_num_trajectories=0,
                  sim_memory_num_trajectories=0,
                  initial_distribution=None,
+                 thompson_sampling=False,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(
             env_name,
@@ -49,6 +50,7 @@ class MPCAgent(ModelBasedAgent):
             sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
             sim_memory_num_trajectories=sim_memory_num_trajectories,
             initial_distribution=initial_distribution,
+            thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes, comment=comment)
 

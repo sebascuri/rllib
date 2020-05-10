@@ -25,6 +25,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  sim_initial_dist_num_trajectories=0,
                  sim_memory_num_trajectories=0,
                  sim_num_subsample=1,
+                 thompson_sampling=False,
                  gamma=1.0,
                  exploration_steps=0,
                  exploration_episodes=0,
@@ -47,6 +48,7 @@ class MBMPPOAgent(ModelBasedAgent):
             sim_refresh_interval=1,
             sim_num_subsample=sim_num_subsample,
             initial_distribution=initial_distribution,
+            thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes, comment=comment)
 

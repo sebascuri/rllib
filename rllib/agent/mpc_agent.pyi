@@ -32,6 +32,7 @@ class MPCAgent(ModelBasedAgent):
                  sim_initial_dist_num_trajectories: int = 0,
                  sim_memory_num_trajectories: int = 0,
                  initial_distribution: Distribution = None,
+                 thompson_sampling: bool = False,
                  gamma: float = 1.0,
                  exploration_steps: int = 0,
                  exploration_episodes: int = 0,

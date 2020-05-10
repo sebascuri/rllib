@@ -10,6 +10,7 @@ import gpytorch
 from gym.utils import colorize
 import torch
 from torch.utils.data import DataLoader
+import numpy as np
 from tqdm import tqdm
 
 from .abstract_agent import AbstractAgent
@@ -84,9 +85,10 @@ class ModelBasedAgent(AbstractAgent):
         Number of policy optimization steps.
     sim_num_subsample: int, optional. (default: 1).
         Add one out of `sim_num_subsample' samples to the data set.
-
     initial_distribution: Distribution, optional. (default: None).
         Initial state distribution.
+    thompsons_sampling: bool, optional. (default: False).
+        Bool that indicates to use thompson's sampling.
     gamma: float, optional. (default: 0.99).
     exploration_steps: int, optional. (default: 0).
     exploration_episodes: int, optional. (default: 0).
@@ -113,6 +115,7 @@ class ModelBasedAgent(AbstractAgent):
                  sim_refresh_interval=1,
                  sim_num_subsample=1,
                  initial_distribution=None,
+                 thompson_sampling=False,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
@@ -163,6 +166,7 @@ class ModelBasedAgent(AbstractAgent):
         self.initial_distribution = initial_distribution
         self.initial_states = torch.tensor(float('nan'))
         self.new_episode = True
+        self.thompson_sampling = thompson_sampling
 
     def act(self, state):
         """Ask the agent for an action to interact with the environment.
@@ -202,6 +206,11 @@ class ModelBasedAgent(AbstractAgent):
         """See `AbstractAgent.start_episode'."""
         super().start_episode()
         self.new_episode = True
+
+        if self.thompson_sampling:
+            self.dynamical_model.base_model.set_head(
+                np.random.choice(self.dynamical_model.base_model.num_heads)
+            )
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'.

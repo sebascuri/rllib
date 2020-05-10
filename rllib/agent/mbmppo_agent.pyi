@@ -27,6 +27,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  sim_initial_states_num_trajectories: int = 8,
                  sim_initial_dist_num_trajectories: int = 0,
                  sim_memory_num_trajectories: int = 0,
+                 thompson_sampling: bool = False,
                  gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0,
                  comment: str = '') -> None: ...

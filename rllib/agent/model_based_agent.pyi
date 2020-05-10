@@ -51,6 +51,7 @@ class ModelBasedAgent(AbstractAgent):
     initial_distribution: Distribution
     initial_states: Tensor
     new_episode: bool
+    thompson_sampling: bool
 
     def __init__(self,
                  env_name: str,
@@ -76,6 +77,7 @@ class ModelBasedAgent(AbstractAgent):
                  sim_refresh_interval: int = 1,
                  sim_num_subsample: int = 1,
                  initial_distribution: Distribution = None,
+                 thompson_sampling: bool = False,
                  gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0, comment: str = '') -> None: ...
 
