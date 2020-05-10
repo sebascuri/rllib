@@ -28,6 +28,5 @@ def mc_return(trajectory: Trajectory, gamma: float = 1.0,
 def mb_return(state: State, dynamical_model: AbstractModel, reward_model: AbstractReward,
               policy: AbstractPolicy, num_steps: int = 1, gamma: float = 1.0,
               num_samples: int = 1, value_function: AbstractValueFunction = None,
-              entropy_reg: float = 0.,
-              termination: Termination = None
-              ) -> MBValueReturn: ...
+              entropy_reg: float = 0., termination: Termination = None,
+              action_scale: float = 1.) -> MBValueReturn: ...

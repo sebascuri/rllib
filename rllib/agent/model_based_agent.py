@@ -97,6 +97,7 @@ class ModelBasedAgent(AbstractAgent):
                  policy,
                  value_function=None,
                  termination=None,
+                 action_scale=1.,
                  plan_horizon=0,
                  plan_samples=1,
                  plan_elite=1,
@@ -132,6 +133,8 @@ class ModelBasedAgent(AbstractAgent):
         self.plan_horizon = plan_horizon
         self.plan_samples = plan_samples
         self.plan_elite = plan_elite
+
+        self.action_scale = action_scale
 
         if hasattr(dynamical_model.base_model, 'num_heads'):
             num_heads = dynamical_model.base_model.num_heads
@@ -176,7 +179,8 @@ class ModelBasedAgent(AbstractAgent):
             self.pi = policy
             action = self._plan(state).detach().numpy()
 
-        return action[..., :self.dynamical_model.base_model.dim_action]
+        action = action[..., :self.dynamical_model.base_model.dim_action]
+        return self.action_scale * action
 
     def observe(self, observation):
         """Observe a new transition.
@@ -241,7 +245,7 @@ class ModelBasedAgent(AbstractAgent):
             reward_model=self.reward_model, policy=self.plan_policy,
             num_steps=self.plan_horizon, gamma=self.gamma,
             num_samples=self.plan_samples, value_function=self.value_function,
-            termination=self.termination)
+            termination=self.termination, action_scale=self.action_scale)
         actions = stack_list_of_tuples(trajectory).action
         idx = torch.topk(value, k=self.plan_elite, largest=True)[1]
         # Return first action and the mean over the elite samples.
@@ -359,7 +363,8 @@ class ModelBasedAgent(AbstractAgent):
                                    policy=self.plan_policy,
                                    initial_state=initial_states,
                                    max_steps=self.sim_num_steps,
-                                   termination=self.termination)
+                                   termination=self.termination,
+                                   action_scale=self.action_scale)
 
         self.sim_trajectory = stack_list_of_tuples(trajectory)
 

@@ -22,6 +22,8 @@ class ModelBasedAgent(AbstractAgent):
     termination: Optional[Termination]
     value_function: AbstractValueFunction
 
+    action_scale: float
+
     model_optimizer: Optimizer
     dataset: BootstrapExperienceReplay
     sim_dataset: ExperienceReplay
@@ -58,6 +60,7 @@ class ModelBasedAgent(AbstractAgent):
                  model_optimizer: Optimizer = None,
                  value_function: AbstractValueFunction = None,
                  termination: Termination = None,
+                 action_scale: float = 1.,
                  plan_horizon: int = 1,
                  plan_samples: int = 1,
                  plan_elite: int = 1,
