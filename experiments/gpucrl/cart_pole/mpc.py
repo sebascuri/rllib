@@ -28,8 +28,9 @@ from experiments.gpucrl.cart_pole.util import termination, StateTransform
 # %% Define and parse arguments.
 parser = argparse.ArgumentParser(
     description='Run Swing-up CartPole using Model-Based RL.')
-parser.add_argument('--optimistic', action='store_true',
-                    help='activate optimistic exploration.')
+parser.add_argument('--exploration', type=str, default='optimistic',
+                    choices=['optimistic', 'expected', 'thompson'])
+
 parser.add_argument('--exact-model', action='store_true', help='Use exact model.')
 parser.add_argument('--seed', type=int, default=0,
                     help='initial random seed (default: 0).')
@@ -43,19 +44,19 @@ parser.add_argument('--model-sparse-approximation', type=str, default='DTC',
 parser.add_argument('--model-feature-approximation', type=str, default='QFF',
                     choices=['QFF', 'RFF', 'OFF'])
 
-parser.add_argument('--action-cost', type=float, default=0.0)
+parser.add_argument('--action-cost', type=float, default=0.04)
 parser.add_argument('--gamma', type=float, default=0.99)
 parser.add_argument('--environment-max-steps', type=int, default=200)
 parser.add_argument('--train-episodes', type=int, default=15)
 parser.add_argument('--test-episodes', type=int, default=1)
-parser.add_argument('--beta', type=float, default=1.0)
+parser.add_argument('--beta', type=float, default=2.0)
 parser.add_argument('--plan-horizon', type=int, default=1)
 parser.add_argument('--plan-samples', type=int, default=20)
 parser.add_argument('--plan-elite', type=int, default=1)
 parser.add_argument('--max-memory', type=int, default=10000)
 
 parser.add_argument('--batch-size', type=int, default=64)
-parser.add_argument('--num-model-iter', type=int, default=40)
+parser.add_argument('--num-model-iter', type=int, default=50)
 parser.add_argument('--num-mppo-iter', type=int, default=50)
 parser.add_argument('--num-gradient-steps', type=int, default=50)
 
@@ -64,7 +65,7 @@ parser.add_argument('--sim-initial-states-num-trajectories', type=int, default=4
 parser.add_argument('--sim-initial-dist-num-trajectories', type=int, default=32)
 parser.add_argument('--sim-num-subsample', type=int, default=1)
 
-parser.add_argument('--model-opt-lr', type=float, default=1e-4)
+parser.add_argument('--model-opt-lr', type=float, default=1e-3)
 parser.add_argument('--model-opt-weight-decay', type=float, default=0)
 parser.add_argument('--model-max-num-points', type=int, default=int(1e10))
 parser.add_argument('--model-sparse-q-bar', type=int, default=2)
@@ -187,7 +188,7 @@ else:
 hparams.update({"model": model.__class__.__name__})
 
 # %% Define Optimistic or Expected Model
-if hparams['optimistic']:
+if hparams['exploration'] == 'optimistic':
     dynamical_model = OptimisticModel(model, transformations, beta=hparams['beta'])
     dim_policy_action = environment.dim_action + environment.dim_state
 else:
@@ -225,24 +226,25 @@ else:
 # value_function = torch.jit.script(value_function)
 
 # %% Define MPPO
-solver = CEMShooting(dynamical_model, reward_model, horizon=10, gamma=hparams['gamma'],
+solver = CEMShooting(dynamical_model, reward_model, horizon=20, gamma=hparams['gamma'],
                      scale=1., num_iter=5, num_samples=400, num_elites=40,
+                     terminal_reward=None,
                      termination=termination, warm_start=True, num_cpu=1)
 policy = MPCPolicy(solver)
 # %% Define Agent
-comment = model.name
-comment = f"{model.name} {'Optimistic' if hparams['optimistic'] else 'Expected'}"
+comment = f"{model.name} {hparams['exploration'].capitalize()} {hparams['action_cost']}"
 
 agent = MPCAgent(
     environment.name, policy, model_optimizer=model_optimizer,
     initial_distribution=initial_distribution,
     max_memory=hparams['max_memory'],
-    model_learn_num_iter=0, #hparams['num_model_iter'],
+    model_learn_num_iter=hparams['num_model_iter'],
     model_learn_batch_size=hparams['batch_size'],
     num_gradient_steps=0,
     sim_initial_states_num_trajectories=hparams['sim_initial_states_num_trajectories'],
     sim_initial_dist_num_trajectories=hparams['sim_initial_dist_num_trajectories'],
     sim_num_steps=hparams['sim_num_steps'],
+    thompson_sampling=hparams['exploration'] == 'thompson',
     gamma=hparams['gamma'], comment=comment)
 
 # %% Train Agent
