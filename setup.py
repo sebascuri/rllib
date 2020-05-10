@@ -25,13 +25,17 @@ setup(
             'mypy==0.750',
         ],
         'mujoco': [
-            'mujoco-py<2.1,>=2.0'
+            'mujoco-py<2.1,>=2.0',
+            'imageio-ffmpeg==0.4.1'
         ],
         'logging': [
             'tensorboard>=2.0,<3',
         ],
         'experiments': [
             'lsf_runner>=0.0.2',
+            'torchvision==0.5.0',
+            'Pillow==5.4.1',
+            'dotmap=>1.3.0<1.4'
         ]
     },
     classifiers=[
