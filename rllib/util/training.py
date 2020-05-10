@@ -68,16 +68,19 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
 def train_exact_gp_type2mll_step(model, observation, optimizer):
     """Train a GP using type-2 Marginal-Log-Likelihood optimization."""
     optimizer.zero_grad()
-    model.training = True
-
+    # model.training = True
+    model.train()
     output = tensor_to_distribution(model(observation.state[:, 0],
                                           observation.action[:, 0]))
     with gpytorch.settings.fast_pred_var():
-        loss = exact_mll(output, observation.next_state[:, 0].T, model.gp)
+        val = torch.stack(tuple([gp.train_targets for gp in model.gp]), 0)
+        loss = exact_mll(output, val, model.gp)
+        # loss = exact_mll(output, observation.next_state[:, 0].T, model.gp)
     loss.backward()
     optimizer.step()
 
-    model.training = False
+    # model.training = False
+    model.eval()
     return loss.item()
 
 

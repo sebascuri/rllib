@@ -247,7 +247,7 @@ class Ensemble(HeteroGaussianNN):
 
             mean = torch.mean(out, dim=-1, keepdim=True)
             sigma = (mean - out) @ (mean - out).transpose(-2, -1)
-            sigma += 1e-6 * torch.eye(dim)  # Add some jitter.
+            sigma += 1e-4 * torch.eye(dim)  # Add some jitter.
             scale += torch.cholesky(sigma / (num_samples - 1))
             mean = mean.squeeze(-1)
 

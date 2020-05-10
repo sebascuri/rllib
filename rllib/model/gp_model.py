@@ -37,14 +37,16 @@ class ExactGPModel(AbstractModel):
         """Get next state distribution."""
         test_x = self.state_actions_to_input_data(state, action)
 
-        out = [likelihood(gp(test_x))
-               for gp, likelihood in zip(self.gp, self.likelihood)]
-
         if self.training:
+            out = [likelihood(gp(gp.train_inputs[0]))
+                   for gp, likelihood in zip(self.gp, self.likelihood)]
+
             mean = torch.stack(tuple(o.mean for o in out), dim=0)
             scale_tril = torch.stack(tuple(o.scale_tril for o in out), dim=0)
             return mean, scale_tril
         else:
+            out = [likelihood(gp(test_x))
+                   for gp, likelihood in zip(self.gp, self.likelihood)]
             mean = torch.stack(tuple(o.mean for o in out), dim=-1)
 
             # Sometimes, gpytorch returns negative variances due to numerical errors.
