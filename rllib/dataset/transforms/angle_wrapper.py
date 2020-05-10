@@ -1,65 +1,47 @@
-"""Implementation of a Transformation that clips attributes."""
+"""Implementation of a that wraps angles to -pi and pi."""
 
-import numpy as np
 import torch
 import torch.jit
-import torch.nn as nn
 
 from .abstract_transform import AbstractTransform
 from rllib.dataset.datatypes import Observation
 
 
-class Clipper(nn.Module):
-    """Clipper Class."""
-
-    def __init__(self, min_val, max_val):
-        super().__init__()
-        self._min = min_val
-        self._max = max_val
-
-    def forward(self, array):
-        """See `AbstractTransform.__call__'."""
-        if isinstance(array, torch.Tensor):
-            return torch.clamp(array, self._min, self._max)
-        else:
-            return np.clip(array, self._min, self._max)
-
-    @torch.jit.export
-    def inverse(self, array):
-        """See `AbstractTransform.inverse'."""
-        return array
-
-
-class RewardClipper(AbstractTransform):
+class AngleWrapper(AbstractTransform):
     """Implementation of a Reward Clipper.
 
-    Given a reward, it will clip it between min_reward and max_reward.
+    Given a state vector, it will wrap the angles to a value between -pi and pi.
 
     Parameters
     ----------
-    min_reward: float, optional (default=0.)
-        minimum bound for rewards.
+    indexes: List[int].
+        indexes where there are angles.
 
-    max_reward: float, optional (default=1.)
-        maximum bound for rewards.
-
-    Notes
-    -----
-    This transformation does not have a inverse so the same observation is returned.
 
     """
 
-    def __init__(self, min_reward=0., max_reward=1.):
+    def __init__(self, indexes):
         super().__init__()
-        self._clipper = Clipper(min_reward, max_reward)
+        self._indexes = indexes
 
     def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
+        state = observation.state
+        angles = state[..., self._indexes]
+        cos, sin = torch.cos(angles), torch.sin(angles)
+        state[..., self._indexes] = torch.atan2(sin, cos)
+
+        next_state = observation.next_state
+        if observation.next_state.dim() > 0:
+            angles = next_state[..., self._indexes]
+            cos, sin = torch.cos(angles), torch.sin(angles)
+            next_state[..., self._indexes] = torch.atan2(sin, cos)
+
         return Observation(
-            state=observation.state,
+            state=state,
             action=observation.action,
-            reward=self._clipper(observation.reward),
-            next_state=observation.next_state,
+            reward=observation.reward,
+            next_state=next_state,
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
@@ -71,70 +53,4 @@ class RewardClipper(AbstractTransform):
     @torch.jit.export
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=self._clipper.inverse(observation.reward),
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
-        )
-
-
-class ActionClipper(AbstractTransform):
-    """Implementation of a Action Clipper.
-
-    Given an action, it will clip it between min_action and max_action.
-
-    Parameters
-    ----------
-    min_action: float, optional (default=0.)
-        minimum bound for rewards.
-
-    max_action: float, optional (default=1.)
-        maximum bound for rewards.
-
-    Notes
-    -----
-    This transformation does not have a inverse so the same observation is returned.
-
-    """
-
-    def __init__(self, min_action=-1., max_action=1.):
-        super().__init__()
-        self._clipper = Clipper(min_action, max_action)
-
-    def forward(self, observation: Observation):
-        """See `AbstractTransform.__call__'."""
-        return Observation(
-            state=observation.state,
-            action=self._clipper(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
-        )
-
-    @torch.jit.export
-    def inverse(self, observation: Observation):
-        """See `AbstractTransform.inverse'."""
-        return Observation(
-            state=observation.state,
-            action=self._clipper.inverse(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
-        )
+        return observation
