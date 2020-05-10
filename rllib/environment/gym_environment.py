@@ -86,7 +86,8 @@ class GymEnvironment(AbstractEnvironment):
         elif hasattr(self.env, 's'):
             self.env.s = value
         elif hasattr(self.env, 'set_state'):
-            pass
+            self.env.set_state(value[:len(self.env.sim.data.qpos)],
+                               value[len(self.env.sim.data.qpos):])
         else:
             raise NotImplementedError('Strange state')
 

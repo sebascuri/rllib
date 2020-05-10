@@ -62,7 +62,7 @@ try:
             """Set-up the viewer."""
             v = self.viewer
             v.cam.trackbodyid = 0
-            v.cam.distance = v.model.stat.extent
+            v.cam.distance = self.model.stat.extent
 
 except Exception:  # Mujoco not installed.
     pass
