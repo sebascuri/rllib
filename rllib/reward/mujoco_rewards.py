@@ -14,6 +14,10 @@ class MujocoReward(AbstractReward, metaclass=ABCMeta):
         super().__init__()
         self.action_cost = action_cost
 
+    def action_reward(self, action):
+        """Get action reward."""
+        return (-action[..., :self.dim_action] ** 2).sum(-1)
+
     def get_reward(self, reward_state, reward_control):
         """Get reward distribution from reward_state, reward_control tuple."""
         reward = reward_state + self.action_cost * reward_control
@@ -22,6 +26,8 @@ class MujocoReward(AbstractReward, metaclass=ABCMeta):
 
 class CartPoleReward(MujocoReward):
     """Reward of MBRL CartPole Environment."""
+
+    dim_action = 1
 
     def __init__(self, action_cost=0.01, pendulum_length=0.6):
         super().__init__(action_cost)
@@ -33,8 +39,7 @@ class CartPoleReward(MujocoReward):
         end_effector = self._get_ee_pos(next_state[..., 0], next_state[..., 1])
 
         reward_state = bk.exp(-(end_effector ** 2).sum(-1) / (self.length ** 2))
-        reward_control = -(action ** 2).sum(-1)
-        return self.get_reward(reward_state, reward_control)
+        return self.get_reward(reward_state, self.action_reward(action))
 
     def _get_ee_pos(self, x0, theta):
         bk = get_backend(x0)
@@ -45,19 +50,22 @@ class CartPoleReward(MujocoReward):
 class HalfCheetahReward(MujocoReward):
     """Reward of MBRL HalfCheetah Environment."""
 
+    dim_action = 6
+
     def __init__(self, action_cost=0.1):
         super().__init__(action_cost)
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
         reward_state = next_state[..., 0] - 0.0 * next_state[..., 2] ** 2
-        reward_control = -(action ** 2).sum(-1)
 
-        return self.get_reward(reward_state, reward_control)
+        return self.get_reward(reward_state, self.action_reward(action))
 
 
 class PusherReward(MujocoReward):
     """Reward of MBRL Pusher Environment."""
+
+    dim_action = 7
 
     def __init__(self, action_cost=0.1, goal=np.zeros(3)):
         super().__init__(action_cost)
@@ -75,13 +83,14 @@ class PusherReward(MujocoReward):
         reward_dist = - bk.abs(vec_2).sum(-1)
 
         reward_state = 1.25 * reward_dist + 0.5 * reward_near
-        reward_control = -(action ** 2).sum(-1)
 
-        return self.get_reward(reward_state, reward_control)
+        return self.get_reward(reward_state, self.action_reward(action))
 
 
 class ReacherReward(MujocoReward):
     """Reward of Reacher Environment."""
+
+    dim_action = 7
 
     def __init__(self, action_cost=0.1, goal=torch.zeros(3)):
         super().__init__(action_cost)
@@ -91,8 +100,7 @@ class ReacherReward(MujocoReward):
         """See `AbstractReward.forward()'."""
         dist_to_target = self.get_goal_distance(next_state)
         reward_state = -(dist_to_target ** 2).sum(-1)
-        reward_control = -(action ** 2).sum(-1)
-        return self.get_reward(reward_state, reward_control)
+        return self.get_reward(reward_state, self.action_reward(action))
 
     def get_goal_distance(self, state):
         """Get the distance between the end effector and the goal."""
