@@ -19,7 +19,7 @@ from rllib.reward.utilities import tolerance
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.neural_networks.utilities import freeze_parameters
 
-from experiments.gpucrl.inverted_pendulum.plotters import plot_learning_losses, \
+from exps.gpucrl.inverted_pendulum.plotters import plot_learning_losses, \
     plot_trajectory_states_and_rewards, plot_values_and_policy, plot_returns_entropy_kl
 
 

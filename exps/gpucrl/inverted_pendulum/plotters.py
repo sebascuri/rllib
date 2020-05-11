@@ -229,7 +229,7 @@ def plot_returns_entropy_kl(returns, entropy, kl_div):
 
 def plot_pendulum_trajectories(agent, episode: int):
     """Plot GP inputs and trajectory in a Pendulum environment."""
-    model = agent.mppo.dynamical_model.base_model
+    model = agent.dynamical_model.base_model
     trajectory = stack_list_of_tuples(agent.last_trajectory)
     sim_obs = agent.sim_trajectory
 
