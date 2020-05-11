@@ -1,51 +1,36 @@
-"""Implementation of a Linear Dynamical System."""
-
+"""Implementation of a System from a Learned Model."""
 
 import numpy as np
 
 from .abstract_system import AbstractSystem
+from rllib.util import tensor_to_distribution
 
 
-class LinearSystem(AbstractSystem):
-    """An environment Discrete Time for Linear Dynamical Systems.
+class ModelSystem(AbstractSystem):
+    """An system based on a dynamical model.
 
     Parameters
     ----------
-    a: ndarray
-        state transition matrix.
-    b: ndarray
-        input matrix.
-    c: ndarray, optional
-        observation matrix.
+    dynamical_model: AbstractModel.
+        dynamical model.
     """
 
-    def __init__(self, a, b, c=None):
-        self.a = np.atleast_2d(a)
-        self.b = np.atleast_2d(b)
-        if c is None:
-            c = np.eye(self.a.shape[0])
-        self.c = c
-
-        dim_state, dim_action = self.b.shape
-        dim_observation = self.c.shape[0]
-
-        super().__init__(dim_state=dim_state,
-                         dim_action=dim_action,
-                         dim_observation=dim_observation,
-                         )
-        self._state = None
+    def __init__(self, dynamical_model):
+        self.dynamical_model = dynamical_model
+        super().__init__(dim_state=dynamical_model.dim_state,
+                         dim_action=dynamical_model.dim_action)
 
     def step(self, action):
         """See `AbstractSystem.step'."""
-        action = np.atleast_1d(action)
-        self.state = self.a @ self.state + self.b @ action
-        return self.c @ self.state
+        self.state = tensor_to_distribution(
+            self.dynamical_model(self.state, action)
+        ).sample()
+        return self.state
 
     def reset(self, state):
         """See `AbstractSystem.reset'."""
-        self._time = 0
-        self.state = np.atleast_1d(state)
-        return self.c @ self.state
+        self.state = state
+        return self.state
 
     @property
     def state(self):
