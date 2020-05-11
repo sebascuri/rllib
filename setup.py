@@ -26,7 +26,7 @@ setup(
         ],
         'mujoco': [
             'mujoco-py<2.1,>=2.0',
-            'imageio-ffmpeg==0.4.1'
+            'imageio-ffmpeg==0.4.1',
         ],
         'logging': [
             'tensorboard>=2.0,<3',
@@ -35,8 +35,8 @@ setup(
             'lsf_runner>=0.0.2',
             'torchvision==0.5.0',
             'Pillow==5.4.1',
-            'dotmap=>1.3.0<1.4'
-        ]
+            'dotmap>=1.3.0,<1.4.0',
+        ],
     },
     classifiers=[
         # How mature is this project? Common values are
