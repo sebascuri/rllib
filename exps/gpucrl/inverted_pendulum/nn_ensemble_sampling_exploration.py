@@ -10,9 +10,9 @@ from rllib.model.derived_model import TransformedModel
 from rllib.util.collect_data import collect_model_transitions
 from rllib.util.training import train_model
 
-from experiments.gpucrl.inverted_pendulum.util import StateTransform
-from experiments.gpucrl.inverted_pendulum.util import PendulumReward, PendulumModel
-from experiments.gpucrl.inverted_pendulum.util import solve_mpc
+from exps.gpucrl.inverted_pendulum.util import StateTransform
+from exps.gpucrl.inverted_pendulum.util import PendulumReward, PendulumModel
+from exps.gpucrl.inverted_pendulum.util import solve_mpc
 
 torch.manual_seed(0)
 np.random.seed(0)

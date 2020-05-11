@@ -10,7 +10,7 @@ import torch.optim as optim
 from rllib.algorithms.mppo import MBMPPO, train_mppo
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment.system_environment import SystemEnvironment
-from rllib.environment.systems import InvertedPendulum
+from rllib.environment.systems import InvertedPendulum, ModelSystem
 from rllib.model.abstract_model import AbstractModel
 from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
@@ -210,8 +210,10 @@ def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
 
         # %% Test controller on Environment.
         environment = SystemEnvironment(
+            # ModelSystem(PendulumModel(mass=0.3, length=0.5, friction=0.005)),
             InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                             step_size=1 / 80), reward=reward_model)
+                             step_size=1 / 80),
+            reward=reward_model)
         test_policy_on_environment(environment, mppo.policy, test_state)
 
         environment_rewards, _ = test_policy_on_environment(
