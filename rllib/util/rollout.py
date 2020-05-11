@@ -88,7 +88,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
 
 
 def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False,
-                   action_scale=1.):
+                   action_scale=None):
     """Conduct a rollout of a policy in an environment.
 
     Parameters
@@ -103,6 +103,8 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         Maximum number of steps per episode.
     render: bool.
         Flag that indicates whether to render the environment or not.
+    action_scale: float, optional (default=None).
+        Magnitude of policy actions.
 
     Returns
     -------
@@ -119,7 +121,9 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
             while not done:
                 pi = tensor_to_distribution(policy(
                     torch.tensor(state, dtype=torch.get_default_dtype())))
-                action = action_scale * pi.sample().numpy()
+                action = pi.sample().numpy()
+                if action_scale:
+                    action = action_scale * action
                 observation, state, done = step(environment, state, action, pi, render)
                 trajectory.append(observation)
                 if max_steps <= environment.time:
@@ -129,7 +133,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
 
 
 def rollout_model(dynamical_model, reward_model, policy, initial_state,
-                  termination=None, max_steps=1000, action_scale=1.):
+                  termination=None, max_steps=1000, action_scale=None):
     """Conduct a rollout of a policy interacting with a model.
 
     Parameters
@@ -146,6 +150,8 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         Termination condition to finish the rollout.
     max_steps: int.
         Maximum number of steps per episode.
+    action_scale: float, optional (default=None).
+        Magnitude of policy actions.
 
     Returns
     -------
@@ -168,7 +174,8 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             action = pi.rsample()
         else:
             action = pi.sample()
-        action = action_scale * action
+        if action_scale:
+            action = action_scale * action
 
         # Sample next states
         next_state_out = dynamical_model(state, action)

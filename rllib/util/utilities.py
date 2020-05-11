@@ -154,6 +154,27 @@ def sample_mean_and_cov(sample):
     return mean, covariance
 
 
+def safe_cholesky(covariance_matrix, jitter=1e-6):
+    """Perform a safe cholesky decomposition of the covariance matrix.
+
+    If cholesky decomposition raises Runtime error, it adds jitter to the covariance
+    matrix.
+
+    Parameters
+    ----------
+    covariance_matrix: torch.Tensor.
+        Tensor with dimensions batch x dim x dim.
+    jitter: float, optional.
+        Jitter to add to the covariance matrix.
+    """
+    try:
+        return torch.cholesky(covariance_matrix)
+    except RuntimeError:
+        dim = covariance_matrix.shape[-1]
+        return safe_cholesky(covariance_matrix + jitter * torch.eye(dim),
+                             jitter=10 * jitter)
+
+
 def moving_average_filter(x, y, horizon):
     """Apply a moving average filter to data x and y.
 

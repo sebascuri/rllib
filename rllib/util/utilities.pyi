@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, List,Union
+from typing import Callable, Tuple, List, Union
 
 import numpy as np
 from torch import Tensor
@@ -24,6 +24,9 @@ def separated_kl(p: Gaussian, q: Gaussian) -> Tuple[Tensor, Tensor]: ...
 
 
 def sample_mean_and_cov(sample: Tensor) -> Tuple[Tensor, Tensor]: ...
+
+
+def safe_cholesky(covariance_matrix: Tensor, jitter: float = 1e-6) -> Tensor: ...
 
 
 def moving_average_filter(x: Array, y: Array, horizon: int) -> Array: ...

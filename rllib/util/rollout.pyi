@@ -26,13 +26,13 @@ def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
 
 def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
                    num_episodes: int = 1, max_steps: int = 1000, render: bool = False,
-                   action_scale: float = 1.) -> List[Trajectory]: ...
+                   action_scale: float = None) -> List[Trajectory]: ...
 
 
 def rollout_model(dynamical_model: AbstractModel, reward_model: AbstractReward,
                   policy: AbstractPolicy, initial_state: State,
                   termination: Termination = None, max_steps: int = 1000,
-                  action_scale: float = 1.) -> Trajectory: ...
+                  action_scale: float = None) -> Trajectory: ...
 
 
 def rollout_actions(dynamical_model: AbstractModel, reward_model: AbstractReward,

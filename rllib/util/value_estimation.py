@@ -113,7 +113,7 @@ def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.):
 
 def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1.,
               value_function=None, num_samples=1, entropy_reg=0., termination=None,
-              action_scale=1.):
+              action_scale=None):
     r"""Estimate the value of a state by propagating the state with a model for N-steps.
 
     Rolls out the model for a number of `steps` and sums up the rewards. After this,
@@ -146,7 +146,7 @@ def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1
         Entropy regularization parameter.
     termination: Callable, optional. (default=None).
         Callable that returns True if the transition yields a terminal state.
-    action_scale: float, optional. (default=1.).
+    action_scale: float, optional. (default=None).
         Scale of actions.
 
     Returns
