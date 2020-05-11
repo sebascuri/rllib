@@ -12,7 +12,7 @@ from rllib.algorithms.td import ModelBasedTDLearning
 class MPCAgent(ModelBasedAgent):
     """Implementation of an agent that runs an MPC policy."""
     value_optimizer: Optional[Optimizer]
-    num_gradient_steps: int
+    value_gradient_steps: int
     value_learning: ModelBasedTDLearning
 
     def __init__(self,
@@ -22,11 +22,11 @@ class MPCAgent(ModelBasedAgent):
                  model_learn_batch_size: int = 64,
                  model_optimizer: Optimizer = None,
                  value_optimizer: Optimizer = None,
-                 num_gradient_steps: int = 50,
-                 num_steps_returns: int = 1,
                  max_memory: int = 1000,
                  value_opt_num_iter: int = 0,
                  value_opt_batch_size: int = None,
+                 value_num_steps_returns: int = 1,
+                 value_gradient_steps: int = 50,
                  sim_num_steps: int = 0,
                  sim_initial_states_num_trajectories: int = 0,
                  sim_initial_dist_num_trajectories: int = 0,

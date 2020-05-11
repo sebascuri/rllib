@@ -17,11 +17,11 @@ class MPCAgent(ModelBasedAgent):
                  model_learn_batch_size=64,
                  model_optimizer=None,
                  value_optimizer=None,
-                 num_gradient_steps=50,
-                 num_steps_returns=1,
                  max_memory=1,
                  value_opt_num_iter=0,
                  value_opt_batch_size=None,
+                 value_num_steps_returns=1,
+                 value_gradient_steps=50,
                  sim_num_steps=0,
                  sim_initial_states_num_trajectories=0,
                  sim_initial_dist_num_trajectories=0,
@@ -55,13 +55,12 @@ class MPCAgent(ModelBasedAgent):
             exploration_episodes=exploration_episodes, comment=comment)
 
         self.value_optimizer = value_optimizer
-        self.num_gradient_steps = num_gradient_steps
+        self.value_gradient_steps = value_gradient_steps
         self.value_learning = ModelBasedTDLearning(
-            self.value_function,
-            criterion=nn.MSELoss(reduction='none'),
-            policy=self.policy,
-            dynamical_model=self.dynamical_model, reward_model=self.reward_model,
-            termination=self.termination, num_steps=num_steps_returns, gamma=self.gamma)
+            self.value_function, criterion=nn.MSELoss(reduction='none'),
+            policy=self.policy, dynamical_model=self.dynamical_model,
+            reward_model=self.reward_model, termination=self.termination,
+            num_steps=value_num_steps_returns, gamma=self.gamma)
 
     def _optimize_policy(self):
         """Optimize policy by optimizing value function."""

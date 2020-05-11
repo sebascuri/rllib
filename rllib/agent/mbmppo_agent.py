@@ -16,10 +16,12 @@ class MBMPPOAgent(ModelBasedAgent):
                  initial_distribution=None,
                  action_scale=1.,
                  plan_horizon=1, plan_samples=8, plan_elite=1,
-                 max_memory=10000, batch_size=64,
-                 num_model_iter=30,
-                 num_mppo_iter=100,
-                 num_gradient_steps=50,
+                 max_memory=10000,
+                 model_learn_batch_size=64,
+                 model_learn_num_iter=30,
+                 mppo_num_iter=100,
+                 mppo_gradient_steps=50,
+                 mppo_batch_size=None,
                  sim_num_steps=200,
                  sim_initial_states_num_trajectories=8,
                  sim_initial_dist_num_trajectories=0,
@@ -36,11 +38,11 @@ class MBMPPOAgent(ModelBasedAgent):
             termination=mppo.termination, value_function=mppo.value_function,
             action_scale=action_scale,
             plan_horizon=plan_horizon, plan_samples=plan_samples, plan_elite=plan_elite,
-            model_learn_num_iter=num_model_iter,
-            model_learn_batch_size=batch_size,
+            model_learn_num_iter=model_learn_num_iter,
+            model_learn_batch_size=model_learn_batch_size,
             max_memory=max_memory,
-            policy_opt_num_iter=num_mppo_iter,
-            policy_opt_batch_size=batch_size,
+            policy_opt_num_iter=mppo_num_iter,
+            policy_opt_batch_size=mppo_batch_size,
             sim_num_steps=sim_num_steps,
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
             sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
@@ -54,7 +56,7 @@ class MBMPPOAgent(ModelBasedAgent):
 
         self.mppo = mppo
         self.mppo_optimizer = mppo_optimizer
-        self.num_gradient_steps = num_gradient_steps
+        self.mppo_gradient_steps = mppo_gradient_steps
 
         if hasattr(self.dynamical_model.base_model, 'num_heads'):
             num_heads = self.dynamical_model.base_model.num_heads
@@ -89,7 +91,7 @@ class MBMPPOAgent(ModelBasedAgent):
         state_batches = torch.split(states, self.policy_opt_batch_size
                                     )[::self.sim_num_subsample]
 
-        for _ in range(self.num_gradient_steps):
+        for _ in range(self.mppo_gradient_steps):
             # obs, _, _ = self.sim_dataset.get_batch(self.policy_opt_batch_size)
             # states = obs.state[:, 0]
             idx = np.random.choice(len(state_batches))
