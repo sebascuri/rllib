@@ -72,7 +72,8 @@ mpc_parser.add_argument('--mpc-not-warm-start', action='store_true')
 mpc_parser.add_argument('--mpc-default-action', type=str, default='zero',
                         choices=['constant', 'mean', 'zero'])
 mpc_parser.add_argument('--mpc-kappa', type=float, default=1.)
-mpc_parser.add_argument('--mpc-filter', type=float, nargs='+', default=[0.2, 0.8, 0])
+mpc_parser.add_argument('--mpc-filter-coefficients', type=float, nargs='+',
+                        default=[0.2, 0.8, 0])
 
 
 sim_parser = parser.add_argument_group('simulation')

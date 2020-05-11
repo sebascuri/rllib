@@ -6,39 +6,37 @@ from torch.distributions import Uniform
 from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState, \
     AngleWrapper
 from rllib.environment import GymEnvironment
-from rllib.reward.mujoco_rewards import CartPoleReward
+from rllib.reward.mujoco_rewards import HalfCheetahReward
 from rllib.util.training import train_agent, evaluate_agent
-from exps.gpucrl.cart_pole.util import StateTransform
+from exps.gpucrl.half_cheetah.util import StateTransform
 
 from exps.gpucrl.util import large_state_termination, get_mpc_agent
-from exps.gpucrl.plotters import plot_last_trajectory
+from exps.gpucrl.plotters import plot_last_rewards
 from exps.gpucrl.mpc_arguments import parser
 
-parser.description = 'Run Swing-up Cart-Pole using Model-Based MPC.'
-parser.set_defaults(action_cost=0.05, action_scale=3.,
-                    environment_max_steps=200, train_episodes=15,
-                    mpc_solver='mppi',
+parser.description = 'Run Half Cheetah using Model-Based MPC.'
+parser.set_defaults(action_cost=0.1, environment_max_steps=1000, train_episodes=15,
+                    mpc_horizon=40,
                     model_kind='DeterministicEnsemble', model_learn_num_iter=50,
                     model_opt_lr=1e-3, render_train=True)
 args = parser.parse_args()
-print(args)
 params = DotMap(vars(args))
 torch.manual_seed(params.seed)
 np.random.seed(params.seed)
 
 # %% Define Helper modules
 transformations = [
-    ActionScaler(scale=3),
+    # ActionScaler(scale=3),
     MeanFunction(DeltaState()),
-    AngleWrapper(indexes=[1]),
+    # AngleWrapper(indexes=[2]),
 ]
 
 input_transform = StateTransform()
 
 # %% Define Environment.
-environment = GymEnvironment('MBRLCartPole-v0', action_cost=params.action_cost,
+environment = GymEnvironment('MBRLHalfCheetah-v0', action_cost=params.action_cost,
                              seed=params.seed)
-reward_model = CartPoleReward(action_cost=params.action_cost)
+reward_model = HalfCheetahReward(action_cost=params.action_cost)
 exploratory_distribution = torch.distributions.Uniform(
     torch.tensor([-np.pi, -1.25, -0.05, -0.05]),
     torch.tensor([+np.pi, +1.25, +0.05, +0.05])
@@ -58,7 +56,7 @@ with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
                 plot_flag=params.plot_train_results,
                 print_frequency=params.print_frequency,
                 render=params.render_train,
-                plot_callbacks=[plot_last_trajectory]
+                plot_callbacks=[plot_last_rewards]
                 )
 agent.logger.export_to_json(params.toDict())
 

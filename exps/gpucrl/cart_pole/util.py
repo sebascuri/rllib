@@ -4,17 +4,6 @@ import torch
 import torch.nn as nn
 
 
-def termination(state, action, next_state=None):
-    """Termination condition for environment."""
-    if not isinstance(state, torch.Tensor):
-        state = torch.tensor(state)
-    if not isinstance(action, torch.Tensor):
-        action = torch.tensor(action)
-
-    return (torch.any(torch.abs(state) > 200, dim=-1) | torch.any(
-        torch.abs(action) > 15, dim=-1))
-
-
 class StateTransform(nn.Module):
     """Transform pendulum states to cos, sin, angular_velocity."""
     extra_dim = 1

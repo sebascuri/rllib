@@ -10,13 +10,24 @@ from rllib.environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.util.training import train_agent, evaluate_agent
 
-from experiments.gpucrl.inverted_pendulum.plotters import plot_pendulum_trajectories, \
-    plot_values_and_policy
-from experiments.gpucrl.inverted_pendulum.util import StateTransform, PendulumReward
-from experiments.gpucrl.mpc_arguments import parser
-from experiments.gpucrl.util import get_mpc_agent, large_state_termination
+from exps.gpucrl.inverted_pendulum.plotters import plot_values_and_policy
+from exps.gpucrl.inverted_pendulum.util import StateTransform, PendulumReward
+from exps.gpucrl.mpc_arguments import parser
+from exps.gpucrl.util import get_mpc_agent, large_state_termination
+from exps.gpucrl.plotters import plot_last_trajectory
 
 # Parse command line Arguments.
+parser.description = 'Run Swing-up Pendulum using MPC.'
+parser.set_defaults(action_cost=0.01,
+                    environment_max_steps=400,
+                    mpc_horizon=10, mpc_solver='random', mpc_terminal_reward=True,
+                    value_opt_num_iter=25, sim_num_steps=40,
+                    sim_initial_dist_num_trajectories=8,
+                    model_kind='DeterministicEnsemble',
+                    model_learn_num_iter=50,
+                    model_opt_lr=1e-3,
+                    render_train=True)
+
 args = parser.parse_args()
 params = DotMap(vars(args))
 torch.manual_seed(params.seed)
@@ -31,7 +42,7 @@ reward_model = PendulumReward(action_cost=params.action_cost)
 initial_distribution = torch.distributions.Uniform(
     torch.tensor([np.pi, -0.0]), torch.tensor([np.pi, +0.0]))
 exploratory_distribution = torch.distributions.Uniform(
-        torch.tensor([-np.pi, -0.005]), torch.tensor([np.pi, +0.005])),
+    torch.tensor([-np.pi, -0.005]), torch.tensor([np.pi, +0.005]))
 
 environment = SystemEnvironment(
     InvertedPendulum(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80),
@@ -41,6 +52,7 @@ environment = SystemEnvironment(
 
 agent = get_mpc_agent(environment.name, environment.dim_state, environment.dim_action,
                       params, reward_model, input_transform=input_transform,
+                      transformations=transformations,
                       termination=large_state_termination,
                       initial_distribution=exploratory_distribution)
 
@@ -53,7 +65,7 @@ with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
                 plot_flag=params.plot_train_results,
                 print_frequency=params.print_frequency,
                 render=params.render_train,
-                plot_callbacks=[plot_pendulum_trajectories]
+                plot_callbacks=[plot_last_trajectory]
                 )
 agent.logger.export_to_json(params.toDict())
 

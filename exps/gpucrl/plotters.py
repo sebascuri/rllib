@@ -48,3 +48,33 @@ def plot_last_trajectory(agent, episode: int):
     else:
         plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
 
+
+def plot_last_rewards(agent, episode: int):
+    """Plot agent last trajectory."""
+    real_trajectory = stack_list_of_tuples(agent.last_trajectory)
+
+    for transformation in agent.dataset.transformations:
+        real_trajectory = transformation(real_trajectory)
+
+    fig, axes = plt.subplots(1, 1, sharex='col')
+    axes.plot(real_trajectory.reward)
+    axes.set_ylabel(f"Reward")
+    axes.set_xlabel('Time')
+
+    img_name = f"{agent.comment.title()}"
+    plt.suptitle(f'{img_name} Episode {episode + 1}', y=1)
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='jpeg')
+    buf.seek(0)
+
+    image = PIL.Image.open(buf)
+    image = ToTensor()(image)
+
+    agent.logger.writer.add_image(img_name, image, episode)
+
+    if 'DISPLAY' in os.environ:
+        plt.show()
+    else:
+        plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
+
