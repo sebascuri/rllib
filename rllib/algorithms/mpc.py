@@ -103,25 +103,23 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     def initialize_actions(self, batch_shape):
         """Initialize mean and covariance of action distribution."""
         if self.warm_start and self.mean is not None:
-            next_mean = self.mean[..., 1:, :]
+            next_mean = self.mean[1:, ..., :]
             if self.default_action == 'zero':
-                final_action = torch.zeros_like(self.mean[..., :1, :])
+                final_action = torch.zeros_like(self.mean[:1, ..., :])
             elif self.default_action == 'constant':
-                final_action = self.mean[..., -1:, :]
+                final_action = self.mean[-1:, ..., :]
             elif self.default_action == 'mean':
-                final_action = torch.mean(next_mean, dim=-2, keepdim=True)
+                final_action = torch.mean(next_mean, dim=0, keepdim=True)
             else:
                 raise NotImplementedError
-            self.mean = torch.cat((next_mean, final_action), dim=-2)
+            self.mean = torch.cat((next_mean, final_action), dim=0)
         else:
-            self.mean = torch.zeros(self.horizon, self.dim_action)
+            self.mean = torch.zeros(self.horizon, *batch_shape, self.dim_action)
         self.covariance = (self._scale ** 2) * torch.eye(self.dim_action).repeat(
-            self.horizon, 1, 1)
+            self.horizon, *batch_shape, 1, 1)
 
-        if self.mean.shape[:-2] != batch_shape:
-            self.mean = self.mean.repeat(*batch_shape, 1, 1)
-        if self.covariance.shape[:-3] != batch_shape:
-            self.covariance = self.covariance.repeat(*batch_shape, 1, 1, 1)
+        # if self.mean.shape[1:-1] != batch_shape:
+        #     self.mean = self.mean.repeat(1, *batch_shape, 1)
 
     def get_action_sequence_and_returns(self, state, action_sequence, returns,
                                         process_nr=0):
@@ -225,7 +223,9 @@ class CEMShooting(MPCSolver):
         """Get candidate actions by sampling from a multivariate normal."""
         action_distribution = MultivariateNormal(self.mean, self.covariance)
         action_sequence = action_distribution.sample((self.num_samples,))
-        return action_sequence.transpose(0, -2)
+        action_sequence = action_sequence.permute(
+            tuple(torch.arange(1, action_sequence.dim() - 1)) + (0, -1))
+        return action_sequence
 
     def get_best_action(self, action_sequence, returns):
         """Get best action by averaging the num_elites samples."""
@@ -237,8 +237,8 @@ class CEMShooting(MPCSolver):
 
     def update_sequence_generation(self, elite_actions):
         """Update distribution by the empirical mean and covariance of best actions."""
-        mean, covariance = sample_mean_and_cov(elite_actions.transpose(-1, -2))
-        self.mean, self.covariance = mean.transpose(0, -2), covariance.transpose(0, -3)
+        self.mean, self.covariance = sample_mean_and_cov(elite_actions.transpose(-1, -2)
+                                                         )
 
 
 class RandomShooting(CEMShooting):
@@ -313,7 +313,7 @@ class MPPIShooting(MPCSolver):
     """
 
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1., scale=.3,
-                 num_iter=1, kappa=1., filter_coefficients=[1.], num_samples=None,
+                 num_iter=1, kappa=1., filter_coefficients=None, num_samples=None,
                  termination=None, terminal_reward=None, warm_start=False,
                  default_action='zero', num_cpu=1):
         super().__init__(
@@ -325,6 +325,8 @@ class MPPIShooting(MPCSolver):
         if not isinstance(kappa, ParameterDecay):
             kappa = Constant(kappa)
         self.kappa = kappa
+        if filter_coefficients is None:
+            filter_coefficients = [1.]
         self.filter_coefficients = torch.tensor(filter_coefficients)
         self.filter_coefficients /= torch.sum(self.filter_coefficients)
 
@@ -336,19 +338,26 @@ class MPPIShooting(MPCSolver):
         lag = len(self.filter_coefficients)
         for i in range(self.horizon):
             weights = self.filter_coefficients[:min(i + 1, lag)]
-            aux = torch.einsum('i, ...ij-> ...j', weights.flip(0),
-                               noise[..., max(0, i - lag + 1):i + 1, :])
-            noise[..., i, :] = aux / torch.sum(weights)
+            aux = torch.einsum('i, ki...j-> k...j', weights.flip(0),
+                               noise[:, max(0, i - lag + 1):i + 1, ..., :])
+            noise[:, i, ..., :] = aux / torch.sum(weights)
 
-        action_sequence = self.mean + noise
-        return action_sequence.transpose(0, -2)
+        action_sequence = self.mean.unsqueeze(0).repeat_interleave(self.num_samples, 0)
+        action_sequence += noise
+        action_sequence = action_sequence.permute(
+            tuple(torch.arange(1, action_sequence.dim() - 1)) + (0, -1))
+        return action_sequence
 
     def get_best_action(self, action_sequence, returns):
         """Get best action by a weighted average of e^kappa returns."""
         returns = self.kappa() * returns
         weights = torch.exp(returns - torch.max(returns))
-        weighted_sum = torch.einsum('i,...ij->...j', weights, action_sequence)
-        return weighted_sum / torch.sum(weights)
+        normalization = weights.sum()
+
+        weights = weights.unsqueeze(0).unsqueeze(-1)
+        weights = weights.repeat_interleave(self.horizon, 0).repeat_interleave(
+            self.dim_action, -1)
+        return (weights * action_sequence).sum(dim=-2) / normalization
 
     def update_sequence_generation(self, elite_actions):
         """Update distribution by the fitting the elite_actions to the mean."""

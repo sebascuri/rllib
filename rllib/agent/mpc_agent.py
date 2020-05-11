@@ -58,7 +58,7 @@ class MPCAgent(ModelBasedAgent):
         self.value_gradient_steps = value_gradient_steps
         self.value_learning = ModelBasedTDLearning(
             self.value_function, criterion=nn.MSELoss(reduction='none'),
-            policy=self.policy, dynamical_model=self.dynamical_model,
+            policy=self.plan_policy, dynamical_model=self.dynamical_model,
             reward_model=self.reward_model, termination=self.termination,
             num_steps=value_num_steps_returns, gamma=self.gamma)
 
@@ -70,15 +70,18 @@ class MPCAgent(ModelBasedAgent):
         state_batches = torch.split(
             states, self.policy_opt_batch_size)[::self.sim_num_subsample]
 
-        for _ in range(self.num_gradient_steps):
+        for _ in range(self.value_gradient_steps):
             # obs, _, _ = self.sim_dataset.get_batch(self.policy_opt_batch_size)
             # states = obs.state[:, 0]
             idx = np.random.choice(len(state_batches))
             states = state_batches[idx]
 
+            self.plan_policy.reset()
             self.value_learning.zero_grad()
-            losses = self.value_learning(states)
-            losses.loss.backward()
+            losses = self.value_learning(states.unsqueeze(-2))
+            loss = losses.loss.mean()
+            loss.backward()
             self.value_optimizer.step()
 
-            self.logger.update(**losses._asdict())
+            self.logger.update(critic_losses=loss.item(),
+                               td_errors=losses.td_error.abs().mean().item())

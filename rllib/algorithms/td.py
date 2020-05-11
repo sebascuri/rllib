@@ -1,10 +1,8 @@
 """N-Step TD Learning Algorithm."""
-import copy
-
 import torch
 import torch.nn as nn
 
-from rllib.util.neural_networks import update_parameters
+from rllib.util.neural_networks import update_parameters, deep_copy_module
 from rllib.util import discount_sum, mb_return
 from .q_learning import QLearningLoss
 
@@ -42,7 +40,7 @@ class TDLearning(nn.Module):
     def __init__(self, value_function, criterion, gamma):
         super().__init__()
         self.value_function = value_function
-        self.value_target = copy.deepcopy(value_function)
+        self.value_target = deep_copy_module(value_function)
         self.criterion = criterion
         self.gamma = gamma
         # self.n_steps = n_steps
@@ -107,13 +105,14 @@ class ModelBasedTDLearning(TDLearning):
     """
 
     def __init__(self, value_function, criterion, policy, dynamical_model, reward_model,
-                 termination=None, num_steps=1, gamma=0.99):
+                 termination=None, action_scale=None, num_steps=1, gamma=0.99):
         super().__init__(value_function, gamma=gamma, criterion=criterion)
         self.policy = policy
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
         self.num_steps = num_steps
         self.termination = termination
+        self.action_scale = action_scale
 
     def forward(self, state, *args):
         """Compute the loss and the td-error."""
@@ -125,6 +124,7 @@ class ModelBasedTDLearning(TDLearning):
                 state, dynamical_model=self.dynamical_model, policy=self.policy,
                 reward_model=self.reward_model, num_steps=self.num_steps,
                 value_function=self.value_target, gamma=self.gamma,
-                termination=self.termination)
+                termination=self.termination,
+                action_scale=self.action_scale)
 
-        return self._build_return(pred_v, value_estimate)
+        return self._build_return(pred_v, value_estimate.mean(dim=0))

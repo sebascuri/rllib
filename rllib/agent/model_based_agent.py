@@ -366,7 +366,7 @@ class ModelBasedAgent(AbstractAgent):
             initial_states = torch.cat((initial_states, initial_states_), dim=0)
 
         initial_states = initial_states.unsqueeze(0)
-
+        self.plan_policy.reset()
         trajectory = rollout_model(dynamical_model=self.dynamical_model,
                                    reward_model=self.reward_model,
                                    policy=self.plan_policy,
