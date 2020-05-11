@@ -6,6 +6,7 @@ import torch.nn.functional as functional
 import torch.jit
 
 from .utilities import inverse_softplus, parse_layers, update_parameters
+from rllib.util.utilities import safe_cholesky, sample_mean_and_cov
 
 
 class FeedForwardNN(nn.Module):
@@ -242,14 +243,9 @@ class Ensemble(HeteroGaussianNN):
             scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
         if self.head_ptr == self.num_heads and self.num_heads:
-            dim, num_samples = out.shape[-2:]
             scale = torch.diag_embed(torch.mean(scale, dim=-1))
-
-            mean = torch.mean(out, dim=-1, keepdim=True)
-            sigma = (mean - out) @ (mean - out).transpose(-2, -1)
-            sigma += 1e-4 * torch.eye(dim)  # Add some jitter.
-            scale += torch.cholesky(sigma / (num_samples - 1))
-            mean = mean.squeeze(-1)
+            mean, covariance = sample_mean_and_cov(out)
+            scale += safe_cholesky(covariance)
 
         else:
             mean = out[..., self.head_ptr]
