@@ -26,7 +26,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     warm_start: bool
     default_action: str
 
-    mean: Tensor
+    mean: Optional[Tensor]
     _scale: float
     covariance: Tensor
 
@@ -61,11 +61,12 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
 class CEMShooting(MPCSolver):
     num_elites: int
+    alpha: float
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  horizon: int, gamma: float = 1., scale: float = 0.3,
                  num_iter: int = 1, num_samples: int = None, num_elites: int = None,
-                 termination: Termination = None,
+                 alpha: float = 0., termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
@@ -95,7 +96,8 @@ class MPPIShooting(MPCSolver):
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  horizon: int, gamma: float = 1., scale: float = 0.3,
                  num_iter: int = 1, num_samples: int = None,
-                 kappa: Union[float, ParameterDecay] = 1., filter_coefficients: List[float] = [1.],
+                 kappa: Union[float, ParameterDecay] = 1.,
+                 filter_coefficients: List[float] = [1.],
                  termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,

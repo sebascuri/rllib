@@ -66,6 +66,7 @@ mpc_parser.add_argument('--mpc-horizon', type=int, default=20)
 mpc_parser.add_argument('--mpc-num-iter', type=int, default=5)
 mpc_parser.add_argument('--mpc-num-samples', type=int, default=400)
 mpc_parser.add_argument('--mpc-num-elites', type=int, default=40)
+mpc_parser.add_argument('--mpc-alpha', type=float, default=0.1)
 
 mpc_parser.add_argument('--mpc-terminal-reward', action='store_true')
 mpc_parser.add_argument('--mpc-not-warm-start', action='store_true')

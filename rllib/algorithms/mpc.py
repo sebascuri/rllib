@@ -190,6 +190,8 @@ class CEMShooting(MPCSolver):
         Number of samples for shooting method.
     num_elites: int, optional.
         Number of elite samples to keep between iterations.
+    alpha: float, optional. (default = 0.)
+        Low pass filter of mean and covariance update.
     termination: Callable, optional.
         Termination condition.
     terminal_reward: terminal reward model, optional.
@@ -209,8 +211,8 @@ class CEMShooting(MPCSolver):
     """
 
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1., scale=0.3,
-                 num_iter=5, num_samples=None, num_elites=None, termination=None,
-                 terminal_reward=None, warm_start=False,
+                 alpha=0., num_iter=5, num_samples=None, num_elites=None,
+                 termination=None, terminal_reward=None, warm_start=False,
                  default_action='zero', num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
@@ -218,6 +220,7 @@ class CEMShooting(MPCSolver):
             termination=termination, terminal_reward=terminal_reward,
             warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
         self.num_elites = max(1, num_samples // 10) if not num_elites else num_elites
+        self.alpha = alpha
 
     def get_candidate_action_sequence(self):
         """Get candidate actions by sampling from a multivariate normal."""
@@ -237,8 +240,9 @@ class CEMShooting(MPCSolver):
 
     def update_sequence_generation(self, elite_actions):
         """Update distribution by the empirical mean and covariance of best actions."""
-        self.mean, self.covariance = sample_mean_and_cov(elite_actions.transpose(-1, -2)
-                                                         )
+        new_mean, new_cov = sample_mean_and_cov(elite_actions.transpose(-1, -2))
+        self.mean = self.alpha * self.mean + (1 - self.alpha) * new_mean
+        self.covariance = self.alpha * self.covariance + (1 - self.alpha) * new_cov
 
 
 class RandomShooting(CEMShooting):
