@@ -23,8 +23,8 @@ from rllib.value_function import NNValueFunction
 
 from exps.gpucrl.inverted_pendulum.plotters import plot_pendulum_trajectories, \
     plot_values_and_policy
-
-from exps.gpucrl.inverted_pendulum.util import StateTransform, termination
+from exps.gpucrl.util import large_state_termination
+from exps.gpucrl.inverted_pendulum.util import StateTransform
 from exps.gpucrl.inverted_pendulum.util import test_policy_on_model, \
     test_policy_on_environment
 from exps.gpucrl.inverted_pendulum.util import PendulumModel, PendulumReward
@@ -127,7 +127,7 @@ environment = SystemEnvironment(InvertedPendulum(mass=0.3, length=0.5, friction=
                                                  step_size=1 / 80),
                                 reward=reward_model,
                                 initial_state=initial_distribution.sample,
-                                termination=termination)
+                                termination=large_state_termination)
 
 # %% Define Base Model
 state = torch.zeros(1, environment.dim_state)
@@ -230,7 +230,7 @@ mppo = MBMPPO(dynamical_model, reward_model, policy, value_function,
               eta_var=hparams['mppo_eta_var'],
               gamma=hparams['gamma'],
               num_action_samples=hparams['mppo_num_action_samples'],
-              termination=termination)
+              termination=large_state_termination)
 
 mppo_optimizer = optim.Adam([p for name, p in mppo.named_parameters()
                              if 'model' not in name],
@@ -247,10 +247,12 @@ agent = MBMPPOAgent(
         torch.tensor([-np.pi, -0.005]), torch.tensor([np.pi, +0.005])),
     plan_horizon=hparams['plan_horizon'], plan_samples=hparams['plan_samples'],
     plan_elite=hparams['plan_elite'],
-    max_memory=hparams['max_memory'], batch_size=hparams['batch_size'],
-    num_model_iter=hparams['num_model_iter'],
-    num_mppo_iter=hparams['num_mppo_iter'],
-    num_gradient_steps=hparams['num_gradient_steps'],
+    max_memory=hparams['max_memory'],
+    model_learn_batch_size=hparams['batch_size'],
+    mppo_batch_size=hparams['batch_size'],
+    model_learn_num_iter=hparams['num_model_iter'],
+    mppo_num_iter=hparams['num_mppo_iter'],
+    mppo_gradient_steps=hparams['num_gradient_steps'],
     sim_num_subsample=hparams['sim_num_subsample'],
     sim_initial_states_num_trajectories=hparams['sim_initial_states_num_trajectories'],
     sim_initial_dist_num_trajectories=hparams['sim_initial_dist_num_trajectories'],

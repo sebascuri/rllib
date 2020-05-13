@@ -12,11 +12,10 @@ parser.set_defaults(action_cost=0.01,
                     mpc_num_samples=400,  # default 400
                     mpc_num_elites=40,  # default 40
                     mpc_alpha=.1,  # default .1
-                    environment_max_steps=200, train_episodes=15,
-                    # exploration='expected',  # default optimistic
-                    # exploration='thompson',
+                    environment_max_steps=200,
+                    train_episodes=50,
                     model_kind='DeterministicEnsemble', model_learn_num_iter=50,
-                    model_opt_lr=1e-3, render_train=True)
+                    model_opt_lr=1e-3)
 args = parser.parse_args()
 print(args)
 params = DotMap(vars(args))

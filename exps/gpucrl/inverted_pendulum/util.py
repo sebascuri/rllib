@@ -3,6 +3,7 @@
 import numpy as np
 import gpytorch
 import torch
+import torch.distributions
 from torch.distributions import MultivariateNormal
 import torch.nn as nn
 import torch.optim as optim
@@ -18,6 +19,11 @@ from rllib.reward.abstract_reward import AbstractReward
 from rllib.reward.utilities import tolerance
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.neural_networks.utilities import freeze_parameters
+
+from exps.gpucrl.util import large_state_termination, get_mpc_agent, get_mb_mppo_agent
+from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
+from rllib.environment import GymEnvironment
+from rllib.reward.mujoco_rewards import CartPoleReward
 
 from exps.gpucrl.inverted_pendulum.plotters import plot_learning_losses, \
     plot_trajectory_states_and_rewards, plot_values_and_policy, plot_returns_entropy_kl
@@ -235,3 +241,56 @@ def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
     plot_learning_losses(policy_losses, value_losses, horizon=20)
 
     return environment_rewards
+
+
+def get_agent_and_environment(params, agent_name):
+    """Get experiment agent and environment."""
+    torch.manual_seed(params.seed)
+    np.random.seed(params.seed)
+
+    # %% Define Environment.
+    initial_distribution = torch.distributions.Uniform(
+        torch.tensor([np.pi, -0.0]),
+        torch.tensor([np.pi, +0.0])
+    )
+    reward_model = PendulumReward(action_cost=params.action_cost)
+    environment = SystemEnvironment(
+        InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
+                         step_size=1 / 80),
+        reward=reward_model,
+        initial_state=initial_distribution.sample,
+        termination=large_state_termination)
+
+    action_scale = environment.action_scale
+
+    # %% Define Helper modules
+    transformations = [ActionScaler(scale=action_scale),
+                       MeanFunction(DeltaState()),  # AngleWrapper(indexes=[1])
+                       ]
+
+    input_transform = StateTransform()
+    exploratory_distribution = torch.distributions.Uniform(
+        torch.tensor([-np.pi, -0.005]), torch.tensor([np.pi, +0.005])
+    )
+
+    if agent_name == 'mpc':
+        agent = get_mpc_agent(environment.name, environment.dim_state,
+                              environment.dim_action,
+                              params, reward_model,
+                              action_scale=action_scale,
+                              transformations=transformations,
+                              input_transform=input_transform,
+                              termination=large_state_termination,
+                              initial_distribution=exploratory_distribution)
+    elif agent_name == 'mbmppo':
+        agent = get_mb_mppo_agent(
+            environment.name, environment.dim_state, environment.dim_action,
+            params, reward_model, input_transform=input_transform,
+            action_scale=action_scale,
+            transformations=transformations,
+            termination=large_state_termination,
+            initial_distribution=exploratory_distribution)
+    else:
+        raise NotImplementedError
+
+    return environment, agent

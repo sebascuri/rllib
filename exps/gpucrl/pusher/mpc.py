@@ -2,11 +2,11 @@ from dotmap import DotMap
 
 from exps.gpucrl.pusher.util import get_agent_and_environment
 from exps.gpucrl.mpc_arguments import parser
-from exps.gpucrl.plotters import plot_last_rewards
+from exps.gpucrl.plotters import plot_last_action_rewards
 from exps.gpucrl.util import train_and_evaluate
 
 parser.description = 'Run Pusher using Model-Based MPC.'
-parser.set_defaults(action_cost=0.1, action_scale=1.,
+parser.set_defaults(action_cost=0.1,
                     mpc_horizon=25,  # default 20
                     mpc_num_iter=5,  # default 5
                     mpc_num_samples=500,  # default 400
@@ -22,4 +22,5 @@ print(args)
 params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, 'mpc')
-train_and_evaluate(agent, environment, params, plot_callbacks=[plot_last_rewards])
+train_and_evaluate(agent, environment, params,
+                   plot_callbacks=[plot_last_action_rewards])
