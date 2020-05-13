@@ -67,18 +67,18 @@ def plot_last_sim_and_real_trajectory(agent, episode: int):
 
     for i in range(model.dim_state):
         axes[i, 0].plot(real_trajectory.state[:, i])
-        axes[i, 1].plot(sim_trajectory.state[:, 0, :num_sim_trajectories, i].mean(-1))
+        axes[i, 1].plot(sim_trajectory.state[:, 0, 0, i])
 
         axes[i, 0].set_ylabel(f"State {i}")
 
     for i in range(model.dim_action):
         axes[model.dim_state + i, 0].plot(real_trajectory.action[:, i])
         axes[model.dim_state + i, 1].plot(
-            sim_trajectory.action[:, 0, :num_sim_trajectories, i].mean(-1))
+            sim_trajectory.action[:, 0, 0, i])
         axes[model.dim_state + i, 0].set_ylabel(f"Action {i}")
 
     axes[-1, 0].plot(real_trajectory.reward)
-    axes[-1, 1].plot(sim_trajectory.reward[:, 0, :num_sim_trajectories].mean(-1))
+    axes[-1, 1].plot(sim_trajectory.reward[:, 0, 0])
 
     axes[-1, 0].set_ylabel(f"Reward")
     axes[-1, 0].set_xlabel('Time')
@@ -102,17 +102,22 @@ def plot_last_sim_and_real_trajectory(agent, episode: int):
         plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
 
 
-def plot_last_rewards(agent, episode: int):
+def plot_last_action_rewards(agent, episode: int):
     """Plot agent last rewards."""
     real_trajectory = stack_list_of_tuples(agent.last_trajectory)
+    model = agent.dynamical_model.base_model
+    # for transformation in agent.dataset.transformations:
+    #     real_trajectory = transformation(real_trajectory)
 
-    for transformation in agent.dataset.transformations:
-        real_trajectory = transformation(real_trajectory)
+    fig, axes = plt.subplots(model.dim_action + 1, 1, sharex='col')
 
-    fig, axes = plt.subplots(1, 1, sharex='col')
-    axes.plot(real_trajectory.reward)
-    axes.set_ylabel(f"Reward")
-    axes.set_xlabel('Time')
+    for i in range(model.dim_action):
+        axes[i].plot(real_trajectory.action[:, i])
+        axes[i].set_ylabel(f"Action {i}")
+
+    axes[-1].plot(real_trajectory.reward)
+    axes[-1].set_ylabel(f"Reward")
+    axes[-1].set_xlabel('Time')
 
     img_name = f"{agent.comment.title()}"
     plt.suptitle(f'{img_name} Episode {episode + 1}', y=1)

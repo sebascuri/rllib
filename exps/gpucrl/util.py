@@ -78,14 +78,14 @@ def _get_model(dim_state, dim_action, params, input_transform=None,
     return dynamical_model
 
 
-def _get_mpc_policy(dynamical_model, reward_model, params, terminal_reward=None,
-                    termination=None):
+def _get_mpc_policy(dynamical_model, reward_model, params, action_scale,
+                    terminal_reward=None, termination=None):
     if params.mpc_solver == 'cem':
         solver = CEMShooting(dynamical_model, reward_model,
                              horizon=params.mpc_horizon,
                              gamma=params.gamma,
                              scale=1 / 8,
-                             action_scale=params.action_scale,
+                             action_scale=action_scale,
                              num_iter=params.mpc_num_iter,
                              num_samples=params.mpc_num_samples,
                              num_elites=params.mpc_num_elites,
@@ -99,8 +99,8 @@ def _get_mpc_policy(dynamical_model, reward_model, params, terminal_reward=None,
         solver = RandomShooting(dynamical_model, reward_model,
                                 horizon=params.mpc_horizon,
                                 gamma=params.gamma,
-                                scale=1 / 8,
-                                action_scale=params.action_scale,
+                                action_scale=action_scale,
+                                scale=1 / 3,
                                 num_samples=params.mpc_num_samples,
                                 num_elites=params.mpc_num_elites,
                                 terminal_reward=terminal_reward,
@@ -113,7 +113,7 @@ def _get_mpc_policy(dynamical_model, reward_model, params, terminal_reward=None,
         solver = MPPIShooting(dynamical_model, reward_model,
                               horizon=params.mpc_horizon,
                               gamma=params.gamma,
-                              action_scale=params.action_scale,
+                              action_scale=action_scale,
                               scale=1 / 8,
                               num_iter=params.mpc_num_iter,
                               num_samples=params.mpc_num_samples,
@@ -140,11 +140,14 @@ def _get_value_function(dim_state, params, input_transform=None):
         input_transform=input_transform)
 
     params.update({"value_function": value_function.__class__.__name__})
-    value_function = torch.jit.script(value_function)
+    # value_function = torch.jit.script(value_function)
     return value_function
 
 
-def _get_nn_policy(dim_state, dim_action, params, input_transform=None):
+def _get_nn_policy(dim_state, dim_action, params, action_scale, input_transform=None):
+    if params.exploration == 'optimistic':
+        dim_action += dim_state
+
     policy = NNPolicy(
         dim_state=dim_state, dim_action=dim_action,
         layers=params.policy_layers,
@@ -152,15 +155,16 @@ def _get_nn_policy(dim_state, dim_action, params, input_transform=None):
         non_linearity=params.policy_non_linearity,
         squashed_output=True,
         input_transform=input_transform,
+        action_scale=action_scale,
         deterministic=params.policy_deterministic)
     params.update({"policy": policy.__class__.__name__})
-    policy = torch.jit.script(policy)
+    # policy = torch.jit.script(policy)
     return policy
 
 
 def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
-                      transformations, input_transform=None, termination=None,
-                      initial_distribution=None):
+                      transformations, action_scale, input_transform=None,
+                      termination=None, initial_distribution=None):
     """Get a MB-MPPO agent."""
     # Define Base Model
     dynamical_model = _get_model(dim_state, dim_action, params, input_transform,
@@ -176,8 +180,8 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
                                          input_transform)
 
     # Define Policy
-    policy = _get_nn_policy(dynamical_model.dim_state, dynamical_model.dim_action,
-                            params, input_transform)
+    policy = _get_nn_policy(dim_state, dim_action, params, action_scale=action_scale,
+                            input_transform=input_transform)
 
     # Define Agent
     mppo = MBMPPO(dynamical_model, reward_model, policy, value_function,
@@ -201,7 +205,6 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
         model_learn_num_iter=params.model_learn_num_iter,
         model_learn_batch_size=params.model_learn_batch_size,
         mppo_optimizer=mppo_optimizer,
-        action_scale=params.action_scale,
         plan_horizon=params.plan_horizon,
         plan_samples=params.plan_samples,
         plan_elite=params.plan_elite,
@@ -224,7 +227,7 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
 
 
 def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
-                  transformations, input_transform=None, termination=None,
+                  transformations, action_scale, input_transform=None, termination=None,
                   initial_distribution=None):
     """Get an MPC based agent."""
     # Define Base Model
@@ -251,7 +254,8 @@ def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
 
     # Define Policy
     policy = _get_mpc_policy(dynamical_model, reward_model, params,
-                             terminal_reward=terminal_reward, termination=termination)
+                             action_scale=action_scale, terminal_reward=terminal_reward,
+                             termination=termination)
 
     # Define Agent
     model_name = dynamical_model.base_model.name
@@ -259,7 +263,6 @@ def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
 
     agent = MPCAgent(
         env_name, policy,
-        action_scale=params.action_scale,
         model_optimizer=model_optimizer,
         model_learn_num_iter=params.model_learn_num_iter,
         model_learn_batch_size=params.model_learn_batch_size,
@@ -300,7 +303,7 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
          gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
         train_agent(agent, environment,
                     num_episodes=params.train_episodes,
-                    max_steps=params.environment_max_steps,
+                    max_steps=params.environment_max_steps * environment.frame_skip,
                     plot_flag=params.plot_train_results,
                     print_frequency=params.print_frequency,
                     render=params.render_train,
@@ -311,7 +314,8 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
     # %% Test agent.
     metrics = dict()
     evaluate_agent(agent, environment, num_episodes=params.test_episodes,
-                   max_steps=params.environment_max_steps, render=params.render_test)
+                   max_steps=params.environment_max_steps * environment.frame_skip,
+                   render=params.render_test)
 
     returns = np.mean(agent.logger.get('environment_return')[-params.test_episodes:])
     metrics.update({"test/test_env_returns": returns})

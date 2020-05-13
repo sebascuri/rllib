@@ -36,17 +36,18 @@ def get_agent_and_environment(params, agent_name):
     torch.manual_seed(params.seed)
     np.random.seed(params.seed)
 
+    # %% Define Environment.
+    environment = GymEnvironment('MBRLCartPole-v0', action_cost=params.action_cost,
+                                 seed=params.seed)
+    action_scale = environment.action_scale
+
+    reward_model = CartPoleReward(action_cost=params.action_cost)
     # %% Define Helper modules
-    transformations = [ActionScaler(scale=params.action_scale),
+    transformations = [ActionScaler(scale=action_scale),
                        MeanFunction(DeltaState()),  # AngleWrapper(indexes=[1])
                        ]
 
     input_transform = StateTransform()
-
-    # %% Define Environment.
-    environment = GymEnvironment('MBRLCartPole-v0', action_cost=params.action_cost,
-                                 seed=params.seed)
-    reward_model = CartPoleReward(action_cost=params.action_cost)
     exploratory_distribution = torch.distributions.Uniform(
         torch.tensor([-1.25, -np.pi, -0.05, -0.05]),
         torch.tensor([+1.25, +np.pi, +0.05, +0.05])
@@ -55,13 +56,17 @@ def get_agent_and_environment(params, agent_name):
     if agent_name == 'mpc':
         agent = get_mpc_agent(environment.name, environment.dim_state,
                               environment.dim_action,
-                              params, reward_model, transformations, input_transform,
+                              params, reward_model,
+                              action_scale=action_scale,
+                              transformations=transformations,
+                              input_transform=input_transform,
                               termination=large_state_termination,
                               initial_distribution=exploratory_distribution)
     elif agent_name == 'mbmppo':
         agent = get_mb_mppo_agent(
             environment.name, environment.dim_state, environment.dim_action,
             params, reward_model, input_transform=input_transform,
+            action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,
             initial_distribution=exploratory_distribution)

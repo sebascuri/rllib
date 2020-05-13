@@ -6,7 +6,7 @@ from exps.gpucrl.plotters import plot_last_trajectory
 from exps.gpucrl.util import train_and_evaluate
 
 parser.description = 'Run Swing-up Cart-Pole using Model-Based MPC.'
-parser.set_defaults(action_cost=0.01, action_scale=3.,
+parser.set_defaults(action_cost=0.01,
                     mpc_horizon=25,  # default 20
                     mpc_num_iter=5,  # default 5
                     mpc_num_samples=400,  # default 400

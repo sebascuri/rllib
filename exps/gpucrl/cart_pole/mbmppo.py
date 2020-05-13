@@ -6,9 +6,9 @@ from exps.gpucrl.plotters import plot_last_sim_and_real_trajectory
 from exps.gpucrl.util import train_and_evaluate
 
 parser.description = 'Run Swing-up Cart-Pole using Model-Based MPPO.'
-parser.set_defaults(action_cost=0.05, action_scale=3.,
+parser.set_defaults(action_cost=0.05,
                     environment_max_steps=200, train_episodes=20,
-                    exploration='expected',  # default optimistic
+                    # exploration='expected',  # default optimistic
                     # exploration='thompson',
                     # mppo_num_iter=0,
                     plan_horizon=4,  # default 1
