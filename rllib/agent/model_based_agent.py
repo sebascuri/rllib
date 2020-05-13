@@ -87,7 +87,7 @@ class ModelBasedAgent(AbstractAgent):
         Add one out of `sim_num_subsample' samples to the data set.
     initial_distribution: Distribution, optional. (default: None).
         Initial state distribution.
-    thompsons_sampling: bool, optional. (default: False).
+    thompson_sampling: bool, optional. (default: False).
         Bool that indicates to use thompson's sampling.
     gamma: float, optional. (default: 0.99).
     exploration_steps: int, optional. (default: 0).
@@ -99,7 +99,6 @@ class ModelBasedAgent(AbstractAgent):
                  policy,
                  value_function=None,
                  termination=None,
-                 action_scale=1.,
                  plan_horizon=0,
                  plan_samples=1,
                  plan_elite=1,
@@ -136,8 +135,6 @@ class ModelBasedAgent(AbstractAgent):
         self.plan_horizon = plan_horizon
         self.plan_samples = plan_samples
         self.plan_elite = plan_elite
-
-        self.action_scale = action_scale
 
         if hasattr(dynamical_model.base_model, 'num_heads'):
             num_heads = dynamical_model.base_model.num_heads
@@ -184,7 +181,7 @@ class ModelBasedAgent(AbstractAgent):
             action = self._plan(state).detach().numpy()
 
         action = action[..., :self.dynamical_model.base_model.dim_action]
-        return self.action_scale * action
+        return action.clip(-self.policy.action_scale, self.policy.action_scale)
 
     def observe(self, observation):
         """Observe a new transition.
@@ -202,10 +199,13 @@ class ModelBasedAgent(AbstractAgent):
                 self.initial_states = torch.cat((self.initial_states, initial_state))
             self.new_episode = False
 
-    def start_episode(self):
+    def start_episode(self, **kwargs):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode()
+        super().start_episode(**kwargs)
         self.new_episode = True
+
+        if hasattr(self.reward_model, 'goal'):
+            self.reward_model.goal = kwargs.get('goal')
 
         if self.thompson_sampling:
             self.dynamical_model.base_model.set_head(
@@ -254,7 +254,7 @@ class ModelBasedAgent(AbstractAgent):
             reward_model=self.reward_model, policy=self.plan_policy,
             num_steps=self.plan_horizon, gamma=self.gamma,
             num_samples=self.plan_samples, value_function=self.value_function,
-            termination=self.termination, action_scale=self.action_scale)
+            termination=self.termination)
         actions = stack_list_of_tuples(trajectory).action
         idx = torch.topk(value, k=self.plan_elite, largest=True)[1]
         # Return first action and the mean over the elite samples.
@@ -372,8 +372,7 @@ class ModelBasedAgent(AbstractAgent):
                                    policy=self.plan_policy,
                                    initial_state=initial_states,
                                    max_steps=self.sim_num_steps,
-                                   termination=self.termination,
-                                   action_scale=self.action_scale)
+                                   termination=self.termination)
 
         self.sim_trajectory = stack_list_of_tuples(trajectory)
 

@@ -1,7 +1,7 @@
 """Interface for Environments."""
 
-
 from abc import ABCMeta, abstractmethod
+from gym.spaces import Box
 
 
 class AbstractEnvironment(object, metaclass=ABCMeta):
@@ -128,6 +128,24 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         garbage collected or when the program exits.
         """
         pass
+
+    @property
+    def frame_skip(self):
+        """Return the frame skip of the environment."""
+        if hasattr(self, 'env') and hasattr(self.env, 'frame_skip'):
+            return self.env.frame_skip
+        else:
+            return 1
+
+    @property
+    def action_scale(self):
+        """Return the action scale of the environment."""
+        if self.discrete_action:
+            return 1
+        elif isinstance(self.action_space, Box):
+            return 1 / 2 * (self.action_space.high - self.action_space.low)
+        else:
+            raise NotImplementedError
 
     @property
     def goal(self):

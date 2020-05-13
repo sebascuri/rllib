@@ -25,6 +25,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     terminal_reward: AbstractValueFunction
     warm_start: bool
     default_action: str
+    action_scale: Tensor
 
     mean: Optional[Tensor]
     _scale: float
@@ -36,7 +37,9 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
                  termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
-                 default_action: str = 'zero', num_cpu: int = 1) -> None: ...
+                 default_action: str = 'zero',
+                 action_scale: float = 1.,
+                 num_cpu: int = 1) -> None: ...
 
     def evaluate_action_sequence(self, action_sequence: Tensor,
                                  state: Tensor) -> Tensor: ...
@@ -69,6 +72,7 @@ class CEMShooting(MPCSolver):
                  alpha: float = 0., termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
+                 action_scale: float = 1.,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
 
     def get_candidate_action_sequence(self) -> Tensor: ...
@@ -86,6 +90,7 @@ class RandomShooting(CEMShooting):
                  termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
+                 action_scale: float = 1.,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
 
 
@@ -101,6 +106,7 @@ class MPPIShooting(MPCSolver):
                  termination: Termination = None,
                  terminal_reward: AbstractValueFunction = None,
                  warm_start: bool = False,
+                 action_scale: float = 1.,
                  default_action: str = 'zero', num_cpu: int = 1) -> None: ...
 
     def get_candidate_action_sequence(self) -> Tensor: ...

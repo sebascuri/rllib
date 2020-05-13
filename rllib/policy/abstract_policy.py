@@ -2,6 +2,7 @@
 
 from abc import ABCMeta
 
+import numpy as np
 import torch
 import torch.jit
 import torch.nn as nn
@@ -35,21 +36,12 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         low pass coefficient for parameter update.
     deterministic: bool, optional.
         flag that indicates if the policy is deterministic.
-
-    Methods
-    -------
-    forward(state): torch.distribution.Distribution
-        return the action distribution that the policy suggests.
-    random: torch.distribution.Distribution
-        return a uniform action distribution (same family as policy).
-    discrete_state: bool
-        Flag that indicates if state space is discrete.
-    discrete_action: bool
-        Flag that indicates if action space is discrete.
+    action_scale: float, optional.
+        Magnitude of output scale.
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 tau=0.0, deterministic=False):
+                 tau=0.0, deterministic=False, action_scale=1.):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
@@ -59,6 +51,16 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
         self.tau = tau
+
+        if isinstance(action_scale, np.ndarray):
+            action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
+        elif not isinstance(action_scale, torch.Tensor):
+            action_scale = torch.full((self.dim_action,), action_scale)
+        if not self.discrete_action and len(action_scale) < self.dim_action:
+            extra_dim = self.dim_action - len(action_scale)
+            action_scale = torch.cat((action_scale, torch.ones(extra_dim)))
+
+        self.action_scale = action_scale
 
     def random(self, batch_size=None):
         """Return a uniform random distribution of the output space.
@@ -79,7 +81,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             else:
                 return torch.ones(*batch_size, self.num_actions)
         else:
-            cov = torch.eye(self.dim_action)
+            cov = self.action_scale * torch.eye(self.dim_action)
             if batch_size is None:
                 return torch.zeros(self.dim_action), cov
             else:

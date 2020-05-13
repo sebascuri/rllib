@@ -4,7 +4,7 @@ from typing import Tuple
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import TupleDistribution
+from rllib.dataset.datatypes import TupleDistribution, Action
 
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
@@ -16,10 +16,11 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     tau: float
     discrete_state: bool
     discrete_action: bool
+    action_scale: Tensor
 
     def __init__(self, dim_state: int, dim_action: int,
                  num_states: int = -1, num_actions: int = -1, tau: float = 0.0,
-                 deterministic: bool = False) -> None: ...
+                 deterministic: bool = False, action_scale: Action = 1.) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 

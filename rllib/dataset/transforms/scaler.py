@@ -12,8 +12,8 @@ class Scaler(nn.Module):
 
     def __init__(self, scale):
         super().__init__()
-        self._scale = scale
-        assert self._scale > 0, "Scale must be positive."
+        self._scale = torch.tensor(scale, dtype=torch.get_default_dtype())
+        assert torch.all(self._scale > 0), "Scale must be positive."
 
     def forward(self, array):
         """See `AbstractTransform.__call__'."""

@@ -14,6 +14,7 @@ class DerivedPolicy(AbstractPolicy):
             dim_state=base_policy.dim_state,
             dim_action=dim_action,
             num_states=base_policy.num_states, num_actions=base_policy.num_actions,
+            action_scale=base_policy.action_scale[:dim_action],
             tau=base_policy.tau, deterministic=base_policy.deterministic)
         self.base_policy = base_policy
 

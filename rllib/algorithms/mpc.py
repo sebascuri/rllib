@@ -2,6 +2,7 @@
 from abc import ABCMeta, abstractmethod
 import time
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal
@@ -49,7 +50,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1.,
                  num_iter=1, num_samples=None, termination=None, scale=0.3,
                  terminal_reward=None, warm_start=False, default_action='zero',
-                 num_cpu=1):
+                 action_scale=1., num_cpu=1):
         super().__init__()
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
@@ -69,14 +70,24 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self._scale = scale
         self.covariance = (scale ** 2) * torch.eye(self.dim_action).repeat(
             self.horizon, 1, 1)
+        if isinstance(action_scale, np.ndarray):
+            action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
+        elif not isinstance(action_scale, torch.Tensor):
+            action_scale = torch.full((self.dim_action,), action_scale)
+        if len(action_scale) < self.dim_action:
+            extra_dim = self.dim_action - len(action_scale)
+            action_scale = torch.cat((action_scale, torch.ones(extra_dim)))
+
+        self.action_scale = action_scale
 
         self.num_cpu = num_cpu
 
     def evaluate_action_sequence(self, action_sequence, state):
         """Evaluate action sequence by performing a rollout."""
         trajectory = stack_list_of_tuples(rollout_actions(
-            self.dynamical_model, self.reward_model, action_sequence, state,
-            self.termination))
+            self.dynamical_model, self.reward_model,
+            self.action_scale * action_sequence,  # scale actions.
+            state, self.termination))
 
         returns = discount_sum(trajectory.reward, self.gamma)
 
@@ -117,9 +128,6 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             self.mean = torch.zeros(self.horizon, *batch_shape, self.dim_action)
         self.covariance = (self._scale ** 2) * torch.eye(self.dim_action).repeat(
             self.horizon, *batch_shape, 1, 1)
-
-        # if self.mean.shape[1:-1] != batch_shape:
-        #     self.mean = self.mean.repeat(1, *batch_shape, 1)
 
     def get_action_sequence_and_returns(self, state, action_sequence, returns,
                                         process_nr=0):
@@ -163,7 +171,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             elite_actions = self.get_best_action(action_sequence, returns)
             self.update_sequence_generation(elite_actions)
 
-        return self.mean
+        return self.action_scale * self.mean
 
     def reset(self, warm_action=None):
         """Reset warm action."""
@@ -213,12 +221,13 @@ class CEMShooting(MPCSolver):
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1., scale=0.3,
                  alpha=0., num_iter=5, num_samples=None, num_elites=None,
                  termination=None, terminal_reward=None, warm_start=False,
-                 default_action='zero', num_cpu=1):
+                 default_action='zero', action_scale=1., num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
             num_iter=num_iter, num_samples=num_samples,
             termination=termination, terminal_reward=terminal_reward,
-            warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
+            warm_start=warm_start, default_action=default_action,
+            action_scale=action_scale, num_cpu=num_cpu)
         self.num_elites = max(1, num_samples // 10) if not num_elites else num_elites
         self.alpha = alpha
 
@@ -290,13 +299,14 @@ class RandomShooting(CEMShooting):
 
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1, scale=0.3,
                  num_samples=None, num_elites=None, termination=None,
-                 terminal_reward=None, warm_start=False,
-                 default_action='zero', num_cpu=1):
+                 terminal_reward=None, warm_start=False, default_action='zero',
+                 action_scale=1., num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
             num_iter=1, num_elites=num_elites, num_samples=num_samples,
             termination=termination, terminal_reward=terminal_reward,
-            warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
+            warm_start=warm_start, default_action=default_action,
+            action_scale=action_scale, num_cpu=num_cpu)
 
 
 class MPPIShooting(MPCSolver):
@@ -319,12 +329,13 @@ class MPPIShooting(MPCSolver):
     def __init__(self, dynamical_model, reward_model, horizon, gamma=1., scale=.3,
                  num_iter=1, kappa=1., filter_coefficients=None, num_samples=None,
                  termination=None, terminal_reward=None, warm_start=False,
-                 default_action='zero', num_cpu=1):
+                 default_action='zero', action_scale=1., num_cpu=1):
         super().__init__(
             dynamical_model, reward_model, horizon, gamma=gamma, scale=scale,
             num_iter=num_iter, num_samples=num_samples,
             termination=termination, terminal_reward=terminal_reward,
-            warm_start=warm_start, default_action=default_action, num_cpu=num_cpu)
+            warm_start=warm_start, default_action=default_action,
+            action_scale=action_scale, num_cpu=num_cpu)
 
         if not isinstance(kappa, ParameterDecay):
             kappa = Constant(kappa)

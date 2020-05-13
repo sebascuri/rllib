@@ -1,11 +1,13 @@
 import torch.nn as nn
+import torch
 
 from rllib.dataset.datatypes import Observation, Array
 from .abstract_transform import AbstractTransform
 
 
 class Scaler(nn.Module):
-    _scale: float
+    _scale: torch.Tensor
+
     def __init__(self, scale: float) -> None: ...
 
     def forward(self, *array: Array, **kwargs) -> Array: ...

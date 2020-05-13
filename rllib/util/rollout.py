@@ -63,7 +63,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     plot_callbacks = list() if plot_callbacks is None else plot_callbacks
     for episode in tqdm(range(num_episodes)):
         state = environment.reset()
-        agent.start_episode()
+        agent.start_episode(goal=environment.goal)
         done = False
         while not done:
             action = agent.act(state)
@@ -87,8 +87,7 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     agent.end_interaction()
 
 
-def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False,
-                   action_scale=None):
+def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False):
     """Conduct a rollout of a policy in an environment.
 
     Parameters
@@ -103,8 +102,6 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         Maximum number of steps per episode.
     render: bool.
         Flag that indicates whether to render the environment or not.
-    action_scale: float, optional (default=None).
-        Magnitude of policy actions.
 
     Returns
     -------
@@ -122,8 +119,6 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                 pi = tensor_to_distribution(policy(
                     torch.tensor(state, dtype=torch.get_default_dtype())))
                 action = pi.sample().numpy()
-                if action_scale:
-                    action = action_scale * action
                 observation, state, done = step(environment, state, action, pi, render)
                 trajectory.append(observation)
                 if max_steps <= environment.time:
@@ -133,7 +128,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
 
 
 def rollout_model(dynamical_model, reward_model, policy, initial_state,
-                  termination=None, max_steps=1000, action_scale=None):
+                  termination=None, max_steps=1000):
     """Conduct a rollout of a policy interacting with a model.
 
     Parameters
@@ -168,16 +163,14 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
 
     assert max_steps > 0
     for _ in range(max_steps):
-        # Sample actions
+        # Sample an action
         pi = tensor_to_distribution(policy(state))
         if pi.has_rsample:
             action = pi.rsample()
         else:
             action = pi.sample()
-        if action_scale:
-            action = action_scale * action
 
-        # Sample next states
+        # Sample a next state
         next_state_out = dynamical_model(state, action)
         next_state_distribution = tensor_to_distribution(next_state_out)
         if len(next_state_out) == 3:
@@ -190,7 +183,7 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         else:
             next_state = next_state_distribution.sample()
 
-        # % Sample a reward
+        # Sample a reward
         reward_distribution = tensor_to_distribution(
             reward_model(state, action, next_state))
         if reward_distribution.has_rsample:
@@ -255,7 +248,7 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
     state = initial_state
     done = torch.full(state.shape[:-1], False, dtype=torch.bool)
 
-    for action in action_sequence:  # Sampled actions
+    for action in action_sequence:  # Normalized actions
 
         # Sample next states
         next_state_out = dynamical_model(state, action)
