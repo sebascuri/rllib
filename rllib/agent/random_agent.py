@@ -22,9 +22,9 @@ class RandomAgent(AbstractAgent):
         super().observe(observation)
         self.trajectory.append(observation)
 
-    def start_episode(self):
+    def start_episode(self, **kwargs):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode()
+        super().start_episode(**kwargs)
         self.trajectory = []
 
     def end_episode(self):

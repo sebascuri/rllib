@@ -45,9 +45,9 @@ class ActorCriticAgent(AbstractAgent):
         super().observe(observation)
         self.trajectories[-1].append(observation)
 
-    def start_episode(self):
+    def start_episode(self, **kwargs):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode()
+        super().start_episode(**kwargs)
         self.trajectories.append([])
 
     def end_episode(self):

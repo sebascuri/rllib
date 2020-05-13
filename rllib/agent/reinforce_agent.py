@@ -42,9 +42,9 @@ class REINFORCEAgent(AbstractAgent):
         if self.total_steps % self.target_update_frequency == 0:
             self.reinforce.update()
 
-    def start_episode(self):
+    def start_episode(self, **kwargs):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode()
+        super().start_episode(**kwargs)
         self.trajectories.append([])
 
     def end_episode(self):

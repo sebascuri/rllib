@@ -31,6 +31,9 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
 
     def close(self) -> None: ...
 
+    @property
+    def goal(self) -> State: ...
+
     @property  # type: ignore
     @abstractmethod
     def state(self) -> State: ...

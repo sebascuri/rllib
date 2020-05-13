@@ -77,7 +77,11 @@ class PusherReward(MujocoReward):
 
         obj_pos = state[..., -3:]
         vec_1 = obj_pos - state[..., -6:-3]
-        vec_2 = obj_pos - self.goal
+        if bk is torch and not isinstance(self.goal, torch.Tensor):
+            goal = torch.tensor(self.goal, dtype=torch.get_default_dtype())
+        else:
+            goal = self.goal
+        vec_2 = obj_pos - goal
 
         reward_near = - bk.abs(vec_1).sum(-1)
         reward_dist = - bk.abs(vec_2).sum(-1)
@@ -98,7 +102,8 @@ class ReacherReward(MujocoReward):
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
-        dist_to_target = self.get_goal_distance(next_state)
+        with torch.no_grad():
+            dist_to_target = self.get_goal_distance(next_state)
         reward_state = -(dist_to_target ** 2).sum(-1)
         return self.get_reward(reward_state, self.action_reward(action))
 
@@ -123,7 +128,8 @@ class ReacherReward(MujocoReward):
         for length, hinge, roll in [(0.321, theta4, theta3), (0.16828, theta6, theta5)]:
             perp_all_axis = np.cross(rot_axis, rot_perp_axis)
             if bk is torch:
-                perp_all_axis = torch.tensor(perp_all_axis)
+                perp_all_axis = torch.tensor(perp_all_axis,
+                                             dtype=torch.get_default_dtype())
 
             x = rot_axis * bk.cos(hinge)
             y = bk.sin(hinge) * bk.sin(roll) * rot_perp_axis
@@ -132,7 +138,8 @@ class ReacherReward(MujocoReward):
             new_rot_axis = x + y + z
             new_rot_perp_axis = np.cross(new_rot_axis, rot_axis)
             if bk is torch:
-                new_rot_perp_axis = torch.tensor(new_rot_perp_axis)
+                new_rot_perp_axis = torch.tensor(new_rot_perp_axis,
+                                                 dtype=torch.get_default_dtype())
 
             norm = bk.sqrt((new_rot_axis ** 2).sum(-1))
             new_rot_perp_axis[norm < 1e-30] = rot_perp_axis[norm < 1e-30]
@@ -142,4 +149,8 @@ class ReacherReward(MujocoReward):
             rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
             cur_end = cur_end + length * new_rot_axis
 
-        return cur_end - self.goal
+        if bk is torch and not isinstance(self.goal, torch.Tensor):
+            goal = torch.tensor(self.goal, dtype=torch.get_default_dtype())
+        else:
+            goal = self.goal
+        return cur_end - goal

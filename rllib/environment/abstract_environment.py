@@ -130,6 +130,11 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         pass
 
     @property
+    def goal(self):
+        """Return current goal of environment."""
+        return None
+
+    @property
     @abstractmethod
     def state(self):
         """Return current state of environment."""

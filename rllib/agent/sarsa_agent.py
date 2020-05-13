@@ -73,9 +73,9 @@ class SARSAAgent(AbstractAgent):
         if self.total_steps % self.target_update_frequency == 0:
             self.sarsa.update()
 
-    def start_episode(self):
+    def start_episode(self, **kwargs):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode()
+        super().start_episode(**kwargs)
         self.last_observation = None
 
     def end_episode(self):

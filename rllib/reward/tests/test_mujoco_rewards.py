@@ -33,16 +33,17 @@ def test_reward(environment, action_cost):
     else:
         env = GymEnvironment(env_name)
     state = env.reset()
-    if hasattr(env.env, 'goal'):
+    if env.goal is not None:
         if action_cost:
-            reward_model = reward_model_(action_cost=action_cost, goal=env.env.goal)
+            reward_model = reward_model_(action_cost=action_cost, goal=env.goal)
         else:
-            reward_model = reward_model_(goal=env.env.goal)
+            reward_model = reward_model_(goal=env.goal)
     else:
         if action_cost:
             reward_model = reward_model_(action_cost=action_cost)
         else:
             reward_model = reward_model_()
+
 
     for _ in range(50):
         action = env.action_space.sample()
@@ -55,8 +56,9 @@ def test_reward(environment, action_cost):
             reward_model(np.tile(state, (5, 1)), np.tile(action, (5, 1)),
                          np.tile(next_state, (5, 1)))[0], rtol=1e-3, atol=1e-6)
 
-        state, action = torch.tensor(state), torch.tensor(action)
-        next_state = torch.tensor(next_state)
+        state = torch.tensor(state, dtype=torch.get_default_dtype())
+        action = torch.tensor(action, dtype=torch.get_default_dtype())
+        next_state = torch.tensor(next_state, dtype=torch.get_default_dtype())
         np.testing.assert_allclose(reward, reward_model(state, action, next_state)[0],
                                    rtol=1e-3, atol=1e-6)
 

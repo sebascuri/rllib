@@ -68,6 +68,13 @@ class GymEnvironment(AbstractEnvironment):
         return self.env.reset()
 
     @property
+    def goal(self):
+        """Return current goal of environment."""
+        if hasattr(self.env, 'goal'):
+            return self.env.goal
+        return None
+
+    @property
     def state(self):
         """See `AbstractEnvironment.state'."""
         if hasattr(self.env, 'state'):

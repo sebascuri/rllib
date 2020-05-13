@@ -97,7 +97,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self.last_trajectory.append(observation)
 
-    def start_episode(self):
+    def start_episode(self, **kwargs):
         """Start a new episode."""
         self.policy.reset()
         self.episode_steps.append(0)
