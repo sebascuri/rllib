@@ -181,7 +181,8 @@ class ModelBasedAgent(AbstractAgent):
             action = self._plan(state).detach().numpy()
 
         action = action[..., :self.dynamical_model.base_model.dim_action]
-        return action.clip(-self.policy.action_scale, self.policy.action_scale)
+        return action.clip(-self.policy.action_scale.numpy(),
+                           self.policy.action_scale.numpy())
 
     def observe(self, observation):
         """Observe a new transition.
