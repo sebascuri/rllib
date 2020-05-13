@@ -1,4 +1,4 @@
-"""Utilities for cartpole experiments."""
+"""Utilities for Reacher experiments."""
 
 import numpy as np
 import torch
@@ -8,27 +8,20 @@ import torch.nn as nn
 from exps.gpucrl.util import large_state_termination, get_mpc_agent, get_mb_mppo_agent
 from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
 from rllib.environment import GymEnvironment
-from rllib.reward.mujoco_rewards import CartPoleReward
+from rllib.reward.mujoco_rewards import PusherReward
 
 
 class StateTransform(nn.Module):
     """Transform pendulum states to cos, sin, angular_velocity."""
-    extra_dim = 1
+    extra_dim = 0
 
-    def forward(self, states_):
+    def forward(self, states):
         """Transform state before applying function approximation."""
-        position, angle, velocity, angular_velocity = torch.split(states_, 1, dim=-1)
-        states_ = torch.cat((torch.cos(angle), torch.sin(angle), position, velocity,
-                             angular_velocity),
-                            dim=-1)
-        return states_
+        return states
 
-    def inverse(self, states_):
+    def inverse(self, states):
         """Inverse transformation of states."""
-        cos, sin, position, velocity, angular_velocity = torch.split(states_, 1, dim=-1)
-        angle = torch.atan2(sin, cos)
-        states_ = torch.cat((position, angle, velocity, angular_velocity), dim=-1)
-        return states_
+        return states
 
 
 def get_agent_and_environment(params, agent_name):
@@ -44,12 +37,13 @@ def get_agent_and_environment(params, agent_name):
     input_transform = StateTransform()
 
     # %% Define Environment.
-    environment = GymEnvironment('MBRLCartPole-v0', action_cost=params.action_cost,
+    environment = GymEnvironment('MBRLPusher-v0', action_cost=params.action_cost,
                                  seed=params.seed)
-    reward_model = CartPoleReward(action_cost=params.action_cost)
-    exploratory_distribution = torch.distributions.Uniform(
-        torch.tensor([-1.25, -np.pi, -0.05, -0.05]),
-        torch.tensor([+1.25, +np.pi, +0.05, +0.05])
+    reward_model = PusherReward(action_cost=params.action_cost,
+                                goal=environment.goal)
+
+    exploratory_distribution = torch.distributions.MultivariateNormal(
+        torch.zeros(environment.dim_state), torch.eye(environment.dim_state)
     )
 
     if agent_name == 'mpc':

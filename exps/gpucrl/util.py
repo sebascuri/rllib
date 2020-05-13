@@ -2,6 +2,8 @@
 import torch
 import torch.jit
 import torch.optim as optim
+import gpytorch
+import numpy as np
 
 from rllib.agent import MPCAgent, MBMPPOAgent
 from rllib.algorithms.mpc import CEMShooting, RandomShooting, MPPIShooting
@@ -12,6 +14,7 @@ from rllib.model.ensemble_model import EnsembleModel
 from rllib.model.derived_model import OptimisticModel, TransformedModel
 from rllib.policy import MPCPolicy, NNPolicy
 from rllib.value_function import NNValueFunction
+from rllib.util.training import train_agent, evaluate_agent
 
 
 def _get_model(dim_state, dim_action, params, input_transform=None,
@@ -81,7 +84,8 @@ def _get_mpc_policy(dynamical_model, reward_model, params, terminal_reward=None,
         solver = CEMShooting(dynamical_model, reward_model,
                              horizon=params.mpc_horizon,
                              gamma=params.gamma,
-                             scale=params.action_scale / 3,
+                             scale=1 / 8,
+                             action_scale=params.action_scale,
                              num_iter=params.mpc_num_iter,
                              num_samples=params.mpc_num_samples,
                              num_elites=params.mpc_num_elites,
@@ -95,7 +99,8 @@ def _get_mpc_policy(dynamical_model, reward_model, params, terminal_reward=None,
         solver = RandomShooting(dynamical_model, reward_model,
                                 horizon=params.mpc_horizon,
                                 gamma=params.gamma,
-                                scale=params.action_scale / 3,
+                                scale=1 / 8,
+                                action_scale=params.action_scale,
                                 num_samples=params.mpc_num_samples,
                                 num_elites=params.mpc_num_elites,
                                 terminal_reward=terminal_reward,
@@ -108,7 +113,8 @@ def _get_mpc_policy(dynamical_model, reward_model, params, terminal_reward=None,
         solver = MPPIShooting(dynamical_model, reward_model,
                               horizon=params.mpc_horizon,
                               gamma=params.gamma,
-                              scale=params.action_scale / 3,
+                              action_scale=params.action_scale,
+                              scale=1 / 8,
                               num_iter=params.mpc_num_iter,
                               num_samples=params.mpc_num_samples,
                               terminal_reward=terminal_reward,
@@ -253,6 +259,7 @@ def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
 
     agent = MPCAgent(
         env_name, policy,
+        action_scale=params.action_scale,
         model_optimizer=model_optimizer,
         model_learn_num_iter=params.model_learn_num_iter,
         model_learn_batch_size=params.model_learn_batch_size,
@@ -284,3 +291,31 @@ def large_state_termination(state, action, next_state=None):
 
     return (torch.any(torch.abs(state) > 200, dim=-1) | torch.any(
         torch.abs(action) > 15, dim=-1))
+
+
+def train_and_evaluate(agent, environment, params, plot_callbacks):
+    """Train and evaluate agent on environment."""
+    # %% Train Agent
+    with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
+         gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
+        train_agent(agent, environment,
+                    num_episodes=params.train_episodes,
+                    max_steps=params.environment_max_steps,
+                    plot_flag=params.plot_train_results,
+                    print_frequency=params.print_frequency,
+                    render=params.render_train,
+                    plot_callbacks=plot_callbacks
+                    )
+    agent.logger.export_to_json(params.toDict())
+
+    # %% Test agent.
+    metrics = dict()
+    evaluate_agent(agent, environment, num_episodes=params.test_episodes,
+                   max_steps=params.environment_max_steps, render=params.render_test)
+
+    returns = np.mean(agent.logger.get('environment_return')[-params.test_episodes:])
+    metrics.update({"test/test_env_returns": returns})
+    returns = np.mean(agent.logger.get('environment_return')[:-params.test_episodes])
+    metrics.update({"test/train_env_returns": returns})
+
+    agent.logger.log_hparams(params.toDict(), metrics)

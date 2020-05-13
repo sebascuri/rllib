@@ -1,12 +1,13 @@
 from dotmap import DotMap
 
-from exps.gpucrl.cart_pole.util import get_agent_and_environment
+from exps.gpucrl.pusher.util import get_agent_and_environment
 from exps.gpucrl.mb_mppo_arguments import parser
 from exps.gpucrl.plotters import plot_last_sim_and_real_trajectory
 from exps.gpucrl.util import train_and_evaluate
 
-parser.description = 'Run Swing-up Cart-Pole using Model-Based MPPO.'
-parser.set_defaults(action_cost=0.05, action_scale=3.,
+parser.description = 'Run Pusher using Model-Based MPPO.'
+
+parser.set_defaults(action_cost=0.05, action_scale=2.,
                     environment_max_steps=200, train_episodes=20,
                     exploration='expected',  # default optimistic
                     # exploration='thompson',
