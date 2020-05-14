@@ -21,7 +21,7 @@ parser.set_defaults(action_cost=0.05, action_scale=20.,
                     sim_initial_states_num_trajectories=4,  # default 4
                     sim_initial_dist_num_trajectories=8,  # default 4
                     model_kind='DeterministicEnsemble', model_learn_num_iter=50,
-                    model_opt_lr=1e-3, render_train=True)
+                    model_opt_lr=1e-3)
 
 args = parser.parse_args()
 params = DotMap(vars(args))

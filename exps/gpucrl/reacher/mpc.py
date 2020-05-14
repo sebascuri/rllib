@@ -16,7 +16,7 @@ parser.set_defaults(action_cost=0.01,
                     # exploration='expected',  # default optimistic
                     # exploration='thompson',
                     model_kind='DeterministicEnsemble', model_learn_num_iter=50,
-                    model_opt_lr=1e-3, render_train=True)
+                    model_opt_lr=1e-3)
 args = parser.parse_args()
 print(args)
 params = DotMap(vars(args))

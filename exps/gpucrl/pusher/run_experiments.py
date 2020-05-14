@@ -2,7 +2,7 @@
 
 from lsf_runner import make_commands, init_runner
 
-runner = init_runner('GPUCRL_Pusher', num_threads=4)
+runner = init_runner('GPUCRL_Pusher', num_threads=1, wall_time=1439)
 
 cmd_list = make_commands(
     'mpc.py',

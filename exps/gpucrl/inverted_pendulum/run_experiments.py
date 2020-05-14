@@ -2,8 +2,6 @@
 
 from lsf_runner import make_commands, init_runner
 
-runner = init_runner('GPUCRL_Inverted_Pendulum', num_threads=1)
-
 gp_hyper_params = {
     'model-kind': ['ExactGP'],
     'model-max-num-points': [int(1e10), 200],
@@ -30,8 +28,11 @@ nn_ensemble_hyper_params = {
 }
 
 for algorithm_hyper_args in [gp_hyper_params, sparse_gp_hyper_params,
-                             features_gp_hyper_params,
-                             nn_ensemble_hyper_params]:
+                             features_gp_hyper_params]:
+    runner = init_runner(
+        f"GPUCRL_Inverted_Pendulum_{algorithm_hyper_args['model-kind'][0]}",
+        num_threads=1)
+
     cmd_list = make_commands(
         'optimistic_exploration.py',
         base_args={'train-episodes': 15},

@@ -2,7 +2,7 @@
 
 from lsf_runner import make_commands, init_runner
 
-runner = init_runner('GPUCRL_CartPole', num_threads=4)
+runner = init_runner('GPUCRL_CartPole', num_threads=1)
 
 cmd_list = make_commands(
     'mpc.py',

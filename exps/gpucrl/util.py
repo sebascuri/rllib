@@ -1,9 +1,14 @@
 """Utilities for GP-UCRL experiments."""
+import os
+import json
+
 import torch
 import torch.jit
 import torch.optim as optim
 import gpytorch
 import numpy as np
+from dotmap import DotMap
+import pandas as pd
 
 from rllib.agent import MPCAgent, MBMPPOAgent
 from rllib.algorithms.mpc import CEMShooting, RandomShooting, MPPIShooting
@@ -323,3 +328,30 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
     metrics.update({"test/train_env_returns": returns})
 
     agent.logger.log_hparams(params.toDict(), metrics)
+
+
+def parse_results(base_dir):
+    """Parse all results from base directory."""
+    log_dirs = os.listdir(base_dir)
+
+    results = {}
+    for log_dir in log_dirs:
+        try:
+            with open(f"{base_dir}{log_dir}/hparams.json", 'r') as f:
+                params = DotMap(json.load(f))
+        except FileNotFoundError:  # If experiment did not finish, just continue.
+            continue
+        exploration = params.get('exploration',
+                                 'optimistic' if params.optimistic else 'expected')
+        name = f"{params.action_cost}{exploration}{params.model_kind}"
+
+        with open(f"{base_dir}{log_dir}/statistics.json", 'r') as f:
+            df = pd.read_json(f)
+
+        if name not in results:
+            results[name] = (df.iloc[-1].environment_return, df, params)
+        else:
+            if df.iloc[-1].environment_return > results[name][0]:
+                results[name] = (df.iloc[-1].environment_return, df, params)
+
+    return results
