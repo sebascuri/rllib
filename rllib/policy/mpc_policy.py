@@ -20,6 +20,8 @@ class MPCPolicy(AbstractPolicy):
         # Return first Step.
         return action_sequence[0, ..., :], torch.zeros(self.dim_action, self.dim_action)
 
-    def reset(self):
+    def reset(self, **kwargs):
         """Re-set last_action to None."""
         self.solver.reset()
+        if 'goal' in kwargs:
+            self.solver.reward_model.goal = kwargs.get('goal')

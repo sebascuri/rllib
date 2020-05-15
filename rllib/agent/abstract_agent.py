@@ -99,7 +99,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def start_episode(self, **kwargs):
         """Start a new episode."""
-        self.policy.reset()
+        self.policy.reset(**kwargs)
         self.episode_steps.append(0)
         self.last_trajectory = []
 
@@ -108,6 +108,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.counters['total_episodes'] += 1
         rewards = self.logger.current['rewards']
         self.logger.end_episode(environment_return=rewards[0] * rewards[1])
+        self.logger.export_to_json()  # save at every episode?
 
     def end_interaction(self):
         """End the interaction with the environment."""

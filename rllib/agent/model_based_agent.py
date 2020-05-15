@@ -176,7 +176,7 @@ class ModelBasedAgent(AbstractAgent):
         else:
             if not isinstance(state, torch.Tensor):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
-            policy = tensor_to_distribution(self.plan_policy(state))
+            policy = tensor_to_distribution(self.policy(state))
             self.pi = policy
             action = self._plan(state).detach().numpy()
 

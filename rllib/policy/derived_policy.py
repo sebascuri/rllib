@@ -24,3 +24,17 @@ class DerivedPolicy(AbstractPolicy):
         mean = mean[..., :self.dim_action]
         scale = scale[..., :self.dim_action, :self.dim_action]
         return mean, scale
+
+    def reset(self, **kwargs):
+        """Reset policy parameters (for example internal states).
+
+        Parameters
+        ----------
+        kwargs: dict.
+            Dictionary with exogenous parameters such as goals.
+        """
+        self.base_policy.reset(**kwargs)
+
+    def update(self):
+        """Update policy parameters."""
+        self.base_policy.update()

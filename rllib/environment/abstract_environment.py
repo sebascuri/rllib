@@ -130,14 +130,6 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         pass
 
     @property
-    def frame_skip(self):
-        """Return the frame skip of the environment."""
-        if hasattr(self, 'env') and hasattr(self.env, 'frame_skip'):
-            return self.env.frame_skip
-        else:
-            return 1
-
-    @property
     def action_scale(self):
         """Return the action scale of the environment."""
         if self.discrete_action:
