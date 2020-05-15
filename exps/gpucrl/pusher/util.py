@@ -1,4 +1,4 @@
-"""Utilities for Reacher experiments."""
+"""Utilities for Pusher experiments."""
 
 import numpy as np
 import torch
@@ -58,7 +58,8 @@ def get_agent_and_environment(params, agent_name):
     elif agent_name == 'mbmppo':
         agent = get_mb_mppo_agent(
             environment.name, environment.dim_state, environment.dim_action,
-            params, reward_model, input_transform=input_transform,
+            params, reward_model, goal=environment.goal,
+            input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,

@@ -5,7 +5,7 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from exps.gpucrl.util import large_state_termination, get_mpc_agent, get_mb_mppo_agent
+from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
 from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import HalfCheetahReward
@@ -29,6 +29,17 @@ class StateTransform(nn.Module):
         angle = torch.atan2(sin, cos)
         states_ = torch.cat((states[..., :2], angle, states[..., 4:]), dim=-1)
         return states_
+
+
+def large_state_termination(state, action, next_state=None):
+    """Termination condition for environment."""
+    if not isinstance(state, torch.Tensor):
+        state = torch.tensor(state)
+    if not isinstance(action, torch.Tensor):
+        action = torch.tensor(action)
+
+    return (torch.any(torch.abs(state[..., 1:]) > 200, dim=-1) | torch.any(
+        torch.abs(action) > 200, dim=-1))
 
 
 def get_agent_and_environment(params, agent_name):

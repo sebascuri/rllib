@@ -20,10 +20,8 @@ from rllib.reward.utilities import tolerance
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.neural_networks.utilities import freeze_parameters
 
-from exps.gpucrl.util import large_state_termination, get_mpc_agent, get_mb_mppo_agent
+from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
 from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
-from rllib.environment import GymEnvironment
-from rllib.reward.mujoco_rewards import CartPoleReward
 
 from exps.gpucrl.inverted_pendulum.plotters import plot_learning_losses, \
     plot_trajectory_states_and_rewards, plot_values_and_policy, plot_returns_entropy_kl
@@ -48,15 +46,15 @@ class StateTransform(nn.Module):
         return states_
 
 
-def termination(state, action, next_state=None):
+def large_state_termination(state, action, next_state=None):
     """Termination condition for environment."""
     if not isinstance(state, torch.Tensor):
         state = torch.tensor(state)
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (torch.any(torch.abs(state) > 15, dim=-1) | torch.any(
-        torch.abs(action) > 15, dim=-1))
+    return (torch.any(torch.abs(state) > 200, dim=-1) | torch.any(
+        torch.abs(action) > 200, dim=-1))
 
 
 class PendulumReward(AbstractReward):

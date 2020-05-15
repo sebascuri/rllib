@@ -149,12 +149,14 @@ def _get_value_function(dim_state, params, input_transform=None):
     return value_function
 
 
-def _get_nn_policy(dim_state, dim_action, params, action_scale, input_transform=None):
+def _get_nn_policy(dim_state, dim_action, params, action_scale, goal=None,
+                   input_transform=None):
     if params.exploration == 'optimistic':
         dim_action += dim_state
 
     policy = NNPolicy(
         dim_state=dim_state, dim_action=dim_action,
+        goal=goal,
         layers=params.policy_layers,
         biased_head=not params.policy_unbiased_head,
         non_linearity=params.policy_non_linearity,
@@ -168,7 +170,7 @@ def _get_nn_policy(dim_state, dim_action, params, action_scale, input_transform=
 
 
 def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
-                      transformations, action_scale, input_transform=None,
+                      transformations, action_scale, goal=None, input_transform=None,
                       termination=None, initial_distribution=None):
     """Get a MB-MPPO agent."""
     # Define Base Model
@@ -186,6 +188,7 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
 
     # Define Policy
     policy = _get_nn_policy(dim_state, dim_action, params, action_scale=action_scale,
+                            goal=goal,
                             input_transform=input_transform)
 
     # Define Agent
@@ -308,7 +311,7 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
          gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
         train_agent(agent, environment,
                     num_episodes=params.train_episodes,
-                    max_steps=params.environment_max_steps * environment.frame_skip,
+                    max_steps=params.environment_max_steps,
                     plot_flag=params.plot_train_results,
                     print_frequency=params.print_frequency,
                     render=params.render_train,
@@ -319,7 +322,7 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
     # %% Test agent.
     metrics = dict()
     evaluate_agent(agent, environment, num_episodes=params.test_episodes,
-                   max_steps=params.environment_max_steps * environment.frame_skip,
+                   max_steps=params.environment_max_steps,
                    render=params.render_test)
 
     returns = np.mean(agent.logger.get('environment_return')[-params.test_episodes:])
@@ -330,28 +333,81 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
     agent.logger.log_hparams(params.toDict(), metrics)
 
 
-def parse_results(base_dir):
-    """Parse all results from base directory."""
-    log_dirs = os.listdir(base_dir)
+def parse_results(base_dir, agent):
+    """Parse all results from base directory.
 
-    results = {}
-    for log_dir in log_dirs:
+    Parameters
+    ----------
+    base_dir: str.
+        Relative path to base directory.
+    agent: str.
+        Name of agent.
+
+    Examples
+    --------
+    parse_results('runs/Cartpoleenv', 'MBMPPO'))
+
+    """
+    log_dirs = os.listdir(f"{base_dir}/{agent}Agent/")
+
+    df = pd.DataFrame()
+    for i, log_dir in enumerate(log_dirs):
         try:
-            with open(f"{base_dir}{log_dir}/hparams.json", 'r') as f:
-                params = DotMap(json.load(f))
+            with open(f"{base_dir}/{agent}Agent/{log_dir}/hparams.json", 'r') as f:
+                params = json.load(f)
         except FileNotFoundError:  # If experiment did not finish, just continue.
             continue
-        exploration = params.get('exploration',
-                                 'optimistic' if params.optimistic else 'expected')
-        name = f"{params.action_cost}{exploration}{params.model_kind}"
 
-        with open(f"{base_dir}{log_dir}/statistics.json", 'r') as f:
-            df = pd.read_json(f)
+        for key, value in params.items():
+            if isinstance(value, list):
+                params[key] = ','.join(str(s) for s in value)
 
-        if name not in results:
-            results[name] = (df.iloc[-1].environment_return, df, params)
-        else:
-            if df.iloc[-1].environment_return > results[name][0]:
-                results[name] = (df.iloc[-1].environment_return, df, params)
+        if 'exploration' not in params:
+            params['exploration'] = 'optimistic' if params['optimistic'] else 'expected'
 
-    return results
+        params['agent'] = agent
+        params = pd.DataFrame(params, index=(0,))
+        params['id'] = i
+
+        with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", 'r') as f:
+            statistics = pd.read_json(f)
+        statistics['best_return'] = statistics.loc[:, 'environment_return'].cummax()
+        statistics['id'] = i
+
+        exp = pd.merge(statistics, params, on='id')
+
+        df = pd.concat((df, exp))
+    return df
+
+
+def print_df(df, idx=None, sort_key='best_return', keep='first',
+             group_keys=('action_cost', 'exploration', 'model_kind'),
+             print_keys=('best_return', 'environment_return', 'id')):
+    """Print data frame by grouping and sorting data.
+
+    It will group the data frame by group_keys in order and then print, per group,
+    the maximum of the best_key.
+
+    Parameters
+    ----------
+    df: pd.DataFrame.
+        Data frame to sort and print.
+    idx: int, optional.
+        Time index in which to filter results.
+    sort_key: str, optional.
+        Key to sort by.
+    keep: str, optional.
+        Keep order in sorting. By default first.
+    group_keys: Iter[str]
+        Tuple of strings to group.
+    print_keys: str:
+        Tuple of strings to print.
+
+    """
+    max_idx = df.index.unique().max()
+    idx = idx if idx is not None else max_idx
+    idx = min(idx, max_idx)
+    df = df[df.index == idx]
+    df = df.sort_values(sort_key).drop_duplicates(list(group_keys), keep=keep)
+    df = df.groupby(list(group_keys)).max()
+    print(df[list(print_keys)])
