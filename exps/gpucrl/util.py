@@ -307,6 +307,7 @@ def large_state_termination(state, action, next_state=None):
 def train_and_evaluate(agent, environment, params, plot_callbacks):
     """Train and evaluate agent on environment."""
     # %% Train Agent
+    agent.logger.save_hparams(params.toDict())
     with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
          gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
         train_agent(agent, environment,
@@ -317,7 +318,7 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
                     render=params.render_train,
                     plot_callbacks=plot_callbacks
                     )
-    agent.logger.export_to_json(params.toDict())
+    agent.logger.export_to_json()
 
     # %% Test agent.
     metrics = dict()

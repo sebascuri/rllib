@@ -260,6 +260,7 @@ agent = MBMPPOAgent(
     gamma=hparams['gamma'], comment=comment)
 
 # %% Train Agent
+agent.logger.save_hparams(hparams)
 with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
      gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
     train_agent(agent, environment,
@@ -270,7 +271,7 @@ with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
                 render=hparams['render_train'],
                 plot_callbacks=[plot_pendulum_trajectories]
                 )
-agent.logger.export_to_json(hparams)
+agent.logger.export_to_json()
 
 # %% Test agent.
 metrics = dict()

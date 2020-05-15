@@ -109,13 +109,15 @@ class Logger(object):
         self.current = dict()
         self.episode += 1
 
-    def export_to_json(self, hparams=None):
-        """Save the statistics (and hparams) to a json file."""
+    def save_hparams(self, hparams):
+        """Save hparams to a json file."""
+        with open(f"{self.writer.logdir}/hparams.json", "w") as f:
+            json.dump(hparams, f)
+
+    def export_to_json(self):
+        """Save the statistics to a json file."""
         with open(f"{self.writer.logdir}/statistics.json", "w") as f:
             json.dump(self.statistics, f)
-        if hparams is not None:
-            with open(f"{self.writer.logdir}/hparams.json", "w") as f:
-                json.dump(hparams, f)
 
     def log_hparams(self, hparams, metrics=None):
         """Log hyper parameters together with a metric dictionary."""

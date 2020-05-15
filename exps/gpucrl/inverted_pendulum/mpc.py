@@ -57,6 +57,7 @@ agent = get_mpc_agent(environment.name, environment.dim_state, environment.dim_a
                       initial_distribution=exploratory_distribution)
 
 # %% Train Agent
+agent.logger.save_hparams(params.toDict())
 with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
      gpytorch.settings.fast_pred_samples(), gpytorch.settings.memory_efficient():
     train_agent(agent, environment,
@@ -67,7 +68,7 @@ with gpytorch.settings.fast_computations(), gpytorch.settings.fast_pred_var(), \
                 render=params.render_train,
                 plot_callbacks=[plot_last_trajectory]
                 )
-agent.logger.export_to_json(params.toDict())
+agent.logger.export_to_json()
 
 # %% Test agent.
 metrics = dict()
