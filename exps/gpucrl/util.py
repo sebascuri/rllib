@@ -412,3 +412,31 @@ def print_df(df, idx=None, sort_key='best_return', keep='first',
     df = df.sort_values(sort_key).drop_duplicates(list(group_keys), keep=keep)
     df = df.groupby(list(group_keys)).max()
     print(df[list(print_keys)])
+
+
+def parse_statistics(base_dir, agent):
+    """Parse statistics from base directory.
+
+    Parameters
+    ----------
+    base_dir: str.
+        Relative path to base directory.
+    agent: str.
+        Name of agent.
+
+    Examples
+    --------
+    parse_results('runs/Cartpoleenv', 'MBMPPO'))
+
+    """
+    log_dirs = os.listdir(f"{base_dir}/{agent}Agent/")
+
+    df = pd.DataFrame()
+    for i, log_dir in enumerate(log_dirs):
+        with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", 'r') as f:
+            statistics = pd.read_json(f)
+        statistics['best_return'] = statistics.loc[:, 'environment_return'].cummax()
+        statistics['id'] = i
+
+        df = pd.concat((df, statistics))
+    return df
