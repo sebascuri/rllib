@@ -113,7 +113,7 @@ class NNPolicy(AbstractPolicy):
         features = self.nn.last_layer_embeddings(state)
         return features.squeeze()
 
-    @torch.jit.export
+    # @torch.jit.export
     def reset(self, **kwargs):
         """Re-set last_action to None."""
         if self.goal is not None and 'goal' in kwargs:
