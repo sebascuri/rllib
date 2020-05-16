@@ -13,6 +13,7 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         super().__init__()
 
         self.max_torque = 1.
+        self.discrete = discrete
         if not discrete:
             self.action_space = Box(low=-self.max_torque, high=self.max_torque,
                                     shape=(1,))
@@ -30,10 +31,13 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         x, x_dot = self.state[..., 0], self.state[..., 1]
         theta, theta_dot = self.state[..., 2], self.state[..., 3]
 
-        try:
-            force = self.force_mag * action[..., 0]
-        except IndexError:
+        if self.discrete:
             force = self.force_mag * action
+        else:
+            try:
+                force = self.force_mag * action[..., 0]
+            except IndexError:
+                force = self.force_mag * action
 
         cos = bk.cos(theta)
         sin = bk.sin(theta)
