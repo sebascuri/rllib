@@ -9,12 +9,12 @@ parser.add_argument('--seed', type=int, default=0,
                     help='initial random seed (default: 0).')
 parser.add_argument('--train-episodes', type=int, default=10)
 parser.add_argument('--test-episodes', type=int, default=1)
+parser.add_argument('--num-threads', type=int, default=2)
 parser.add_argument('--beta', type=float, default=1.0)
 parser.add_argument('--max-memory', type=int, default=10000)
 
 environment_parser = parser.add_argument_group('environment')
 environment_parser.add_argument('--action-cost', type=float, default=0.2)
-environment_parser.add_argument('--action-scale', type=float, default=1.)
 environment_parser.add_argument('--gamma', type=float, default=0.99)
 environment_parser.add_argument('--environment-max-steps', type=int, default=400)
 

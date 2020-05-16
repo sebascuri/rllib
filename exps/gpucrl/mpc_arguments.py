@@ -1,7 +1,6 @@
 """Command line arguments for MPC Agents."""
 import argparse
 
-# %% Define and parse arguments.
 parser = argparse.ArgumentParser(description='Parameters for MPC.')
 
 parser.add_argument('--exploration', type=str, default='optimistic',
@@ -10,6 +9,7 @@ parser.add_argument('--seed', type=int, default=0,
                     help='initial random seed (default: 0).')
 parser.add_argument('--train-episodes', type=int, default=10)
 parser.add_argument('--test-episodes', type=int, default=1)
+parser.add_argument('--num-threads', type=int, default=2)
 parser.add_argument('--beta', type=float, default=1.0)
 parser.add_argument('--max-memory', type=int, default=10000)
 
