@@ -32,7 +32,7 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         theta, theta_dot = self.state[..., 2], self.state[..., 3]
 
         if self.discrete:
-            force = self.force_mag * action
+            force = self.force_mag * action.squeeze(-1)
         else:
             try:
                 force = self.force_mag * action[..., 0]
