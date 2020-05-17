@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from gym import envs
 
-
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import CartPoleReward, HalfCheetahReward, \
     PusherReward, ReacherReward
@@ -43,7 +42,6 @@ def test_reward(environment, action_cost):
             reward_model = reward_model_(action_cost=action_cost)
         else:
             reward_model = reward_model_()
-
 
     for _ in range(50):
         action = env.action_space.sample()

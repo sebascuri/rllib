@@ -5,7 +5,7 @@ import torch.nn.functional as func
 import torch.optim
 
 from rllib.util.training import train_agent, evaluate_agent
-from rllib.agent import TD3Agent
+from rllib.agent import TD3Agent, DPGAgent
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.exploration_strategies import GaussianNoise
@@ -54,7 +54,7 @@ critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_
                                     weight_decay=WEIGHT_DECAY)
 criterion = torch.nn.MSELoss
 
-agent = TD3Agent(
+agent = DPGAgent(
     environment.name, q_function, policy, noise, criterion, critic_optimizer,
     actor_optimizer, memory, batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY, exploration_episodes=1,

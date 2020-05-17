@@ -92,16 +92,18 @@ class DPGAgent(AbstractAgent):
                 observation.state, observation.action, observation.reward,
                 observation.next_state, observation.done)
 
-            # Optimize critic
-            critic_loss = (weight * ans.critic_loss).mean()
+            # Back-propagate critic loss.
+            critic_loss = (weight.detach() * ans.critic_loss).mean()
             critic_loss.backward()
-            self.critic_optimizer.step()
 
-            # Optimize actor
-            actor_loss = (weight * ans.actor_loss).mean()
-            if not (self.total_steps % self.policy_update_frequency):
+            # Back-propagate actor loss.
+            actor_loss = (weight.detach() * ans.actor_loss).mean()
+            if self.total_steps % self.policy_update_frequency == 0:
                 actor_loss.backward()
-                self.actor_optimizer.step()
+
+            # Update actor and critic.
+            self.critic_optimizer.step()
+            self.actor_optimizer.step()
 
             # Update memory
             self.memory.update(idx, ans.td_error.abs().detach())

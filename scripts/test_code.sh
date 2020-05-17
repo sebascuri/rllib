@@ -23,7 +23,7 @@ NC='\033[0m'
 
 # Run style tests
 echo -e "${GREEN}Running style tests.${NC}"
-flake8 $module --exclude '__init__.py,test_*.py' --show-source || { exit 1; }
+flake8 $module --exclude '__init__.py' --show-source || { exit 1; }
 
 # Ignore import errors for __init__
 flake8 $module --filename=__init__.py  --show-source || { exit 1; }
