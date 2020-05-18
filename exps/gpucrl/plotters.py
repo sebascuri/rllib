@@ -44,9 +44,10 @@ def plot_last_trajectory(agent, episode: int):
     agent.logger.writer.add_image(img_name, image, episode)
 
     if 'DISPLAY' in os.environ:
-        plt.show()
+        plt.draw()
     else:
         plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
+    plt.close()
 
 
 def plot_last_sim_and_real_trajectory(agent, episode: int):
@@ -97,9 +98,11 @@ def plot_last_sim_and_real_trajectory(agent, episode: int):
     agent.logger.writer.add_image(img_name, image, episode)
 
     if 'DISPLAY' in os.environ:
-        plt.show()
+        plt.draw()
     else:
         plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
+
+    plt.close()
 
 
 def plot_last_action_rewards(agent, episode: int):
@@ -132,7 +135,8 @@ def plot_last_action_rewards(agent, episode: int):
     agent.logger.writer.add_image(img_name, image, episode)
 
     if 'DISPLAY' in os.environ:
-        plt.show()
+        plt.draw()
     else:
         plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
 
+    plt.close()
