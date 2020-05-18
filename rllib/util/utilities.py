@@ -1,4 +1,5 @@
 """Utilities for the rllib library."""
+import warnings
 
 import numpy as np
 import torch
@@ -171,6 +172,11 @@ def safe_cholesky(covariance_matrix, jitter=1e-6):
         return torch.cholesky(covariance_matrix)
     except RuntimeError:
         dim = covariance_matrix.shape[-1]
+        if jitter > 1:
+            # When jitter is too big, then there is some numerical issue and this avoids
+            # stack overflow.
+            warnings.warn("Jitter too big. Maybe some numerical issue somewhere.")
+            return torch.eye(dim)
         return safe_cholesky(covariance_matrix + jitter * torch.eye(dim),
                              jitter=10 * jitter)
 
