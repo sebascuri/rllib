@@ -32,7 +32,7 @@ setup(
             'tensorboard>=2.0,<3',
         ],
         'experiments': [
-            'lsf_runner>=0.0.3',
+            'lsf_runner>=0.0.4',
             'torchvision==0.5.0',
             'Pillow==5.4.1',
             'pandas==0.25.0',
