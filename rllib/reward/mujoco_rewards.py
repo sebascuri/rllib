@@ -67,20 +67,19 @@ class PusherReward(MujocoReward):
 
     dim_action = 7
 
-    def __init__(self, action_cost=0.1, goal=np.zeros(3)):
+    def __init__(self, action_cost=0.1):
         super().__init__(action_cost)
-        self.goal = goal
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
         bk = get_backend(state)
-
+        if bk == np:
+            goal = np.array([0.45, -0.05, -0.323])
+        else:
+            goal = torch.tensor([0.45, -0.05, -0.323])
         obj_pos = state[..., -3:]
         vec_1 = obj_pos - state[..., -6:-3]
-        if bk is torch and not isinstance(self.goal, torch.Tensor):
-            goal = torch.tensor(self.goal, dtype=torch.get_default_dtype())
-        else:
-            goal = self.goal
+
         vec_2 = obj_pos - goal
 
         reward_near = - bk.abs(vec_1).sum(-1)
@@ -96,9 +95,8 @@ class ReacherReward(MujocoReward):
 
     dim_action = 7
 
-    def __init__(self, action_cost=0.1, goal=torch.zeros(3)):
+    def __init__(self, action_cost=0.1):
         super().__init__(action_cost)
-        self.goal = goal
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
@@ -113,6 +111,7 @@ class ReacherReward(MujocoReward):
         theta1, theta2 = state[..., 0], state[..., 1]
         theta3, theta4 = state[..., 2:3], state[..., 3:4]
         theta5, theta6 = state[..., 4:5], state[..., 5:6]
+        goal = state[..., 7:10]
 
         rot_axis = bk.stack([bk.cos(theta2) * bk.cos(theta1),
                              bk.cos(theta2) * bk.sin(theta1),
@@ -149,8 +148,4 @@ class ReacherReward(MujocoReward):
             rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
             cur_end = cur_end + length * new_rot_axis
 
-        if bk is torch and not isinstance(self.goal, torch.Tensor):
-            goal = torch.tensor(self.goal, dtype=torch.get_default_dtype())
-        else:
-            goal = self.goal
         return cur_end - goal

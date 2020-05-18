@@ -32,16 +32,10 @@ def test_reward(environment, action_cost):
     else:
         env = GymEnvironment(env_name)
     state = env.reset()
-    if env.goal is not None:
-        if action_cost:
-            reward_model = reward_model_(action_cost=action_cost, goal=env.goal)
-        else:
-            reward_model = reward_model_(goal=env.goal)
+    if action_cost:
+        reward_model = reward_model_(action_cost=action_cost)
     else:
-        if action_cost:
-            reward_model = reward_model_(action_cost=action_cost)
-        else:
-            reward_model = reward_model_()
+        reward_model = reward_model_()
 
     for _ in range(50):
         action = env.action_space.sample()

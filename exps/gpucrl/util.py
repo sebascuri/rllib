@@ -7,7 +7,6 @@ import torch.jit
 import torch.optim as optim
 import gpytorch
 import numpy as np
-from dotmap import DotMap
 import pandas as pd
 
 from rllib.agent import MPCAgent, MBMPPOAgent
@@ -149,14 +148,13 @@ def _get_value_function(dim_state, params, input_transform=None):
     return value_function
 
 
-def _get_nn_policy(dim_state, dim_action, params, action_scale, goal=None,
+def _get_nn_policy(dim_state, dim_action, params, action_scale,
                    input_transform=None):
     if params.exploration == 'optimistic':
         dim_action += dim_state
 
     policy = NNPolicy(
         dim_state=dim_state, dim_action=dim_action,
-        goal=goal,
         layers=params.policy_layers,
         biased_head=not params.policy_unbiased_head,
         non_linearity=params.policy_non_linearity,
@@ -170,7 +168,7 @@ def _get_nn_policy(dim_state, dim_action, params, action_scale, goal=None,
 
 
 def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
-                      transformations, action_scale, goal=None, input_transform=None,
+                      transformations, action_scale, input_transform=None,
                       termination=None, initial_distribution=None):
     """Get a MB-MPPO agent."""
     # Define Base Model
@@ -188,7 +186,6 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
 
     # Define Policy
     policy = _get_nn_policy(dim_state, dim_action, params, action_scale=action_scale,
-                            goal=goal,
                             input_transform=input_transform)
 
     # Define Agent
@@ -356,7 +353,8 @@ def parse_results(base_dir, agent):
         try:
             with open(f"{base_dir}/{agent}Agent/{log_dir}/hparams.json", 'r') as f:
                 params = json.load(f)
-        except FileNotFoundError:  # If experiment did not finish, just continue.
+        except (json.JSONDecodeError,
+                FileNotFoundError):  # If experiment did not finish, just continue.
             continue
 
         for key, value in params.items():
@@ -370,9 +368,18 @@ def parse_results(base_dir, agent):
         params = pd.DataFrame(params, index=(0,))
         params['id'] = i
 
-        with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", 'r') as f:
-            statistics = pd.read_json(f)
-        statistics['best_return'] = statistics.loc[:, 'environment_return'].cummax()
+        try:
+            with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", 'r') as f:
+                statistics = pd.read_json(f)
+        except (json.JSONDecodeError,
+                FileNotFoundError):  # If experiment did not finish, just continue.
+            continue
+
+        statistics['best_return'] = statistics['environment_return'].cummax()
+        try:
+            statistics['best_model_return'] = statistics['model_return'].cummax()
+        except KeyError:
+            pass
         statistics['id'] = i
 
         exp = pd.merge(statistics, params, on='id')
