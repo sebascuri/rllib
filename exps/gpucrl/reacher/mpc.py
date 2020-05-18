@@ -3,7 +3,7 @@ from dotmap import DotMap
 from exps.gpucrl.reacher import TRAIN_EPISODES, ENVIRONMENT_MAX_STEPS, ACTION_COST, \
     get_agent_and_environment
 from exps.gpucrl.mpc_arguments import parser
-from exps.gpucrl.plotters import plot_last_action_rewards
+from exps.gpucrl.plotters import plot_last_rewards
 from exps.gpucrl.util import train_and_evaluate
 
 MPC_HORIZON, MPC_NUM_SAMPLES = 25, 400
@@ -24,4 +24,4 @@ params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, 'mpc')
 train_and_evaluate(agent, environment, params=params,
-                   plot_callbacks=[plot_last_action_rewards])
+                   plot_callbacks=[plot_last_rewards])

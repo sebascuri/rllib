@@ -1,3 +1,19 @@
+<!-- Cart Pole Model
+
+    The state space is populated with joints in the order that they are
+    defined in this file. The actuators also operate on joints.
+    State-Space (name/joint/parameter):
+        - slider      	slider      position (m)
+        - hinge 		hinge		angle (rad)
+
+        - slider      	slider      velocity (m/s)
+        - hinge 		hinge		angular velocity (rad/s)
+
+    Actuators (name/actuator/parameter):
+        - slider      slider       Force (N)
+
+-->
+
 <mujoco model="cartpole">
 	<compiler inertiafromgeom="true"/>
 	<default>

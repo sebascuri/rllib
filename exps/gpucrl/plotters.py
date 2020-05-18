@@ -105,22 +105,18 @@ def plot_last_sim_and_real_trajectory(agent, episode: int):
     plt.close()
 
 
-def plot_last_action_rewards(agent, episode: int):
+def plot_last_rewards(agent, episode: int):
     """Plot agent last rewards."""
     real_trajectory = stack_list_of_tuples(agent.last_trajectory)
     model = agent.dynamical_model.base_model
     # for transformation in agent.dataset.transformations:
     #     real_trajectory = transformation(real_trajectory)
 
-    fig, axes = plt.subplots(model.dim_action + 1, 1, sharex='col')
+    fig, axes = plt.subplots(1, 1, sharex='col')
 
-    for i in range(model.dim_action):
-        axes[i].plot(real_trajectory.action[:, i])
-        axes[i].set_ylabel(f"Action {i}")
-
-    axes[-1].plot(real_trajectory.reward)
-    axes[-1].set_ylabel(f"Reward")
-    axes[-1].set_xlabel('Time')
+    axes.plot(real_trajectory.reward)
+    axes.set_ylabel("Reward")
+    axes.set_xlabel('Time')
 
     img_name = f"{agent.comment.title()}"
     plt.suptitle(f'{img_name} Episode {episode + 1}', y=1)
@@ -135,7 +131,7 @@ def plot_last_action_rewards(agent, episode: int):
     agent.logger.writer.add_image(img_name, image, episode)
 
     if 'DISPLAY' in os.environ:
-        plt.draw()
+        plt.show()
     else:
         plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
 

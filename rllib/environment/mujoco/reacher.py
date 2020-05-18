@@ -20,7 +20,7 @@ try:
         https://github.com/kchua/handful-of-trials
         """
 
-        def __init__(self, action_cost=0.1):
+        def __init__(self, action_cost=0.01):
             self.action_cost = action_cost
             self.viewer = None
             utils.EzPickle.__init__(self)

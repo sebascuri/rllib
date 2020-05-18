@@ -95,23 +95,25 @@ class ReacherReward(MujocoReward):
 
     dim_action = 7
 
-    def __init__(self, action_cost=0.1):
+    def __init__(self, action_cost=0.01):
         super().__init__(action_cost)
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
         with torch.no_grad():
-            dist_to_target = self.get_goal_distance(next_state)
+            goal = next_state[..., 7:10]
+            dist_to_target = self.get_ee_position(next_state) - goal
+
         reward_state = -(dist_to_target ** 2).sum(-1)
         return self.get_reward(reward_state, self.action_reward(action))
 
-    def get_goal_distance(self, state):
-        """Get the distance between the end effector and the goal."""
+    @staticmethod
+    def get_ee_position(state):
+        """Get the end effector position."""
         bk = get_backend(state)
         theta1, theta2 = state[..., 0], state[..., 1]
         theta3, theta4 = state[..., 2:3], state[..., 3:4]
         theta5, theta6 = state[..., 4:5], state[..., 5:6]
-        goal = state[..., 7:10]
 
         rot_axis = bk.stack([bk.cos(theta2) * bk.cos(theta1),
                              bk.cos(theta2) * bk.sin(theta1),
@@ -148,4 +150,4 @@ class ReacherReward(MujocoReward):
             rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
             cur_end = cur_end + length * new_rot_axis
 
-        return cur_end - goal
+        return cur_end

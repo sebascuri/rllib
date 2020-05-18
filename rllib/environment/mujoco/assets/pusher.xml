@@ -1,3 +1,41 @@
+<!-- Pusher Model
+
+    The state space is populated with joints in the order that they are
+    defined in this file. The actuators also operate on joints.
+    State-Space (name/joint/parameter):
+        - r_shoulder_pan_joint      hinge       angle (rad)
+        - r_shoulder_lift_joint     hinge       angle (rad)
+        - r_upper_arm_roll_joint    hinge       angle (rad)
+        - r_elbow_flex_joint        hinge       angle (rad)
+        - r_forearm_roll_joint      hinge       angle (rad)
+        - r_wrist_flex_joint        hinge       angle (rad)
+        - r_wrist_roll_joint        hinge       angle (rad)
+        - obj_slidey                slider      position (m)
+        - obj_slidex                slider      position (m)
+        - goal_slidey               slider      position (m)
+        - goal_slidex               slider      position (m)
+
+        - r_shoulder_pan_joint      hinge       angular velocity (rad/s)
+        - r_shoulder_lift_joint     hinge       angular velocity (rad/s)
+        - r_upper_arm_roll_joint    hinge       angular velocity (rad/s)
+        - r_elbow_flex_joint        hinge       angular velocity (rad/s)
+        - r_forearm_roll_joint      hinge       angular velocity (rad/s)
+        - r_wrist_flex_joint        hinge       angular velocity (rad/s)
+        - r_wrist_roll_joint        hinge       angular velocity (rad/s)
+        - obj_slidey                slider      velocity (m/s)
+        - obj_slidex                slider      velocity (m/s)
+        - goal_slidey               slider      velocity (m/s)
+        - goal_slidex               slider      velocity (m/s)
+
+    Actuators (name/actuator/parameter):
+        - r_shoulder_pan_joint      hinge       torque (N m)
+        - r_shoulder_lift_joint     hinge       torque (N m)
+        - r_upper_arm_roll_joint    hinge       torque (N m)
+        - r_elbow_flex_joint        hinge       torque (N m)
+        - r_forearm_roll_joint      hinge       torque (N m)
+        - r_wrist_flex_joint        hinge       torque (N m)
+        - r_wrist_roll_joint        hinge       torque (N m)
+-->
 <mujoco model="arm3d">
   <compiler inertiafromgeom="true" angle="radian" coordinate="local"/>
   <option timestep="0.01" gravity="0 0 0" iterations="20" integrator="Euler" />

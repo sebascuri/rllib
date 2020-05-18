@@ -13,21 +13,21 @@ from rllib.reward.mujoco_rewards import HalfCheetahReward
 
 class StateTransform(nn.Module):
     """Transform pendulum states to cos, sin, angular_velocity."""
-    extra_dim = 1
+    extra_dim = 7
 
     def forward(self, states):
         """Transform state before applying function approximation."""
-        angles = states[..., 2:3]
+        angles = states[..., 2:9]
         states_ = torch.cat(
-            (states[..., :2], torch.cos(angles), torch.sin(angles), states[..., 3:]),
+            (states[..., :2], torch.cos(angles), torch.sin(angles), states[..., 9:]),
             dim=-1)
         return states_
 
     def inverse(self, states):
         """Inverse transformation of states."""
-        cos, sin = states[..., 2:3], states[..., 3:4]
+        cos, sin = states[..., 2:9], states[..., 9:16]
         angle = torch.atan2(sin, cos)
-        states_ = torch.cat((states[..., :2], angle, states[..., 4:]), dim=-1)
+        states_ = torch.cat((states[..., :2], angle, states[..., 16:]), dim=-1)
         return states_
 
 
@@ -38,8 +38,8 @@ def large_state_termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (torch.any(torch.abs(state[..., 1:]) > 200, dim=-1) | torch.any(
-        torch.abs(action) > 200, dim=-1))
+    return (torch.any(torch.abs(state[..., 1:]) > 2000, dim=-1) | torch.any(
+        torch.abs(action) > 25 * 4, dim=-1))
 
 
 def get_agent_and_environment(params, agent_name):
@@ -60,7 +60,8 @@ def get_agent_and_environment(params, agent_name):
 
     input_transform = None
     exploratory_distribution = torch.distributions.MultivariateNormal(
-        torch.zeros(environment.dim_state), torch.eye(environment.dim_state)
+        torch.zeros(environment.dim_state),
+        1e-6 * torch.eye(environment.dim_state)
     )
 
     if agent_name == 'mpc':

@@ -1,3 +1,40 @@
+<!-- Reacher Model
+
+    The state space is populated with joints in the order that they are
+    defined in this file. The actuators also operate on joints.
+
+    State-Space (name/joint/parameter):
+        - r_shoulder_pan_joint      hinge       angle (rad)
+        - r_shoulder_lift_joint     hinge       angle (rad)
+        - r_upper_arm_roll_joint    hinge       angle (rad)
+        - r_elbow_flex_joint        hinge       angle (rad)
+        - r_forearm_roll_joint      hinge       angle (rad)
+        - r_wrist_flex_joint        hinge       angle (rad)
+        - r_wrist_roll_joint        hinge       angle (rad)
+        - target_x                  slider      position (m)
+        - target_y                  slider      position (m)
+        - target_z                  slider      position (m)
+
+        - r_shoulder_pan_joint      hinge       angular velocity (rad/s)
+        - r_shoulder_lift_joint     hinge       angular velocity (rad/s)
+        - r_upper_arm_roll_joint    hinge       angular velocity (rad/s)
+        - r_elbow_flex_joint        hinge       angular velocity (rad/s)
+        - r_forearm_roll_joint      hinge       angular velocity (rad/s)
+        - r_wrist_flex_joint        hinge       angular velocity (rad/s)
+        - r_wrist_roll_joint        hinge       angular velocity (rad/s)
+        - target_x                  slider      velocity (m/s)
+        - target_y                  slider      velocity (m/s)
+        - target_z                  slider      velocity (m/s)
+
+    Actuators (name/actuator/parameter):
+        - r_shoulder_pan_joint      hinge       torque (N m)
+        - r_shoulder_lift_joint     hinge       torque (N m)
+        - r_upper_arm_roll_joint    hinge       torque (N m)
+        - r_elbow_flex_joint        hinge       torque (N m)
+        - r_forearm_roll_joint      hinge       torque (N m)
+        - r_wrist_flex_joint        hinge       torque (N m)
+        - r_wrist_roll_joint        hinge       torque (N m)
+-->
 <mujoco model="arm3d">
 
     <compiler inertiafromgeom="true" angle="radian" coordinate="local" />
