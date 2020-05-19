@@ -18,6 +18,18 @@ def deep_copy_module(module):
     return copy.deepcopy(module)
 
 
+class Swish(nn.Module):
+    """Swish activation function.
+
+    The swish activation function is given by:
+        f(x) = x * sigmoid(x)
+    """
+
+    def forward(self, x):
+        """Apply forward computation of the module."""
+        return x * torch.sigmoid(x)
+
+
 def parse_nonlinearity(non_linearity):
     """Parse non-linearity."""
     if hasattr(nn, non_linearity):
@@ -26,6 +38,8 @@ def parse_nonlinearity(non_linearity):
         return getattr(nn, non_linearity.capitalize())
     elif hasattr(nn, non_linearity.upper()):
         return getattr(nn, non_linearity.upper())
+    elif non_linearity.lower() == 'swish':
+        return Swish
     else:
         raise NotImplementedError(f"non-linearity {non_linearity} not implemented")
 

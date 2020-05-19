@@ -8,6 +8,10 @@ from torch import Tensor
 def deep_copy_module(module: nn.Module) -> nn.Module: ...
 
 
+class Swish(nn.Module):
+    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+
+
 def parse_nonlinearity(non_linearity: str) -> nn.Module: ...
 
 
