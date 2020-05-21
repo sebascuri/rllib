@@ -4,10 +4,10 @@ from torch.nn.modules.loss import _Loss
 
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
-from .q_learning import QLearningLoss
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
-class ESARSA(nn.Module):
+class ESARSA(AbstractAlgorithm):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     policy: AbstractPolicy
@@ -17,9 +17,9 @@ class ESARSA(nn.Module):
     def __init__(self, q_function: AbstractQFunction, criterion: _Loss,
                  policy: AbstractPolicy, gamma: float) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> QLearningLoss: ...
+    def forward(self, *args: Tensor, **kwargs) -> TDLoss: ...
 
-    def _build_return(self, pred_q: Tensor, target_q: Tensor) -> QLearningLoss: ...
+    def _build_return(self, pred_q: Tensor, target_q: Tensor) -> TDLoss: ...
 
     def update(self) -> None: ...
 

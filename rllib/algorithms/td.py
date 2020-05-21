@@ -1,13 +1,12 @@
 """N-Step TD Learning Algorithm."""
 import torch
-import torch.nn as nn
 
 from rllib.util.neural_networks import update_parameters, deep_copy_module
 from rllib.util import discount_sum, mb_return
-from .q_learning import QLearningLoss
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
-class TDLearning(nn.Module):
+class TDLearning(AbstractAlgorithm):
     r"""Implementation of TD-Learning algorithm.
 
     TD is a policy-evaluation method algorithm.
@@ -60,8 +59,8 @@ class TDLearning(nn.Module):
         return self._build_return(pred_v, target_v)
 
     def _build_return(self, pred_v, target_v):
-        return QLearningLoss(loss=self.criterion(pred_v, target_v),
-                             td_error=(pred_v - target_v).detach())
+        return TDLoss(loss=self.criterion(pred_v, target_v),
+                      td_error=(pred_v - target_v).detach())
 
     def update(self):
         """Update the target network."""

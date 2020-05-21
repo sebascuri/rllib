@@ -2,13 +2,12 @@
 import copy
 
 import torch
-import torch.nn as nn
 
 from rllib.util.neural_networks import update_parameters
-from .q_learning import QLearningLoss
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
-class SARSA(nn.Module):
+class SARSA(AbstractAlgorithm):
     r"""Implementation of SARSA algorithm.
 
     SARSA is an on-policy model-free control algorithm.
@@ -62,8 +61,8 @@ class SARSA(nn.Module):
         return self._build_return(pred_q, target_q)
 
     def _build_return(self, pred_q, target_q):
-        return QLearningLoss(loss=self.criterion(pred_q, target_q),
-                             td_error=(pred_q - target_q).detach())
+        return TDLoss(loss=self.criterion(pred_q, target_q),
+                      td_error=(pred_q - target_q).detach())
 
     def update(self):
         """Update the target network."""

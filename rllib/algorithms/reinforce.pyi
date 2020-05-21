@@ -1,20 +1,14 @@
-from typing import NamedTuple, List
+from typing import List
 
-import torch.nn as nn
-from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
+from .abstract_algorithm import AbstractAlgorithm, PGLoss
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
 
 
-class REINFORCELoss(NamedTuple):
-    actor_loss: Tensor
-    baseline_loss: Tensor
-
-
-class REINFORCE(nn.Module):
+class REINFORCE(AbstractAlgorithm):
     eps: float = 1e-12
     policy: AbstractPolicy
     baseline: AbstractValueFunction
@@ -24,6 +18,4 @@ class REINFORCE(nn.Module):
     def __init__(self, policy: AbstractPolicy, baseline: AbstractValueFunction,
                  criterion: _Loss, gamma: float) -> None: ...
 
-    def forward(self, *args: List[Observation], **kwargs) -> REINFORCELoss: ...
-
-    def update(self) -> None: ...
+    def forward(self, *args: List[Observation], **kwargs) -> PGLoss: ...

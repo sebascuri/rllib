@@ -1,23 +1,30 @@
-"""Abstract Algorithm."""
-
 from abc import ABCMeta
-from collections import namedtuple
+from typing import NamedTuple
 
 import torch.nn as nn
-import torch.jit
-
+from torch import Tensor
 
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
 
-    @torch.jit.export
-    def update(self):
-        """Update algorithm parameters"""
-        pass
+    def update(self) -> None: ...
 
 
-TDLoss = namedtuple('TDLoss', ['loss', 'td_error'])
-ACLoss = namedtuple('ACLoss', ['actor_loss', 'critic_loss', 'td_error'])
-PGLoss = namedtuple('PGLoss', ['actor_loss', 'baseline_loss'])
-LPLoss = namedtuple('REPSLosses', ['dual', 'primal', 'td', 'advantage'])
+class TDLoss(NamedTuple):
+    loss: Tensor
+    td_error: Tensor
+
+
+class ACLoss(NamedTuple):
+    actor_loss: Tensor
+    critic_loss: Tensor
+    td_error: Tensor
+
+
+class PGLoss(NamedTuple):
+    actor_loss: Tensor
+    baseline_loss: Tensor
+
+
+# LPLoss = namedtuple('REPSLosses', ['dual', 'primal', 'td', 'advantage'])

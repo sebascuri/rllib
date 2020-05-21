@@ -1,128 +1,190 @@
-"""N-Step TD Learning Algorithm."""
+"""Off-Policy TD Calculation."""
+from abc import ABCMeta, abstractmethod
+
 import torch
 import torch.nn as nn
 
 from rllib.util.neural_networks import update_parameters, deep_copy_module
-from rllib.util import discount_sum, mb_return
-from .q_learning import QLearningLoss
+from rllib.util import tensor_to_distribution, integrate
+
+from .abstract_algorithm import TDLoss, AbstractAlgorithm
 
 
-class TDLearning(nn.Module):
-    r"""Implementation of TD-Learning algorithm.
+class OffPolicyTDLearning(AbstractAlgorithm, metaclass=ABCMeta):
+    r"""Implementation of the Off-Policy TD-Learning algorithms.
 
-    TD is a policy-evaluation method algorithm.
+    The target is computed as:
+    .. math:: Q_target(x, a) = Q(x, a) + E_\mu(\sum_{t} \gamma^t \Prod_{s=1}^t c_s td_t,
+    where
+    ..math:: td_t = r_t + \gamma E_{\pi} Q(x_{t+1}, a) - Q_(x_t, a_t)
 
-    The TD algorithm attempts to find the fixed point of:
-    .. math:: V(s) = r(s, a) + \gamma V(s')
-    where a is sampled from the current policy and s' \sim P(s, a).
+    Depending of the choice of the c_s, different algorithms exist. Namely:
 
-    Usually the loss is computed as:
-    .. math:: V_{target} = \sum_{n=0}^{N-1} r(s_n, a_n) + \gamma^N V(s_N)
-    .. math:: \mathcal{L}(V(s), V_{target})
+    Importance Sampling:
+        .. math:: c_s = \pi(a_s|s_s) / \mu(a_s|s_s)
+
+    QLambda:
+        .. math:: c_s = \lambda
+
+    TBLambda:
+        .. math:: c_s = \lambda \pi(a_s|s_s)
+
+    Retrace
+        .. math:: c_s = \lambda \min(1, \pi(a_s|s_s) / \mu(a_s|s_s))
+
 
     Parameters
     ----------
-    value_function: AbstractValueFunction
-        Value Function to optimize.
+    q_function: AbstractQFunction
+        Q Function to evaluate.
+    policy: AbstractPolicy
+        Policy to evaluate.
     criterion: _Loss
         Criterion to optimize.
     gamma: float
         Discount factor.
-    n_steps: int, optional.
-        Number of steps to optimize.
+    lambda_: float.
+        Lambda factor for off-policy evaluation.
 
     References
     ----------
-    Sutton, R. S. (1988).
-    Learning to predict by the methods of temporal differences. Machine learning.
+    Precup, D., Sutton, R. S., & Singh, S. (2000).
+    Eligibility Traces for Off-Policy Policy Evaluation. ICML.
+
+    Precup, D., Sutton, R. S., & Dasgupta, S. (2001).
+    Off-policy temporal-difference learning with function approximation. ICML.
+
+    Geist, M., & Scherrer, B. (2014).
+    Off-policy Learning With Eligibility Traces: A Survey. JMLR.
+
+    Harutyunyan, A., Bellemare, M. G., Stepleton, T., & Munos, R. (2016).
+    Q (\lambda) with Off-Policy Corrections. ALT.
+
+    Munos, R., Stepleton, T., Harutyunyan, A., & Bellemare, M. (2016).
+    Safe and efficient off-policy reinforcement learning. NeuRIPS.
+
     """
 
-    def __init__(self, value_function, criterion, gamma):
+    def __init__(self, q_function, policy, criterion, gamma, lambda_=1):
         super().__init__()
-        self.value_function = value_function
-        self.value_target = deep_copy_module(value_function)
+        self.q_function = q_function
+        self.q_target = deep_copy_module(q_function)
+        self.policy = policy
         self.criterion = criterion
         self.gamma = gamma
-        # self.n_steps = n_steps
+        self.lambda_ = lambda_
 
-    def forward(self, state, action, reward, next_state, done):
+    @abstractmethod
+    def correction(self, pi_log_prob, mu_log_prob):
+        """Return the correction at time step t."""
+        raise NotImplementedError
+
+    def forward(self, state, action, reward, next_state, done, action_log_prob):
         """Compute the loss and the td-error."""
         n_steps = state.shape[1]
-        pred_v = self.value_function(state[:, 0])
+        pred_q = self.q_function(state[:, 0], action[:, 0])
+        target_q = pred_q.detach()
 
         with torch.no_grad():
-            returns = discount_sum(reward.transpose(0, 1), self.gamma)
-            final_state = next_state[:, -1]
-            next_v = self.value_target(final_state)
+            discount = 1.
+            factor = 1.
 
-            target_v = returns + self.gamma ** n_steps * next_v * (1 - done[:, -1])
+            for t in range(n_steps + 1):
+                pi = tensor_to_distribution(self.policy(state[:, t]))
+                next_pi = tensor_to_distribution(self.policy(next_state[:, t]))
+                next_v = integrate(lambda a: self.critic_target(next_state[:, t], a),
+                                   next_pi)
+                td = reward[:, t] + self.gamma * next_v * done[:, t] - self.q_function(
+                    state[:, t], action[:, t])
 
-        return self._build_return(pred_v, target_v)
+                target_q += discount * factor * td
 
-    def _build_return(self, pred_v, target_v):
-        return QLearningLoss(loss=self.criterion(pred_v, target_v),
-                             td_error=(pred_v - target_v).detach())
+                discount *= self.gamma
+                factor *= self.correction(pi.log_prob(action[:, t]),
+                                          action_log_prob[:, t])
+
+        return self._build_return(pred_q, target_q)
+
+    def _build_return(self, pred_q, target_q):
+        return TDLoss(loss=self.criterion(pred_q, target_q),
+                      td_error=(pred_q - target_q).detach())
 
     def update(self):
         """Update the target network."""
-        update_parameters(self.value_target, self.value_function,
+        update_parameters(self.q_target, self.q_function,
                           tau=self.value_function.tau)
 
 
-class ModelBasedTDLearning(TDLearning):
-    r"""Implementation of Model-Based TD-Learning algorithm.
+class ImportanceSamplingOffPolicyTD(nn.Module, metaclass=ABCMeta):
+    r"""Importance Sampling Off-Policy TD-Learning algorithm.
 
-    TD is a policy-evaluation method algorithm.
+    The correction factor is given by:
 
-    The TD algorithm attempts to find the fixed point of:
-    .. math:: V(s) = r(s, a) + \gamma V(s')
-    where a is sampled from the current policy and s' \sim Model(s, a).
-
-    Usually the loss is computed as:
-    .. math:: V_{target} = \sum_{n=0}^{N-1} r(s_n, a_n) + \gamma^N V(s_N)
-    .. math:: \mathcal{L}(V(s), V_{target})
-
-    Parameters
-    ----------
-    value_function: AbstractValueFunction
-        Value Function to optimize.
-    criterion: _Loss
-        Criterion to optimize.
-    gamma: float
-        Discount factor.
-    num_steps: int, optional.
-        Number of steps to optimize.
+    .. math:: c_s = \pi(a_s|s_s) / \mu(a_s|s_s)
 
     References
     ----------
-    Sutton, R. S. (1988).
-    Learning to predict by the methods of temporal differences. Machine learning.
+    Precup, D., Sutton, R. S., & Dasgupta, S. (2001).
+    Off-policy temporal-difference learning with function approximation. ICML.
 
-    Lowrey, K., Rajeswaran, A., Kakade, S., Todorov, E., & Mordatch, I. (2018).
-    Plan online, learn offline: Efficient learning and exploration via model-based
-    control. ICLR.
+    Geist, M., & Scherrer, B. (2014).
+    Off-policy Learning With Eligibility Traces: A Survey. JMLR.
 
     """
 
-    def __init__(self, value_function, criterion, policy, dynamical_model, reward_model,
-                 termination=None, num_steps=1, gamma=0.99):
-        super().__init__(value_function, gamma=gamma, criterion=criterion)
-        self.policy = policy
-        self.dynamical_model = dynamical_model
-        self.reward_model = reward_model
-        self.num_steps = num_steps
-        self.termination = termination
+    def correction(self, pi_log_prob, mu_log_prob):
+        """Return the correction at time step t."""
+        return torch.exp(pi_log_prob - mu_log_prob)
 
-    def forward(self, state, *args):
-        """Compute the loss and the td-error."""
-        state = state[:, 0]
-        pred_v = self.value_function(state)
 
-        with torch.no_grad():
-            value_estimate, trajectory = mb_return(
-                state, dynamical_model=self.dynamical_model, policy=self.policy,
-                reward_model=self.reward_model, num_steps=self.num_steps,
-                value_function=self.value_target, gamma=self.gamma,
-                termination=self.termination)
+class TDLambda(nn.Module, metaclass=ABCMeta):
+    r"""TD-Lambda algorithm.
 
-        return self._build_return(pred_v, value_estimate.mean(dim=0))
+    The correction factor is given by:
+    .. math:: c_s = \lambda
+
+    References
+    ----------
+    Harutyunyan, A., Bellemare, M. G., Stepleton, T., & Munos, R. (2016).
+    Q (\lambda) with Off-Policy Corrections. ALT.
+
+    """
+
+    def correction(self, pi_log_prob, mu_log_prob):
+        """Return the correction at time step t."""
+        return self._lambda
+
+
+class TreeBackupLambda(nn.Module, metaclass=ABCMeta):
+    r"""Tree-Backup Lambda Off-Policy TD-Learning algorithm.
+
+    The correction factor is given by:
+    .. math:: c_s = \lambda * \pi(a_s | s_s)
+
+    References
+    ----------
+    Precup, D., Sutton, R. S., & Singh, S. (2000).
+    Eligibility Traces for Off-Policy Policy Evaluation. ICML.
+
+    """
+
+    def correction(self, pi_log_prob, mu_log_prob):
+        """Return the correction at time step t."""
+        return self._lambda * pi_log_prob
+
+
+class Retrace(nn.Module, metaclass=ABCMeta):
+    r"""Importance Sampling Off-Policy TD-Learning algorithm.
+
+    .. math:: c_s = \lambda min(1, \pi(a_s|s_s) / \mu(a_s|s_s))
+
+    References
+    ----------
+    Harutyunyan, A., Bellemare, M. G., Stepleton, T., & Munos, R. (2016).
+    Q (\lambda) with Off-Policy Corrections. ALT.
+
+    """
+
+    def correction(self, pi_log_prob, mu_log_prob):
+        """Return the correction at time step t."""
+        return self._lambda * torch.exp(pi_log_prob - mu_log_prob).clamp_max(1.)

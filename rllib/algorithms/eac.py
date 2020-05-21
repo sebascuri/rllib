@@ -2,7 +2,8 @@
 import torch
 
 from rllib.util import integrate, discount_sum, tensor_to_distribution
-from .ac import PGLoss, ActorCritic
+from .ac import ActorCritic
+from .abstract_algorithm import ACLoss
 
 
 class ExpectedActorCritic(ActorCritic):
@@ -60,5 +61,5 @@ class ExpectedActorCritic(ActorCritic):
             td_error += (pred_q - target_q).detach().mean()
 
         num_trajectories = len(trajectories)
-        return PGLoss(actor_loss / num_trajectories, critic_loss / num_trajectories,
+        return ACLoss(actor_loss / num_trajectories, critic_loss / num_trajectories,
                       td_error / num_trajectories)

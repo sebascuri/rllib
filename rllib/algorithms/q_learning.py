@@ -1,17 +1,13 @@
 """Q Learning Algorithm."""
 
-from collections import namedtuple
-
 import torch
-import torch.nn as nn
 
+from .abstract_algorithm import TDLoss, AbstractAlgorithm
 from rllib.policy.q_function_policy import SoftMax
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 
-QLearningLoss = namedtuple('QLearningLoss', ['loss', 'td_error'])
 
-
-class QLearning(nn.Module):
+class QLearning(AbstractAlgorithm):
     r"""Implementation of Q-Learning algorithm.
 
     Q-Learning is an off-policy model-free control algorithm.
@@ -68,8 +64,8 @@ class QLearning(nn.Module):
         return self._build_return(pred_q, target_q)
 
     def _build_return(self, pred_q, target_q):
-        return QLearningLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
-                             td_error=(pred_q - target_q).detach().squeeze(-1))
+        return TDLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
+                      td_error=(pred_q - target_q).detach().squeeze(-1))
 
     def update(self):
         """Update the target network."""

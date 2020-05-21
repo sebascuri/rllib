@@ -1,16 +1,14 @@
 """Deterministic Policy Gradient Algorithm."""
 
 import torch
-import torch.nn as nn
 
 from rllib.util.neural_networks.utilities import disable_gradient, deep_copy_module, \
     update_parameters
 from rllib.util.utilities import tensor_to_distribution
-from .ac import PGLoss
-from .q_learning import QLearningLoss
+from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
 
-class DPG(nn.Module):
+class DPG(AbstractAlgorithm):
     r"""Implementation of DPG algorithm.
 
     DPG is an off-policy model-free control algorithm.
@@ -87,7 +85,7 @@ class DPG(nn.Module):
             critic_loss += (self.criterion(q, target_q))
             td_error += q.detach() - target_q.detach()
 
-        return QLearningLoss(critic_loss, td_error)
+        return TDLoss(critic_loss, td_error)
 
     def forward(self, state, action, reward, next_state, done):
         """Compute the losses and the td-error."""
@@ -98,7 +96,7 @@ class DPG(nn.Module):
         # Actor loss
         actor_loss = self.actor_loss(state)
 
-        return PGLoss(actor_loss=actor_loss.squeeze(-1),
+        return ACLoss(actor_loss=actor_loss.squeeze(-1),
                       critic_loss=critic_loss.squeeze(-1),
                       td_error=td_error.squeeze(-1))
 

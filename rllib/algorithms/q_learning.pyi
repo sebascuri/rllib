@@ -1,20 +1,16 @@
-from typing import NamedTuple, Union
+from typing import Union
 
-import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
+from .abstract_algorithm import TDLoss, AbstractAlgorithm
 from rllib.policy.q_function_policy import SoftMax
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractQFunction
 
 
-class QLearningLoss(NamedTuple):
-    loss: Tensor
-    td_error: Tensor
 
-
-class QLearning(nn.Module):
+class QLearning(AbstractAlgorithm):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     criterion: _Loss
@@ -23,9 +19,9 @@ class QLearning(nn.Module):
     def __init__(self, q_function: AbstractQFunction, criterion: _Loss, gamma: float) -> None: ...
 
 
-    def forward(self, *args: Tensor, **kwargs) -> QLearningLoss: ...
+    def forward(self, *args: Tensor, **kwargs) -> TDLoss: ...
 
-    def _build_return(self, pred_q: Tensor, target_q: Tensor) -> QLearningLoss: ...
+    def _build_return(self, pred_q: Tensor, target_q: Tensor) -> TDLoss: ...
 
     def update(self) -> None: ...
 

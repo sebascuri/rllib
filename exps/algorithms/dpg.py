@@ -60,5 +60,5 @@ agent = DPGAgent(
     target_update_frequency=TARGET_UPDATE_FREQUENCY, exploration_episodes=1,
     gamma=GAMMA)
 
-train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
+train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, render=True)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

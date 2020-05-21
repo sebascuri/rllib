@@ -1,14 +1,13 @@
 """Expected SARSA Algorithm."""
 
 import torch
-import torch.nn as nn
 
 from rllib.util.utilities import integrate, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
-from .q_learning import QLearningLoss
+from .abstract_algorithm import TDLoss, AbstractAlgorithm
 
 
-class ESARSA(nn.Module):
+class ESARSA(AbstractAlgorithm):
     r"""Implementation of Expected SARSA algorithm.
 
     SARSA is an on-policy model-free control algorithm
@@ -44,8 +43,8 @@ class ESARSA(nn.Module):
         self.gamma = gamma
 
     def _build_return(self, pred_q, target_q):
-        return QLearningLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
-                             td_error=(pred_q - target_q).detach().squeeze(-1))
+        return TDLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
+                      td_error=(pred_q - target_q).detach().squeeze(-1))
 
     def forward(self, state, action, reward, next_state, done):
         """Compute the loss and the td-error."""

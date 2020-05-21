@@ -4,11 +4,10 @@ from torch.nn.modules.loss import _Loss
 
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
-from .ac import PGLoss
-from .q_learning import QLearningLoss
+from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
 
-class DPG(nn.Module):
+class DPG(AbstractAlgorithm):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     policy: AbstractPolicy
@@ -26,8 +25,6 @@ class DPG(nn.Module):
     def actor_loss(self, state: Tensor) -> Tensor: ...
 
     def critic_loss(self, state: Tensor, action: Tensor, reward: Tensor,
-                    next_state: Tensor, done: Tensor) -> QLearningLoss: ...
+                    next_state: Tensor, done: Tensor) -> TDLoss: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> PGLoss: ...
-
-    def update(self) -> None: ...
+    def forward(self, *args: Tensor, **kwargs) -> ACLoss: ...

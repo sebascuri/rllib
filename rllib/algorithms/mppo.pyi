@@ -7,6 +7,7 @@ from torch import Tensor
 from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
+from .abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
@@ -26,6 +27,8 @@ class MPOReturn(NamedTuple):
     primal_loss: Tensor
     dual_loss: Tensor
     kl_div: Tensor
+    kl_mean: Tensor
+    kl_var: Tensor
 
 
 class MPPOLoss(nn.Module):
@@ -48,10 +51,12 @@ class MPPOLoss(nn.Module):
     def forward(self, *args: Tensor, **kwargs: Tensor) -> MPOLosses: ...
 
 
-class MPPO(nn.Module):
+class MPPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
     policy: AbstractPolicy
     q_function: AbstractQFunction
+    q_target: AbstractQFunction
+
     gamma: float
     num_action_samples: int
 
@@ -74,11 +79,12 @@ class MPPO(nn.Module):
     def forward(self, *args: Tensor, **kwargs) -> MPOReturn: ...
 
 
-class MBMPPO(nn.Module):
+class MBMPPO(AbstractAlgorithm):
     dynamical_model: AbstractModel
     reward_model: AbstractReward
     policy: AbstractPolicy
     value_function: AbstractValueFunction
+    value_function_target: AbstractValueFunction
 
     gamma: float
 

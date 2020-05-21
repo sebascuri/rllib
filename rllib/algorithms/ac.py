@@ -1,19 +1,12 @@
 """Actor-Critic Algorithm."""
-
-from collections import namedtuple
-
 import torch
-import torch.nn as nn
 
+from .abstract_algorithm import AbstractAlgorithm, ACLoss
 from rllib.util import integrate, discount_sum, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 
 
-PGLoss = namedtuple('PolicyGradientLoss',
-                    ['actor_loss', 'critic_loss', 'td_error'])
-
-
-class ActorCritic(nn.Module):
+class ActorCritic(AbstractAlgorithm):
     r"""Implementation of Policy Gradient algorithm.
 
     Policy-Gradient is an on-policy model-free control algorithm.
@@ -98,7 +91,7 @@ class ActorCritic(nn.Module):
             td_error += (pred_q - target_q).detach().mean()
 
         num_trajectories = len(trajectories)
-        return PGLoss(actor_loss / num_trajectories, critic_loss / num_trajectories,
+        return ACLoss(actor_loss / num_trajectories, critic_loss / num_trajectories,
                       td_error / num_trajectories)
 
     def update(self):

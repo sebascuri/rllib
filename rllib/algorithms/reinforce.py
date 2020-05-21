@@ -1,19 +1,14 @@
 """REINFORCE Algorithm."""
 
-from collections import namedtuple
-
 import torch
-import torch.nn as nn
 
+from .abstract_algorithm import AbstractAlgorithm, PGLoss
 from rllib.util.utilities import tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 from .gae import GAE
 
-REINFORCELoss = namedtuple('REINFORCELoss',
-                           ['actor_loss', 'baseline_loss'])
 
-
-class REINFORCE(nn.Module):
+class REINFORCE(AbstractAlgorithm):
     r"""Implementation of REINFORCE algorithm.
 
     REINFORCE is an on-policy model-free control algorithm.
@@ -85,7 +80,7 @@ class REINFORCE(nn.Module):
 
                 baseline_loss += self.criterion(self.baseline(state), target_v).mean()
 
-        return REINFORCELoss(actor_loss, baseline_loss)
+        return PGLoss(actor_loss, baseline_loss)
 
     def update(self):
         """Update the baseline network."""

@@ -1,21 +1,17 @@
 """Actor-Critic Algorithm."""
-from typing import NamedTuple, List
+from typing import List
 
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
+from .abstract_algorithm import ACLoss, AbstractAlgorithm
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
 
 
-class PGLoss(NamedTuple):
-    actor_loss: Tensor
-    critic_loss: Tensor
-    td_error: Tensor
-
-class ActorCritic(nn.Module):
+class ActorCritic(AbstractAlgorithm):
     policy: AbstractPolicy
     policy_target: AbstractPolicy
     critic: AbstractQFunction
@@ -29,6 +25,4 @@ class ActorCritic(nn.Module):
 
     def returns(self, trajectory: Observation) -> Tensor: ...
 
-    def forward(self, *args: List[Observation], **kwargs) -> PGLoss: ...
-
-    def update(self) -> None: ...
+    def forward(self, *args: List[Observation], **kwargs) -> ACLoss: ...
