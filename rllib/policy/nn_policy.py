@@ -31,7 +31,7 @@ class NNPolicy(AbstractPolicy):
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
                  layers=None, biased_head=True, non_linearity='ReLU',
-                 squashed_output=True, action_scale=1.,
+                 squashed_output=True, action_scale=1., goal=None,
                  tau=0.0, deterministic=False, input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau,
                          deterministic, action_scale=action_scale)
@@ -43,6 +43,12 @@ class NNPolicy(AbstractPolicy):
         self.input_transform = input_transform
         if hasattr(input_transform, 'extra_dim'):
             in_dim += getattr(input_transform, 'extra_dim')
+
+        if goal is not None:
+            in_dim += len(goal)
+            if not isinstance(goal, torch.Tensor):
+                goal = torch.tensor(goal, dtype=torch.get_default_dtype())
+        self.goal = goal
 
         if self.discrete_action:
             self.nn = CategoricalNN(in_dim, self.num_actions, layers=layers,
@@ -60,20 +66,20 @@ class NNPolicy(AbstractPolicy):
         new = cls(dim_state=other.dim_state, dim_action=other.dim_action,
                   num_states=other.num_states, num_actions=other.num_actions,
                   tau=other.tau, deterministic=other.deterministic,
-                  action_scale=other.action_scale,
+                  action_scale=other.action_scale, goal=other.goal,
                   input_transform=other.input_transform)
         new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
         return new
 
     @classmethod
     def from_nn(cls, module, dim_state, dim_action, num_states=-1, num_actions=-1,
-                tau=0.0, deterministic=False, action_scale=1.,
+                tau=0.0, goal=None, deterministic=False, action_scale=1.,
                 input_transform=None):
         """Create new NN Policy from a Neural Network Implementation."""
         new = cls(dim_state=dim_state, dim_action=dim_action,
                   num_states=num_states, num_actions=num_actions,
                   tau=tau, deterministic=deterministic, action_scale=action_scale,
-                  input_transform=input_transform)
+                  goal=goal, input_transform=input_transform)
         new.nn = module
         return new
 
@@ -85,9 +91,13 @@ class NNPolicy(AbstractPolicy):
         if self.discrete_state:
             state = one_hot_encode(state.long(), num_classes=self.num_states)
 
+        if self.goal is not None:
+            goal = self.goal.repeat(*state.shape[:-1], 1)
+            state = torch.cat((state, goal), dim=-1)
+
         out = self.nn(state)
         if not self.discrete_action:
-            out = (self.action_scale * out[0], self.action_scale * out[1])
+            out = (self.action_scale * out[0], self.action_scale * out[1] / 3)
 
         if self.deterministic:
             return out[0], torch.zeros(1)
@@ -102,6 +112,15 @@ class NNPolicy(AbstractPolicy):
 
         features = self.nn.last_layer_embeddings(state)
         return features.squeeze()
+
+    # @torch.jit.export
+    def reset(self, **kwargs):
+        """Re-set last_action to None."""
+        if self.goal is not None and 'goal' in kwargs:
+            goal = kwargs.get('goal')
+            if not isinstance(goal, torch.Tensor):
+                goal = torch.tensor(goal, dtype=torch.get_default_dtype())
+            self.goal = goal
 
 
 class FelixPolicy(NNPolicy):
@@ -125,11 +144,11 @@ class FelixPolicy(NNPolicy):
     """
 
     def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 tau=0.0, deterministic=False, action_scale=1.,
+                 tau=0.0, deterministic=False, action_scale=1., goal=None,
                  input_transform=None):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau=tau,
                          deterministic=deterministic, input_transform=input_transform,
-                         action_scale=action_scale)
+                         action_scale=action_scale, goal=goal)
         self.nn = FelixNet(self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'])
         if self.discrete_state or self.discrete_action:
             raise ValueError(f"num_states and num_actions have to be set to -1.")
