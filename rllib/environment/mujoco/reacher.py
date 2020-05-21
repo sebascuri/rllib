@@ -38,7 +38,7 @@ try:
             reward = reward_dist + self.action_cost * reward_ctrl
             done = False
             return ob, reward, done, dict(reward_dist=reward_dist,
-                                          reward_ctrl=reward_ctrl)
+                                          reward_ctrl=self.action_cost * reward_ctrl)
 
         def viewer_setup(self):
             """Set-up the viewer."""
@@ -57,14 +57,14 @@ try:
             return self._get_obs()
 
         def _get_obs(self):
-            return np.concatenate([self.sim.data.qpos.flat,
+            return np.concatenate([self.sim.data.qpos.flat[:-3],
                                    self.sim.data.qvel.flat[:-3]])
 
         @staticmethod
         def get_end_effector_pos(states):
             """Get end effector position."""
             theta1, theta2, theta3, theta4, theta5, theta6, *_ = np.split(
-                states, 17, -1)
+                states, 14, -1)
             rot_axis = np.stack([np.cos(theta2) * np.cos(theta1),
                                  np.cos(theta2) * np.sin(theta1),
                                  -np.sin(theta2)], axis=1)

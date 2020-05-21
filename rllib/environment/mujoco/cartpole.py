@@ -36,11 +36,12 @@ try:
 
             reward_dist = np.exp(
                 -np.sum(np.square(end_effector)) / (pendulum_length ** 2))
-            reward_ctr = -np.sum(np.square(action))
-            reward = reward_dist + self.action_cost * reward_ctr
+            reward_ctrl = -np.sum(np.square(action))
+            reward = reward_dist + self.action_cost * reward_ctrl
 
             done = False
-            return ob, reward, done, {}
+            return ob, reward, done, dict(reward_dist=reward_dist,
+                                          reward_ctrl=self.action_cost * reward_ctrl)
 
         def reset_model(self):
             """Reset the model."""

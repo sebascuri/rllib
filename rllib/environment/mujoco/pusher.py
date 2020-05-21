@@ -46,7 +46,42 @@ try:
             self.do_simulation(action, self.frame_skip)
             ob = self._get_obs()
             done = False
-            return ob, reward, done, {}
+            return ob, reward, done, dict(reward_dist=1.25 * reward_dist,
+                                          reward_near=0.5 * reward_near,
+                                          reward_ctrl=self.action_cost * reward_ctrl)
+
+        @staticmethod
+        def get_end_effector_pos(states):
+            """Get end effector position."""
+            theta1, theta2, theta3, theta4, theta5, theta6, *_ = np.split(
+                states, 17, -1)
+            rot_axis = np.stack([np.cos(theta2) * np.cos(theta1),
+                                 np.cos(theta2) * np.sin(theta1),
+                                 -np.sin(theta2)], axis=1)
+            rot_perp_axis = np.stack([-np.sin(theta1), np.cos(theta1),
+                                      np.zeros(theta1.shape)], axis=1)
+
+            cur_end = np.stack([
+                0.1 * np.cos(theta1) + 0.4 * np.cos(theta1) * np.cos(theta2),
+                0.1 * np.sin(theta1) + 0.4 * np.sin(theta1) * np.cos(theta2) - 0.6,
+                -0.4 * np.sin(theta2)
+            ], axis=1)
+
+            for length, hinge, roll in [(0.321, theta4, theta3)]:
+                perp_all_axis = np.cross(rot_axis, rot_perp_axis)
+                x = np.cos(hinge) * rot_axis
+                y = np.sin(hinge) * np.sin(roll) * rot_perp_axis
+                z = -np.sin(hinge) * np.cos(roll) * perp_all_axis
+                new_rot_axis = x + y + z
+                new_rot_perp_axis = np.cross(new_rot_axis, rot_axis)
+                new_rot_perp_axis[np.linalg.norm(new_rot_perp_axis, axis=1) < 1e-30] = \
+                    rot_perp_axis[np.linalg.norm(new_rot_perp_axis, axis=1) < 1e-30]
+                new_rot_perp_axis /= np.linalg.norm(new_rot_perp_axis, axis=1,
+                                                    keepdims=True)
+                rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
+                cur_end = cur_end + length * new_rot_axis
+
+            return cur_end
 
         def viewer_setup(self):
             """Set-up the viewer."""
@@ -75,8 +110,8 @@ try:
             return np.concatenate([
                 self.sim.data.qpos.flat[:7],
                 self.sim.data.qvel.flat[:7],
-                self.get_body_com("tips_arm"),
                 self.get_body_com("object"),
+                # self.get_body_com("tips_arm"),
             ])
 
 except Exception:  # Mujoco not installed.

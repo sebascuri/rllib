@@ -40,7 +40,8 @@ try:
             reward = reward_run + self.action_cost * reward_ctrl
 
             done = False
-            return ob, reward, done, {}
+            return ob, reward, done, dict(reward_run=reward_run,
+                                          reward_ctrl=self.action_cost * reward_ctrl)
 
         def _get_obs(self):
             return np.concatenate([
