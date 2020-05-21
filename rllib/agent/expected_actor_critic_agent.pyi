@@ -3,4 +3,4 @@ from .actor_critic_agent import ActorCriticAgent
 
 
 class ExpectedActorCriticAgent(ActorCriticAgent):
-    actor_critic: ExpectedActorCritic
+    algorithm: ExpectedActorCritic

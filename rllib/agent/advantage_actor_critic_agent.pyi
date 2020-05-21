@@ -3,4 +3,4 @@ from .actor_critic_agent import ActorCriticAgent
 
 
 class A2CAgent(ActorCriticAgent):
-    actor_critic: A2C
+    algorithm: A2C

@@ -8,7 +8,7 @@ from rllib.util.logger import Logger
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
-    environment: str
+    env_name: str
     pi: Distribution
     counters: Dict[str, int]
     episode_steps: List[int]
@@ -18,10 +18,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
     exploration_episodes: int
     _training: bool
     comment: str
+    train_iter: int
 
     last_trajectory: List[Observation]
 
-    def __init__(self, environment: str, gamma: float = 1.0, exploration_steps: int = 0,
+    def __init__(self, env_name: str, gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0, comment: str = '') -> None: ...
 
     def act(self, state: State) -> Action: ...

@@ -37,12 +37,12 @@ class ExpectedSARSAAgent(AbstractAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(self, environment, q_function, policy, criterion, optimizer,
+    def __init__(self, env_name, q_function, policy, criterion, optimizer,
                  num_iter=1, batch_size=1, target_update_frequency=1, gamma=1.0,
                  exploration_steps=0, exploration_episodes=0):
-        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
-        self.sarsa = ESARSA(q_function, criterion(reduction='none'), policy, gamma)
+        self.algorithm = ESARSA(q_function, criterion(reduction='none'), policy, gamma)
         self.policy = policy
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
@@ -59,15 +59,6 @@ class ExpectedSARSAAgent(AbstractAgent):
                 self._train()
             self.trajectory = []
 
-        if self.total_steps % self.target_update_frequency == 0:
-            self.sarsa.update()
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        if len(self.trajectory) and self._training:
-            self._train()
-        super().end_episode()
-
     def _train(self):
         """Train the SARSA agent."""
         trajectory = stack_list_of_tuples(self.trajectory)
@@ -75,8 +66,9 @@ class ExpectedSARSAAgent(AbstractAgent):
         for _ in range(self.num_iter):
             # Update critic
             self.optimizer.zero_grad()
-            losses = self.sarsa(trajectory.state, trajectory.action, trajectory.reward,
-                                trajectory.next_state, trajectory.done)
+            losses = self.algorithm(trajectory.state, trajectory.action,
+                                    trajectory.reward, trajectory.next_state,
+                                    trajectory.done)
 
             loss = losses.loss.mean()
             loss.backward()
@@ -85,3 +77,7 @@ class ExpectedSARSAAgent(AbstractAgent):
             # Update loss
             self.logger.update(critic_losses=loss.item(),
                                td_errors=losses.td_error.abs().mean().item())
+
+            self.train_iter += 1
+            if self.train_iter % self.target_update_frequency == 0:
+                self.algorithm.update()

@@ -1,10 +1,14 @@
 """Implementation of DQNAgent Algorithms."""
-from rllib.agent import QLearningAgent
-from rllib.algorithms.q_learning import SoftQLearning
+import torch
+
+from rllib.agent.off_policy_ac_agent import OffPolicyACAgent
+from rllib.algorithms.sac import SoftActorCritic
+from rllib.value_function import NNEnsembleQFunction
+from rllib.util import tensor_to_distribution
 
 
-class SoftQLearningAgent(QLearningAgent):
-    """Implementation of a DQN-Learning agent.
+class SACAgent(OffPolicyACAgent):
+    """Implementation of a SAC agent.
 
     Parameters
     ----------
@@ -12,8 +16,6 @@ class SoftQLearningAgent(QLearningAgent):
         q_function that is learned.
     criterion: nn.Module
         Criterion to minimize the TD-error.
-    optimizer: nn.optim
-        Optimization algorithm for q_function.
     memory: ExperienceReplay
         Memory where to store the observations.
     temperature: ParameterDecay.
@@ -29,17 +31,54 @@ class SoftQLearningAgent(QLearningAgent):
 
     References
     ----------
-    Mnih, Volodymyr, et al. (2015)
-    Human-level control through deep reinforcement learning. Nature.
+    Haarnoja, T., Zhou, A., Abbeel, P., & Levine, S. (2018).
+    Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a
+    stochastic actor. ICML.
+
     """
 
-    def __init__(self, environment, q_function, criterion, optimizer,
-                 memory, temperature, num_iter=1, batch_size=64,
-                 target_update_frequency=4, gamma=1.0,
-                 exploration_steps=0, exploration_episodes=0):
-        super().__init__(environment, q_function, None, criterion, optimizer, memory,
-                         num_iter, batch_size, target_update_frequency,
-                         gamma, exploration_steps, exploration_episodes)
-        self.q_learning = SoftQLearning(q_function, criterion(reduction='none'),
-                                        temperature, self.gamma)
-        self.policy = self.q_learning.policy
+    def __init__(self, env_name, q_function, policy,
+                 criterion, critic_optimizer, actor_optimizer, memory, temperature,
+                 train_frequency=1, num_iter=1, batch_size=64,
+                 target_update_frequency=4, policy_update_frequency=1,
+                 policy_noise=0., noise_clip=1., gamma=1.0,
+                 exploration_steps=0, exploration_episodes=0, comment=''):
+
+        q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
+                                                         num_heads=2)
+        critic_optimizer = type(critic_optimizer)(q_function.parameters(),
+                                                  **critic_optimizer.defaults)
+        super().__init__(env_name, actor_optimizer, critic_optimizer, memory,
+                         batch_size=batch_size, train_frequency=train_frequency,
+                         num_iter=num_iter,
+                         target_update_frequency=target_update_frequency,
+                         policy_update_frequency=policy_update_frequency,
+                         gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes, comment=comment
+                         )
+        self.algorithm = SoftActorCritic(policy, q_function,
+                                         criterion(reduction='none'), temperature,
+                                         gamma)
+        self.policy = self.algorithm.policy
+
+    def act(self, state):
+        """See `AbstractAgent.act'."""
+        if self.total_steps < self.exploration_steps or (
+                self.total_episodes < self.exploration_episodes):
+            policy = self.policy.random()
+        else:
+            if not isinstance(state, torch.Tensor):
+                state = torch.tensor(state, dtype=torch.get_default_dtype())
+            policy = self.policy(state)
+
+        self.pi = tensor_to_distribution(policy, tanh=True,
+                                         action_scale=self.policy.action_scale)
+        if self._training:
+            action = self.pi.sample()
+        else:
+            self.pi = tensor_to_distribution(policy, tanh=False)
+            action = self.pi.mean
+
+        action = action.detach().numpy().clip(-self.policy.action_scale.numpy(),
+                                              self.policy.action_scale.numpy())
+        return action

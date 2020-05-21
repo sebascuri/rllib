@@ -1,11 +1,10 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
-import numpy as np
 
-from rllib.agent.abstract_agent import AbstractAgent
+from rllib.agent.off_policy_ac_agent import OffPolicyACAgent
 from rllib.algorithms.dpg import DPG
 
 
-class DPGAgent(AbstractAgent):
+class DPGAgent(OffPolicyACAgent):
     """Implementation of the Deterministic Policy Gradient Agent.
 
     The AbstractDDPGAgent algorithm implements the DPG-Learning algorithm except for
@@ -36,30 +35,29 @@ class DPGAgent(AbstractAgent):
 
     """
 
-    def __init__(self, environment, q_function, policy, exploration, criterion,
-                 critic_optimizer, actor_optimizer, memory, num_iter=1, batch_size=64,
-                 max_action=1, target_update_frequency=4, policy_update_frequency=1,
+    def __init__(self, env_name, q_function, policy, exploration, criterion,
+                 critic_optimizer, actor_optimizer, memory, num_iter=1,
+                 train_frequency=1, batch_size=64,
+                 target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1.,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name,
+                         actor_optimizer=actor_optimizer,
+                         critic_optimizer=critic_optimizer,
+                         memory=memory, batch_size=batch_size,
+                         train_frequency=train_frequency,
+                         num_iter=num_iter,
+                         target_update_frequency=target_update_frequency,
+                         policy_update_frequency=policy_update_frequency,
+                         gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
+
         assert policy.deterministic, "Policy must be deterministic."
-
-        self.dpg_algorithm = DPG(q_function, policy, criterion(reduction='none'), gamma,
-                                 policy_noise, noise_clip)
-
-        self.policy = self.dpg_algorithm.policy
-
+        self.algorithm = DPG(q_function, policy, criterion(reduction='none'), gamma,
+                             policy_noise, noise_clip
+                             )
+        self.policy = self.algorithm.policy
         self.exploration = exploration
-        self.memory = memory
-
-        self.num_iter = num_iter
-        self.batch_size = batch_size
-        self.target_update_frequency = target_update_frequency
-        self.critic_optimizer = critic_optimizer
-        self.actor_optimizer = actor_optimizer
-        self.max_action = max_action
-        self.policy_update_frequency = policy_update_frequency
 
     def act(self, state):
         """See `AbstractAgent.act'.
@@ -69,46 +67,6 @@ class DPGAgent(AbstractAgent):
         action = super().act(state)
         if self._training:
             action += self.exploration().numpy()
-        return self.max_action * np.clip(action, -1, 1)
 
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.memory.append(observation)
-        if self._training and len(self.memory) > self.batch_size:
-            self._train()
-        if self.total_steps % self.target_update_frequency == 0:
-            self.dpg_algorithm.update()
-
-    def _train(self):
-        """Train the DPG Agent."""
-        for _ in range(self.num_iter):
-            observation, idx, weight = self.memory.get_batch(self.batch_size)
-
-            self.critic_optimizer.zero_grad()
-            self.actor_optimizer.zero_grad()
-
-            ans = self.dpg_algorithm(
-                observation.state, observation.action, observation.reward,
-                observation.next_state, observation.done)
-
-            # Back-propagate critic loss.
-            critic_loss = (weight.detach() * ans.critic_loss).mean()
-            critic_loss.backward()
-
-            # Back-propagate actor loss.
-            actor_loss = (weight.detach() * ans.actor_loss).mean()
-            if self.total_steps % self.policy_update_frequency == 0:
-                actor_loss.backward()
-
-            # Update actor and critic.
-            self.critic_optimizer.step()
-            self.actor_optimizer.step()
-
-            # Update memory
-            self.memory.update(idx, ans.td_error.abs().detach())
-
-            # Update logs
-            self.logger.update(actor_losses=actor_loss.item(),
-                               critic_losses=critic_loss.item(),
-                               td_errors=ans.td_error.abs().mean().item())
+        return action.clip(-self.policy.action_scale.numpy(),
+                           self.policy.action_scale.numpy())

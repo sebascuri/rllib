@@ -3,5 +3,5 @@ from rllib.algorithms.q_learning import DQN
 
 
 class DQNAgent(QLearningAgent):
-    q_learning: DQN
+    algorithm: DQN
 

@@ -81,9 +81,9 @@ class GPUCBAgent(AbstractAgent):
     On kernelized multi-armed bandits. JMLR.
     """
 
-    def __init__(self, environment, gp, x, beta=2.0):
+    def __init__(self, env_name, gp, x, beta=2.0):
         self.policy = GPUCBPolicy(gp, x, beta)
-        super().__init__(environment, gamma=1, exploration_episodes=0,
+        super().__init__(env_name, gamma=1, exploration_episodes=0,
                          exploration_steps=0, comment=gp.name)
 
     def observe(self, observation) -> None:

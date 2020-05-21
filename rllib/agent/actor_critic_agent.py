@@ -1,11 +1,10 @@
 """Implementation of Model-Free Policy Gradient Algorithms."""
 
-from rllib.agent.abstract_agent import AbstractAgent
+from rllib.agent.on_policy_ac_agent import OnPolicyACAgent
 from rllib.algorithms.ac import ActorCritic
-from rllib.dataset.utilities import stack_list_of_tuples
 
 
-class ActorCriticAgent(AbstractAgent):
+class ActorCriticAgent(OnPolicyACAgent):
     """Abstract Implementation of the Actor-Critic Agent.
 
     The AbstractEpisodicPolicyGradient algorithm implements the Actor-Critic algorithms.
@@ -23,61 +22,16 @@ class ActorCriticAgent(AbstractAgent):
 
     eps = 1e-12
 
-    def __init__(self, environment, policy, actor_optimizer, critic, critic_optimizer,
+    def __init__(self, env_name, policy, actor_optimizer, critic, critic_optimizer,
                  criterion, num_rollouts=1, num_iter=1, target_update_frequency=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
-        self.trajectories = []
-        self.actor_critic = ActorCritic(policy, critic, criterion(reduction='none'),
-                                        gamma)
-        self.policy = self.actor_critic.policy
-
-        self.actor_optimizer = actor_optimizer
-        self.critic_optimizer = critic_optimizer
-
-        self.num_rollouts = num_rollouts
-        self.num_iter = num_iter
-        self.target_update_freq = target_update_frequency
-
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.trajectories[-1].append(observation)
-
-    def start_episode(self, **kwargs):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode(**kwargs)
-        self.trajectories.append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        if self.total_episodes % self.num_rollouts == 0:
-            if self._training:
-                self._train()
-            self.trajectories = []
-
-        if self.total_episodes % (self.target_update_freq * self.num_rollouts) == 0:
-            self.actor_critic.update()
-
-        super().end_episode()
-
-    def _train(self):
-        """Train Policy Gradient Agent."""
-        trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
-
-        for _ in range(self.num_iter):
-            self.actor_optimizer.zero_grad()
-            self.critic_optimizer.zero_grad()
-
-            losses = self.actor_critic(trajectories)
-
-            total_loss = losses.actor_loss + losses.critic_loss
-            total_loss.backward()
-            self.actor_optimizer.step()
-            self.critic_optimizer.step()
-
-            # Update logs
-            self.logger.update(actor_losses=losses.actor_loss.item(),
-                               critic_losses=losses.critic_loss.item(),
-                               td_errors=losses.td_error.abs().mean().item())
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
+        super().__init__(env_name,
+                         actor_optimizer=actor_optimizer,
+                         critic_optimizer=critic_optimizer,
+                         num_iter=num_iter,
+                         target_update_frequency=target_update_frequency,
+                         num_rollouts=num_rollouts,
+                         gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes, comment=comment)
+        self.algorithm = ActorCritic(policy, critic, criterion(reduction='none'), gamma)
+        self.policy = self.algorithm.policy

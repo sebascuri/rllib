@@ -32,9 +32,9 @@ class TD3Agent(DPGAgent):
 
     """
 
-    def __init__(self, environment, q_function, policy, exploration, criterion,
+    def __init__(self, env_name, q_function, policy, exploration, criterion,
                  critic_optimizer, actor_optimizer, memory, num_iter=1, batch_size=64,
-                 max_action=1, target_update_frequency=4, policy_update_frequency=1,
+                 target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1.,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
 
@@ -42,10 +42,9 @@ class TD3Agent(DPGAgent):
                                                          num_heads=2)
         critic_optimizer = type(critic_optimizer)(q_function.parameters(),
                                                   **critic_optimizer.defaults)
-        super().__init__(environment, q_function, policy, exploration, criterion,
+        super().__init__(env_name, q_function, policy, exploration, criterion,
                          critic_optimizer, actor_optimizer, memory,
                          num_iter=num_iter, batch_size=batch_size,
-                         max_action=max_action,
                          target_update_frequency=target_update_frequency,
                          policy_update_frequency=policy_update_frequency,
                          policy_noise=policy_noise, noise_clip=noise_clip,

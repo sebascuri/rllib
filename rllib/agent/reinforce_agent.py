@@ -1,11 +1,11 @@
 """Implementation of REINFORCE Algorithms."""
 
-from rllib.agent.abstract_agent import AbstractAgent
+from rllib.agent.on_policy_agent import OnPolicyAgent
 from rllib.algorithms.reinforce import REINFORCE
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
-class REINFORCEAgent(AbstractAgent):
+class REINFORCEAgent(OnPolicyAgent):
     """Implementation of the REINFORCE algorithm.
 
     The REINFORCE algorithm computes the policy gradient using MC
@@ -17,44 +17,22 @@ class REINFORCEAgent(AbstractAgent):
     connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
     """
 
-    def __init__(self, environment, policy, policy_optimizer, baseline=None,
+    def __init__(self, env_name, policy, policy_optimizer, baseline=None,
                  baseline_optimizer=None, criterion=None, num_rollouts=1, num_iter=1,
                  target_update_frequency=1, gamma=1.0, exploration_steps=0,
                  exploration_episodes=0):
-        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name,
+                         num_rollouts=num_rollouts,
+                         gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
-        self.trajectories = []
-        self.reinforce = REINFORCE(policy, baseline,
-                                   criterion(reduction='none'),
+        self.algorithm = REINFORCE(policy, baseline, criterion(reduction='none'),
                                    gamma)
-        self.policy = self.reinforce.policy
+        self.policy = self.algorithm.policy
         self.policy_optimizer = policy_optimizer
         self.baseline_optimizer = baseline_optimizer
 
         self.num_iter = num_iter
-        self.num_rollouts = num_rollouts
         self.target_update_frequency = target_update_frequency
-
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.trajectories[-1].append(observation)
-        if self.total_steps % self.target_update_frequency == 0:
-            self.reinforce.update()
-
-    def start_episode(self, **kwargs):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode(**kwargs)
-        self.trajectories.append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        if self.total_episodes % self.num_rollouts == 0:
-            if self._training:
-                self._train()
-            self.trajectories = list()
-
-        super().end_episode()
 
     def _train(self):
         """See `AbstractAgent.train_agent'."""
@@ -66,7 +44,7 @@ class REINFORCEAgent(AbstractAgent):
             if self.baseline_optimizer is not None:
                 self.baseline_optimizer.zero_grad()
 
-            losses = self.reinforce(trajectories)
+            losses = self.algorithm(trajectories)
             losses.actor_loss.backward()
             self.policy_optimizer.step()
 
@@ -78,3 +56,7 @@ class REINFORCEAgent(AbstractAgent):
                 losses.baseline_loss.backward()
                 self.baseline_optimizer.step()
                 self.logger.update(baseline_losses=losses.baseline_loss.item())
+
+            self.train_iter += 1
+            if self.train_iter % self.target_update_frequency == 0:
+                self.algorithm.update()

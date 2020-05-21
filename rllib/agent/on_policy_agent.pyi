@@ -1,38 +1,20 @@
 """On Policy Agent."""
+from typing import List
 
 from .abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
+from rllib.dataset.datatypes import Observation
 
 
 class OnPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
     algorithm: AbstractAlgorithm
+    num_rollouts: int
+    trajectories: List[List[Observation]]
 
-    def __init__(self, env_name,
-                 num_rollouts=1,
-                 gamma=1.0, exploration_steps=0,
-                 exploration_episodes=0, comment=''):
-        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
-        self.trajectories = []
-        self.num_rollouts = num_rollouts
-
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.trajectories[-1].append(observation)
-
-    def start_episode(self, **kwargs):
-        """See `AbstractAgent.start_episode'."""
-        super().start_episode(**kwargs)
-        self.trajectories.append([])
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        if self.total_episodes % self.num_rollouts == self.num_rollouts - 1:
-            if self._training:
-                self._train()
-            self.trajectories = list()
-
-        super().end_episode()
+    def __init__(self, env_name: str,
+                 num_rollouts: int = 1,
+                 gamma: float = 1.0, exploration_steps: int = 0,
+                 exploration_episodes: int = 0, comment: str = ''
+                 ) -> None: ...

@@ -36,10 +36,10 @@ class DDQNAgent(QLearningAgent):
     Deep reinforcement learning with double q-learning. AAAI.
     """
 
-    def __init__(self, environment, q_function, policy, criterion, optimizer,
+    def __init__(self, env_name, q_function, policy, criterion, optimizer,
                  memory, num_iter=1, batch_size=64, target_update_frequency=4,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(environment, q_function, policy, criterion, optimizer, memory,
+        super().__init__(env_name, q_function, policy, criterion, optimizer, memory,
                          num_iter, batch_size, target_update_frequency, gamma,
                          exploration_steps, exploration_episodes)
-        self.q_learning = DDQN(q_function, criterion(reduction='none'), self.gamma)
+        self.algorithm = DDQN(q_function, criterion(reduction='none'), self.gamma)

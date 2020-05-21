@@ -16,10 +16,10 @@ class REPSAgent(AbstractAgent):
     A survey on policy search for robotics. Foundations and Trends® in Robotics.
     """
 
-    def __init__(self, environment, reps_loss, optimizer, memory,
+    def __init__(self, env_name, reps_loss, optimizer, memory,
                  num_rollouts, batch_size, num_dual_iter, num_policy_iter=0,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
 
         self.policy = reps_loss.policy

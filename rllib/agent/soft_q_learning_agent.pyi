@@ -13,10 +13,10 @@ from rllib.value_function import AbstractQFunction
 
 
 class SoftQLearningAgent(QLearningAgent):
-    q_learning: SoftQLearning
+    algorithm: SoftQLearning
     policy: SoftMax
 
-    def __init__(self, environment: str, q_function: AbstractQFunction, criterion: _Loss,
+    def __init__(self, env_name: str, q_function: AbstractQFunction, criterion: _Loss,
                  optimizer: Optimizer, memory: ExperienceReplay,
                  temperature: Union[float, ParameterDecay], num_iter: int = 1,
                  batch_size: int = 64, target_update_frequency: int = 4,

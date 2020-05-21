@@ -1,10 +1,10 @@
 """Implementation of QLearning Algorithms."""
 
-from rllib.agent.abstract_agent import AbstractAgent
+from rllib.agent.off_policy_agent import OffPolicyAgent
 from rllib.algorithms.q_learning import QLearning
 
 
-class QLearningAgent(AbstractAgent):
+class QLearningAgent(OffPolicyAgent):
     """Implementation of a Q-Learning agent.
 
     The Q-Learning algorithm implements the Q-Learning algorithm except for the
@@ -43,29 +43,20 @@ class QLearningAgent(AbstractAgent):
 
     """
 
-    def __init__(self, environment, q_function, policy, criterion, optimizer,
-                 memory, num_iter=1, batch_size=64, target_update_frequency=4,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(environment, gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
+    def __init__(self, env_name, q_function, policy, criterion, optimizer,
+                 memory, num_iter=1, train_frequency=1,
+                 batch_size=64, target_update_frequency=4,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 comment=''):
+        super().__init__(env_name, memory=memory, batch_size=batch_size,
+                         train_frequency=train_frequency,
+                         gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes, comment=comment)
         self.policy = policy
-        self.q_learning = QLearning(q_function, criterion(reduction='none'), gamma)
-
-        self.memory = memory
-        self.target_update_frequency = target_update_frequency
+        self.algorithm = QLearning(q_function, criterion(reduction='none'), gamma)
         self.optimizer = optimizer
-
-        self.batch_size = batch_size
         self.num_iter = num_iter
-
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.memory.append(observation)
-        if self._training and len(self.memory) > self.batch_size:
-            self._train()
-        if self.total_steps % self.target_update_frequency == 0:
-            self.q_learning.update()
+        self.target_update_frequency = target_update_frequency
 
     def _train(self):
         """Train the Q-Learning Agent."""
@@ -74,7 +65,7 @@ class QLearningAgent(AbstractAgent):
 
             # Optimize critic
             self.optimizer.zero_grad()
-            losses = self.q_learning(
+            losses = self.algorithm(
                 observation.state, observation.action, observation.reward,
                 observation.next_state, observation.done)
             loss = (weight * losses.loss).mean()
@@ -87,3 +78,7 @@ class QLearningAgent(AbstractAgent):
             # Update loss
             self.logger.update(critic_losses=loss.item(),
                                td_errors=losses.td_error.abs().mean().item())
+
+            self.train_iter += 1
+            if self.train_iter % self.target_update_frequency == 0:
+                self.algorithm.update()

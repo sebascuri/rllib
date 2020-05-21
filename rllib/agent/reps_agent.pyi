@@ -17,7 +17,7 @@ class REPSAgent(AbstractAgent):
     num_rollouts: int
     batch_size: int
 
-    def __init__(self, environment: str, reps_loss: REPS, optimizer: Optimizer,
+    def __init__(self, env_name: str, reps_loss: REPS, optimizer: Optimizer,
                  memory: ExperienceReplay, num_rollouts: int, batch_size: int,
                  num_dual_iter: int, num_policy_iter: int = 0,
                  gamma: float = 1.0, exploration_steps: int = 0,

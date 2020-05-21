@@ -8,9 +8,9 @@ from .actor_critic_agent import ActorCriticAgent
 
 
 class GAACAgent(ActorCriticAgent):
-    actor_critic: GAAC
+    algorithm: GAAC
 
-    def __init__(self, environment: str, policy: AbstractPolicy, actor_optimizer: Optimizer,
+    def __init__(self, env_name: str, policy: AbstractPolicy, actor_optimizer: Optimizer,
                  critic: AbstractValueFunction, critic_optimizer: Optimizer,
                  criterion: _Loss, num_rollouts: int = 1, num_inter: int = 1,
                  target_update_frequency: int = 1, lambda_: float = 0.97,
