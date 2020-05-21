@@ -6,7 +6,7 @@ import torch.nn.functional as functional
 import torch.jit
 
 from .utilities import inverse_softplus, parse_layers, update_parameters
-from rllib.util.utilities import safe_cholesky, sample_mean_and_cov
+from rllib.util.utilities import safe_cholesky
 
 
 class FeedForwardNN(nn.Module):
@@ -126,7 +126,8 @@ class HeteroGaussianNN(FeedForwardNN):
         # TODO: Verify if this is useful or is just the action sample that gets big.
         # If the latter is the case, consider a tanh/sigmoid constrained multivariate
         # normal distribution.
-        scale = torch.diag_embed(nn.functional.softplus(self._scale(x)).clamp(1e-2, 1.))
+        scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.) + 1e-6
+        scale = torch.diag_embed(scale)
         return mean, scale
 
 
@@ -159,7 +160,7 @@ class HomoGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        scale = torch.diag_embed(functional.softplus(self._scale))
+        scale = torch.diag_embed(functional.softplus(self._scale)) + 1e-6
 
         return mean, scale
 
@@ -239,13 +240,16 @@ class Ensemble(HeteroGaussianNN):
         if self.deterministic:
             scale = torch.zeros_like(out)
         else:
-            scale = nn.functional.softplus(self._scale(x)).clamp(1e-3, 1.)
+            scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.) + 1e-6
             scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
         if self.head_ptr == self.num_heads and self.num_heads:
-            scale = torch.diag_embed(torch.mean(scale, dim=-1))
-            mean, covariance = sample_mean_and_cov(out)
-            scale += safe_cholesky(covariance)
+            mean = out.mean(-1)
+            variance = ((scale.square() + out.square()).mean(-1) - mean.square())
+            scale = safe_cholesky(torch.diag_embed(variance))
+            # variance = torch.diag_embed(torch.mean(scale.square()), dim=-1))
+            # mean, covariance = sample_mean_and_cov(out, diag=True)
+            # scale = safe_cholesky(variance + covariance)
 
         else:
             mean = out[..., self.head_ptr]
@@ -349,6 +353,6 @@ class FelixNet(FeedForwardNN):
         x = self.hidden_layers(x)
 
         mean = torch.tanh(self.head(x))
-        scale = torch.diag_embed(functional.softplus(self._scale_tril(x)))
+        scale = torch.diag_embed(functional.softplus(self._scale_tril(x)) + 1e-6)
 
         return mean, scale

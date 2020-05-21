@@ -4,7 +4,8 @@ import warnings
 import numpy as np
 import torch
 import torch.distributions
-from torch.distributions import Categorical, MultivariateNormal
+from torch.distributions import Categorical, MultivariateNormal, TransformedDistribution
+from torch.distributions.transforms import TanhTransform, AffineTransform
 
 from rllib.util.distributions import Delta
 
@@ -82,7 +83,7 @@ def mellow_max(values, omega=1.):
     return (torch.logsumexp(omega * values, dim=-1) - torch.log(n)) / omega
 
 
-def tensor_to_distribution(args):
+def tensor_to_distribution(args, **kwargs):
     """Convert tensors to a distribution.
 
     When args is a tensor, it returns a Categorical distribution with logits given by
@@ -101,7 +102,14 @@ def tensor_to_distribution(args):
     elif torch.all(args[1] == 0):
         return Delta(args[0], event_dim=min(1, args[0].dim()))
     else:
-        return MultivariateNormal(args[0], scale_tril=args[1])
+        d = MultivariateNormal(args[0], scale_tril=args[1])
+        if 'tanh' in kwargs and kwargs.get('tanh'):
+            d = TransformedDistribution(d, [
+                AffineTransform(loc=0, scale=1 / kwargs.get('action_scale', 1)),
+                TanhTransform(),
+                AffineTransform(loc=0, scale=kwargs.get('action_scale', 1))
+            ])
+        return d
 
 
 def separated_kl(p, q):
@@ -120,22 +128,26 @@ def separated_kl(p, q):
     kl_mean: torch.Tensor
     kl_var: torch.Tensor
     """
-    p_mean = torch.distributions.MultivariateNormal(q.loc, scale_tril=p.scale_tril)
-    p_var = torch.distributions.MultivariateNormal(p.loc, scale_tril=q.scale_tril)
-
-    kl_mean = torch.distributions.kl_divergence(p=p_mean, q=q).mean()
-    kl_var = torch.distributions.kl_divergence(p=p_var, q=q).mean()
+    kl_mean = torch.distributions.kl_divergence(
+        p=MultivariateNormal(p.loc, scale_tril=q.scale_tril), q=q
+    ).mean()
+    kl_var = torch.distributions.kl_divergence(
+        p=MultivariateNormal(q.loc, scale_tril=p.scale_tril), q=q
+    ).mean()
 
     return kl_mean, kl_var
 
 
-def sample_mean_and_cov(sample):
+def sample_mean_and_cov(sample, diag=False):
     """Compute mean and covariance of a sample of vectors.
 
     Parameters
     ----------
     sample: Tensor
         Tensor of dimensions [batch x N x num_samples].
+    diag: bool, optional.
+        Flag to indicate if the computation has to assume independent or correlated
+        variables.
 
     Returns
     -------
@@ -147,9 +159,13 @@ def sample_mean_and_cov(sample):
     """
     num_samples = sample.shape[-1]
     mean = torch.mean(sample, dim=-1, keepdim=True)
-    sigma = (mean - sample) @ (mean - sample).transpose(-2, -1)
-    sigma += 1e-6 * torch.eye(sigma.shape[-1])  # Add some jitter.
-    covariance = sigma / num_samples
+
+    if diag:
+        covariance = torch.diag_embed(sample.var(-1))
+    else:
+        sigma = (mean - sample) @ (mean - sample).transpose(-2, -1)
+        sigma += 1e-6 * torch.eye(sigma.shape[-1])  # Add some jitter.
+        covariance = sigma / num_samples
     mean = mean.squeeze(-1)
 
     return mean, covariance

@@ -13,7 +13,7 @@ from rllib.reward import AbstractReward
 
 def step(environment: AbstractEnvironment, state: Union[int, ndarray],
          action: Union[int, ndarray], pi: Distribution, render: bool
-         ) -> Tuple[Observation, Union[int, ndarray], bool]: ...
+         ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
 
 
 def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,

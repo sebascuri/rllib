@@ -166,3 +166,30 @@ class TestSeparatedKL(object):
         torch.testing.assert_allclose(
             kl_divergence(q, p).mean(), sum(separated_kl(q, p))
         )
+
+    def test_correctness(self, dim, batch_size):
+        p = self.get_multivariate_normal(dim, batch_size)
+        q = self.get_multivariate_normal(dim, batch_size)
+        kl_mean, kl_var = separated_kl(p, q)
+        if batch_size is None:
+            kl_mean_ = (
+                    0.5 * (q.loc - p.loc) @ torch.inverse(q.covariance_matrix)
+                    @ (q.loc - p.loc)
+            ).mean()
+        else:
+            kl_mean_ = (0.5
+                        * (q.loc - p.loc).unsqueeze(1)
+                        @ torch.inverse(q.covariance_matrix)
+                        @ (q.loc - p.loc).unsqueeze(-1)
+                        ).mean()
+
+        n = q.covariance_matrix.shape[-1]
+        ratio = torch.inverse(q.covariance_matrix) @ p.covariance_matrix
+        kl_var_ = (0.5 * (
+                torch.logdet(q.covariance_matrix) - torch.logdet(p.covariance_matrix)
+                + ratio[..., torch.arange(n), torch.arange(n)].sum(-1) - n
+        )).mean()
+
+        torch.testing.assert_allclose(kl_mean, kl_mean_)
+
+        torch.testing.assert_allclose(kl_var, kl_var_)

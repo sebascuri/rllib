@@ -12,25 +12,30 @@ from rllib.util.utilities import tensor_to_distribution
 def step(environment, state, action, pi, render):
     """Perform a single step in an environment."""
     try:
-        next_state, reward, done, _ = environment.step(action)
+        next_state, reward, done, info = environment.step(action)
     except TypeError:
-        next_state, reward, done, _ = environment.step(action.item())
+        next_state, reward, done, info = environment.step(action.item())
 
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action, dtype=torch.get_default_dtype())
+
+    try:
+        entropy = pi.entropy().squeeze()
+    except NotImplementedError:
+        entropy = 1.
 
     observation = RawObservation(state=state,
                                  action=action,
                                  reward=reward,
                                  next_state=next_state,
                                  done=done,
-                                 entropy=pi.entropy().squeeze(),
+                                 entropy=entropy,
                                  log_prob_action=pi.log_prob(action).squeeze()
                                  ).to_torch()
     state = next_state
     if render:
         environment.render()
-    return observation, state, done
+    return observation, state, done, info
 
 
 def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
@@ -67,9 +72,11 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         done = False
         while not done:
             action = agent.act(state)
-            observation, state, done = step(environment, state, action, agent.pi,
-                                            render)
-            agent.observe(observation)
+            obs, state, done, info = step(environment, state, action, agent.pi, render)
+            agent.observe(obs)
+            # Log info.
+            agent.logger.update(**info)
+
             if max_steps <= environment.time:
                 break
         agent.end_episode()
@@ -119,8 +126,8 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                 pi = tensor_to_distribution(policy(
                     torch.tensor(state, dtype=torch.get_default_dtype())))
                 action = pi.sample().numpy()
-                observation, state, done = step(environment, state, action, pi, render)
-                trajectory.append(observation)
+                obs, state, done, info = step(environment, state, action, pi, render)
+                trajectory.append(obs)
                 if max_steps <= environment.time:
                     break
         trajectories.append(trajectory)
@@ -145,8 +152,6 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         Termination condition to finish the rollout.
     max_steps: int.
         Maximum number of steps per episode.
-    action_scale: float, optional (default=None).
-        Magnitude of policy actions.
 
     Returns
     -------
@@ -169,6 +174,8 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             action = pi.rsample()
         else:
             action = pi.sample()
+        # action = torch.max(torch.min(action, policy.action_scale),
+        # -policy.action_scale)
 
         # Sample a next state
         next_state_out = dynamical_model(state, action)
@@ -211,6 +218,7 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         state[done] = old_state[done]
 
         if torch.all(done):
+            print('early stop trajectory.')
             break
 
     return trajectory
