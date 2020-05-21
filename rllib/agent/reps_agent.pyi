@@ -14,14 +14,14 @@ class REPSAgent(AbstractAgent):
     num_dual_iter: int
     num_policy_iter: int
 
-    num_rollouts: int
     batch_size: int
 
     def __init__(self, env_name: str, reps_loss: REPS, optimizer: Optimizer,
-                 memory: ExperienceReplay, num_rollouts: int, batch_size: int,
+                 memory: ExperienceReplay, batch_size: int,
                  num_dual_iter: int, num_policy_iter: int = 0,
-                 gamma: float = 1.0, exploration_steps: int = 0,
-                 exploration_episodes: int = 0, comment: str = '') -> None: ...
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...
 
     def _optimizer_dual(self) -> None: ...
 

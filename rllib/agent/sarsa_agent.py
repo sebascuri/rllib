@@ -40,11 +40,14 @@ class SARSAAgent(AbstractAgent):
     """
 
     def __init__(self, env_name, q_function, policy, criterion, optimizer,
-                 num_iter=1, batch_size=1, target_update_frequency=1, gamma=1.0,
-                 exploration_steps=0, exploration_episodes=0):
-        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
-        self.sarsa = SARSA(q_function, criterion(reduction='none'), gamma)
+                 num_iter=1, batch_size=1, target_update_frequency=1,
+                 train_frequency=1, num_rollouts=0,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
+        super().__init__(env_name,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
+                         gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes, comment=comment)
+        self.algorithm = SARSA(q_function, criterion(reduction='none'), gamma)
         self.policy = policy
         self.target_update_frequency = target_update_frequency
         self.optimizer = optimizer
@@ -71,7 +74,7 @@ class SARSAAgent(AbstractAgent):
                 self._train()
             self.trajectory = []
         if self.total_steps % self.target_update_frequency == 0:
-            self.sarsa.update()
+            self.algorithm.update()
 
     def start_episode(self, **kwargs):
         """See `AbstractAgent.start_episode'."""
@@ -96,7 +99,7 @@ class SARSAAgent(AbstractAgent):
         for _ in range(self.num_iter):
             # Update critic.
             self.optimizer.zero_grad()
-            losses = self.sarsa(
+            losses = self.algorithm(
                 trajectory.state, trajectory.action, trajectory.reward,
                 trajectory.next_state, trajectory.done, trajectory.next_action)
             loss = losses.loss.mean()

@@ -17,9 +17,12 @@ class REPSAgent(AbstractAgent):
     """
 
     def __init__(self, env_name, reps_loss, optimizer, memory,
-                 num_rollouts, batch_size, num_dual_iter, num_policy_iter=0,
+                 batch_size, num_dual_iter, num_policy_iter=0,
+                 train_frequency=0, num_rollouts=1,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
+                         gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
 
         self.policy = reps_loss.policy

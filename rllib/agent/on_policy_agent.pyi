@@ -10,11 +10,11 @@ class OnPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
     algorithm: AbstractAlgorithm
-    num_rollouts: int
+    batch_size: int
     trajectories: List[List[Observation]]
 
     def __init__(self, env_name: str,
-                 num_rollouts: int = 1,
-                 gamma: float = 1.0, exploration_steps: int = 0,
-                 exploration_episodes: int = 0, comment: str = ''
-                 ) -> None: ...
+                 batch_size: int = 1,
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...

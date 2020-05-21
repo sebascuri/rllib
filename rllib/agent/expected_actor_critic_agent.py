@@ -16,11 +16,16 @@ class ExpectedActorCriticAgent(ActorCriticAgent):
     """
 
     def __init__(self, env_name, policy, actor_optimizer, critic, critic_optimizer,
-                 criterion, num_rollouts=1, num_iter=1, target_update_frequency=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
-        super().__init__(env_name, policy, actor_optimizer, critic, critic_optimizer,
-                         criterion, num_rollouts, num_iter, target_update_frequency,
-                         gamma, exploration_steps, exploration_episodes)
+                 criterion, num_iter=1, target_update_frequency=1,
+                 train_frequency=0, num_rollouts=1,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
+        super().__init__(env_name, policy=policy, actor_optimizer=actor_optimizer,
+                         critic=critic, critic_optimizer=critic_optimizer,
+                         criterion=criterion, num_iter=num_iter,
+                         target_update_frequency=target_update_frequency,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
+                         gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes, comment=comment)
         self.algorithm = ExpectedActorCritic(
             policy, critic, criterion(reduction='none'), gamma)
         self.policy = self.algorithm.policy

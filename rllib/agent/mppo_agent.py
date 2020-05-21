@@ -7,14 +7,16 @@ class MPPOAgent(OffPolicyAgent):
     """Implementation of an agent that runs MPPO."""
 
     def __init__(self, env_name, mppo, optimizer, memory, num_iter=100, batch_size=64,
-                 train_frequency=100,
                  target_update_frequency=4,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
+                 train_frequency=0, num_rollouts=1,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(env_name, memory=memory,
                          batch_size=batch_size,
                          train_frequency=train_frequency,
+                         num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
+                         exploration_episodes=exploration_episodes,
+                         comment=comment)
 
         self.algorithm = mppo
         self.policy = self.algorithm.policy
@@ -32,8 +34,9 @@ class MPPOAgent(OffPolicyAgent):
             self.optimizer.step()
             self.logger.update(**losses._asdict())
 
-            self.train_iter += 1
-            if self.train_iter % self.target_update_frequency == 0:
+            self.counters['train_steps'] += 1
+            if self.train_steps % self.target_update_frequency == 0:
                 self.algorithm.update()
 
         self.algorithm.reset()
+        self.algorithm.update()

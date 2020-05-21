@@ -20,6 +20,8 @@ class REINFORCEAgent(OnPolicyAgent):
     def __init__(self, env_name: str, policy: AbstractPolicy, policy_optimizer: Optimizer,
                  baseline: AbstractValueFunction = None, critic: AbstractQFunction = None,
                  baseline_optimizer: Optimizer = None, critic_optimizer: Optimizer = None,
-                 criterion: _Loss = None, num_rollouts: int = 1, num_iter: int = 1,
+                 criterion: _Loss = None, num_iter: int = 1,
                  target_update_frequency: int = 1,
-                 gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...

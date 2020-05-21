@@ -27,7 +27,6 @@ class ModelBasedAgent(AbstractAgent):
     sim_dataset: ExperienceReplay
     sim_trajectory: Observation
 
-
     model_learn_num_iter: int
     model_learn_batch_size: int
 
@@ -75,8 +74,9 @@ class ModelBasedAgent(AbstractAgent):
                  sim_num_subsample: int = 1,
                  initial_distribution: Distribution = None,
                  thompson_sampling: bool = False,
-                 gamma: float = 1.0, exploration_steps: int = 0,
-                 exploration_episodes: int = 0, comment: str = '') -> None: ...
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...
 
     def _plan(self, state: Tensor) -> None: ...
 

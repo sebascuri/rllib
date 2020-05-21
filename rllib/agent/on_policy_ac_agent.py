@@ -11,11 +11,10 @@ class OnPolicyACAgent(OnPolicyAgent):
                  actor_optimizer, critic_optimizer,
                  num_iter=1,
                  target_update_frequency=1,
-                 num_rollouts=1,
-                 gamma=1.0, exploration_steps=0,
-                 exploration_episodes=0, comment=''):
+                 train_frequency=0, num_rollouts=1,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(env_name,
-                         num_rollouts=num_rollouts,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
         self.target_update_frequency = target_update_frequency
@@ -44,6 +43,6 @@ class OnPolicyACAgent(OnPolicyAgent):
                                critic_losses=losses.critic_loss.item(),
                                td_errors=losses.td_error.abs().mean().item())
 
-            self.train_iter += 1
-            if self.train_iter % self.target_update_frequency == 0:
+            self.counters['train_steps'] += 1
+            if self.train_steps % self.target_update_frequency == 0:
                 self.algorithm.update()

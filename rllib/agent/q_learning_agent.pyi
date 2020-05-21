@@ -18,5 +18,7 @@ class QLearningAgent(OffPolicyAgent):
     def __init__(self, env_name: str, q_function: AbstractQFunction, policy: AbstractQFunctionPolicy,
                  criterion: _Loss, optimizer: Optimizer, memory: ExperienceReplay,
                  num_iter: int = 1, batch_size: int = 64,
-                 target_update_frequency: int = 4, gamma: float = 1.0,
-                 exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
+                 target_update_frequency: int = 4,
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...

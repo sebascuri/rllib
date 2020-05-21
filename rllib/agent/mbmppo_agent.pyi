@@ -12,6 +12,7 @@ class MBMPPOAgent(ModelBasedAgent):
     mppo: MBMPPO
     mppo_optimizer: Optimizer
     mppo_gradient_steps: int
+
     def __init__(self, env_name: str, mppo: MBMPPO,
                  model_optimizer: Union[Optimizer, None], mppo_optimizer: Optimizer,
                  initial_distribution: Distribution = None,
@@ -28,8 +29,8 @@ class MBMPPOAgent(ModelBasedAgent):
                  sim_initial_dist_num_trajectories: int = 0,
                  sim_memory_num_trajectories: int = 0,
                  thompson_sampling: bool = False,
-                 gamma: float = 1.0, exploration_steps: int = 0,
-                 exploration_episodes: int = 0,
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
                  comment: str = '') -> None: ...
 
     def _optimize_policy(self) -> None: ...

@@ -18,13 +18,13 @@ class REINFORCEAgent(OnPolicyAgent):
     """
 
     def __init__(self, env_name, policy, policy_optimizer, baseline=None,
-                 baseline_optimizer=None, criterion=None, num_rollouts=1, num_iter=1,
-                 target_update_frequency=1, gamma=1.0, exploration_steps=0,
-                 exploration_episodes=0):
+                 baseline_optimizer=None, criterion=None, num_iter=1,
+                 target_update_frequency=1, train_frequency=0, num_rollouts=1,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(env_name,
-                         num_rollouts=num_rollouts,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
+                         exploration_episodes=exploration_episodes, comment=comment)
         self.algorithm = REINFORCE(policy, baseline, criterion(reduction='none'),
                                    gamma)
         self.policy = self.algorithm.policy
@@ -57,6 +57,6 @@ class REINFORCEAgent(OnPolicyAgent):
                 self.baseline_optimizer.step()
                 self.logger.update(baseline_losses=losses.baseline_loss.item())
 
-            self.train_iter += 1
-            if self.train_iter % self.target_update_frequency == 0:
+            self.counters['train_steps'] += 1
+            if self.train_steps % self.target_update_frequency == 0:
                 self.algorithm.update()

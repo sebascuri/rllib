@@ -36,17 +36,22 @@ class TD3Agent(DPGAgent):
                  critic_optimizer, actor_optimizer, memory, num_iter=1, batch_size=64,
                  target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1.,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0):
+                 train_frequency=0, num_rollouts=1,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
 
         q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
                                                          num_heads=2)
         critic_optimizer = type(critic_optimizer)(q_function.parameters(),
                                                   **critic_optimizer.defaults)
-        super().__init__(env_name, q_function, policy, exploration, criterion,
-                         critic_optimizer, actor_optimizer, memory,
+        super().__init__(env_name, q_function=q_function, policy=policy,
+                         exploration=exploration, criterion=criterion,
+                         critic_optimizer=critic_optimizer,
+                         actor_optimizer=actor_optimizer,
+                         memory=memory,
                          num_iter=num_iter, batch_size=batch_size,
                          target_update_frequency=target_update_frequency,
                          policy_update_frequency=policy_update_frequency,
                          policy_noise=policy_noise, noise_clip=noise_clip,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
+                         exploration_episodes=exploration_episodes, comment=comment)

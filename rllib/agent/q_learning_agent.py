@@ -44,12 +44,11 @@ class QLearningAgent(OffPolicyAgent):
     """
 
     def __init__(self, env_name, q_function, policy, criterion, optimizer,
-                 memory, num_iter=1, train_frequency=1,
-                 batch_size=64, target_update_frequency=4,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 comment=''):
+                 memory, num_iter=1, batch_size=64, target_update_frequency=4,
+                 train_frequency=1, num_rollouts=0,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
         super().__init__(env_name, memory=memory, batch_size=batch_size,
-                         train_frequency=train_frequency,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
         self.policy = policy
@@ -79,6 +78,6 @@ class QLearningAgent(OffPolicyAgent):
             self.logger.update(critic_losses=loss.item(),
                                td_errors=losses.td_error.abs().mean().item())
 
-            self.train_iter += 1
-            if self.train_iter % self.target_update_frequency == 0:
+            self.counters['train_steps'] += 1
+            if self.train_steps % self.target_update_frequency == 0:
                 self.algorithm.update()

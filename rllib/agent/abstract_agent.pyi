@@ -16,13 +16,15 @@ class AbstractAgent(object, metaclass=ABCMeta):
     gamma: float
     exploration_steps: int
     exploration_episodes: int
+    num_rollouts: int
+    train_frequency: int
     _training: bool
     comment: str
-    train_iter: int
 
     last_trajectory: List[Observation]
 
-    def __init__(self, env_name: str, gamma: float = 1.0, exploration_steps: int = 0,
+    def __init__(self, env_name: str, train_frequency: int, num_rollouts: int,
+                 gamma: float = 1.0, exploration_steps: int = 0,
                  exploration_episodes: int = 0, comment: str = '') -> None: ...
 
     def act(self, state: State) -> Action: ...
@@ -46,6 +48,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     @property
     def total_steps(self) -> int: ...
+
+    @property
+    def train_steps(self) -> int: ...
+
+    def step(self) -> int: ...
 
     @property
     def name(self) -> str: ...

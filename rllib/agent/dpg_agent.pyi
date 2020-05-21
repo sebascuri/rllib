@@ -19,4 +19,6 @@ class DPGAgent(OffPolicyACAgent):
                  memory: ExperienceReplay, num_iter: int = 1, batch_size: int = 64,
                  target_update_frequency: int = 4, policy_update_frequency: int = 1,
                  policy_noise: float = 0., noise_clip: float = 1.,
-                 gamma: float = 1.0, exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...

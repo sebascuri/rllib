@@ -14,5 +14,6 @@ class RandomAgent(AbstractAgent):
 
     def __init__(self, env_name: str, dim_state: int, dim_action: int,
                  num_states: int = -1, num_actions: int = -1,
-                 gamma: float = None,
-                 exploration_steps: int = 0, exploration_episodes: int = 0) -> None: ...
+                 train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
+                 exploration_steps: int = 0, exploration_episodes: int = 0,
+                 comment: str = '') -> None: ...

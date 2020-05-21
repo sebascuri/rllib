@@ -38,10 +38,14 @@ class ExpectedSARSAAgent(AbstractAgent):
     """
 
     def __init__(self, env_name, q_function, policy, criterion, optimizer,
-                 num_iter=1, batch_size=1, target_update_frequency=1, gamma=1.0,
-                 exploration_steps=0, exploration_episodes=0):
-        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
+                 num_iter=1, batch_size=1, target_update_frequency=1,
+                 train_frequency=1, num_rollouts=0,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''
+                 ):
+        super().__init__(env_name,
+                         train_frequency=train_frequency, num_rollouts=num_rollouts,
+                         gamma=gamma, exploration_steps=exploration_steps,
+                         exploration_episodes=exploration_episodes, comment=comment)
         self.algorithm = ESARSA(q_function, criterion(reduction='none'), policy, gamma)
         self.policy = policy
         self.target_update_frequency = target_update_frequency
@@ -78,6 +82,6 @@ class ExpectedSARSAAgent(AbstractAgent):
             self.logger.update(critic_losses=loss.item(),
                                td_errors=losses.td_error.abs().mean().item())
 
-            self.train_iter += 1
-            if self.train_iter % self.target_update_frequency == 0:
+            self.counters['train_steps'] += 1
+            if self.train_steps % self.target_update_frequency == 0:
                 self.algorithm.update()

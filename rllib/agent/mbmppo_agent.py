@@ -54,7 +54,9 @@ class MBMPPOAgent(ModelBasedAgent):
 
         self.mppo = mppo
         self.mppo_optimizer = mppo_optimizer
+        self.mppo_optimizer_init = self.mppo_optimizer.state_dict()
         self.mppo_gradient_steps = mppo_gradient_steps
+        self.value_function = None
 
         if hasattr(self.dynamical_model.base_model, 'num_heads'):
             num_heads = self.dynamical_model.base_model.num_heads
@@ -80,8 +82,8 @@ class MBMPPOAgent(ModelBasedAgent):
 
     def _optimize_policy(self):
         """Optimize guiding policy using Model-Based MPPO."""
-        # Copy over old policy for KL divergence
-        self.mppo.reset()
+        # Reset optimizer.
+        self.mppo_optimizer.load_state_dict(self.mppo_optimizer_init)
 
         # Iterate over state batches in the state distribution
         states = self.sim_trajectory.state.reshape(-1, self.dynamical_model.dim_state)
@@ -101,3 +103,13 @@ class MBMPPOAgent(ModelBasedAgent):
             self.mppo_optimizer.step()
 
             self.logger.update(**losses._asdict())
+            self.logger.update(eta=self.mppo.mppo_loss.eta(),
+                               eta_mean=self.mppo.mppo_loss.eta_mean(),
+                               eta_var=self.mppo.mppo_loss.eta_var())
+
+            # if losses.kl_div > 10 * self.mppo.mppo_loss.epsilon_mean > 0:
+            #     print('early stop.')
+            #     break
+
+        # Copy over old policy for KL divergence
+        self.mppo.reset()

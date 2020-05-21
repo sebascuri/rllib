@@ -116,7 +116,8 @@ class ModelBasedAgent(AbstractAgent):
                  initial_distribution=None,
                  thompson_sampling=False,
                  gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name, train_frequency=0, num_rollouts=0,
+                         gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
         if not isinstance(dynamical_model, TransformedModel):
             dynamical_model = TransformedModel(dynamical_model, [])
@@ -261,7 +262,7 @@ class ModelBasedAgent(AbstractAgent):
         # Return first action and the mean over the elite samples.
         return actions[0, idx].mean(0)
 
-    def _train(self) -> None:
+    def _train(self):
         """Train the agent.
 
         This consists of two steps:
@@ -315,14 +316,32 @@ class ModelBasedAgent(AbstractAgent):
                     with torch.no_grad():
                         self._simulate_model()
 
+                    # Log last simulations.
                     average_return = self.sim_trajectory.reward.sum(0).mean().item()
                     average_scale = torch.diagonal(
-                            self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
-                        ).sum(-1).sum(0).mean().item()
-                    self.logger.update(model_return=average_return)
-                    self.logger.update(total_scale=average_scale)
+                        self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
+                    ).square().sum(-1).mean().sqrt().item()
+                    self.logger.update(
+                        sim_entropy=self.sim_trajectory.entropy.mean().item())
+                    self.logger.update(sim_return=average_return)
+                    self.logger.update(sim_scale=average_scale)
+                    self.logger.update(
+                        sim_max_state=self.sim_trajectory.state.abs().max().item())
+                    self.logger.update(
+                        sim_max_action=self.sim_trajectory.action.abs().max().item())
+                    try:
+                        r_ctrl = self.reward_model.reward_ctrl.mean().detach().item()
+                        r_state = self.reward_model.reward_state.mean().detach().item()
+                        self.logger.update(sim_reward_ctrl=r_ctrl)
+                        self.logger.update(sim_reward_state=r_state)
+                    except AttributeError:
+                        pass
+
                     # self._trajectory_to_experience_replay()
 
+                # if self.logger.current['sim_scale'][-1] > 1:
+                #     print(self.logger.current['sim_scale'][-1])
+                #     break
                 # Step 2: Optimize policy
                 self._optimize_policy()
 

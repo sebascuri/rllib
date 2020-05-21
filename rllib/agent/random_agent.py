@@ -10,7 +10,8 @@ class RandomAgent(AbstractAgent):
 
     def __init__(self, env_name, dim_state, dim_action, num_states=-1,
                  num_actions=-1, gamma=1, exploration_steps=0, exploration_episodes=0):
-        super().__init__(env_name, gamma=gamma, exploration_steps=exploration_steps,
+        super().__init__(env_name, train_frequency=0, num_rollouts=0, gamma=gamma,
+                         exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes)
         self.policy = RandomPolicy(dim_state, dim_action, num_states=num_states,
                                    num_actions=num_actions)
