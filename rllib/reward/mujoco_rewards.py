@@ -13,14 +13,19 @@ class MujocoReward(AbstractReward, metaclass=ABCMeta):
     def __init__(self, action_cost=0.01):
         super().__init__()
         self.action_cost = action_cost
+        self.reward_ctrl = None
+        self.reward_state = None
 
     def action_reward(self, action):
         """Get action reward."""
-        return (-action[..., :self.dim_action] ** 2).sum(-1)
+        bk = get_backend(action)
+        return -bk.square(action[..., :self.dim_action]).sum(-1)
 
     def get_reward(self, reward_state, reward_control):
         """Get reward distribution from reward_state, reward_control tuple."""
-        reward = reward_state + self.action_cost * reward_control
+        self.reward_ctrl = self.action_cost * reward_control
+        self.reward_state = reward_state
+        reward = self.reward_state + self.reward_ctrl
         return reward, torch.zeros(1)
 
 
@@ -38,7 +43,7 @@ class CartPoleReward(MujocoReward):
         bk = get_backend(next_state)
         end_effector = self._get_ee_pos(next_state[..., 0], next_state[..., 1])
 
-        reward_state = bk.exp(-(end_effector ** 2).sum(-1) / (self.length ** 2))
+        reward_state = bk.exp(-bk.square(end_effector).sum(-1) / (self.length ** 2))
         return self.get_reward(reward_state, self.action_reward(action))
 
     def _get_ee_pos(self, x0, theta):
@@ -57,7 +62,8 @@ class HalfCheetahReward(MujocoReward):
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
-        reward_state = next_state[..., 0] - 0.0 * next_state[..., 2] ** 2
+        bk = get_backend(state)
+        reward_state = next_state[..., 0] - 0.0 * bk.square(next_state[..., 2])
 
         return self.get_reward(reward_state, self.action_reward(action))
 
@@ -77,9 +83,13 @@ class PusherReward(MujocoReward):
             goal = np.array([0.45, -0.05, -0.323])
         else:
             goal = torch.tensor([0.45, -0.05, -0.323])
-        obj_pos = state[..., -3:]
-        vec_1 = obj_pos - state[..., -6:-3]
 
+        if isinstance(state, torch.Tensor):
+            state = state.detach()
+        tip_pos = self.get_ee_position(state.detach())
+        obj_pos = state[..., -3:]
+
+        vec_1 = obj_pos - tip_pos
         vec_2 = obj_pos - goal
 
         reward_near = - bk.abs(vec_1).sum(-1)
@@ -89,6 +99,52 @@ class PusherReward(MujocoReward):
 
         return self.get_reward(reward_state, self.action_reward(action))
 
+    @staticmethod
+    def get_ee_position(state):
+        """Get the end effector position."""
+        bk = get_backend(state)
+        theta1, theta2 = state[..., 0], state[..., 1]
+        theta3, theta4 = state[..., 2:3], state[..., 3:4]
+
+        rot_axis = bk.stack([bk.cos(theta2) * bk.cos(theta1),
+                             bk.cos(theta2) * bk.sin(theta1),
+                             -bk.sin(theta2)], -1)
+        rot_perp_axis = bk.stack([-bk.sin(theta1), bk.cos(theta1),
+                                  bk.zeros_like(theta1)], -1)
+
+        cur_end = bk.stack([
+            0.1 * bk.cos(theta1) + 0.4 * bk.cos(theta1) * bk.cos(theta2),
+            0.1 * bk.sin(theta1) + 0.4 * bk.sin(theta1) * bk.cos(theta2) - 0.6,
+            -0.4 * bk.sin(theta2)
+        ], -1)
+
+        for length, hinge, roll in [(0.321, theta4, theta3)]:
+            perp_all_axis = np.cross(rot_axis, rot_perp_axis)
+            if bk is torch:
+                perp_all_axis = torch.tensor(perp_all_axis,
+                                             dtype=torch.get_default_dtype())
+
+            x = rot_axis * bk.cos(hinge)
+            y = bk.sin(hinge) * bk.sin(roll) * rot_perp_axis
+            z = -bk.sin(hinge) * bk.cos(roll) * perp_all_axis
+
+            new_rot_axis = x + y + z
+            new_rot_perp_axis = np.cross(new_rot_axis, rot_axis)
+            if bk is torch:
+                new_rot_perp_axis = torch.tensor(new_rot_perp_axis,
+                                                 dtype=torch.get_default_dtype())
+
+            norm = bk.sqrt(bk.square(new_rot_axis).sum(-1))
+            new_rot_perp_axis[norm < 1e-30] = rot_perp_axis[norm < 1e-30]
+
+            new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1)
+                                         )[..., None]
+
+            rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
+            cur_end = cur_end + length * new_rot_axis
+
+        return cur_end
+
 
 class ReacherReward(MujocoReward):
     """Reward of Reacher Environment."""
@@ -97,14 +153,22 @@ class ReacherReward(MujocoReward):
 
     def __init__(self, action_cost=0.01):
         super().__init__(action_cost)
+        self.goal = None
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
+        if self.goal is None:
+            raise ValueError
+        bk = get_backend(state)
         with torch.no_grad():
-            goal = next_state[..., 7:10]
+            if bk is torch and not isinstance(self.goal, torch.Tensor):
+                goal = torch.tensor(self.goal, dtype=torch.get_default_dtype())
+            else:
+                goal = self.goal
+
             dist_to_target = self.get_ee_position(next_state) - goal
 
-        reward_state = -(dist_to_target ** 2).sum(-1)
+        reward_state = -bk.square(dist_to_target).sum(-1)
         return self.get_reward(reward_state, self.action_reward(action))
 
     @staticmethod
@@ -142,10 +206,11 @@ class ReacherReward(MujocoReward):
                 new_rot_perp_axis = torch.tensor(new_rot_perp_axis,
                                                  dtype=torch.get_default_dtype())
 
-            norm = bk.sqrt((new_rot_axis ** 2).sum(-1))
+            norm = bk.sqrt(bk.square(new_rot_axis).sum(-1))
             new_rot_perp_axis[norm < 1e-30] = rot_perp_axis[norm < 1e-30]
 
-            new_rot_perp_axis /= bk.sqrt((new_rot_perp_axis ** 2).sum(-1))[..., None]
+            new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1)
+                                         )[..., None]
 
             rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
             cur_end = cur_end + length * new_rot_axis

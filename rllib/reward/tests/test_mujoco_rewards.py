@@ -5,7 +5,7 @@ from gym import envs
 
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import CartPoleReward, HalfCheetahReward, \
-    PusherReward, ReacherReward
+    PusherReward  # , ReacherReward
 
 
 @pytest.fixture(params=[0, 0.1, None])
@@ -16,7 +16,7 @@ def action_cost(request):
 @pytest.fixture(params=[('MBRLCartPole-v0', CartPoleReward),
                         ('MBRLHalfCheetah-v0', HalfCheetahReward),
                         ('MBRLPusher-v0', PusherReward),
-                        ('MBRLReacher3D-v0', ReacherReward)
+                        # ('MBRLReacher3D-v0', ReacherReward)
                         ])
 def environment(request):
     return request.param
@@ -36,6 +36,9 @@ def test_reward(environment, action_cost):
         reward_model = reward_model_(action_cost=action_cost)
     else:
         reward_model = reward_model_()
+
+    if hasattr(reward_model, 'goal'):
+        reward_model.goal = env.goal
 
     for _ in range(50):
         action = env.action_space.sample()
