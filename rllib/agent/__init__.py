@@ -16,5 +16,6 @@ from .random_agent import RandomAgent
 from .reps_agent import REPSAgent
 from .reinforce_agent import REINFORCEAgent
 from .sarsa_agent import SARSAAgent
+from .sac_agent import SACAgent
 from .soft_q_learning_agent import SoftQLearningAgent
 from .td3_agent import TD3Agent

@@ -1,15 +1,14 @@
 """Soft Actor-Critic Algorithm."""
 
 import torch
-import torch.nn as nn
 
 from rllib.util.utilities import tensor_to_distribution
-from rllib.util.neural_networks import deep_copy_module
-from .ac import PGLoss
-from .q_learning import QLearningLoss
+from rllib.util.neural_networks import deep_copy_module, disable_gradient, \
+    update_parameters
+from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
 
-class SoftActorCritic(nn.Module):
+class SoftActorCritic(AbstractAlgorithm):
     r"""Implementation of Soft Actor-Critic algorithm.
 
     SAC is an off-policy policy gradient algorithm.
@@ -24,8 +23,8 @@ class SoftActorCritic(nn.Module):
         self.policy_target = deep_copy_module(policy)
 
         # Critic
-        self.critic = critic
-        self.critic_target = deep_copy_module(critic)
+        self.q_function = critic
+        self.q_target = deep_copy_module(critic)
 
         self.temperature = temperature
 
@@ -34,17 +33,19 @@ class SoftActorCritic(nn.Module):
 
     def actor_loss(self, state):
         """Get Actor Loss."""
-        pi = tensor_to_distribution(self.policy(state))
-        if pi.has_rsample():
+        pi = tensor_to_distribution(self.policy(state), tanh=True,
+                                    action_scale=self.policy.action_scale)
+        if pi.has_rsample:
             action = pi.rsample()  # re-parametrization trick.
         else:
             action = pi.sample()
 
-        q_function = self.critic_target(state, action)
-        if type(q_function) is list:
-            q_function = torch.min(*q_function)
+        with disable_gradient(self.q_target):
+            q_val = self.q_target(state, action)
+            if type(q_val) is list:
+                q_val = torch.min(*q_val)
 
-        return (self.temperature * pi.log_prob(action.detach()) - q_function).mean()
+        return (self.temperature * pi.log_prob(action) - q_val).mean()
 
     def critic_loss(self, state, action, reward, next_state, done):
         """Get Critic Loss and td-error."""
@@ -54,9 +55,10 @@ class SoftActorCritic(nn.Module):
 
         # Target Q-values
         with torch.no_grad():
-            pi = self.policy(next_state)
+            pi = tensor_to_distribution(self.policy(next_state), tanh=True,
+                                        action_scale=self.policy.action_scale)
             next_action = pi.sample()
-            next_q = self.critic_target(next_state, next_action)
+            next_q = self.q_target(next_state, next_action)
             if type(next_q) is list:
                 next_q = torch.min(*next_q)
 
@@ -69,7 +71,7 @@ class SoftActorCritic(nn.Module):
             critic_loss += self.criterion(q, target_q)
             td_error += (q - target_q).detach()
 
-        return QLearningLoss(critic_loss, td_error)
+        return TDLoss(critic_loss, td_error)
 
     def forward(self, state, action, reward, next_state, done):
         """Compute the losses."""
@@ -79,9 +81,9 @@ class SoftActorCritic(nn.Module):
 
         # Actor loss
         actor_loss = self.actor_loss(state)
-        return PGLoss(actor_loss, critic_loss, td_error)
+        return ACLoss(actor_loss, critic_loss, td_error)
 
     def update(self):
         """Update the baseline network."""
-        self.policy_target.update_parameters(self.policy.parameters())
-        self.critic_target.update_parameters(self.critic.parameters())
+        update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
+        update_parameters(self.policy_target, self.policy, tau=self.policy.tau)
