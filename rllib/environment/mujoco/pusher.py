@@ -34,27 +34,29 @@ try:
         def step(self, action: np.ndarray):
             """See `AbstractEnvironment.step()'."""
             obj_pos = self.get_body_com("object")  # type: np.ndarray
-            vec_1 = obj_pos - self.get_body_com("tips_arm")  # type: np.ndarray
-            vec_2 = obj_pos - self.get_body_com("goal")  # type: np.ndarray
+            dist_to_obj = obj_pos - self.get_body_com("tips_arm")  # type: np.ndarray
+            dist_to_goal = obj_pos - self.get_body_com("goal")  # type: np.ndarray
 
-            reward_near = -np.sum(np.abs(vec_1))
-            reward_dist = -np.sum(np.abs(vec_2))
+            reward_dist_to_obj = -np.sum(np.abs(dist_to_obj))
+            reward_dist_to_goal = -np.sum(np.abs(dist_to_goal)[:-1])
             reward_ctrl = -np.square(action).sum()
-            reward_state = 1.25 * reward_dist + 0.5 * reward_near
+            reward_state = 1.25 * reward_dist_to_goal + 0.5 * reward_dist_to_obj
             reward = reward_state + self.action_cost * reward_ctrl
 
             self.do_simulation(action, self.frame_skip)
             ob = self._get_obs()
             done = False
-            return ob, reward, done, dict(reward_dist=1.25 * reward_dist,
-                                          reward_near=0.5 * reward_near,
-                                          reward_ctrl=self.action_cost * reward_ctrl)
+            return ob, reward, done, dict(
+                reward_dist_to_goal=1.25 * reward_dist_to_goal,
+                reward_dist_to_obj=0.5 * reward_dist_to_obj,
+                reward_ctrl=self.action_cost * reward_ctrl
+            )
 
         @staticmethod
-        def get_end_effector_pos(states):
+        def get_end_effector_pos(observation):
             """Get end effector position."""
             theta1, theta2, theta3, theta4, theta5, theta6, *_ = np.split(
-                states, 17, -1)
+                observation, observation.shape[-1], -1)
             rot_axis = np.stack([np.cos(theta2) * np.cos(theta1),
                                  np.cos(theta2) * np.sin(theta1),
                                  -np.sin(theta2)], axis=1)

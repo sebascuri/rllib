@@ -24,6 +24,11 @@ def map_and_cast(fun, iter_):
     return _cast_to_iter_class(generator, iter_[0].__class__)
 
 
+def average_named_tuple(named_tuple_):
+    """Return an averaged named-tuple."""
+    return type(named_tuple_)(*map(lambda x: x.mean().item(), named_tuple_))
+
+
 def stack_list_of_tuples(iter_):
     """Convert a list of observation tuples to a list of numpy arrays.
 

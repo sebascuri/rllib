@@ -97,7 +97,7 @@ class NNPolicy(AbstractPolicy):
 
         out = self.nn(state)
         if not self.discrete_action:
-            out = (self.action_scale * out[0], self.action_scale * out[1] / 3)
+            out = (self.action_scale * out[0], self.action_scale * out[1])
 
         if self.deterministic:
             return out[0], torch.zeros(1)

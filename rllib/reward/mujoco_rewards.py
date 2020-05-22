@@ -83,19 +83,21 @@ class PusherReward(MujocoReward):
             goal = np.array([0.45, -0.05, -0.323])
         else:
             goal = torch.tensor([0.45, -0.05, -0.323])
-
+        # goal[-1] = -0.275
         if isinstance(state, torch.Tensor):
             state = state.detach()
-        tip_pos = self.get_ee_position(state.detach())
+        tip_pos = self.get_ee_position(state)
         obj_pos = state[..., -3:]
 
-        vec_1 = obj_pos - tip_pos
-        vec_2 = obj_pos - goal
+        dist_to_obj = obj_pos - tip_pos
+        dist_to_goal = obj_pos - goal
 
-        reward_near = - bk.abs(vec_1).sum(-1)
-        reward_dist = - bk.abs(vec_2).sum(-1)
+        reward_dist_to_obj = - bk.abs(dist_to_obj).sum(-1)
+        reward_dist_to_goal = - bk.abs(dist_to_goal)[..., :-1].sum(-1)
+        reward_state = 1.25 * reward_dist_to_goal + 0.5 * reward_dist_to_obj
 
-        reward_state = 1.25 * reward_dist + 0.5 * reward_near
+        self.reward_dist_to_obj = 0.5 * reward_dist_to_obj
+        self.reward_dist_to_goal = 1.25 * reward_dist_to_goal
 
         return self.get_reward(reward_state, self.action_reward(action))
 

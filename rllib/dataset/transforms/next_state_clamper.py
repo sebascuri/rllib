@@ -18,10 +18,10 @@ class NextStateClamper(AbstractTransform):
     higher: torch.tensor
     """
 
-    def __init__(self, lower, higher):
+    def __init__(self, low, high):
         super().__init__()
-        self.lower = lower
-        self.higher = higher
+        self.low = low
+        self.high = high
 
     def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
@@ -30,16 +30,23 @@ class NextStateClamper(AbstractTransform):
     @torch.jit.export
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
+        next_state = torch.max(torch.min(observation.next_state, self.high), self.low)
+        idx = torch.diag_embed(observation.next_state != next_state)
+        next_scale_tril = observation.next_state_scale_tril
+        try:
+            next_scale_tril[idx] = 1e-6
+        except IndexError:
+            pass
+
         return Observation(
             state=observation.state,
             action=observation.action,
             reward=observation.reward,
-            next_state=torch.max(torch.min(observation.next_state, self.higher),
-                                 -self.lower),
+            next_state=next_state,
             done=observation.done,
             next_action=observation.next_action,
             log_prob_action=observation.log_prob_action,
             entropy=observation.entropy,
             state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
+            next_state_scale_tril=next_scale_tril
         )

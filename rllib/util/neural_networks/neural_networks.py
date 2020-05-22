@@ -99,7 +99,7 @@ class HeteroGaussianNN(FeedForwardNN):
         super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
                          biased_head=biased_head, squashed_output=squashed_output)
         in_dim = self.head.in_features
-        self._scale = nn.Linear(in_dim, out_dim)
+        self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
         # self._scale_tril = nn.Linear(in_dim, out_dim * out_dim, bias=biased_head)
 
     def forward(self, x):

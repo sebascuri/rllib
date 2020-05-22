@@ -10,6 +10,9 @@ T = TypeVar('T')
 def stack_list_of_tuples(iter_: List[T]) -> T: ...
 
 
+def average_named_tuple(named_tuple_: T) -> T: ...
+
+
 def map_and_cast(fun: Callable[[T], T], iter_: List[T]) -> T: ...
 
 
