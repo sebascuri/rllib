@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import RawObservation
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import tensor_to_distribution, integrate
 
 
 def step(environment, state, action, pi, render):
@@ -22,7 +22,8 @@ def step(environment, state, action, pi, render):
     try:
         entropy = pi.entropy().squeeze()
     except NotImplementedError:
-        entropy = 1.
+        # Approximate it by MC sampling.
+        entropy = integrate(lambda x: -pi.log_prob(x), pi, num_samples=2)
 
     observation = RawObservation(state=state,
                                  action=action,
@@ -174,8 +175,7 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             action = pi.rsample()
         else:
             action = pi.sample()
-        # action = torch.max(torch.min(action, policy.action_scale),
-        # -policy.action_scale)
+        action = torch.max(torch.min(action, policy.action_scale), -policy.action_scale)
 
         # Sample a next state
         next_state_out = dynamical_model(state, action)
@@ -218,7 +218,6 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         state[done] = old_state[done]
 
         if torch.all(done):
-            print('early stop trajectory.')
             break
 
     return trajectory

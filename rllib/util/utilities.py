@@ -126,7 +126,11 @@ def separated_kl(p, q):
     Returns
     -------
     kl_mean: torch.Tensor
+        KL divergence that corresponds to a shift in the mean components while keeping
+        the scale fixed.
     kl_var: torch.Tensor
+        KL divergence that corresponds to a shift in the scale components while keeping
+        the location fixed.
     """
     kl_mean = torch.distributions.kl_divergence(
         p=MultivariateNormal(p.loc, scale_tril=q.scale_tril), q=q
