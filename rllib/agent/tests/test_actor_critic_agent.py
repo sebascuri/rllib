@@ -48,14 +48,14 @@ def test_ac_agent(environment, agent, num_rollouts):
     critic = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions, layers=LAYERS)
-    critic_optimizer = torch.optim.Adam(critic.parameters(),
-                                        lr=CRITIC_LEARNING_RATE)
+    optimizer = torch.optim.Adam([
+        {'params': critic.parameters(), 'lr': CRITIC_LEARNING_RATE},
+        {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
+    ])
 
-    actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
     criterion = torch.nn.MSELoss
 
-    agent = agent(environment.name, policy=policy, actor_optimizer=actor_optimizer,
-                  critic=critic, critic_optimizer=critic_optimizer,
+    agent = agent(environment.name, policy=policy, critic=critic, optimizer=optimizer,
                   criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
@@ -74,14 +74,14 @@ def test_gaac_agent(environment, num_rollouts):
 
     critic = NNValueFunction(environment.dim_state, num_states=environment.num_states,
                              layers=LAYERS)
-    critic_optimizer = torch.optim.Adam(critic.parameters(),
-                                        lr=CRITIC_LEARNING_RATE)
-
-    actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
+    optimizer = torch.optim.Adam([
+        {'params': critic.parameters(), 'lr': CRITIC_LEARNING_RATE},
+        {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
+    ])
     criterion = torch.nn.MSELoss
 
-    agent = GAACAgent(environment.name, policy=policy, actor_optimizer=actor_optimizer,
-                      critic=critic, critic_optimizer=critic_optimizer,
+    agent = GAACAgent(environment.name, policy=policy,
+                      critic=critic, optimizer=optimizer,
                       criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)

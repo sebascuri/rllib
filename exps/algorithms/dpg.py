@@ -1,4 +1,5 @@
 """Working example of DDPG."""
+from itertools import chain
 
 import numpy as np
 import torch.nn.functional as func
@@ -20,8 +21,7 @@ TARGET_UPDATE_FREQUENCY = 2
 TARGET_UPDATE_TAU = 0.01
 MEMORY_MAX_SIZE = 25000
 BATCH_SIZE = 64
-ACTOR_LEARNING_RATE = 1e-3
-CRITIC_LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 0
 GAMMA = 0.99
 EPS_START = 1.0
@@ -45,18 +45,14 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          tau=TARGET_UPDATE_TAU)
 memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
-# policy = torch.jit.script(policy)
-# q_function = torch.jit.script(q_function)
-
-actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE,
-                                   weight_decay=WEIGHT_DECAY)
-critic_optimizer = torch.optim.Adam(q_function.parameters(), lr=CRITIC_LEARNING_RATE,
-                                    weight_decay=WEIGHT_DECAY)
+optimizer = torch.optim.Adam(chain(policy.parameters(), q_function.parameters()),
+                             lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+critic_optimizer = None
 criterion = torch.nn.MSELoss
 
 agent = DPGAgent(
-    environment.name, q_function, policy, noise, criterion, critic_optimizer,
-    actor_optimizer, memory, batch_size=BATCH_SIZE,
+    environment.name, q_function, policy, noise, criterion, optimizer=optimizer,
+    memory=memory, batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY, exploration_episodes=1,
     gamma=GAMMA)
 

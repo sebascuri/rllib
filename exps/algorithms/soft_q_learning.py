@@ -23,7 +23,7 @@ LEARNING_RATE = 1e-2
 MOMENTUM = 0.1
 WEIGHT_DECAY = 1e-4
 GAMMA = 0.99
-TEMPERATURE = 0.1
+TEMPERATURE = 0.2
 LAYERS = [64, 64]
 SEED = 0
 
@@ -44,7 +44,8 @@ memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 agent = SoftQLearningAgent(
     environment.name, q_function, criterion, optimizer, memory, batch_size=BATCH_SIZE,
-    temperature=TEMPERATURE, target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
+    temperature=TEMPERATURE, target_update_frequency=TARGET_UPDATE_FREQUENCY,
+    gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

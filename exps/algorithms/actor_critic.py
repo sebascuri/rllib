@@ -34,14 +34,15 @@ critic = NNQFunction(environment.dim_state, environment.num_actions,
                      num_states=environment.num_states,
                      num_actions=environment.num_actions, layers=LAYERS)
 
-actor_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
-critic_optimizer = torch.optim.Adam(critic.parameters(), lr=CRITIC_LEARNING_RATE)
+optimizer = torch.optim.Adam([
+    {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
+    {'params': critic.parameters(), 'lr': CRITIC_LEARNING_RATE}
+])
 criterion = loss.MSELoss
 
 agent = A2CAgent(
-    environment.name, policy=policy, actor_optimizer=actor_optimizer, critic=critic,
-    critic_optimizer=critic_optimizer, criterion=criterion,
-    num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+    environment.name, policy=policy, optimizer=optimizer, critic=critic,
+    criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

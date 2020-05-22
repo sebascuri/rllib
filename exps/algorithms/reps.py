@@ -1,5 +1,5 @@
 """Working example of REPS."""
-from rllib.agent.reps_agent import REPSAgent
+from rllib.agent import REPSAgent
 from rllib.algorithms.reps import REPS, QREPS
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
@@ -44,7 +44,8 @@ optimizer = torch.optim.Adam(reps_loss.parameters(), lr=LR,  weight_decay=0)
 
 memory = ExperienceReplay(max_len=int(NUM_ROLLOUTS * MAX_STEPS))
 agent = REPSAgent(ENVIRONMENT, reps_loss, optimizer, memory,
-                  num_iter=NUM_ITER, num_rollouts=NUM_ROLLOUTS, batch_size=BATCH_SIZE,
+                  num_iter=NUM_ITER, num_rollouts=NUM_ROLLOUTS,
+                  batch_size=BATCH_SIZE,
                   gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS + 1)

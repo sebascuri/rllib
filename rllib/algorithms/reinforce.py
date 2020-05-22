@@ -78,9 +78,9 @@ class REINFORCE(AbstractAlgorithm):
                     next_v = self.baseline_target(next_state)
                     target_v = reward + self.gamma * next_v * (1 - done)
 
-                baseline_loss += self.criterion(self.baseline(state), target_v).mean()
+                baseline_loss += self.criterion(self.baseline(state), target_v)
 
-        return PGLoss(actor_loss, baseline_loss)
+        return PGLoss(actor_loss + baseline_loss, actor_loss, baseline_loss)
 
     def update(self):
         """Update the baseline network."""

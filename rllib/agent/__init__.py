@@ -1,21 +1,9 @@
 from .abstract_agent import AbstractAgent
-from .actor_critic_agent import ActorCriticAgent
-from .advantage_actor_critic_agent import A2CAgent
-from .ddqn_learning_agent import DDQNAgent
-from .dpg_agent import DPGAgent
-from .dqn_learning_agent import DQNAgent
-from .expected_actor_critic_agent import ExpectedActorCriticAgent
-from .expected_sarsa_agent import ExpectedSARSAAgent
-from .generalized_advantage_actor_critic_agent import GAACAgent
-from .gp_ucb_agent import GPUCBAgent
-from .mbmppo_agent import MBMPPOAgent
-from .model_based_agent import ModelBasedAgent
-from .mpc_agent import MPCAgent
-from .q_learning_agent import QLearningAgent
+from .bandit import GPUCBAgent
+from .model_based import MBSACAgent, MBMPPOAgent, MPCAgent
 from .random_agent import RandomAgent
-from .reps_agent import REPSAgent
-from .reinforce_agent import REINFORCEAgent
-from .sarsa_agent import SARSAAgent
-from .sac_agent import SACAgent
-from .soft_q_learning_agent import SoftQLearningAgent
-from .td3_agent import TD3Agent
+from .off_policy import DDQNAgent, DPGAgent, DQNAgent, MPPOAgent, QLearningAgent, \
+    REPSAgent, SACAgent, SoftQLearningAgent, TD3Agent
+from .on_policy import ActorCriticAgent, A2CAgent, ExpectedActorCriticAgent, \
+    ExpectedSARSAAgent, GAACAgent, REINFORCEAgent, SARSAAgent
+

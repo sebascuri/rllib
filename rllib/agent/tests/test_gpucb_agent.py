@@ -2,7 +2,7 @@ import gpytorch
 import pytest
 import torch
 
-from rllib.agent.gp_ucb_agent import GPUCBAgent
+from rllib.agent import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.reward.gp_reward import GPBanditReward
 from rllib.util import rollout_agent

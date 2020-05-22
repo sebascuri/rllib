@@ -51,10 +51,11 @@ for name, Policy in {
 
     optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, batch_size=BATCH_SIZE)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = DDQNAgent(
         environment.name, q_function, policy, criterion, optimizer, memory,
+        batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
     rollout_agent(environment, agent, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
     print(agent)

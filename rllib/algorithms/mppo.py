@@ -8,7 +8,7 @@ import torch.distributions
 import torch.nn as nn
 from tqdm import tqdm
 
-from .abstract_algorithm import AbstractAlgorithm
+from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import freeze_parameters
@@ -20,11 +20,9 @@ from rllib.util.neural_networks import deep_copy_module, repeat_along_dimension,
 from rllib.util.parameter_decay import Learnable, Constant, ParameterDecay
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
-MPOReturn = namedtuple('MPOReturn', ['loss', 'value_loss', 'policy_loss', 'eta_loss',
-                                     'kl_div', 'kl_mean', 'kl_var'])
 
 
-class MPPOLoss(nn.Module):
+class MPPOWorker(nn.Module):
     """Maximum a Posterior Policy Optimization Losses.
 
     This method uses critic values under samples from a policy to construct a
@@ -191,8 +189,8 @@ class MPPO(AbstractAlgorithm):
     TODO: Add Retrace for policy evaluation.
     """
 
-    def __init__(self, policy, q_function, num_action_samples,
-                 epsilon=None, epsilon_mean=None, epsilon_var=None,
+    def __init__(self, policy, q_function, num_action_samples, criterion,
+                 entropy_reg=0., epsilon=None, epsilon_mean=None, epsilon_var=None,
                  eta=None, eta_mean=None, eta_var=None, gamma=0.99):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
@@ -204,15 +202,11 @@ class MPPO(AbstractAlgorithm):
         self.q_target = deep_copy_module(q_function)
         self.num_action_samples = num_action_samples
         self.gamma = gamma
+        self.entropy_reg = entropy_reg
 
-        self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var,
-                                  eta, eta_mean, eta_var)
-        self.value_loss = nn.MSELoss(reduction='mean')
-
-    def reset(self):
-        """Reset the optimization (kl divergence) for the next epoch."""
-        # Copy over old policy for KL divergence
-        self.old_policy.load_state_dict(self.policy.state_dict())
+        self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var,
+                                    eta, eta_mean, eta_var)
+        self.value_loss = criterion(reduction='mean')
 
     def get_kl_and_pi(self, state):
         """Get kl divergence and current policy at a given state.
@@ -223,12 +217,6 @@ class MPPO(AbstractAlgorithm):
 
         When the policy is a Categorical distribution, it computes the divergence and
         assigns it to the mean component. The variance component is kept to zero.
-
-        Note to future self: MPPO uses the reversed mode-seeking KL-divergence.
-        Don't change the next direction of the KL divergence.
-
-        TRPO/PPO use the forward mean-seeking KL-divergence.
-        kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
 
         Parameters
         ----------
@@ -252,9 +240,9 @@ class MPPO(AbstractAlgorithm):
         pi_dist_old = tensor_to_distribution(self.old_policy(state))
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_dist, q=pi_dist_old)
+            kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
         else:
-            kl_mean = torch.distributions.kl_divergence(p=pi_dist, q=pi_dist_old).mean()
+            kl_mean = torch.distributions.kl_divergence(p=pi_dist_old, q=pi_dist).mean()
             kl_var = torch.zeros_like(kl_mean)
 
         return kl_mean, kl_var, pi_dist
@@ -304,30 +292,36 @@ class MPPO(AbstractAlgorithm):
                                 kl_var=kl_var)
 
         with torch.no_grad():
-            next_pi = tensor_to_distribution(self.policy(next_state))
+            next_pi = tensor_to_distribution(self.old_policy(next_state))
             next_action = next_pi.sample()
 
             next_values = self.q_target(next_state, next_action)
             value_target = reward + self.gamma * next_values * (1. - done)
 
         value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
-        combined_loss = (value_loss
-                         + losses.primal_loss.mean()
-                         + losses.dual_loss.mean()
-                         + self.entropy_reg * pi_dist.entropy()
-                         )
+        td_error = value_pred - value_target.mean(dim=0)
 
-        return MPOReturn(loss=combined_loss,
-                         value_loss=value_loss,
-                         policy_loss=losses.primal_loss,
-                         eta_loss=losses.dual_loss,
-                         kl_div=kl_mean + kl_var,
-                         kl_mean=kl_mean, kl_var=kl_var)
+        dual_loss = losses.dual_loss.mean()
+        policy_loss = losses.primal_loss.mean()
+        combined_loss = value_loss + dual_loss + policy_loss
+
+        self._info = {'kl_div': kl_mean + kl_var, 'kl_mean': kl_mean, 'kl_var': kl_var,
+                      'eta': self.mppo_loss.eta(),
+                      'eta_mean': self.mppo_loss.eta_mean(),
+                      'eta_var': self.mppo_loss.eta_var()
+                      }
+
+        return MPOLoss(loss=combined_loss, dual=dual_loss, policy_loss=policy_loss,
+                       critic_loss=value_loss, td_error=td_error)
+
+    def reset(self):
+        """Reset the optimization (kl divergence) for the next epoch."""
+        # Copy over old policy for KL divergence
+        self.old_policy.load_state_dict(self.policy.state_dict())
 
     def update(self):
         """Update target networks."""
-        update_parameters(self.q_function, self.q_function,
-                          tau=self.q_function.tau)
+        update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
 
 
 class MBMPPO(AbstractAlgorithm):
@@ -356,7 +350,7 @@ class MBMPPO(AbstractAlgorithm):
     """
 
     def __init__(self, dynamical_model, reward_model, policy, value_function,
-                 epsilon=None, epsilon_mean=None, epsilon_var=None,
+                 criterion, epsilon=None, epsilon_mean=None, epsilon_var=None,
                  eta=None, eta_mean=None, eta_var=None, gamma=0.99,
                  num_action_samples=15, entropy_reg=0., termination=None):
         old_policy = deep_copy_module(policy)
@@ -368,28 +362,16 @@ class MBMPPO(AbstractAlgorithm):
         self.reward_model = reward_model
         self.policy = policy
         self.value_function = value_function
-        self.value_function_target = deep_copy_module(value_function)
+        self.value_target = deep_copy_module(value_function)
         self.gamma = gamma
 
-        self.mppo_loss = MPPOLoss(epsilon, epsilon_mean, epsilon_var,
-                                  eta, eta_mean, eta_var)
-        self.value_loss = nn.MSELoss(reduction='mean')
-        # self.value_loss = nn.SmoothL1Loss(reduction='mean')
+        self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var,
+                                    eta, eta_mean, eta_var)
+        self.value_loss = criterion(reduction='mean')
 
         self.num_action_samples = num_action_samples
         self.entropy_reg = entropy_reg
         self.termination = termination
-
-    def reset(self):
-        """Reset the optimization (kl divergence) for the next epoch."""
-        # Copy over old policy for KL divergence
-        self.old_policy.load_state_dict(self.policy.state_dict())
-        self.update()
-
-    def update(self):
-        """Update target value function."""
-        update_parameters(self.value_function_target, self.value_function,
-                          tau=self.value_function.tau)
 
     def forward(self, states):
         """Compute the losses for one step of MPO.
@@ -431,30 +413,42 @@ class MBMPPO(AbstractAlgorithm):
                 state=states, dynamical_model=self.dynamical_model,
                 policy=self.old_policy,
                 reward_model=self.reward_model, num_steps=1, gamma=self.gamma,
-                value_function=self.value_function_target,
+                value_function=self.value_target,
                 num_samples=self.num_action_samples,
                 entropy_reg=self.entropy_reg, termination=self.termination)
         q_values = value_estimate
         action_log_probs = pi_dist.log_prob(trajectory[0].action)
 
         # Since actions come from policy, value is the expected q-value
-        value_loss = self.value_loss(value_prediction, q_values.mean(dim=0))
-
         losses = self.mppo_loss(q_values=q_values, action_log_probs=action_log_probs,
                                 kl_mean=kl_mean, kl_var=kl_var)
 
-        combined_loss = (value_loss
-                         + losses.primal_loss.mean()
-                         + losses.dual_loss.mean()
-                         - self.entropy_reg * pi_dist.entropy().mean()
-                         )
+        value_loss = self.value_loss(value_prediction, q_values.mean(dim=0))
+        td_error = value_prediction - q_values.mean(dim=0)
 
-        return MPOReturn(loss=combined_loss,
-                         value_loss=value_loss,
-                         policy_loss=losses.primal_loss,
-                         eta_loss=losses.dual_loss,
-                         kl_div=kl_mean + kl_var,
-                         kl_mean=kl_mean, kl_var=kl_var)
+        dual_loss = losses.dual_loss.mean()
+        policy_loss = losses.primal_loss.mean()
+        combined_loss = value_loss + dual_loss + policy_loss
+
+        self._info = {'kl_div': kl_mean + kl_var, 'kl_mean': kl_mean, 'kl_var': kl_var,
+                      'eta': self.mppo_loss.eta(),
+                      'eta_mean': self.mppo_loss.eta_mean(),
+                      'eta_var': self.mppo_loss.eta_var()
+                      }
+
+        return MPOLoss(loss=combined_loss, dual=dual_loss, policy_loss=policy_loss,
+                       critic_loss=value_loss, td_error=td_error)
+
+    def reset(self):
+        """Reset the optimization (kl divergence) for the next epoch."""
+        # Copy over old policy for KL divergence
+        self.old_policy.load_state_dict(self.policy.state_dict())
+        self.update()
+
+    def update(self):
+        """Update target value function."""
+        update_parameters(self.value_target, self.value_function,
+                          tau=self.value_function.tau)
 
 
 def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,

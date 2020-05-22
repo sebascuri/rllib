@@ -96,9 +96,11 @@ class DPG(AbstractAlgorithm):
         # Actor loss
         actor_loss = self.actor_loss(state)
 
-        return ACLoss(actor_loss=actor_loss.squeeze(-1),
-                      critic_loss=critic_loss.squeeze(-1),
-                      td_error=td_error.squeeze(-1))
+        return ACLoss(
+            loss=(actor_loss + critic_loss).squeeze(-1),
+            actor_loss=actor_loss.squeeze(-1),
+            critic_loss=critic_loss.squeeze(-1),
+            td_error=td_error.squeeze(-1))
 
     def update(self):
         """Update the target network."""

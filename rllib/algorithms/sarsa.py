@@ -50,8 +50,12 @@ class SARSA(AbstractAlgorithm):
         self.criterion = criterion
         self.gamma = gamma
 
-    def forward(self, state, action, reward, next_state, done, next_action):
+    def forward(self, trajectories):
         """Compute the loss and the td-error."""
+        trajectory = trajectories[0]
+        state, action = trajectory.state, trajectory.action
+        reward, done = trajectory.reward, trajectory.done
+        next_state, next_action = trajectory.next_state, trajectory.next_action
         pred_q = self.q_function(state, action)
 
         with torch.no_grad():
@@ -81,8 +85,13 @@ class GradientSARSA(SARSA):
     TODO: find
     """
 
-    def forward(self, state, action, reward, next_state, done, next_action):
+    def forward(self, trajectories):
         """Compute the loss and the td-error."""
+        trajectory = trajectories[0]
+        state, action = trajectory.state, trajectory.action
+        reward, done = trajectory.reward, trajectory.done
+        next_state, next_action = trajectory.next_state, trajectory.next_action
+
         pred_q = self.q_function(state, action)
 
         next_v = self.q_function(next_state, next_action)

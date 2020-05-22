@@ -46,8 +46,13 @@ class ESARSA(AbstractAlgorithm):
         return TDLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
                       td_error=(pred_q - target_q).detach().squeeze(-1))
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, trajectories):
         """Compute the loss and the td-error."""
+        trajectory = trajectories[0]
+        state, action = trajectory.state, trajectory.action
+        reward, done = trajectory.reward, trajectory.done
+        next_state = trajectory.next_state
+
         pred_q = self.q_function(state, action)
         with torch.no_grad():
             pi = tensor_to_distribution(self.policy(state))
@@ -74,11 +79,16 @@ class GradientESARSA(ESARSA):
     TODO: Find.
     """
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, trajectories):
         """Compute the loss and the td-error."""
+        trajectory = trajectories[0]
+        state, action = trajectory.state, trajectory.action
+        reward, done = trajectory.reward, trajectory.done
+        next_state = trajectory.next_state
+
         pred_q = self.q_function(state, action)
         pi = tensor_to_distribution(self.policy(state))
-        next_v = integrate(lambda a: self.q_function(state, a), pi)
+        next_v = integrate(lambda a: self.q_function(next_state, a), pi)
         target_q = reward + self.gamma * next_v * (1 - done)
 
         return self._build_return(pred_q, target_q)

@@ -44,23 +44,25 @@ def test_REINFORCE(environment, num_rollouts, baseline):
                       num_states=environment.num_states,
                       num_actions=environment.num_actions,
                       layers=LAYERS)
-    policy_optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 
     if baseline:
         value_function = NNValueFunction(environment.dim_state,
                                          num_states=environment.num_states,
                                          layers=LAYERS)
-        value_optimizer = torch.optim.Adam(value_function.parameters(),
-                                           lr=CRITIC_LEARNING_RATE)
+        optimizer = torch.optim.Adam([
+            {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
+            {'params': value_function.parameters(), 'lr': CRITIC_LEARNING_RATE}
+        ])
+
     else:
-        value_function, value_optimizer = None, None
+        value_function = None
+        optimizer = torch.optim.Adam(policy.parameters(), lr=ACTOR_LEARNING_RATE)
 
     criterion = torch.nn.MSELoss
 
     agent = REINFORCEAgent(environment.name, policy=policy, baseline=value_function,
-                           policy_optimizer=policy_optimizer,
-                           baseline_optimizer=value_optimizer,
-                           criterion=criterion, num_rollouts=num_rollouts, gamma=GAMMA)
+                           optimizer=optimizer, criterion=criterion,
+                           num_rollouts=num_rollouts, gamma=GAMMA)
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

@@ -6,8 +6,9 @@ import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
+from torch.nn.modules.loss import _Loss
 
-from .abstract_algorithm import AbstractAlgorithm
+from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
@@ -21,17 +22,7 @@ class MPOLosses(NamedTuple):
     dual_loss: Tensor
 
 
-class MPOReturn(NamedTuple):
-    loss: Tensor
-    value_loss: Tensor
-    primal_loss: Tensor
-    dual_loss: Tensor
-    kl_div: Tensor
-    kl_mean: Tensor
-    kl_var: Tensor
-
-
-class MPPOLoss(nn.Module):
+class MPPOWorker(nn.Module):
     eta: ParameterDecay
     eta_mean: ParameterDecay
     eta_var: ParameterDecay
@@ -60,11 +51,14 @@ class MPPO(AbstractAlgorithm):
     gamma: float
     num_action_samples: int
 
-    mppo_loss: MPPOLoss
-    value_loss: nn.modules.loss._Loss
+    mppo_loss: MPPOWorker
+    value_loss: _Loss
+    entropy_reg: float
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
                  num_action_samples: int,
+                 criterion: _Loss,
+                 entropy_reg: float = 0.,
                  epsilon: Union[ParameterDecay, float] = None,
                  epsilon_mean: Union[ParameterDecay, float] = None,
                  epsilon_var: Union[ParameterDecay, float] = None,
@@ -76,7 +70,7 @@ class MPPO(AbstractAlgorithm):
 
     def reset(self) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> MPOReturn: ...
+    def forward(self, *args: Tensor, **kwargs) -> MPOLoss: ...
 
 
 class MBMPPO(AbstractAlgorithm):
@@ -88,14 +82,15 @@ class MBMPPO(AbstractAlgorithm):
 
     gamma: float
 
-    mppo_loss: MPPOLoss
-    value_loss: nn.modules.loss._Loss
+    mppo_loss: MPPOWorker
+    value_loss: _Loss
     num_action_samples: int
     entropy_reg: float
     termination: Optional[Termination]
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,
+                 criterion: _Loss,
                  epsilon: Union[ParameterDecay, float] = None,
                  epsilon_mean: Union[ParameterDecay, float] = None,
                  epsilon_var: Union[ParameterDecay, float] = None,
@@ -109,7 +104,7 @@ class MBMPPO(AbstractAlgorithm):
 
     def reset(self) -> None: ...
 
-    def forward(self, *args: Tensor, **kwargs) -> MPOReturn: ...
+    def forward(self, *args: Tensor, **kwargs) -> MPOLoss: ...
 
 
 def train_mppo(mppo: MBMPPO, initial_distribution: Distribution, optimizer: Optimizer,
