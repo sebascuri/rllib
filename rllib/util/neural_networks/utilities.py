@@ -83,8 +83,9 @@ def update_parameters(target_module, new_module, tau=0.0):
             if target_state_dict[name] is new_state_dict[name]:
                 continue
             else:
-                target_state_dict[name].data.mul_(tau)
-                target_state_dict[name].data.add_((1 - tau) * new_state_dict[name].data)
+                target_state_dict[name].data[:] = (
+                    tau * target_state_dict[name].data
+                    + (1 - tau) * new_state_dict[name].data)
 
         # It is not necessary to load the dict again as it modifies the pointer.
         # target_module.load_state_dict(target_state_dict)
