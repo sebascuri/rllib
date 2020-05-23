@@ -1,11 +1,9 @@
 """Maximum a Posterior Policy Optimization algorithm stub."""
 
-from typing import List, Tuple, Union, Optional, NamedTuple
+from typing import Union, Optional, NamedTuple
 
 import torch.nn as nn
 from torch import Tensor
-from torch.distributions import Distribution
-from torch.optim.optimizer import Optimizer
 from torch.nn.modules.loss import _Loss
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
@@ -15,6 +13,7 @@ from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.parameter_decay import ParameterDecay
+from rllib.util.utilities import RewardTransformer
 
 
 class MPOLosses(NamedTuple):
@@ -54,6 +53,7 @@ class MPPO(AbstractAlgorithm):
     mppo_loss: MPPOWorker
     value_loss: _Loss
     entropy_reg: float
+    reward_transformer: RewardTransformer
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
                  num_action_samples: int,
@@ -65,6 +65,7 @@ class MPPO(AbstractAlgorithm):
                  eta: Union[ParameterDecay, float] = None,
                  eta_mean: Union[ParameterDecay, float] = None,
                  eta_var: Union[ParameterDecay, float] = None,
+                 reward_transformer: RewardTransformer = RewardTransformer(),
                  gamma: float = 0.99
                  ) -> None: ...
 
@@ -86,6 +87,7 @@ class MBMPPO(AbstractAlgorithm):
     value_loss: _Loss
     num_action_samples: int
     entropy_reg: float
+    reward_transformer: RewardTransformer
     termination: Optional[Termination]
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
@@ -100,15 +102,9 @@ class MBMPPO(AbstractAlgorithm):
                  gamma: float = 0.99,
                  num_action_samples: int = 15,
                  entropy_reg: float = 0.,
+                 reward_transformer: RewardTransformer = RewardTransformer(),
                  termination: Termination = None) -> None: ...
 
     def reset(self) -> None: ...
 
     def forward(self, *args: Tensor, **kwargs) -> MPOLoss: ...
-
-
-def train_mppo(mppo: MBMPPO, initial_distribution: Distribution, optimizer: Optimizer,
-               num_iter: int, num_trajectories: int, num_simulation_steps: int,
-               num_gradient_steps: int,
-               batch_size: int, num_subsample: int
-               ) -> Tuple[List, List, List, List, List]: ...

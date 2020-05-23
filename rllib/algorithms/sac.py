@@ -2,11 +2,12 @@
 
 import torch
 
-from rllib.util.utilities import tensor_to_distribution, integrate
+from rllib.util.utilities import tensor_to_distribution, RewardTransformer
 from rllib.util.neural_networks import deep_copy_module, disable_gradient, \
     update_parameters
 from rllib.util.value_estimation import mb_return
 from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
+from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
 
 
 class SoftActorCritic(AbstractAlgorithm):
@@ -15,7 +16,8 @@ class SoftActorCritic(AbstractAlgorithm):
     SAC is an off-policy policy gradient algorithm.
     """
 
-    def __init__(self, policy, q_function, criterion, temperature, gamma):
+    def __init__(self, policy, q_function, criterion, temperature, gamma,
+                 reward_transformer=RewardTransformer):
         super().__init__()
         # Actor
         self.policy = policy
@@ -26,6 +28,8 @@ class SoftActorCritic(AbstractAlgorithm):
         self.q_target = deep_copy_module(q_function)
 
         self.temperature = temperature
+
+        self.reward_transformer = reward_transformer
 
         self.criterion = criterion
         self.gamma = gamma
@@ -52,9 +56,9 @@ class SoftActorCritic(AbstractAlgorithm):
         if type(pred_q) is not list:
             pred_q = [pred_q]
 
-        critic_loss = torch.zeros_like(q_target)
-        td_error = torch.zeros_like(q_target)
-        for q in pred_q:
+        critic_loss = self.criterion(pred_q[0], q_target)
+        td_error = (pred_q[0] - q_target).detach()
+        for q in pred_q[1:]:
             critic_loss += self.criterion(q, q_target)
             td_error += (q - q_target).detach()
 
@@ -71,8 +75,8 @@ class SoftActorCritic(AbstractAlgorithm):
             if type(next_q) is list:
                 next_q = torch.min(*next_q)
 
-            next_v = next_q - self.temperature * pi.log_prob(next_action)
-            target_q = reward + self.gamma * next_v * (1 - done)
+            next_v = (next_q - self.temperature * pi.log_prob(next_action)) * (1 - done)
+            target_q = self.reward_transformer(reward) + self.gamma * next_v
         return target_q
 
     def forward(self, state, action, reward, next_state, done):
@@ -98,16 +102,21 @@ class MBSoftActorCritic(SoftActorCritic):
     """Model Based Soft-Actor Critic."""
 
     def __init__(self, policy, q_function, dynamical_model, reward_model, criterion,
-                 temperature, gamma, termination=None, num_steps=1, num_samples=15
-                 ):
+                 temperature, gamma, reward_transformer=RewardTransformer(),
+                 termination=None, num_steps=1, num_samples=15):
         super().__init__(policy=policy, q_function=q_function, criterion=criterion,
-                         temperature=temperature, gamma=gamma)
+                         temperature=temperature, gamma=gamma,
+                         reward_transformer=reward_transformer)
 
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
         self.termination = termination
         self.num_steps = num_steps
         self.num_samples = num_samples
+        self.value_function = IntegrateQValueFunction(
+            self.q_target, self.policy_target, self.num_samples,
+            dist_params={'tanh': True, 'action_scale': self.policy.action_scale}
+        )
 
     def forward(self, state):
         """Compute the losses."""
@@ -118,20 +127,14 @@ class MBSoftActorCritic(SoftActorCritic):
                 reward_model=self.reward_model,
                 num_steps=self.num_steps,
                 gamma=self.gamma,
-                value_function=None,
+                reward_transformer=self.reward_transformer,
+                value_function=self.value_function,
                 num_samples=self.num_samples,
                 termination=self.termination
             )
-            next_state = trajectory[-1].next_state
-            next_pi = tensor_to_distribution(self.policy_target(next_state), tanh=True,
-                                             action_scale=self.policy.action_scale)
-            is_terminal = trajectory[-1].done
-            final_v = integrate(
-                lambda a: self.q_target(next_state, a) * (1. - is_terminal), next_pi,
-                num_samples=self.num_samples)
-            q_target = mc_return + self.gamma ** self.num_steps * final_v
 
-        critic_loss, td_error = self.critic_loss(state, trajectory[0].action, q_target)
+        critic_loss, td_error = self.critic_loss(
+            trajectory[0].state, trajectory[0].action, mc_return)
 
         # Actor loss
         actor_loss = self.actor_loss(state)

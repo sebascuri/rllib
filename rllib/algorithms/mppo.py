@@ -2,18 +2,14 @@
 
 from collections import namedtuple
 
-import numpy as np
 import torch
 import torch.distributions
 import torch.nn as nn
-from tqdm import tqdm
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import freeze_parameters
-from rllib.util.rollout import rollout_model
-from rllib.util.utilities import separated_kl, tensor_to_distribution
+from rllib.util.utilities import separated_kl, tensor_to_distribution, RewardTransformer
 from rllib.util.value_estimation import mb_return
 from rllib.util.neural_networks import deep_copy_module, repeat_along_dimension, \
     update_parameters
@@ -191,7 +187,8 @@ class MPPO(AbstractAlgorithm):
 
     def __init__(self, policy, q_function, num_action_samples, criterion,
                  entropy_reg=0., epsilon=None, epsilon_mean=None, epsilon_var=None,
-                 eta=None, eta_mean=None, eta_var=None, gamma=0.99):
+                 eta=None, eta_mean=None, eta_var=None, gamma=0.99,
+                 reward_transformer=RewardTransformer):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
@@ -203,6 +200,7 @@ class MPPO(AbstractAlgorithm):
         self.num_action_samples = num_action_samples
         self.gamma = gamma
         self.entropy_reg = entropy_reg
+        self.reward_transformer = reward_transformer
 
         self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var,
                                     eta, eta_mean, eta_var)
@@ -295,8 +293,8 @@ class MPPO(AbstractAlgorithm):
             next_pi = tensor_to_distribution(self.old_policy(next_state))
             next_action = next_pi.sample()
 
-            next_values = self.q_target(next_state, next_action)
-            value_target = reward + self.gamma * next_values * (1. - done)
+            next_values = self.q_target(next_state, next_action) * (1. - done)
+            value_target = self.reward_transformer(reward) + self.gamma * next_values
 
         value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
         td_error = value_pred - value_target.mean(dim=0)
@@ -352,7 +350,8 @@ class MBMPPO(AbstractAlgorithm):
     def __init__(self, dynamical_model, reward_model, policy, value_function,
                  criterion, epsilon=None, epsilon_mean=None, epsilon_var=None,
                  eta=None, eta_mean=None, eta_var=None, gamma=0.99,
-                 num_action_samples=15, entropy_reg=0., termination=None):
+                 num_action_samples=15, entropy_reg=0.,
+                 reward_transformer=RewardTransformer(), termination=None):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
@@ -371,6 +370,7 @@ class MBMPPO(AbstractAlgorithm):
 
         self.num_action_samples = num_action_samples
         self.entropy_reg = entropy_reg
+        self.reward_transformer = reward_transformer
         self.termination = termination
 
     def forward(self, states):
@@ -404,10 +404,12 @@ class MBMPPO(AbstractAlgorithm):
         """
         value_prediction = self.value_function(states)
 
-        pi_dist = tensor_to_distribution(self.policy(states))
-        pi_dist_old = tensor_to_distribution(self.old_policy(states))
-
+        pi_dist = tensor_to_distribution(self.policy(states), normalized=True,
+                                         action_scale=self.policy.action_scale)
+        pi_dist_old = tensor_to_distribution(self.old_policy(states), normalized=True,
+                                             action_scale=self.policy.action_scale)
         kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
+
         with torch.no_grad():
             value_estimate, trajectory = mb_return(
                 state=states, dynamical_model=self.dynamical_model,
@@ -415,9 +417,11 @@ class MBMPPO(AbstractAlgorithm):
                 reward_model=self.reward_model, num_steps=1, gamma=self.gamma,
                 value_function=self.value_target,
                 num_samples=self.num_action_samples,
+                reward_transformer=self.reward_transformer,
                 entropy_reg=self.entropy_reg, termination=self.termination)
         q_values = value_estimate
-        action_log_probs = pi_dist.log_prob(trajectory[0].action)
+        action_log_probs = pi_dist.log_prob(
+            trajectory[0].action / self.policy.action_scale)
 
         # Since actions come from policy, value is the expected q-value
         losses = self.mppo_loss(q_values=q_values, action_log_probs=action_log_probs,
@@ -449,75 +453,3 @@ class MBMPPO(AbstractAlgorithm):
         """Update target value function."""
         update_parameters(self.value_target, self.value_function,
                           tau=self.value_function.tau)
-
-
-def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
-               num_iter, num_trajectories, num_simulation_steps, num_gradient_steps,
-               batch_size, num_subsample):
-    """Train MPPO policy."""
-    value_losses = []
-    policy_losses = []
-    returns = []
-    kl_div = []
-    entropy = []
-    for i in tqdm(range(num_iter)):
-        # Compute the state distribution
-        state_batches = _simulate_model(
-            mppo, initial_distribution, num_trajectories, num_simulation_steps,
-            batch_size, num_subsample, returns, entropy)
-
-        policy_episode_loss, value_episode_loss, episode_kl_div = _optimize_policy(
-            mppo, state_batches, optimizer, num_gradient_steps
-        )
-
-        value_losses.append(value_episode_loss / len(state_batches))
-        policy_losses.append(policy_episode_loss / len(state_batches))
-        kl_div.append(episode_kl_div)
-
-    return value_losses, policy_losses, kl_div, returns, entropy
-
-
-def _simulate_model(mppo, initial_distribution, num_trajectories, num_simulation_steps,
-                    batch_size, num_subsample, returns, entropy):
-    with torch.no_grad():
-        initial_states = initial_distribution.sample((num_trajectories,))
-
-        trajectory = rollout_model(mppo.dynamical_model,
-                                   reward_model=mppo.reward_model,
-                                   policy=mppo.policy,
-                                   initial_state=initial_states,
-                                   max_steps=num_simulation_steps)
-        trajectory = stack_list_of_tuples(trajectory)
-        returns.append(trajectory.reward.sum(dim=0).mean().item())
-        entropy.append(trajectory.entropy.mean())
-        # Shuffle to get a state distribution
-        states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
-        np.random.shuffle(states.numpy())
-        state_batches = torch.split(states, batch_size)[::num_subsample]
-
-    return state_batches
-
-
-def _optimize_policy(mppo, state_batches, optimizer, num_gradient_steps):
-    policy_episode_loss = 0.
-    value_episode_loss = 0.
-    episode_kl_div = 0.
-
-    # Copy over old policy for KL divergence
-    mppo.reset()
-
-    # Iterate over state batches in the state distribution
-    for _ in range(num_gradient_steps):
-        idx = np.random.choice(len(state_batches))
-        states = state_batches[idx]
-        optimizer.zero_grad()
-        losses = mppo(states)
-        losses.loss.backward()
-        optimizer.step()
-
-        # Track statistics
-        value_episode_loss += losses.value_loss.item()
-        policy_episode_loss += losses.policy_loss.item()
-        episode_kl_div += losses.kl_div.item()
-
-    return policy_episode_loss, value_episode_loss, episode_kl_div

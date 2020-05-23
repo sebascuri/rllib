@@ -10,7 +10,7 @@ from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 from rllib.value_function import AbstractQFunction
-
+from rllib.util.utilities import RewardTransformer
 
 class SoftActorCritic(AbstractAlgorithm):
     q_function: AbstractQFunction
@@ -19,11 +19,12 @@ class SoftActorCritic(AbstractAlgorithm):
     policy_target: AbstractPolicy
     criterion: _Loss
     gamma: float
-
+    reward_transformer: RewardTransformer
     temperature: float
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
-                 criterion: _Loss, temperature: float, gamma: float) -> None: ...
+                 criterion: _Loss, temperature: float, gamma: float,
+                 reward_transformer: RewardTransformer = RewardTransformer()) -> None: ...
 
     def get_q_target(self, reward: Tensor, next_state: Tensor, done: Tensor
                      ) -> Tensor: ...
@@ -48,5 +49,7 @@ class MBSoftActorCritic(SoftActorCritic):
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
                  dynamical_model: AbstractModel, reward_model: AbstractReward,
                  criterion: _Loss, temperature: float, gamma: float,
-                 termination: Termination=None, num_steps: int = 1, num_samples: int = 15,
+                 reward_transformer: RewardTransformer = RewardTransformer(),
+                 termination: Termination = None, num_steps: int = 1,
+                 num_samples: int = 15,
                  ) -> None: ...
