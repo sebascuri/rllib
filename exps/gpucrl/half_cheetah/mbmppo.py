@@ -7,7 +7,7 @@ from exps.gpucrl.plotters import plot_last_rewards
 from exps.gpucrl.util import train_and_evaluate
 
 PLAN_HORIZON = 4
-MPPO_ETA, MPPO_ETA_MEAN, MPPO_ETA_VAR = 0.5, .7, 5.0
+MPPO_ETA, MPPO_ETA_MEAN, MPPO_ETA_VAR = 1., 1., 5.0
 MPPO_NUM_ITER = 100
 SIM_TRAJECTORIES = 4
 SIM_EXP_TRAJECTORIES = 32
@@ -26,9 +26,13 @@ parser.set_defaults(action_cost=ACTION_COST,
                     sim_num_steps=SIM_NUM_STEPS,
                     sim_initial_states_num_trajectories=SIM_TRAJECTORIES,
                     sim_initial_dist_num_trajectories=SIM_EXP_TRAJECTORIES,
-                    model_kind='DeterministicEnsemble',
-                    model_learn_num_iter=50,
-                    model_opt_lr=1e-3)
+                    model_kind='ProbabilisticEnsemble',
+                    model_learn_num_iter=25,
+                    max_memory=ENVIRONMENT_MAX_STEPS,
+                    model_layers=[100, 100, 100, 100],
+                    model_non_linearity='swish',
+                    model_opt_lr=1e-4,
+                    mppo_opt_lr=1e-5)
 
 
 args = parser.parse_args()

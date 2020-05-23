@@ -1,24 +1,26 @@
 """Utilities for GP-UCRL experiments."""
 import os
 import json
+from itertools import chain
 
 import torch
+import torch.nn as nn
 import torch.jit
 import torch.optim as optim
 import gpytorch
 import numpy as np
 import pandas as pd
 
-from rllib.agent import MPCAgent, MBMPPOAgent
+from rllib.agent import MPCAgent, MBMPPOAgent, MBSACAgent
 from rllib.algorithms.mpc import CEMShooting, RandomShooting, MPPIShooting
-from rllib.algorithms.mppo import MBMPPO
 from rllib.model.gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
 from rllib.model.nn_model import NNModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.model.derived_model import OptimisticModel, TransformedModel
 from rllib.policy import MPCPolicy, NNPolicy
-from rllib.value_function import NNValueFunction
+from rllib.value_function import NNValueFunction, NNQFunction
 from rllib.util.training import train_agent, evaluate_agent
+from rllib.util.neural_networks import zero_bias, init_head_weight
 
 
 def _get_model(dim_state, dim_action, params, input_transform=None,
@@ -141,11 +143,31 @@ def _get_value_function(dim_state, params, input_transform=None):
         layers=params.value_function_layers,
         biased_head=not params.value_function_unbiased_head,
         non_linearity=params.value_function_non_linearity,
-        input_transform=input_transform)
+        input_transform=input_transform,
+        tau=params.value_function_tau,
+    )
 
     params.update({"value_function": value_function.__class__.__name__})
     # value_function = torch.jit.script(value_function)
     return value_function
+
+
+def _get_q_function(dim_state, dim_action, params, input_transform=None):
+    if params.exploration == 'optimistic':
+        dim_action += dim_state
+
+    q_function = NNQFunction(
+        dim_state=dim_state, dim_action=dim_action,
+        layers=params.q_function_layers,
+        biased_head=not params.q_function_unbiased_head,
+        non_linearity=params.q_function_non_linearity,
+        input_transform=input_transform,
+        tau=params.q_function_tau,
+    )
+
+    params.update({"q_function": q_function.__class__.__name__})
+    # value_function = torch.jit.script(value_function)
+    return q_function
 
 
 def _get_nn_policy(dim_state, dim_action, params, action_scale,
@@ -161,7 +183,9 @@ def _get_nn_policy(dim_state, dim_action, params, action_scale,
         squashed_output=True,
         input_transform=input_transform,
         action_scale=action_scale,
-        deterministic=params.policy_deterministic)
+        deterministic=params.policy_deterministic,
+        tau=params.policy_tau,
+    )
     params.update({"policy": policy.__class__.__name__})
     # policy = torch.jit.script(policy)
     return policy
@@ -181,41 +205,128 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
                                  weight_decay=params.model_opt_weight_decay)
 
     # Define Value function.
-    value_function = _get_value_function(dynamical_model.dim_state, params,
-                                         input_transform)
+    value_function = _get_value_function(dim_state, params, input_transform)
 
     # Define Policy
     policy = _get_nn_policy(dim_state, dim_action, params, action_scale=action_scale,
                             input_transform=input_transform)
 
-    # Define Agent
-    mppo = MBMPPO(dynamical_model, reward_model, policy, value_function,
-                  eta=params.mppo_eta, eta_mean=params.mppo_eta_mean,
-                  eta_var=params.mppo_eta_var, gamma=params.gamma,
-                  num_action_samples=params.mppo_num_action_samples,
-                  termination=termination)
+    assert (policy.nn.hidden_layers[0].in_features == value_function.nn.hidden_layers[
+        0].in_features)
 
-    mppo_optimizer = optim.Adam([p for name, p in mppo.named_parameters()
-                                 if 'model' not in name],
-                                lr=params.mppo_opt_lr,
-                                weight_decay=params.mppo_opt_weight_decay)
+    zero_bias(policy)
+    init_head_weight(policy)
+    zero_bias(value_function)
+    init_head_weight(value_function)
+    zero_bias(dynamical_model)
+    init_head_weight(dynamical_model)
+
+    # Define Agent
+    optimizer = optim.Adam(chain(policy.parameters(), value_function.parameters()),
+                           lr=params.mppo_opt_lr,
+                           weight_decay=params.mppo_opt_weight_decay)
 
     model_name = dynamical_model.base_model.name
     comment = f"{model_name} {params.exploration.capitalize()} {params.action_cost}"
 
     agent = MBMPPOAgent(
         env_name,
-        mppo=mppo,
+        policy=policy,
+        value_function=value_function,
+        reward_model=reward_model, dynamical_model=dynamical_model,
         model_optimizer=model_optimizer,
         model_learn_num_iter=params.model_learn_num_iter,
         model_learn_batch_size=params.model_learn_batch_size,
-        mppo_optimizer=mppo_optimizer,
+        optimizer=optimizer,
+        termination=termination,
         plan_horizon=params.plan_horizon,
         plan_samples=params.plan_samples,
-        plan_elite=params.plan_elite,
+        plan_elites=params.plan_elites,
+        mppo_value_learning_criterion=nn.MSELoss,
+        mppo_epsilon=params.mppo_epsilon,
+        mppo_epsilon_mean=params.mppo_epsilon_mean,
+        mppo_epsilon_var=params.mppo_epsilon_var,
+        mppo_eta=params.mppo_eta,
+        mppo_eta_mean=params.mppo_eta_mean,
+        mppo_eta_var=params.mppo_eta_var,
+        mppo_num_action_samples=params.mppo_num_action_samples,
         mppo_num_iter=params.mppo_num_iter,
         mppo_gradient_steps=params.mppo_gradient_steps,
         mppo_batch_size=params.mppo_batch_size,
+        mppo_target_update_frequency=params.mppo_target_update_frequency,
+        sim_num_steps=params.sim_num_steps,
+        sim_initial_states_num_trajectories=params.sim_initial_states_num_trajectories,
+        sim_initial_dist_num_trajectories=params.sim_initial_dist_num_trajectories,
+        sim_memory_num_trajectories=params.sim_memory_num_trajectories,
+        sim_num_subsample=params.sim_num_subsample,
+        thompson_sampling=params.exploration == 'thompson',
+        initial_distribution=initial_distribution,
+        max_memory=params.max_memory,
+        gamma=params.gamma,
+        comment=comment
+    )
+
+    return agent
+
+
+def get_mb_sac_agent(env_name, dim_state, dim_action, params, reward_model,
+                     transformations, action_scale, input_transform=None,
+                     termination=None, initial_distribution=None
+                     ):
+    """Get SAC Agent."""
+    # Define Base Model
+    dynamical_model = _get_model(dim_state, dim_action, params, input_transform,
+                                 transformations)
+
+    # Define Optimistic or Expected Model
+    model_optimizer = optim.Adam(dynamical_model.parameters(),
+                                 lr=params.model_opt_lr,
+                                 weight_decay=params.model_opt_weight_decay)
+
+    # Define Value function.
+    q_function = _get_q_function(dim_state, dim_action, params, input_transform)
+
+    # Define Policy
+    policy = _get_nn_policy(dim_state, dim_action, params, action_scale=action_scale,
+                            input_transform=input_transform)
+
+    # Define Agent
+    optimizer = optim.Adam(chain(q_function.parameters(), policy.parameters()),
+                           lr=params.sac_opt_lr,
+                           weight_decay=params.sac_opt_weight_decay)
+
+    assert (policy.nn.hidden_layers[0].in_features + policy.nn.head.out_features ==
+            q_function.nn.hidden_layers[0].in_features)
+
+    model_name = dynamical_model.base_model.name
+    comment = f"{model_name} {params.exploration.capitalize()} {params.action_cost}"
+
+    zero_bias(policy)
+    init_head_weight(policy)
+    zero_bias(q_function)
+    init_head_weight(q_function)
+    zero_bias(dynamical_model)
+    init_head_weight(dynamical_model)
+
+    agent = MBSACAgent(
+        env_name,
+        dynamical_model=dynamical_model,
+        reward_model=reward_model,
+        policy=policy,
+        q_function=q_function,
+        sac_value_learning_criterion=nn.MSELoss,
+        optimizer=optimizer,
+        model_optimizer=model_optimizer,
+        model_learn_num_iter=params.model_learn_num_iter,
+        model_learn_batch_size=params.model_learn_batch_size,
+        plan_horizon=params.plan_horizon,
+        plan_samples=params.plan_samples,
+        plan_elites=params.plan_elites,
+        sac_alpha=params.sac_alpha,
+        sac_num_iter=params.sac_num_iter,
+        sac_gradient_steps=params.sac_gradient_steps,
+        sac_batch_size=params.sac_batch_size,
+        sac_target_update_frequency=params.sac_target_update_frequency,
         sim_num_steps=params.sim_num_steps,
         sim_initial_states_num_trajectories=params.sim_initial_states_num_trajectories,
         sim_initial_dist_num_trajectories=params.sim_initial_dist_num_trajectories,
@@ -245,8 +356,7 @@ def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
                                  weight_decay=params.model_opt_weight_decay)
 
     # Define Value function.
-    value_function = _get_value_function(dynamical_model.dim_state, params,
-                                         input_transform)
+    value_function = _get_value_function(dim_state, params, input_transform)
 
     value_optimizer = optim.Adam(value_function.parameters(),
                                  lr=params.value_opt_lr,

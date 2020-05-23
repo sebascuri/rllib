@@ -6,7 +6,8 @@ import torch.distributions
 import torch.nn as nn
 
 from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
-from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
+from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState, \
+    NextStateClamper
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import PusherReward
 
@@ -18,8 +19,9 @@ class QuaternionTransform(nn.Module):
     def forward(self, states):
         """Transform state before applying function approximation."""
         angles = states[..., :7]
-        vel, ee, obj = states[..., 7:14], states[..., 14:17], states[..., 17:20]
-        return torch.cat((torch.cos(angles), torch.sin(angles), vel, ee, obj), dim=-1)
+        vel, obj = states[..., 7:14], states[..., 14:17]
+        return torch.cat((torch.cos(angles), torch.sin(angles), vel, obj), dim=-1)
+        # return states
 
     def inverse(self, states):
         """Inverse transformation of states."""
@@ -35,8 +37,8 @@ def large_state_termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (torch.any(torch.abs(state) > 2000, dim=-1) | torch.any(
-        torch.abs(action) > 25 * 2, dim=-1))
+    return (state[..., -3:].abs() > 25).any(-1) | (
+            state[..., 7:14].abs() > 2000).any(-1)
 
 
 def get_agent_and_environment(params, agent_name):
@@ -51,26 +53,36 @@ def get_agent_and_environment(params, agent_name):
     reward_model = PusherReward(action_cost=params.action_cost)
 
     # %% Define Helper modules
-    transformations = [ActionScaler(scale=action_scale),
-                       MeanFunction(DeltaState()),  # AngleWrapper(indexes=[1])
-                       ]
+    low = torch.tensor([
+        [-2.2854, -0.5236, -1.5, -2.3213, -1.5, -1.094, -1.5,  # qpos
+         -10., -10., -10., -10., -10., -10., -10.,  # qvel
+         0.3, -0.7, -0.275]
+    ])
+    high = torch.tensor([
+        [2.0, 1.3963, 1.7, 0, 1.5, 0, 1.5,  # qpos
+         10., 10., 10., 10., 10., 10., 10.,  # qvel
+         0.8, 0.1, -0.275]
+    ])
+
+    transformations = [
+        NextStateClamper(low, high),
+        ActionScaler(scale=action_scale),
+        MeanFunction(DeltaState()),
+    ]
 
     input_transform = QuaternionTransform()
     # input_transform = None
+    # 0, 0.5, -1.5, -1.2, 0.7,
     exploratory_distribution = torch.distributions.Uniform(
         torch.tensor(
-            [0., 0., 0., 0., 0., 0., 0.,  # qpos
+            [-.3, 0.3, -1.5, -1.5, 0.5, -1.094, -1.5,  # qpos
              -0.005, -0.005, -0.005, -0.005, -0.005, -0.005, -0.005,  # qvel
-             0.821, -0.6, 0.,  # tips_arm
-             0.5, -0.30655662,  # object
-             -0.275]  # table
+             0.5, -0.4, -0.323]  # object
         ),
         torch.tensor(
-            [0., 0., 0., 0., 0., 0., 0.,  # qpos
+            [0.3, 0.6, -1., -1., 0.9, 0., 1.5,  # qpos
              0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005,  # qvel
-             0.821, -0.4, 0.,  # tips_arm
-             0.7, -0.30655662,  # object
-             -0.275]  # table
+             0.7, -0.2, -0.275]  # object
         )
     )
 

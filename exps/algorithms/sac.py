@@ -25,7 +25,7 @@ GAMMA = 0.99
 LAYERS = [64, 64]
 SEED = 1
 RENDER = True
-TEMPERATURE = 1.
+ALPHA = 1.
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -51,7 +51,7 @@ criterion = torch.nn.MSELoss
 agent = SACAgent(
     environment.name, q_function=q_function, policy=policy, criterion=criterion,
     optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
-    temperature=TEMPERATURE,
+    alpha=ALPHA,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     num_iter=50,
     train_frequency=50,

@@ -7,8 +7,9 @@ import torch.distributions
 from torch.distributions import MultivariateNormal
 import torch.nn as nn
 import torch.optim as optim
+from tqdm import tqdm
 
-from rllib.algorithms.mppo import MBMPPO, train_mppo
+from rllib.algorithms.mppo import MBMPPO
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment.system_environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum, ModelSystem
@@ -20,7 +21,7 @@ from rllib.reward.utilities import tolerance
 from rllib.util.rollout import rollout_model, rollout_policy
 from rllib.util.neural_networks.utilities import freeze_parameters
 
-from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
+from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent, get_mb_sac_agent
 from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
 
 from exps.gpucrl.inverted_pendulum.plotters import plot_learning_losses, \
@@ -63,6 +64,7 @@ class PendulumReward(AbstractReward):
     def __init__(self, action_cost=0):
         super().__init__()
         self.action_cost = action_cost
+        self.reward_offset = 0
 
     def forward(self, state, action, next_state):
         """See `abstract_reward.forward'."""
@@ -157,6 +159,79 @@ def test_policy_on_environment(environment, policy, test_state,
     print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
 
     return env_rewards, trajectory
+
+
+
+def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
+               num_iter, num_trajectories, num_simulation_steps, num_gradient_steps,
+               batch_size, num_subsample):
+    """Train MPPO policy."""
+    value_losses = []
+    policy_losses = []
+    returns = []
+    kl_div = []
+    entropy = []
+    for i in tqdm(range(num_iter)):
+        # Compute the state distribution
+        state_batches = _simulate_model(
+            mppo, initial_distribution, num_trajectories, num_simulation_steps,
+            batch_size, num_subsample, returns, entropy)
+
+        policy_episode_loss, value_episode_loss, episode_kl_div = _optimize_policy(
+            mppo, state_batches, optimizer, num_gradient_steps
+        )
+
+        value_losses.append(value_episode_loss / len(state_batches))
+        policy_losses.append(policy_episode_loss / len(state_batches))
+        kl_div.append(episode_kl_div)
+
+    return value_losses, policy_losses, kl_div, returns, entropy
+
+
+def _simulate_model(mppo, initial_distribution, num_trajectories, num_simulation_steps,
+                    batch_size, num_subsample, returns, entropy):
+    with torch.no_grad():
+        initial_states = initial_distribution.sample((num_trajectories,))
+
+        trajectory = rollout_model(mppo.dynamical_model,
+                                   reward_model=mppo.reward_model,
+                                   policy=mppo.policy,
+                                   initial_state=initial_states,
+                                   max_steps=num_simulation_steps)
+        trajectory = stack_list_of_tuples(trajectory)
+        returns.append(trajectory.reward.sum(dim=0).mean().item())
+        entropy.append(trajectory.entropy.mean())
+        # Shuffle to get a state distribution
+        states = trajectory.state.reshape(-1, trajectory.state.shape[-1])
+        np.random.shuffle(states.numpy())
+        state_batches = torch.split(states, batch_size)[::num_subsample]
+
+    return state_batches
+
+
+def _optimize_policy(mppo, state_batches, optimizer, num_gradient_steps):
+    policy_episode_loss = 0.
+    value_episode_loss = 0.
+    episode_kl_div = 0.
+
+    # Copy over old policy for KL divergence
+    mppo.reset()
+
+    # Iterate over state batches in the state distribution
+    for _ in range(num_gradient_steps):
+        idx = np.random.choice(len(state_batches))
+        states = state_batches[idx]
+        optimizer.zero_grad()
+        losses = mppo(states)
+        losses.loss.backward()
+        optimizer.step()
+
+        # Track statistics
+        value_episode_loss += losses.value_loss.item()
+        policy_episode_loss += losses.policy_loss.item()
+        episode_kl_div += losses.kl_div.item()
+
+    return policy_episode_loss, value_episode_loss, episode_kl_div
 
 
 def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
@@ -288,6 +363,16 @@ def get_agent_and_environment(params, agent_name):
             transformations=transformations,
             termination=large_state_termination,
             initial_distribution=exploratory_distribution)
+
+    elif agent_name == 'mbsac':
+        agent = get_mb_sac_agent(
+            environment.name, environment.dim_state, environment.dim_action,
+            params, reward_model, input_transform=input_transform,
+            action_scale=action_scale,
+            transformations=transformations,
+            termination=large_state_termination,
+            initial_distribution=exploratory_distribution)
+
     else:
         raise NotImplementedError
 

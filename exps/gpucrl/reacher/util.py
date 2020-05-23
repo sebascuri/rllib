@@ -5,8 +5,9 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
-from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
+from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent, get_mb_sac_agent
+from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState, \
+    AngleWrapper, NextStateClamper
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import ReacherReward
 
@@ -34,8 +35,8 @@ def large_state_termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (torch.any(torch.abs(state) > 2000, dim=-1) | torch.any(
-        torch.abs(action) > 25 * 20, dim=-1))
+    return (torch.any(torch.abs(state) > 1e2, dim=-1) | torch.any(
+        torch.abs(action) > 25, dim=-1))
 
 
 def get_agent_and_environment(params, agent_name):
@@ -46,31 +47,46 @@ def get_agent_and_environment(params, agent_name):
     # %% Define Environment.
     environment = GymEnvironment('MBRLReacher3D-v0', action_cost=params.action_cost,
                                  seed=params.seed)
-    action_scale = environment.action_scale
+    action_scale = environment.action_scale / 2
     reward_model = ReacherReward(action_cost=params.action_cost)
 
     # %% Define Helper modules
+    low = torch.tensor(
+        [-2.2854, -0.5236, -3.9, -2.3213, -1e1, -2.094, -1e1,
+         -1e2, -1e2, -1e2, -1e2, -1e2, -1e2, -1e2,
+         -1e2, -1e2, -1e2,
+         ])
+
+    high = torch.tensor(
+        [1.714602, 1.3963, 0.8, 0, 1e10, 0, 1e10,
+         1e2, 1e2, 1e2, 1e2, 1e2, 1e2, 1e2,
+         1e2, 1e2, 1e2
+         ])
+
     transformations = [ActionScaler(scale=action_scale),
-                       MeanFunction(DeltaState()),  # AngleWrapper(indexes=[1])
+                       AngleWrapper(indexes=[0, 1, 2, 3, 4, 5, 6]),
+                       MeanFunction(DeltaState()),  #
+                       NextStateClamper(low, high, constant_idx=[14, 15, 16])
                        ]
 
     input_transform = QuaternionTransform()
     # input_transform = None
+    angle = np.pi / 12
     exploratory_distribution = torch.distributions.Uniform(
         torch.tensor(
-            [-np.pi, -np.pi, -np.pi, -np.pi, -np.pi, -np.pi, -np.pi,  # qpos
-             -0.35, -0.1, -0.35,  # goal
+            [-angle, -angle, -angle, -angle, -angle, -angle, -angle,  # qpos
              -0.005, -0.005, -0.005, -0.005, -0.005, -0.005, -0.005,  # qvel
+             0, 0.25, 0  # goal
              ]),
         torch.tensor(
-            [np.pi, np.pi, np.pi, np.pi, np.pi, np.pi, np.pi,  # qpos
-             0.35, 0.6, 0.35,  # goal
+            [angle, angle, angle, angle, angle, angle, angle,  # qpos
              0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005,  # qvel
+             0.3, 0.55, 0.3  # goal
              ])
     )
 
     if agent_name == 'mpc':
-        agent = get_mpc_agent(environment.name, environment.dim_state,
+        agent = get_mpc_agent(environment.name, environment.dim_state + 3,
                               environment.dim_action,
                               params, reward_model,
                               action_scale=action_scale,
@@ -80,13 +96,23 @@ def get_agent_and_environment(params, agent_name):
                               initial_distribution=exploratory_distribution)
     elif agent_name == 'mbmppo':
         agent = get_mb_mppo_agent(
-            environment.name, environment.dim_state, environment.dim_action,
-            params, reward_model,
+            environment.name, environment.dim_state + 3, environment.dim_action,
+            params=params, reward_model=reward_model,
             input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,
             initial_distribution=exploratory_distribution)
+
+    elif agent_name == 'mbsac':
+        agent = get_mb_sac_agent(
+            environment.name, environment.dim_state + 3, environment.dim_action,
+            params, reward_model, input_transform=input_transform,
+            action_scale=action_scale,
+            transformations=transformations,
+            termination=large_state_termination,
+            initial_distribution=exploratory_distribution)
+
     else:
         raise NotImplementedError
 

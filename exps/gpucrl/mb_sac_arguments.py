@@ -45,36 +45,32 @@ policy_parser.add_argument('--policy-layers', type=list, default=[64, 64])
 policy_parser.add_argument('--policy-non-linearity', type=str, default='ReLU')
 policy_parser.add_argument('--policy-unbiased-head', action='store_false')
 policy_parser.add_argument('--policy-deterministic', action='store_true')
+policy_parser.add_argument('--policy-tau', type=float, default=0)
+
 
 planning_parser = parser.add_argument_group('planning')
 planning_parser.add_argument('--plan-horizon', type=int, default=1)
 planning_parser.add_argument('--plan-samples', type=int, default=8)
-planning_parser.add_argument('--plan-elite', type=int, default=1)
+planning_parser.add_argument('--plan-elites', type=int, default=1)
 
-value_function_parser = parser.add_argument_group('value function')
-value_function_parser.add_argument('--value-function-layers', type=list,
+value_function_parser = parser.add_argument_group('q function')
+value_function_parser.add_argument('--q-function-layers', type=list,
                                    default=[64, 64])
-value_function_parser.add_argument('--value-function-non-linearity', type=str,
+value_function_parser.add_argument('--q-function-non-linearity', type=str,
                                    default='ReLU')
-value_function_parser.add_argument('--value-function-unbiased-head',
+value_function_parser.add_argument('--q-function-unbiased-head',
                                    action='store_false')
+policy_parser.add_argument('--q-function-tau', type=float, default=0)
 
-mppo_parser = parser.add_argument_group('mppo')
-mppo_parser.add_argument('--mppo-num-iter', type=int, default=50)
-mppo_parser.add_argument('--mppo-gradient-steps', type=int, default=50)
-mppo_parser.add_argument('--mppo-target-update-frequency', type=int, default=4)
-mppo_parser.add_argument('--mppo-batch_size', type=int, default=32)
-mppo_parser.add_argument('--mppo-opt-lr', type=float, default=5e-4)
-mppo_parser.add_argument('--mppo-opt-weight-decay', type=float, default=0)
-mppo_parser.add_argument('--mppo-eta', type=float, default=1.)
-mppo_parser.add_argument('--mppo-eta-mean', type=float, default=1.7)
-mppo_parser.add_argument('--mppo-eta-var', type=float, default=1.1)
-
-mppo_parser.add_argument('--mppo-epsilon', type=float, default=None)
-mppo_parser.add_argument('--mppo-epsilon-mean', type=float, default=None)
-mppo_parser.add_argument('--mppo-epsilon-var', type=float, default=None)
-
-mppo_parser.add_argument('--mppo-num-action-samples', type=int, default=16)
+mppo_parser = parser.add_argument_group('sac')
+mppo_parser.add_argument('--sac-num-iter', type=int, default=50)
+mppo_parser.add_argument('--sac-gradient-steps', type=int, default=50)
+mppo_parser.add_argument('--sac-target-update-frequency', type=int, default=4)
+mppo_parser.add_argument('--sac-batch_size', type=int, default=32)
+mppo_parser.add_argument('--sac-opt-lr', type=float, default=5e-4)
+mppo_parser.add_argument('--sac-opt-weight-decay', type=float, default=0)
+mppo_parser.add_argument('--sac-alpha', type=float, default=.2)
+mppo_parser.add_argument('--sac-num-action-samples', type=int, default=16)
 
 sim_parser = parser.add_argument_group('simulation')
 sim_parser.add_argument('--sim-num-steps', type=int, default=400)

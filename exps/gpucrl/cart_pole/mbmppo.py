@@ -8,7 +8,7 @@ from exps.gpucrl.util import train_and_evaluate
 
 PLAN_HORIZON = 4
 MPPO_ETA, MPPO_ETA_MEAN, MPPO_ETA_VAR = 0.5, .7, 5.0
-MPPO_NUM_ITER = 200
+MPPO_NUM_ITER = 50  #200
 SIM_TRAJECTORIES = 8
 SIM_EXP_TRAJECTORIES = 32
 SIM_NUM_STEPS = ENVIRONMENT_MAX_STEPS
@@ -22,6 +22,7 @@ parser.set_defaults(action_cost=ACTION_COST,
                     mppo_eta=MPPO_ETA,
                     mppo_eta_mean=MPPO_ETA_MEAN,
                     mppo_eta_var=MPPO_ETA_VAR,
+                    mppo_gradient_steps=200,
                     sim_num_steps=SIM_NUM_STEPS,
                     sim_initial_states_num_trajectories=SIM_TRAJECTORIES,
                     sim_initial_dist_num_trajectories=SIM_EXP_TRAJECTORIES,
