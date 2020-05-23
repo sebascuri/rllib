@@ -24,14 +24,14 @@ class TDLoss(NamedTuple):
 
 class ACLoss(NamedTuple):
     loss: Tensor
-    actor_loss: Tensor
+    policy_loss: Tensor
     critic_loss: Tensor
     td_error: Tensor
 
 
 class PGLoss(NamedTuple):
     loss: Tensor
-    actor_loss: Tensor
+    policy_loss: Tensor
     baseline_loss: Tensor
 
 
@@ -48,6 +48,12 @@ class MPOLoss(NamedTuple):
     critic_loss: Tensor
     td_error: Tensor
 
+class SACLoss(NamedTuple):
+    loss: Tensor
+    policy_loss: Tensor
+    critic_loss: Tensor
+    eta_loss: Tensor
+    td_error: Tensor
 
 class PPOLoss(NamedTuple):
     loss: Tensor

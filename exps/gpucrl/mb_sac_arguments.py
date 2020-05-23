@@ -69,7 +69,9 @@ mppo_parser.add_argument('--sac-target-update-frequency', type=int, default=4)
 mppo_parser.add_argument('--sac-batch_size', type=int, default=32)
 mppo_parser.add_argument('--sac-opt-lr', type=float, default=5e-4)
 mppo_parser.add_argument('--sac-opt-weight-decay', type=float, default=0)
-mppo_parser.add_argument('--sac-alpha', type=float, default=.2)
+mppo_parser.add_argument('--sac-eta', type=float, default=.2)
+mppo_parser.add_argument('--sac-epsilon', type=float, default=None)
+
 mppo_parser.add_argument('--sac-num-action-samples', type=int, default=16)
 
 sim_parser = parser.add_argument_group('simulation')

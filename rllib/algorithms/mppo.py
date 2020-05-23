@@ -57,7 +57,7 @@ class MPPOWorker(nn.Module):
             self.eta = eta
             self.epsilon = torch.tensor(0.)
         else:  # Trust-Region: || KL(q || \pi_old) || < \epsilon
-            self.eta = Learnable(1.)
+            self.eta = Learnable(1., positive=True)
             self.epsilon = torch.tensor(epsilon)
 
         if eta_mean is not None:  # Regularization: \eta_m KL_m(\pi_old || \pi)
@@ -66,7 +66,7 @@ class MPPOWorker(nn.Module):
             self.eta_mean = eta_mean
             self.epsilon_mean = torch.tensor(0.)
         else:  # Trust-Region: || KL_m(\pi_old || \pi) || < \epsilon_m
-            self.eta_mean = Learnable(1.)
+            self.eta_mean = Learnable(1., positive=True)
             self.epsilon_mean = torch.tensor(epsilon_mean)
 
         if eta_var is not None:  # Regularization: \eta_var KL_var(\pi_old || \pi)
@@ -75,10 +75,10 @@ class MPPOWorker(nn.Module):
             self.eta_var = eta_var
             self.epsilon_var = torch.tensor(0.)
         elif epsilon_var is not None:  # Trust-Region:
-            self.eta_var = Learnable(1.)
+            self.eta_var = Learnable(1., positive=True)
             self.epsilon_var = torch.tensor(epsilon_var)
         else:  # KL-DIV not separated into mean and var components.
-            self.eta_var = Learnable(1.)
+            self.eta_var = Learnable(1., positive=True)
             self.epsilon_var = torch.tensor(0.)
 
     def project_etas(self):
@@ -114,7 +114,7 @@ class MPPOWorker(nn.Module):
             A float corresponding to the KL divergence.
         """
         # Make sure the lagrange multipliers stay positive.
-        self.project_etas()
+        # self.project_etas()
 
         # E-step: Solve Problem (7).
         # Create a weighed, sample-based representation of the optimal policy q Eq(8).

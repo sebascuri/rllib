@@ -11,7 +11,8 @@ PLAN_HORIZON, SIM_TRAJECTORIES = 1, 8
 
 parser.description = 'Run Swing-up Inverted Pendulum using Model-Based SAC.'
 parser.set_defaults(
-    sac_alpha=0.2,
+    sac_eta=None,
+    sac_epsilon=0.2,
     sac_batch_size=100,
     action_cost=ACTION_COST,
     train_episodes=TRAIN_EPISODES,

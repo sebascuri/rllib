@@ -6,28 +6,39 @@ from rllib.util.utilities import tensor_to_distribution, RewardTransformer
 from rllib.util.neural_networks import deep_copy_module, disable_gradient, \
     update_parameters
 from rllib.util.value_estimation import mb_return
-from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
+from .abstract_algorithm import AbstractAlgorithm, SACLoss, TDLoss
 from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
+from rllib.util.parameter_decay import ParameterDecay, Learnable, Constant
 
 
 class SoftActorCritic(AbstractAlgorithm):
     r"""Implementation of Soft Actor-Critic algorithm.
 
     SAC is an off-policy policy gradient algorithm.
+
+    epsilon: Learned temperature as a constraint.
+    eta: Fixed regularization.
     """
 
-    def __init__(self, policy, q_function, criterion, alpha, gamma,
-                 reward_transformer=RewardTransformer):
+    def __init__(self, policy, q_function, criterion, gamma, epsilon=None, eta=None,
+                 reward_transformer=RewardTransformer()):
         super().__init__()
         # Actor
         self.policy = policy
         self.policy_target = deep_copy_module(policy)
+        self.target_entropy = -policy.dim_action
 
         # Critic
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
 
-        self.alpha = alpha
+        assert (epsilon is not None) ^ (eta is not None), "XOR(eps, eta)."
+        if eta is not None:  # Regularization: \eta KL(\pi || Uniform)
+            if not isinstance(eta, ParameterDecay):
+                eta = Constant(eta)
+            self.eta = eta
+        else:  # Trust-Region: || KL(\pi || Uniform)|| < \epsilon
+            self.eta = Learnable(epsilon, positive=True)
 
         self.reward_transformer = reward_transformer
 
@@ -48,7 +59,9 @@ class SoftActorCritic(AbstractAlgorithm):
             if type(q_val) is list:
                 q_val = torch.min(*q_val)
 
-        return (self.alpha * pi.log_prob(action) - q_val).mean()
+        log_prob = pi.log_prob(action).sum(-1, keepdim=True)  # Add the actions.
+        eta_loss = (self.eta() * (-log_prob - self.target_entropy).detach()).mean()
+        return (self.eta().detach() * log_prob - q_val).mean(), eta_loss
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
@@ -68,15 +81,17 @@ class SoftActorCritic(AbstractAlgorithm):
         """Get the target of the q function."""
         # Target Q-values
         with torch.no_grad():
-            pi = tensor_to_distribution(self.policy(next_state), tanh=True,
+            pi = tensor_to_distribution(self.policy_target(next_state), tanh=True,
                                         action_scale=self.policy.action_scale)
             next_action = pi.sample()
             next_q = self.q_target(next_state, next_action)
             if type(next_q) is list:
                 next_q = torch.min(*next_q)
 
-            next_v = (next_q - self.alpha * pi.log_prob(next_action)) * (1 - done)
-            target_q = self.reward_transformer(reward) + self.gamma * next_v
+            log_prob = pi.log_prob(next_action).sum(-1, keepdim=True)
+            next_v = (next_q - self.eta().detach() * log_prob)
+            not_done = 1. - done
+            target_q = self.reward_transformer(reward) + self.gamma * next_v * not_done
         return target_q
 
     def forward(self, state, action, reward, next_state, done):
@@ -87,13 +102,12 @@ class SoftActorCritic(AbstractAlgorithm):
         critic_loss, td_error = self.critic_loss(state, action, q_target)
 
         # Actor loss
-        actor_loss = self.actor_loss(state)
+        policy_loss, eta_loss = self.actor_loss(state)
+        self._info = {'eta': self.eta().detach().item()}
 
-        self._info = {'alpha': self.alpha}
-
-        return ACLoss(loss=critic_loss + actor_loss,
-                      actor_loss=actor_loss,
-                      critic_loss=critic_loss, td_error=td_error)
+        return SACLoss(loss=policy_loss + critic_loss + critic_loss + eta_loss,
+                       policy_loss=policy_loss, critic_loss=critic_loss,
+                       eta_loss=eta_loss, td_error=td_error)
 
     def update(self):
         """Update the baseline network."""
@@ -105,10 +119,10 @@ class MBSoftActorCritic(SoftActorCritic):
     """Model Based Soft-Actor Critic."""
 
     def __init__(self, policy, q_function, dynamical_model, reward_model, criterion,
-                 alpha, gamma, reward_transformer=RewardTransformer(),
+                 gamma, epsilon=None, eta=None, reward_transformer=RewardTransformer(),
                  termination=None, num_steps=1, num_samples=15):
         super().__init__(policy=policy, q_function=q_function, criterion=criterion,
-                         alpha=alpha, gamma=gamma,
+                         epsilon=epsilon, eta=eta, gamma=gamma,
                          reward_transformer=reward_transformer)
 
         self.dynamical_model = dynamical_model
@@ -140,5 +154,9 @@ class MBSoftActorCritic(SoftActorCritic):
             trajectory[0].state, trajectory[0].action, mc_return)
 
         # Actor loss
-        actor_loss = self.actor_loss(state)
-        return ACLoss(actor_loss + critic_loss, actor_loss, critic_loss, td_error)
+        policy_loss, eta_loss = self.actor_loss(state)
+        self._info = {'eta': self.eta().detach().item()}
+
+        return SACLoss(loss=policy_loss + critic_loss + critic_loss + eta_loss,
+                       policy_loss=policy_loss, critic_loss=critic_loss,
+                       eta_loss=eta_loss, td_error=td_error)

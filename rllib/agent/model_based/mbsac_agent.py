@@ -19,7 +19,8 @@ class MBSACAgent(ModelBasedAgent):
                  max_memory=10000,
                  model_learn_batch_size=64,
                  model_learn_num_iter=30,
-                 sac_alpha=0.2,
+                 sac_eta=0.2,
+                 sac_epsilon=None,
                  sac_num_iter=100,
                  sac_gradient_steps=50,
                  sac_batch_size=None,
@@ -45,7 +46,7 @@ class MBSACAgent(ModelBasedAgent):
         self.algorithm = MBSoftActorCritic(
             policy, q_function, dynamical_model, reward_model,
             criterion=sac_value_learning_criterion(reduction='mean'),
-            alpha=sac_alpha, gamma=gamma, termination=termination,
+            eta=sac_eta, epsilon=sac_epsilon, gamma=gamma, termination=termination,
             num_steps=sac_target_num_steps, num_samples=sac_action_samples)
         optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
                                      if 'model' not in name], **optimizer.defaults)

@@ -1,6 +1,4 @@
 """Implementation of DQNAgent Algorithms."""
-from itertools import chain
-
 import torch
 
 from .off_policy_agent import OffPolicyAgent
@@ -20,8 +18,6 @@ class SACAgent(OffPolicyAgent):
         Criterion to minimize the TD-error.
     memory: ExperienceReplay
         Memory where to store the observations.
-    alpha: ParameterDecay.
-        Temperature of Soft Q function.
     target_update_frequency: int
         How often to update the q_function target.
     gamma: float, optional
@@ -40,7 +36,7 @@ class SACAgent(OffPolicyAgent):
     """
 
     def __init__(self, env_name, q_function, policy,
-                 criterion, optimizer, memory, alpha,
+                 criterion, optimizer, memory, eta=None, epsilon=None,
                  num_iter=1, batch_size=64,
                  target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1., train_frequency=1, num_rollouts=0,
@@ -48,8 +44,12 @@ class SACAgent(OffPolicyAgent):
 
         q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
                                                          num_heads=2)
-        optimizer = type(optimizer)(chain(q_function.parameters(), policy.parameters()),
-                                    **optimizer.defaults)
+        self.algorithm = SoftActorCritic(
+            policy=policy, q_function=q_function, criterion=criterion(reduction='none'),
+            gamma=gamma, eta=eta, epsilon=epsilon
+        )
+
+        optimizer = type(optimizer)(self.algorithm.parameters(), **optimizer.defaults)
         super().__init__(env_name,
                          optimizer=optimizer,
                          memory=memory, batch_size=batch_size, num_iter=num_iter,
@@ -57,9 +57,6 @@ class SACAgent(OffPolicyAgent):
                          train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
-
-        self.algorithm = SoftActorCritic(policy, q_function,
-                                         criterion(reduction='none'), alpha, gamma)
         self.policy = self.algorithm.policy
 
     def act(self, state):

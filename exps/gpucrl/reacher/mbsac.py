@@ -28,7 +28,8 @@ parser.set_defaults(
     plan_elites=PLAN_ELITES,
 
     sac_num_iter=ALGORITHM_NUM_ITER,
-    sac_alpha=0.2,
+    sac_eta=0.2,
+    sac_epsilon=None,
     sac_batch_size=100,
     sac_opt_lr=5e-4,
     sac_gradient_steps=50,

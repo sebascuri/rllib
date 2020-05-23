@@ -19,13 +19,13 @@ TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.01
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
-LEARNING_RATE = 5e-4
+LEARNING_RATE = 3e-4
 WEIGHT_DECAY = 1e-5
 GAMMA = 0.99
 LAYERS = [64, 64]
 SEED = 1
 RENDER = True
-ALPHA = 1.
+ETA = 1.
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -51,7 +51,8 @@ criterion = torch.nn.MSELoss
 agent = SACAgent(
     environment.name, q_function=q_function, policy=policy, criterion=criterion,
     optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
-    alpha=ALPHA,
+    eta=None,
+    epsilon=0.1,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     num_iter=50,
     train_frequency=50,

@@ -98,7 +98,7 @@ class DPG(AbstractAlgorithm):
 
         return ACLoss(
             loss=(actor_loss + critic_loss).squeeze(-1),
-            actor_loss=actor_loss.squeeze(-1),
+            policy_loss=actor_loss.squeeze(-1),
             critic_loss=critic_loss.squeeze(-1),
             td_error=td_error.squeeze(-1))
 
