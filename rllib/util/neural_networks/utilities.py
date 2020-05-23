@@ -84,8 +84,8 @@ def update_parameters(target_module, new_module, tau=0.0):
                 continue
             else:
                 target_state_dict[name].data[:] = (
-                    tau * target_state_dict[name].data
-                    + (1 - tau) * new_state_dict[name].data)
+                        tau * target_state_dict[name].data
+                        + (1 - tau) * new_state_dict[name].data)
 
         # It is not necessary to load the dict again as it modifies the pointer.
         # target_module.load_state_dict(target_state_dict)
@@ -107,6 +107,24 @@ def zero_bias(module):
     for name, param in module.named_parameters():
         if name.endswith('bias'):
             nn.init.zeros_(param)
+
+
+def init_head_weight(module):
+    """Initialize the head of a NN.
+
+    The mean output is initialized with a uniform distribution between -0.1 and 0.1.
+    The scale output is initialized with a uniform distribution between -0.01 and 0.01.
+
+    Parameters
+    ----------
+    module: module to zero the biases to.
+
+    """
+    for name, param in module.named_parameters():
+        if name.endswith('head.weight'):
+            torch.nn.init.uniform_(param, -0.1, 0.1)
+        elif name.endswith('scale.weight'):
+            torch.nn.init.uniform_(param, -0.01, 0.01)
 
 
 def repeat_along_dimension(array, number, dim=0):
