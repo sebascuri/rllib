@@ -64,7 +64,7 @@ try:
         def get_end_effector_pos(states):
             """Get end effector position."""
             theta1, theta2, theta3, theta4, theta5, theta6, *_ = np.split(
-                states, 14, -1)
+                states, len(states), -1)
             rot_axis = np.stack([np.cos(theta2) * np.cos(theta1),
                                  np.cos(theta2) * np.sin(theta1),
                                  -np.sin(theta2)], axis=1)
