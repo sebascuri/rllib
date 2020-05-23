@@ -102,13 +102,18 @@ def tensor_to_distribution(args, **kwargs):
     elif torch.all(args[1] == 0):
         return Delta(args[0], event_dim=min(1, args[0].dim()))
     else:
-        d = MultivariateNormal(args[0], scale_tril=args[1])
         if 'tanh' in kwargs and kwargs.get('tanh'):
-            d = TransformedDistribution(d, [
-                AffineTransform(loc=0, scale=1 / kwargs.get('action_scale', 1)),
-                TanhTransform(),
-                AffineTransform(loc=0, scale=kwargs.get('action_scale', 1))
-            ])
+            d = TransformedDistribution(
+                MultivariateNormal(args[0], scale_tril=args[1]),
+                [AffineTransform(loc=0, scale=1 / kwargs.get('action_scale', 1)),
+                 TanhTransform(),
+                 AffineTransform(loc=0, scale=kwargs.get('action_scale', 1))
+                 ])
+        elif 'normalized' in kwargs and kwargs.get('normalized'):
+            scale = kwargs.get('action_scale', 1)
+            d = MultivariateNormal(args[0] / scale, scale_tril=args[1] / scale)
+        else:
+            d = MultivariateNormal(args[0], scale_tril=args[1])
         return d
 
 
@@ -228,3 +233,24 @@ def moving_average_filter(x, y, horizon):
     x_smooth = x[horizon // 2: -horizon // 2 + 1]
     y_smooth = np.convolve(y, smoothing_weights, 'valid')
     return x_smooth, y_smooth
+
+
+class RewardTransformer(object):
+    r"""Reward Transformer.
+
+    Compute a reward by appling:
+    ..math:: out = (scale * (reward - offset)).clamp(min, max)
+    """
+
+    def __init__(self, offset=0, low=-np.inf, high=np.inf, scale=1.):
+        self.offset = offset
+        self.low = low
+        self.high = high
+        self.scale = scale
+
+    def __call__(self, reward):
+        """Call transformation function."""
+        if isinstance(reward, torch.Tensor):
+            return (self.scale * (reward - self.offset)).clamp(self.low, self.high)
+        else:
+            return np.clip(self.scale * (reward - self.offset), self.low, self.high)
