@@ -1,6 +1,6 @@
 """Model-Based MPPO Agent."""
-
 from .model_based_agent import ModelBasedAgent
+from rllib.algorithms.mppo import MBMPPO
 
 
 class MBMPPOAgent(ModelBasedAgent):
@@ -8,17 +8,25 @@ class MBMPPOAgent(ModelBasedAgent):
 
     def __init__(self,
                  env_name,
-                 mppo,
                  model_optimizer,
-                 mppo_optimizer,
+                 policy, value_function, dynamical_model, reward_model,
+                 optimizer, mppo_value_learning_criterion,
+                 termination=None,
                  initial_distribution=None,
                  plan_horizon=1, plan_samples=8, plan_elites=1,
                  max_memory=10000,
                  model_learn_batch_size=64,
                  model_learn_num_iter=30,
+                 mppo_epsilon=None,
+                 mppo_epsilon_mean=None,
+                 mppo_epsilon_var=None,
+                 mppo_eta=None,
+                 mppo_eta_mean=None,
+                 mppo_eta_var=None,
                  mppo_num_iter=100,
                  mppo_gradient_steps=50,
                  mppo_batch_size=None,
+                 mppo_num_action_samples=15,
                  mppo_target_update_frequency=4,
                  sim_num_steps=200,
                  sim_initial_states_num_trajectories=8,
@@ -30,10 +38,25 @@ class MBMPPOAgent(ModelBasedAgent):
                  exploration_steps=0,
                  exploration_episodes=0,
                  comment=''):
+
+        self.algorithm = MBMPPO(dynamical_model, reward_model, policy, value_function,
+                                criterion=mppo_value_learning_criterion,
+                                epsilon=mppo_epsilon,
+                                epsilon_mean=mppo_epsilon_mean,
+                                epsilon_var=mppo_epsilon_var,
+                                eta=mppo_eta,
+                                eta_mean=mppo_eta_mean,
+                                eta_var=mppo_eta_var,
+                                num_action_samples=mppo_num_action_samples,
+                                gamma=gamma,
+                                termination=termination)
+        optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
+                                     if 'model' not in name], **optimizer.defaults)
+
         super().__init__(
-            env_name, policy=mppo.policy, dynamical_model=mppo.dynamical_model,
-            reward_model=mppo.reward_model, model_optimizer=model_optimizer,
-            termination=mppo.termination, value_function=mppo.value_function,
+            env_name, policy=policy, dynamical_model=dynamical_model,
+            reward_model=reward_model, model_optimizer=model_optimizer,
+            termination=termination, value_function=self.algorithm.value_function,
             plan_horizon=plan_horizon,
             plan_samples=plan_samples,
             plan_elites=plan_elites,
@@ -44,7 +67,7 @@ class MBMPPOAgent(ModelBasedAgent):
             policy_opt_batch_size=mppo_batch_size,
             policy_opt_gradient_steps=mppo_gradient_steps,
             policy_opt_target_update_frequency=mppo_target_update_frequency,
-            optimizer=mppo_optimizer,
+            optimizer=optimizer,
             sim_num_steps=sim_num_steps,
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
             sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
@@ -55,6 +78,3 @@ class MBMPPOAgent(ModelBasedAgent):
             thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes, comment=comment)
-
-        self.algorithm = mppo
-        self.value_function = self.algorithm.value_function

@@ -1,6 +1,4 @@
 """Model-Based Soft Actor Critic Agent."""
-from itertools import chain
-
 import torch.nn as nn
 
 from .model_based_agent import ModelBasedAgent
@@ -16,23 +14,24 @@ class MBSACAgent(ModelBasedAgent):
                  model_optimizer,
                  policy, q_function, dynamical_model, reward_model,
                  optimizer,
-                 temperature=0.2,
-                 criterion=nn.MSELoss,
                  initial_distribution=None,
                  plan_horizon=1, plan_samples=8, plan_elites=1,
                  max_memory=10000,
                  model_learn_batch_size=64,
                  model_learn_num_iter=30,
+                 sac_alpha=0.2,
                  sac_num_iter=100,
                  sac_gradient_steps=50,
                  sac_batch_size=None,
                  sac_action_samples=15,
                  sac_target_num_steps=1,
                  sac_target_update_frequency=4,
+                 sac_value_learning_criterion=nn.MSELoss,
                  sim_num_steps=200,
                  sim_initial_states_num_trajectories=8,
                  sim_initial_dist_num_trajectories=0,
                  sim_memory_num_trajectories=0,
+                 sim_refresh_interval=1,
                  sim_num_subsample=1,
                  thompson_sampling=False,
                  gamma=1.0,
@@ -43,13 +42,19 @@ class MBSACAgent(ModelBasedAgent):
 
         q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
                                                          num_heads=2)
-        optimizer = type(optimizer)(chain(q_function.parameters(), policy.parameters()),
-                                    **optimizer.defaults)
+        self.algorithm = MBSoftActorCritic(
+            policy, q_function, dynamical_model, reward_model,
+            criterion=sac_value_learning_criterion(reduction='mean'),
+            alpha=sac_alpha, gamma=gamma, termination=termination,
+            num_steps=sac_target_num_steps, num_samples=sac_action_samples)
+        optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
+                                     if 'model' not in name], **optimizer.defaults)
+        self.dist_params = {'tanh': True, 'action_scale': policy.action_scale}
 
         super().__init__(
             env_name, policy=policy, dynamical_model=dynamical_model,
             reward_model=reward_model, model_optimizer=model_optimizer,
-            termination=termination, value_function=None,
+            termination=termination, value_function=self.algorithm.value_function,
             plan_horizon=plan_horizon, plan_samples=plan_samples,
             plan_elites=plan_elites,
             model_learn_num_iter=model_learn_num_iter,
@@ -64,17 +69,9 @@ class MBSACAgent(ModelBasedAgent):
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
             sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
             sim_memory_num_trajectories=sim_memory_num_trajectories,
-            sim_refresh_interval=1,
+            sim_refresh_interval=sim_refresh_interval,
             sim_num_subsample=sim_num_subsample,
             initial_distribution=initial_distribution,
             thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes, comment=comment)
-
-        self.algorithm = MBSoftActorCritic(
-            policy, q_function, dynamical_model, reward_model,
-            criterion=criterion(reduction='mean'), temperature=temperature,
-            gamma=gamma, termination=termination,
-            num_steps=sac_target_num_steps, num_samples=sac_action_samples)
-        self.value_function = self.algorithm.value_function
-        self.dist_params = {'tanh': True, 'action_scale': self.policy.action_scale}

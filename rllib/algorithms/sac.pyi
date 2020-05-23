@@ -20,10 +20,10 @@ class SoftActorCritic(AbstractAlgorithm):
     criterion: _Loss
     gamma: float
     reward_transformer: RewardTransformer
-    temperature: float
+    alpha: float
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
-                 criterion: _Loss, temperature: float, gamma: float,
+                 criterion: _Loss, alpha: float, gamma: float,
                  reward_transformer: RewardTransformer = RewardTransformer()) -> None: ...
 
     def get_q_target(self, reward: Tensor, next_state: Tensor, done: Tensor
@@ -48,7 +48,7 @@ class MBSoftActorCritic(SoftActorCritic):
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
                  dynamical_model: AbstractModel, reward_model: AbstractReward,
-                 criterion: _Loss, temperature: float, gamma: float,
+                 criterion: _Loss, alpha: float, gamma: float,
                  reward_transformer: RewardTransformer = RewardTransformer(),
                  termination: Termination = None, num_steps: int = 1,
                  num_samples: int = 15,

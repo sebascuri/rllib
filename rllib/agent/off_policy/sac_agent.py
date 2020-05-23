@@ -20,7 +20,7 @@ class SACAgent(OffPolicyAgent):
         Criterion to minimize the TD-error.
     memory: ExperienceReplay
         Memory where to store the observations.
-    temperature: ParameterDecay.
+    alpha: ParameterDecay.
         Temperature of Soft Q function.
     target_update_frequency: int
         How often to update the q_function target.
@@ -40,7 +40,7 @@ class SACAgent(OffPolicyAgent):
     """
 
     def __init__(self, env_name, q_function, policy,
-                 criterion, optimizer, memory, temperature,
+                 criterion, optimizer, memory, alpha,
                  num_iter=1, batch_size=64,
                  target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1., train_frequency=1, num_rollouts=0,
@@ -59,8 +59,7 @@ class SACAgent(OffPolicyAgent):
                          exploration_episodes=exploration_episodes, comment=comment)
 
         self.algorithm = SoftActorCritic(policy, q_function,
-                                         criterion(reduction='none'), temperature,
-                                         gamma)
+                                         criterion(reduction='none'), alpha, gamma)
         self.policy = self.algorithm.policy
 
     def act(self, state):

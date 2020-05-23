@@ -4,7 +4,7 @@ from typing import Union
 from torch.optim.optimizer import Optimizer
 from torch.nn.modules.loss import _Loss
 
-from rllib.agent.off_policy_agent import OffPolicyAgent
+from rllib.agent.off_policy.off_policy_agent import OffPolicyAgent
 from rllib.algorithms.mppo import MPPO
 from rllib.dataset import ExperienceReplay
 from rllib.policy import AbstractQFunctionPolicy

@@ -16,7 +16,7 @@ class SoftActorCritic(AbstractAlgorithm):
     SAC is an off-policy policy gradient algorithm.
     """
 
-    def __init__(self, policy, q_function, criterion, temperature, gamma,
+    def __init__(self, policy, q_function, criterion, alpha, gamma,
                  reward_transformer=RewardTransformer):
         super().__init__()
         # Actor
@@ -27,7 +27,7 @@ class SoftActorCritic(AbstractAlgorithm):
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
 
-        self.temperature = temperature
+        self.alpha = alpha
 
         self.reward_transformer = reward_transformer
 
@@ -48,7 +48,7 @@ class SoftActorCritic(AbstractAlgorithm):
             if type(q_val) is list:
                 q_val = torch.min(*q_val)
 
-        return (self.temperature * pi.log_prob(action) - q_val).mean()
+        return (self.alpha * pi.log_prob(action) - q_val).mean()
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
@@ -75,7 +75,7 @@ class SoftActorCritic(AbstractAlgorithm):
             if type(next_q) is list:
                 next_q = torch.min(*next_q)
 
-            next_v = (next_q - self.temperature * pi.log_prob(next_action)) * (1 - done)
+            next_v = (next_q - self.alpha * pi.log_prob(next_action)) * (1 - done)
             target_q = self.reward_transformer(reward) + self.gamma * next_v
         return target_q
 
@@ -88,6 +88,9 @@ class SoftActorCritic(AbstractAlgorithm):
 
         # Actor loss
         actor_loss = self.actor_loss(state)
+
+        self._info = {'alpha': self.alpha}
+
         return ACLoss(loss=critic_loss + actor_loss,
                       actor_loss=actor_loss,
                       critic_loss=critic_loss, td_error=td_error)
@@ -102,10 +105,10 @@ class MBSoftActorCritic(SoftActorCritic):
     """Model Based Soft-Actor Critic."""
 
     def __init__(self, policy, q_function, dynamical_model, reward_model, criterion,
-                 temperature, gamma, reward_transformer=RewardTransformer(),
+                 alpha, gamma, reward_transformer=RewardTransformer(),
                  termination=None, num_steps=1, num_samples=15):
         super().__init__(policy=policy, q_function=q_function, criterion=criterion,
-                         temperature=temperature, gamma=gamma,
+                         alpha=alpha, gamma=gamma,
                          reward_transformer=reward_transformer)
 
         self.dynamical_model = dynamical_model
