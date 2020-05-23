@@ -12,7 +12,8 @@ from rllib.reward import AbstractReward
 
 
 def step(environment: AbstractEnvironment, state: Union[int, ndarray],
-         action: Union[int, ndarray], pi: Distribution, render: bool
+         action: Union[int, ndarray], pi: Distribution, render: bool,
+         goal: Union[int, ndarray] = None
          ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
 
 

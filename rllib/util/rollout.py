@@ -1,6 +1,7 @@
 """Helper functions to conduct a rollout with policies or agents."""
 
 import pickle
+import numpy as np
 
 import torch
 from tqdm import tqdm
@@ -9,12 +10,15 @@ from rllib.dataset.datatypes import RawObservation
 from rllib.util.utilities import tensor_to_distribution, integrate
 
 
-def step(environment, state, action, pi, render):
+def step(environment, state, action, pi, render, goal=None):
     """Perform a single step in an environment."""
     try:
         next_state, reward, done, info = environment.step(action)
     except TypeError:
         next_state, reward, done, info = environment.step(action.item())
+
+    if goal is not None:
+        next_state = np.concatenate((next_state, goal))
 
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action, dtype=torch.get_default_dtype())
@@ -69,11 +73,15 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     plot_callbacks = list() if plot_callbacks is None else plot_callbacks
     for episode in tqdm(range(num_episodes)):
         state = environment.reset()
-        agent.start_episode(goal=environment.goal)
+        if environment.goal is not None:
+            state = np.concatenate((state, environment.goal))
+
+        agent.start_episode()
         done = False
         while not done:
             action = agent.act(state)
-            obs, state, done, info = step(environment, state, action, agent.pi, render)
+            obs, state, done, info = step(environment, state, action, agent.pi, render,
+                                          goal=environment.goal)
             agent.observe(obs)
             # Log info.
             agent.logger.update(**info)
