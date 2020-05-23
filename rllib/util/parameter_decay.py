@@ -5,6 +5,8 @@ from abc import ABCMeta
 import torch.jit
 import torch.nn as nn
 
+from rllib.util.neural_networks.utilities import inverse_softplus
+
 
 class ParameterDecay(nn.Module, metaclass=ABCMeta):
     """Abstract class that implements the decay of a parameter."""
@@ -40,13 +42,22 @@ class Constant(ParameterDecay):
 class Learnable(ParameterDecay):
     """Learnable parameter."""
 
-    def __init__(self, val):
+    positive: bool
+
+    def __init__(self, val, positive: bool = False):
+        self.positive = positive
+        if self.positive:
+            val = inverse_softplus(val).item()
         super().__init__(val)
         self.start.requires_grad = True
+        self.positive = positive
 
     def forward(self):
         """See `ParameterDecay.__call__'."""
-        return self.start
+        if self.positive:
+            return torch.nn.functional.softplus(self.start) + 1e-6
+        else:
+            return True
 
 
 class ExponentialDecay(ParameterDecay):

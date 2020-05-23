@@ -200,6 +200,8 @@ def inverse_softplus(x):
     -------
     output : torch.Tensor
     """
+    if not isinstance(x, torch.Tensor):
+        x = torch.tensor(x, dtype=torch.get_default_dtype())
     return torch.log(torch.exp(x) - 1.)
 
 
