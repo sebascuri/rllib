@@ -150,6 +150,7 @@ class ExperienceReplay(data.Dataset):
 
         for transformation in self.transformations:
             transformation.update(observation)
+            observation = transformation(observation)
 
     def get_batch(self, batch_size):
         """Get a batch of data."""
