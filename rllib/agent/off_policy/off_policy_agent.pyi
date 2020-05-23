@@ -1,7 +1,7 @@
 """Off Policy Agent."""
 from torch.optim.optimizer import Optimizer
 
-from .abstract_agent import AbstractAgent
+from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.experience_replay import ExperienceReplay
 

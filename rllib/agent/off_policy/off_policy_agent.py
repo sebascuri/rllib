@@ -49,12 +49,16 @@ class OffPolicyAgent(AbstractAgent):
         for _ in range(self.num_iter):
             obs, idx, weight = self.memory.get_batch(self.batch_size)
 
-            self.optimizer.zero_grad()
-            losses = self.algorithm(obs.state, obs.action, obs.reward, obs.next_state,
-                                    obs.done)
-            loss = (losses.loss * weight.detach()).mean()
-            loss.backward()
-            self.optimizer.step()
+            def closure():
+                """Gradient calculation."""
+                self.optimizer.zero_grad()
+                losses = self.algorithm(obs.state, obs.action, obs.reward,
+                                        obs.next_state, obs.done)
+                loss = (losses.loss * weight.detach()).mean()
+                loss.backward()
+                return losses
+
+            losses = self.optimizer.step(closure=closure)
 
             # Update memory
             self.memory.update(idx, losses.td_error.abs().detach())

@@ -54,13 +54,14 @@ class OnPolicyAgent(AbstractAgent):
         trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
         """Train Policy Gradient Agent."""
         for _ in range(self.num_iter):
-            self.optimizer.zero_grad()
+            def closure():
+                """Gradient calculation."""
+                self.optimizer.zero_grad()
+                losses = self.algorithm(trajectories)
+                losses.loss.backward()
+                return losses
 
-            losses = self.algorithm(trajectories)
-            losses.loss.backward()
-
-            self.optimizer.step()
-
+            losses = self.optimizer.step(closure=closure)
             # Update logs
             self.logger.update(**average_named_tuple(losses)._asdict())
             self.logger.update(**self.algorithm.info())

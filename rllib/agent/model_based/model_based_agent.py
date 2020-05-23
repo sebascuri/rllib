@@ -16,9 +16,8 @@ from tqdm import tqdm
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
-from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.dataset.utilities import stack_list_of_tuples, average_named_tuple
 from rllib.policy.derived_policy import DerivedPolicy
-
 
 from rllib.model import ExactGPModel, TransformedModel
 from rllib.util.gaussian_processes import SparseGP
@@ -56,7 +55,7 @@ class ModelBasedAgent(AbstractAgent):
         returns the action that optimizes the plan.
     plan_samples: int, optional. (default: 1).
         Number of samples used to solve the planning problem.
-    plan_elite: int, optional. (default: 1).
+    plan_elites: int, optional. (default: 1).
         Number of elite samples used to return the best action.
 
     model_learn_num_iter: int, optional. (default: 0).
@@ -101,7 +100,7 @@ class ModelBasedAgent(AbstractAgent):
                  termination=None,
                  plan_horizon=0,
                  plan_samples=1,
-                 plan_elite=1,
+                 plan_elites=1,
                  model_learn_num_iter=0,
                  model_learn_batch_size=64,
                  max_memory=10000,
@@ -138,7 +137,7 @@ class ModelBasedAgent(AbstractAgent):
 
         self.plan_horizon = plan_horizon
         self.plan_samples = plan_samples
-        self.plan_elite = plan_elite
+        self.plan_elites = plan_elites
 
         if hasattr(dynamical_model.base_model, 'num_heads'):
             num_heads = dynamical_model.base_model.num_heads
@@ -172,6 +171,31 @@ class ModelBasedAgent(AbstractAgent):
         self.new_episode = True
         self.thompson_sampling = thompson_sampling
 
+        if self.thompson_sampling:
+            self.dynamical_model.base_model.set_prediction_strategy('set_head')
+
+        if hasattr(self.dynamical_model.base_model, 'num_heads'):
+            num_heads = self.dynamical_model.base_model.num_heads
+        else:
+            num_heads = 1
+
+        layout = {
+            'Model Training': {
+                'average': ['Multiline',
+                            [f"average/model-{i}" for i in range(num_heads)] + [
+                                "average/model_loss"]],
+            },
+            'Policy Training': {
+                'average': ['Multiline', ["average/value_loss", "average/policy_loss",
+                                          "average/eta_loss"]],
+            },
+            'Returns': {
+                'average': ['Multiline', ["average/environment_return",
+                                          "average/model_return"]]
+            }
+        }
+        self.logger.writer.add_custom_scalars(layout)
+
     def act(self, state):
         """Ask the agent for an action to interact with the environment.
 
@@ -183,7 +207,7 @@ class ModelBasedAgent(AbstractAgent):
         else:
             if not isinstance(state, torch.Tensor):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
-            policy = tensor_to_distribution(self.policy(state))
+            policy = tensor_to_distribution(self.policy(state), **self.dist_params)
             self.pi = policy
             action = self._plan(state).detach().numpy()
 
@@ -211,9 +235,6 @@ class ModelBasedAgent(AbstractAgent):
         """See `AbstractAgent.start_episode'."""
         super().start_episode(**kwargs)
         self.new_episode = True
-
-        if hasattr(self.reward_model, 'goal'):
-            self.reward_model.goal = kwargs.get('goal')
 
         if self.thompson_sampling:
             self.dynamical_model.base_model.set_head(
@@ -262,9 +283,10 @@ class ModelBasedAgent(AbstractAgent):
             reward_model=self.reward_model, policy=self.plan_policy,
             num_steps=self.plan_horizon, gamma=self.gamma,
             num_samples=self.plan_samples, value_function=self.value_function,
+            reward_transformer=self.algorithm.reward_transformer,
             termination=self.termination)
         actions = stack_list_of_tuples(trajectory).action
-        idx = torch.topk(value, k=self.plan_elite, largest=True)[1]
+        idx = torch.topk(value, k=self.plan_elites, largest=True)[1]
         # Return first action and the mean over the elite samples.
         return actions[0, idx].mean(0)
 
@@ -323,10 +345,11 @@ class ModelBasedAgent(AbstractAgent):
                         self._simulate_model()
 
                     # Log last simulations.
-                    average_return = self.sim_trajectory.reward.sum(0).mean().item()
+                    average_return = (self.sim_trajectory.reward
+                                      ).sum(0).mean().item()
                     average_scale = torch.diagonal(
                         self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
-                    ).square().sum(-1).mean().sqrt().item()
+                    ).square().sum(-1).sum(0).mean().sqrt().item()
                     self.logger.update(
                         sim_entropy=self.sim_trajectory.entropy.mean().item())
                     self.logger.update(sim_return=average_return)
@@ -424,22 +447,17 @@ class ModelBasedAgent(AbstractAgent):
             idx = np.random.choice(len(state_batches))
             states = state_batches[idx]
 
-            if self.critic_optimizer is not None:
-                self.critic_optimizer.zero_grad()
-            self.actor_optimizer.zero_grad()
+            def closure():
+                """Gradient calculation."""
+                self.optimizer.zero_grad()
+                losses = self.algorithm(states)
+                losses.loss.backward()
+                return losses
 
-            losses = self.algorithm(states)
-            losses.loss.backward()
+            losses = self.optimizer.step(closure=closure)
 
-            if self.critic_optimizer is not None:
-                self.critic_optimizer.zero_grad()
-            self.actor_optimizer.zero_grad()
-
-            self.logger.update(**losses._asdict())
-            try:
-                self.logger.update(**self.algorithm.info())
-            except AttributeError:
-                pass
+            self.logger.update(**average_named_tuple(losses)._asdict())
+            self.logger.update(**self.algorithm.info())
 
             self.counters['train_steps'] += 1
             if self.train_steps % self.policy_opt_target_update_frequency == 0:
