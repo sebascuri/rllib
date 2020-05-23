@@ -43,7 +43,7 @@ q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_actions=environment.num_actions,
                          layers=LAYERS,
                          tau=TARGET_UPDATE_TAU)
-memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
+memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 optimizer = torch.optim.Adam(chain(policy.parameters(), q_function.parameters()),
                              lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
