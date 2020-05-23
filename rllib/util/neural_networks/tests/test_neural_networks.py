@@ -307,6 +307,7 @@ class TestEnsembleNN(object):
         assert o.batch_shape == torch.Size(
             [batch_size, 2] if batch_size is not None else [])
 
+        net.set_prediction_strategy('set_head')
         net.set_head(0)
         o = tensor_to_distribution(net(t))
         if deterministic:

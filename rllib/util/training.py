@@ -18,8 +18,15 @@ from rllib.model.gp_model import ExactGPModel
 from rllib.model.nn_model import NNModel
 
 
+def _model_mse(model, state, action, next_state):
+    mean = model(state, action)[0]
+    y = next_state
+    return ((mean - y) ** 2).sum(-1)
+
+
 def _model_loss(model, state, action, next_state):
-    mean, scale_tril = model(state, action)
+    pred_next_state = model(state, action)
+    mean, scale_tril = pred_next_state[0], pred_next_state[1]
     y = next_state
     if torch.all(scale_tril == 0):  # Deterministic Model
         loss = ((mean - y) ** 2).sum(-1)
@@ -54,14 +61,19 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
     for i in range(model.num_heads):
         optimizer.zero_grad()
         model.set_head(i)
+        model.set_prediction_strategy('set_head')
         loss = (mask[:, i] * _model_loss(
             model, observation.state, observation.action, observation.next_state)
                 ).mean()
-
+        with torch.no_grad():
+            mse = _model_mse(model, observation.state, observation.action,
+                             observation.next_state).mean()
         loss.backward()
         optimizer.step()
         ensemble_loss += loss.item()
         logger.update(**{f"model-{i}": loss.item()})
+        logger.update(**{f"model-mse-{i}": mse.item()})
+
     return ensemble_loss
 
 
@@ -92,9 +104,13 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
         for observation, idx, mask in train_loader:
             if isinstance(model, EnsembleModel):
                 current_head = model.get_head()
+                current_pred = model.get_prediction_strategy()
+
                 model_loss = train_ensemble_step(model, observation, mask, optimizer,
                                                  logger)
                 model.set_head(current_head)
+                model.set_prediction_strategy(current_pred)
+
             elif isinstance(model, NNModel):
                 model_loss = train_nn_step(model, observation, optimizer)
             elif isinstance(model, ExactGPModel):

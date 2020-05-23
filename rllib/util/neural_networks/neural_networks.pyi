@@ -51,14 +51,17 @@ class Ensemble(HeteroGaussianNN):
     num_heads: int
     head_ptr: int
     deterministic: bool
+    prediction_strategy: str
 
     def __init__(self, in_dim: int, out_dim: int, num_heads: int,
+                 prediction_strategy: str = 'moment_matching',
                  layers: List[int] = None,
                  non_linearity: str = 'ReLU', biased_head: bool = True,
                  squashed_output: bool = False, deterministic: bool = True) -> None: ...
 
     @classmethod
-    def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int) -> T: ...
+    def from_feedforward(cls: Type[T], other: FeedForwardNN, num_heads: int,
+                         prediction_strategy: str = 'moment_matching') -> T: ...
 
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
 
@@ -84,7 +87,7 @@ class MultiHeadNN(FeedForwardNN):
 
 
 class FelixNet(FeedForwardNN):
-    _scale_tril: nn.Linear
+    _scale: nn.Linear
 
     def __init__(self, in_dim: int, out_dim: int) -> None: ...
 

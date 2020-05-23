@@ -100,7 +100,6 @@ class HeteroGaussianNN(FeedForwardNN):
                          biased_head=biased_head, squashed_output=squashed_output)
         in_dim = self.head.in_features
         self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
-        # self._scale_tril = nn.Linear(in_dim, out_dim * out_dim, bias=biased_head)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -179,8 +178,8 @@ class Ensemble(HeteroGaussianNN):
     """Ensemble of Deterministic Neural Networks.
 
     The Ensemble shares the inner layers and then has `num_heads' different heads.
-    Using these heads, it returns a Multivariate distribution parametrized by the
-    mean and variance of the heads' outputs.
+    Using these heads, it returns a Multivariate Normal distribution. How these are
+    computed depends on the `prediction_strategy' used.
 
     Parameters
     ----------
@@ -190,30 +189,43 @@ class Ensemble(HeteroGaussianNN):
         output dimension of neural network.
     num_heads: int
         number of heads of ensemble
-    layers: list of int
-        list of width of neural network layers, each separated with a ReLU
-        non-linearity.
-
+    prediction_strategy: str
+        - 'moment_matching': mean and covariance are computed as sample averages.
+        - 'sample_head': sample a head U.A.R. and return its output.
+        The same head is used along a batch.
+        - 'sample_multiple_head': sample a head U.A.R. and return its output.
+        A different random head is used for each element of a batch.
+        - 'set_head': set a single head with .set_head() and return its output.
+        This is useful for Thompson's Sampling (for example).
+        - 'set_head_idx': set a head with .set_head_idx() and return its output.
+        Crucially, it has to have the same batch_size as the predicted state-actions.
     """
 
     num_heads: int
     head_ptr: int
+    prediction_strategy: str
 
-    def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
+    def __init__(self, in_dim, out_dim, num_heads,
+                 prediction_strategy='moment_matching',
+                 layers=None, non_linearity='ReLU',
                  biased_head=True, squashed_output=False, deterministic=True):
         super().__init__(in_dim, out_dim * num_heads, layers=layers,
                          non_linearity=non_linearity, biased_head=biased_head,
                          squashed_output=squashed_output)
 
-        self.kwargs.update(out_dim=out_dim, num_heads=num_heads)
+        self.kwargs.update(out_dim=out_dim, num_heads=num_heads,
+                           prediction_strategy=prediction_strategy)
         self.num_heads = num_heads
-        self.head_ptr = num_heads
+        self.head_ptr = 0
+        self.head_indexes = torch.zeros(1).long()
         self.deterministic = deterministic
+        self.prediction_strategy = prediction_strategy
 
     @classmethod
-    def from_feedforward(cls, other, num_heads):
+    def from_feedforward(cls, other, num_heads, prediction_strategy='moment_matching'):
         """Initialize from a feed-forward network."""
         return cls(**other.kwargs, num_heads=num_heads,
+                   prediction_strategy=prediction_strategy,
                    deterministic=isinstance(other, DeterministicNN))
 
     def forward(self, x):
@@ -243,17 +255,26 @@ class Ensemble(HeteroGaussianNN):
             scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.) + 1e-6
             scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
-        if self.head_ptr == self.num_heads and self.num_heads:
+        if self.prediction_strategy == 'moment_matching':
             mean = out.mean(-1)
             variance = ((scale.square() + out.square()).mean(-1) - mean.square())
             scale = safe_cholesky(torch.diag_embed(variance))
-            # variance = torch.diag_embed(torch.mean(scale.square()), dim=-1))
-            # mean, covariance = sample_mean_and_cov(out, diag=True)
-            # scale = safe_cholesky(variance + covariance)
-
-        else:
+        elif self.prediction_strategy == 'sample_head':  # TS-1
+            head_ptr = torch.randint(self.num_heads, (1,))
+            mean = out[..., head_ptr]
+            scale = torch.diag_embed(scale[..., head_ptr])
+        elif self.prediction_strategy == 'set_head':  # Thompson sampling
             mean = out[..., self.head_ptr]
             scale = torch.diag_embed(scale[..., self.head_ptr])
+        elif self.prediction_strategy == 'sample_multiple_head':  # TS-1
+            head_idx = torch.randint(self.num_heads, out.shape[:-1]).unsqueeze(-1)
+            mean = out.gather(-1, head_idx).squeeze(-1)
+            scale = torch.diag_embed(scale.gather(-1, head_idx).squeeze(-1))
+        elif self.prediction_strategy == 'set_head_idx':  # TS-INF
+            mean = out.gather(-1, self.head_idx)
+            scale = torch.diag_embed(scale.gather(-1, self.head_idx))
+        else:
+            raise NotImplementedError
 
         return mean, scale
 
@@ -272,14 +293,33 @@ class Ensemble(HeteroGaussianNN):
         ValueError: If new_head > num_heads.
         """
         self.head_ptr = new_head
-        if new_head > self.num_heads:
-            raise ValueError(
-                f"{new_head} has to be smaller or equal to {self.num_heads}.")
+        if not(0 <= self.head_ptr < self.num_heads):
+            raise ValueError("head_ptr has to be between zero and num_heads - 1.")
 
     @torch.jit.export
     def get_head(self) -> int:
         """Get current head."""
         return self.head_ptr
+
+    @torch.jit.export
+    def set_head_idx(self, head_indexes):
+        """Set ensemble head for particles.."""
+        self.head_indexes = head_indexes
+
+    @torch.jit.export
+    def get_head_idx(self):
+        """Get ensemble head index."""
+        return self.head_indexes
+
+    @torch.jit.export
+    def set_prediction_strategy(self, prediction: str):
+        """Set ensemble prediction strategy."""
+        self.prediction_strategy = prediction
+
+    @torch.jit.export
+    def get_prediction_strategy(self) -> str:
+        """Get ensemble head."""
+        return self.prediction_strategy
 
 
 class MultiHeadNN(FeedForwardNN):
@@ -331,7 +371,8 @@ class FelixNet(FeedForwardNN):
         torch.nn.init.zeros_(self.hidden_layers[2].bias)
         # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
 
-        self._scale_tril = nn.Linear(64, out_dim, bias=False)
+        self._scale = nn.Linear(64, out_dim, bias=False)
+        # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
         # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
 
     def forward(self, x):
@@ -353,6 +394,6 @@ class FelixNet(FeedForwardNN):
         x = self.hidden_layers(x)
 
         mean = torch.tanh(self.head(x))
-        scale = torch.diag_embed(functional.softplus(self._scale_tril(x)) + 1e-6)
+        scale = torch.diag_embed(functional.softplus(self._scale(x)) + 1e-6)
 
         return mean, scale
