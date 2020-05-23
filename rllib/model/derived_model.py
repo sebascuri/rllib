@@ -34,8 +34,9 @@ class TransformedModel(AbstractModel):
         next_state = self.base_model(obs.state, obs.action)
 
         # Back-transform
-        obs = Observation(state, action, reward=none, done=none, next_action=none,
-                          log_prob_action=none, entropy=none, state_scale_tril=none,
+        obs = Observation(obs.state, obs.action, reward=none, done=none,
+                          next_action=none, log_prob_action=none, entropy=none,
+                          state_scale_tril=none,
                           next_state=next_state[0],
                           next_state_scale_tril=next_state[1])
 

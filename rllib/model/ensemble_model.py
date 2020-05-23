@@ -12,6 +12,7 @@ class EnsembleModel(NNModel):
     """Ensemble Model."""
 
     def __init__(self, dim_state, dim_action, num_heads, num_states=-1, num_actions=-1,
+                 prediction_strategy='moment_matching',
                  layers=None, biased_head=True, non_linearity='ReLU',
                  input_transform=None, deterministic=False):
         super().__init__(dim_state, dim_action, num_states, num_actions,
@@ -19,7 +20,9 @@ class EnsembleModel(NNModel):
         self.num_heads = num_heads
         # if deterministic
         self.nn = Ensemble(
-            self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'], layers=layers,
+            self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'],
+            prediction_strategy=prediction_strategy,
+            layers=layers,
             biased_head=biased_head, non_linearity=non_linearity, squashed_output=False,
             num_heads=num_heads, deterministic=deterministic)
         self.deterministic = deterministic
@@ -35,8 +38,7 @@ class EnsembleModel(NNModel):
             state = self.input_transform(state)
 
         state_action = torch.cat((state, action), dim=-1)
-        next_state = self.nn(state_action)
-        return next_state[0], next_state[1]
+        return self.nn(state_action)
 
     @torch.jit.export
     def set_head(self, head_ptr: int):
@@ -44,9 +46,29 @@ class EnsembleModel(NNModel):
         self.nn.set_head(head_ptr)
 
     @torch.jit.export
-    def get_head(self):
+    def get_head(self) -> int:
         """Get ensemble head."""
         return self.nn.get_head()
+
+    @torch.jit.export
+    def set_head_idx(self, head_ptr):
+        """Set ensemble head for particles.."""
+        self.nn.set_head_idx(head_ptr)
+
+    @torch.jit.export
+    def get_head_idx(self):
+        """Get ensemble head index."""
+        return self.nn.get_head_idx()
+
+    @torch.jit.export
+    def set_prediction_strategy(self, prediction: str):
+        """Set ensemble prediction strategy."""
+        self.nn.set_prediction_strategy(prediction)
+
+    @torch.jit.export
+    def get_prediction_strategy(self) -> str:
+        """Get ensemble head."""
+        return self.nn.get_prediction_strategy()
 
     @property
     def name(self):
