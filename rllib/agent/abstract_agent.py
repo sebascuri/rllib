@@ -51,6 +51,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self.comment = comment
         self.last_trajectory = []
+        self.dist_params = {}
 
     def __str__(self):
         """Generate string to parse the agent."""
@@ -73,7 +74,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
             policy = self.policy(state)
 
-        self.pi = tensor_to_distribution(policy)
+        self.pi = tensor_to_distribution(policy, **self.dist_params)
         if self._training:
             action = self.pi.sample()
         elif self.pi.has_enumerate_support:

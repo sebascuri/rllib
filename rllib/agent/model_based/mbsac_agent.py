@@ -1,8 +1,11 @@
 """Model-Based Soft Actor Critic Agent."""
+from itertools import chain
 
 import torch.nn as nn
+
 from .model_based_agent import ModelBasedAgent
 from rllib.algorithms.sac import MBSoftActorCritic
+from rllib.value_function import NNEnsembleQFunction
 
 
 class MBSACAgent(ModelBasedAgent):
@@ -12,12 +15,11 @@ class MBSACAgent(ModelBasedAgent):
                  env_name,
                  model_optimizer,
                  policy, q_function, dynamical_model, reward_model,
-                 actor_optimizer,
-                 critic_optimizer,
+                 optimizer,
                  temperature=0.2,
                  criterion=nn.MSELoss,
                  initial_distribution=None,
-                 plan_horizon=1, plan_samples=8, plan_elite=1,
+                 plan_horizon=1, plan_samples=8, plan_elites=1,
                  max_memory=10000,
                  model_learn_batch_size=64,
                  model_learn_num_iter=30,
@@ -38,11 +40,18 @@ class MBSACAgent(ModelBasedAgent):
                  exploration_episodes=0,
                  termination=None,
                  comment=''):
+
+        q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
+                                                         num_heads=2)
+        optimizer = type(optimizer)(chain(q_function.parameters(), policy.parameters()),
+                                    **optimizer.defaults)
+
         super().__init__(
             env_name, policy=policy, dynamical_model=dynamical_model,
             reward_model=reward_model, model_optimizer=model_optimizer,
             termination=termination, value_function=None,
-            plan_horizon=plan_horizon, plan_samples=plan_samples, plan_elite=plan_elite,
+            plan_horizon=plan_horizon, plan_samples=plan_samples,
+            plan_elites=plan_elites,
             model_learn_num_iter=model_learn_num_iter,
             model_learn_batch_size=model_learn_batch_size,
             max_memory=max_memory,
@@ -50,8 +59,7 @@ class MBSACAgent(ModelBasedAgent):
             policy_opt_batch_size=sac_batch_size,
             policy_opt_gradient_steps=sac_gradient_steps,
             policy_opt_target_update_frequency=sac_target_update_frequency,
-            actor_optimizer=actor_optimizer,
-            critic_optimizer=critic_optimizer,
+            optimizer=optimizer,
             sim_num_steps=sim_num_steps,
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
             sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
@@ -68,26 +76,5 @@ class MBSACAgent(ModelBasedAgent):
             criterion=criterion(reduction='mean'), temperature=temperature,
             gamma=gamma, termination=termination,
             num_steps=sac_target_num_steps, num_samples=sac_action_samples)
-        self.value_function = None
-
-        if hasattr(self.dynamical_model.base_model, 'num_heads'):
-            num_heads = self.dynamical_model.base_model.num_heads
-        else:
-            num_heads = 1
-
-        layout = {
-            'Model Training': {
-                'average': ['Multiline',
-                            [f"average/model-{i}" for i in range(num_heads)] + [
-                                "average/model_loss"]],
-            },
-            'Policy Training': {
-                'average': ['Multiline', ["average/value_loss", "average/policy_loss",
-                                          "average/eta_loss"]],
-            },
-            'Returns': {
-                'average': ['Multiline', ["average/environment_return",
-                                          "average/model_return"]]
-            }
-        }
-        self.logger.writer.add_custom_scalars(layout)
+        self.value_function = self.algorithm.value_function
+        self.dist_params = {'tanh': True, 'action_scale': self.policy.action_scale}

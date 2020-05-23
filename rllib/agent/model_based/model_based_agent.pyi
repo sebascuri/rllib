@@ -4,7 +4,7 @@ from torch import Tensor
 from torch.optim.optimizer import Optimizer
 from torch.distributions import Distribution
 
-from .abstract_agent import AbstractAgent
+from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Observation, Termination
 from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
@@ -33,7 +33,7 @@ class ModelBasedAgent(AbstractAgent):
 
     plan_horizon: int
     plan_samples: int
-    plan_elite: int
+    plan_elites: int
 
     algorithm: AbstractAlgorithm
     policy: DerivedPolicy
@@ -65,7 +65,7 @@ class ModelBasedAgent(AbstractAgent):
                  termination: Termination = None,
                  plan_horizon: int = 1,
                  plan_samples: int = 1,
-                 plan_elite: int = 1,
+                 plan_elites: int = 1,
                  model_learn_num_iter: int = 0,
                  model_learn_batch_size: int = 64,
                  max_memory: int = 10000,

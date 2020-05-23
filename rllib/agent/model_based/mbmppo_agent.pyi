@@ -17,7 +17,7 @@ class MBMPPOAgent(ModelBasedAgent):
     def __init__(self, env_name: str, mppo: MBMPPO,
                  model_optimizer: Union[Optimizer, None], mppo_optimizer: Optimizer,
                  initial_distribution: Distribution = None,
-                 plan_horizon: int = 1, plan_samples: int = 8, plan_elite: int = 1,
+                 plan_horizon: int = 1, plan_samples: int = 8, plan_elites: int = 1,
                  max_memory: int = 10000,
                  model_learn_batch_size: int = 64,
                  model_learn_num_iter: int = 30,

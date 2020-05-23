@@ -12,7 +12,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  model_optimizer,
                  mppo_optimizer,
                  initial_distribution=None,
-                 plan_horizon=1, plan_samples=8, plan_elite=1,
+                 plan_horizon=1, plan_samples=8, plan_elites=1,
                  max_memory=10000,
                  model_learn_batch_size=64,
                  model_learn_num_iter=30,
@@ -34,7 +34,9 @@ class MBMPPOAgent(ModelBasedAgent):
             env_name, policy=mppo.policy, dynamical_model=mppo.dynamical_model,
             reward_model=mppo.reward_model, model_optimizer=model_optimizer,
             termination=mppo.termination, value_function=mppo.value_function,
-            plan_horizon=plan_horizon, plan_samples=plan_samples, plan_elite=plan_elite,
+            plan_horizon=plan_horizon,
+            plan_samples=plan_samples,
+            plan_elites=plan_elites,
             model_learn_num_iter=model_learn_num_iter,
             model_learn_batch_size=model_learn_batch_size,
             max_memory=max_memory,
@@ -55,26 +57,4 @@ class MBMPPOAgent(ModelBasedAgent):
             exploration_episodes=exploration_episodes, comment=comment)
 
         self.algorithm = mppo
-        self.value_function = self.mppo.value_function
-
-        if hasattr(self.dynamical_model.base_model, 'num_heads'):
-            num_heads = self.dynamical_model.base_model.num_heads
-        else:
-            num_heads = 1
-
-        layout = {
-            'Model Training': {
-                'average': ['Multiline',
-                            [f"average/model-{i}" for i in range(num_heads)] + [
-                                "average/model_loss"]],
-            },
-            'Policy Training': {
-                'average': ['Multiline', ["average/value_loss", "average/policy_loss",
-                                          "average/eta_loss"]],
-            },
-            'Returns': {
-                'average': ['Multiline', ["average/environment_return",
-                                          "average/model_return"]]
-            }
-        }
-        self.logger.writer.add_custom_scalars(layout)
+        self.value_function = self.algorithm.value_function

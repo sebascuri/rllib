@@ -20,6 +20,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     train_frequency: int
     _training: bool
     comment: str
+    dist_params: dict
 
     last_trajectory: List[Observation]
 

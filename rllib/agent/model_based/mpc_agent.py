@@ -39,7 +39,7 @@ class MPCAgent(ModelBasedAgent):
             model_optimizer=model_optimizer,
             plan_horizon=0,  # Calling the mpc policy already plans.
             plan_samples=0,
-            plan_elite=0,
+            plan_elites=0,
             model_learn_num_iter=model_learn_num_iter,
             model_learn_batch_size=model_learn_batch_size,
             policy_opt_num_iter=value_opt_num_iter,
