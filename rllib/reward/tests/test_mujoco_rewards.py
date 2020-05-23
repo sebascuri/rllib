@@ -37,12 +37,11 @@ def test_reward(environment, action_cost):
     else:
         reward_model = reward_model_()
 
-    if hasattr(reward_model, 'goal'):
-        reward_model.goal = env.goal
-
     for _ in range(50):
         action = env.action_space.sample()
         next_state, reward, done, info = env.step(action)
+        if env.goal is not None:
+            state = np.concatenate((state, env.goal))
         np.testing.assert_allclose(reward, reward_model(state, action, next_state)[0],
                                    rtol=1e-3, atol=1e-6)
 

@@ -155,19 +155,12 @@ class ReacherReward(MujocoReward):
 
     def __init__(self, action_cost=0.01):
         super().__init__(action_cost)
-        self.goal = None
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
-        if self.goal is None:
-            raise ValueError
         bk = get_backend(state)
         with torch.no_grad():
-            if bk is torch and not isinstance(self.goal, torch.Tensor):
-                goal = torch.tensor(self.goal, dtype=torch.get_default_dtype())
-            else:
-                goal = self.goal
-
+            goal = state[..., -3:]
             dist_to_target = self.get_ee_position(next_state) - goal
 
         reward_state = -bk.square(dist_to_target).sum(-1)

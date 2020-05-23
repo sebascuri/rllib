@@ -23,5 +23,3 @@ class MPCPolicy(AbstractPolicy):
     def reset(self, **kwargs):
         """Re-set last_action to None."""
         self.solver.reset()
-        if hasattr(self.solver.reward_model, 'goal') and 'goal' in kwargs:
-            self.solver.reward_model.goal = kwargs.get('goal')
