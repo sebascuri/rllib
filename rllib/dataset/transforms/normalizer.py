@@ -144,6 +144,65 @@ class StateNormalizer(AbstractTransform):
         self._normalizer.update(observation.state)
 
 
+class NextStateNormalizer(AbstractTransform):
+    r"""Implementation of a transformer that normalizes the next states.
+
+    The next state of an observation is shifted by the mean and then re-scaled with the
+    standard deviation as:
+        .. math:: state = (raw_state - mean) / std_dev
+
+    The mean and standard deviation are computed with running statistics of the state.
+
+    Parameters
+    ----------
+    preserve_origin: bool, optional (default=False)
+        preserve the origin when rescaling.
+
+    """
+
+    def __init__(self, preserve_origin=False):
+        super().__init__()
+        self._normalizer = Normalizer(preserve_origin)
+
+    def forward(self, observation: Observation):
+        """See `AbstractTransform.__call__'."""
+        scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
+        return Observation(
+            state=observation.state,
+            action=observation.action,
+            reward=observation.reward,
+            next_state=self._normalizer(observation.next_state),
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=rescale(observation.next_state_scale_tril, scale),
+        )
+
+    @torch.jit.export
+    def inverse(self, observation: Observation):
+        """See `AbstractTransform.inverse'."""
+        inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
+        return Observation(
+            state=observation.state,
+            action=observation.action,
+            reward=observation.reward,
+            next_state=self._normalizer.inverse(observation.next_state),
+            done=observation.done,
+            next_action=observation.next_action,
+            log_prob_action=observation.log_prob_action,
+            entropy=observation.entropy,
+            state_scale_tril=observation.state_scale_tril,
+            next_state_scale_tril=rescale(observation.next_state_scale_tril, inv_scale)
+        )
+
+    @torch.jit.export
+    def update(self, observation: Observation):
+        """See `AbstractTransform.update'."""
+        self._normalizer.update(observation.next_state)
+
+
 class ActionNormalizer(AbstractTransform):
     """Implementation of a transformer that normalizes the action.
 

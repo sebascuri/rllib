@@ -46,6 +46,12 @@ class StateNormalizer(AbstractTransform):
     def update(self, observation: Observation) -> None: ...
 
 
+class NextStateNormalizer(AbstractTransform):
+    _normalizer: Normalizer
+
+    def __init__(self, preserve_origin: bool = False) -> None: ...
+
+
 class ActionNormalizer(AbstractTransform):
     _normalizer: Normalizer
 

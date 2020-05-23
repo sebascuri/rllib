@@ -14,14 +14,15 @@ class NextStateClamper(AbstractTransform):
 
     Parameters
     ----------
-    lower: torch.tensor
-    higher: torch.tensor
+    low: torch.tensor
+    high: torch.tensor
     """
 
-    def __init__(self, low, high):
+    def __init__(self, low, high, constant_idx=None):
         super().__init__()
         self.low = low
         self.high = high
+        self.constant_idx = [] if constant_idx is None else constant_idx
 
     def forward(self, observation: Observation):
         """See `AbstractTransform.__call__'."""
@@ -31,10 +32,12 @@ class NextStateClamper(AbstractTransform):
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
         next_state = torch.max(torch.min(observation.next_state, self.high), self.low)
+        next_state[..., self.constant_idx] = 0.
         idx = torch.diag_embed(observation.next_state != next_state)
         next_scale_tril = observation.next_state_scale_tril
         try:
-            next_scale_tril[idx] = 1e-6
+            next_scale_tril[idx].clamp_max_(1e-6)
+            next_scale_tril[..., self.constant_idx, self.constant_idx].clamp_max_(1e-6)
         except IndexError:
             pass
 
