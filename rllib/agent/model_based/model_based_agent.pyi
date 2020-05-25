@@ -7,7 +7,8 @@ from torch.distributions import Distribution
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Observation, Termination
-from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
+from rllib.dataset.experience_replay import BootstrapExperienceReplay, \
+    StateExperienceReplay
 
 from rllib.model.derived_model import TransformedModel
 from rllib.model import AbstractModel
@@ -25,7 +26,7 @@ class ModelBasedAgent(AbstractAgent):
 
     model_optimizer: Optimizer
     dataset: BootstrapExperienceReplay
-    sim_dataset: ExperienceReplay
+    sim_dataset: StateExperienceReplay
     sim_trajectory: Observation
 
     model_learn_num_iter: int
@@ -51,7 +52,7 @@ class ModelBasedAgent(AbstractAgent):
     sim_refresh_interval: int
     sim_num_subsample: int
     initial_distribution: Distribution
-    initial_states: Tensor
+    initial_states: StateExperienceReplay
     new_episode: bool
     thompson_sampling: bool
 
@@ -80,6 +81,7 @@ class ModelBasedAgent(AbstractAgent):
                  sim_memory_num_trajectories: int = 0,
                  sim_refresh_interval: int = 1,
                  sim_num_subsample: int = 1,
+                 sim_max_memory: int = 10000,
                  initial_distribution: Distribution = None,
                  thompson_sampling: bool = False,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,

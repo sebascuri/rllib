@@ -32,6 +32,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  sim_initial_states_num_trajectories=8,
                  sim_initial_dist_num_trajectories=0,
                  sim_memory_num_trajectories=0,
+                 sim_max_memory=100000,
                  sim_num_subsample=1,
                  thompson_sampling=False,
                  gamma=1.0,
@@ -72,8 +73,9 @@ class MBMPPOAgent(ModelBasedAgent):
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
             sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
             sim_memory_num_trajectories=sim_memory_num_trajectories,
-            sim_refresh_interval=1,
+            sim_refresh_interval=1,  # Completely on policy?
             sim_num_subsample=sim_num_subsample,
+            sim_max_memory=sim_max_memory,
             initial_distribution=initial_distribution,
             thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,

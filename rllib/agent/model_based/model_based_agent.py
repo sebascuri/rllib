@@ -14,8 +14,8 @@ import numpy as np
 from tqdm import tqdm
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset.datatypes import Observation
-from rllib.dataset.experience_replay import BootstrapExperienceReplay, ExperienceReplay
+from rllib.dataset.experience_replay import BootstrapExperienceReplay, \
+    StateExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples, average_named_tuple
 from rllib.policy.derived_policy import DerivedPolicy
 
@@ -113,6 +113,7 @@ class ModelBasedAgent(AbstractAgent):
                  sim_initial_states_num_trajectories=8,
                  sim_initial_dist_num_trajectories=0,
                  sim_memory_num_trajectories=0,
+                 sim_max_memory=10000,
                  sim_refresh_interval=1,
                  sim_num_subsample=1,
                  initial_distribution=None,
@@ -147,8 +148,10 @@ class ModelBasedAgent(AbstractAgent):
         self.dataset = BootstrapExperienceReplay(
             max_len=max_memory, transformations=dynamical_model.forward_transformations,
             num_bootstraps=num_heads)
-        self.sim_dataset = ExperienceReplay(
-            max_len=max_memory, transformations=dynamical_model.forward_transformations)
+        self.sim_dataset = StateExperienceReplay(
+            max_len=sim_max_memory, dim_state=self.dynamical_model.dim_state)
+        self.initial_states = StateExperienceReplay(
+            max_len=sim_max_memory, dim_state=self.dynamical_model.dim_state)
 
         self.policy_opt_num_iter = policy_opt_num_iter
         if policy_opt_batch_size is None:  # set the same batch size as in model learn.
@@ -167,7 +170,6 @@ class ModelBasedAgent(AbstractAgent):
         self.sim_refresh_interval = sim_refresh_interval
         self.sim_num_subsample = sim_num_subsample
         self.initial_distribution = initial_distribution
-        self.initial_states = torch.tensor(float('nan'))
         self.new_episode = True
         self.thompson_sampling = thompson_sampling
 
@@ -224,11 +226,7 @@ class ModelBasedAgent(AbstractAgent):
         super().observe(observation)
         self.dataset.append(observation)
         if self.new_episode:
-            initial_state = observation.state.unsqueeze(0)
-            if torch.isnan(self.initial_states).any():
-                self.initial_states = initial_state
-            else:
-                self.initial_states = torch.cat((self.initial_states, initial_state))
+            self.initial_states.append(observation.state.unsqueeze(0))
             self.new_episode = False
 
     def start_episode(self, **kwargs):
@@ -337,64 +335,49 @@ class ModelBasedAgent(AbstractAgent):
         """
         print(colorize('Optimizing Policy with Model Data', 'yellow'))
         self.dynamical_model.eval()
+        self.sim_dataset.reset()  # Erase simulation data set before starting.
         with disable_gradient(self.dynamical_model), gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.policy_opt_num_iter)):
                 # Step 1: Compute the state distribution
-                if (i + 1) % self.sim_refresh_interval == 0:
-                    with torch.no_grad():
-                        self._simulate_model()
+                with torch.no_grad():
+                    self._simulate_model()
 
-                    # Log last simulations.
-                    average_return = (self.sim_trajectory.reward
-                                      ).sum(0).mean().item()
-                    average_scale = torch.diagonal(
-                        self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
-                    ).square().sum(-1).sum(0).mean().sqrt().item()
+                # Log last simulations.
+                average_return = (self.sim_trajectory.reward
+                                  ).sum(0).mean().item()
+                average_scale = torch.diagonal(
+                    self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
+                ).square().sum(-1).sum(0).mean().sqrt().item()
+                self.logger.update(
+                    sim_entropy=self.sim_trajectory.entropy.mean().item())
+                self.logger.update(sim_return=average_return)
+                self.logger.update(sim_scale=average_scale)
+                self.logger.update(
+                    sim_max_state=self.sim_trajectory.state.abs().max().item())
+                self.logger.update(
+                    sim_max_action=self.sim_trajectory.action.abs().max().item())
+                try:
+                    r_ctrl = self.reward_model.reward_ctrl.mean().detach().item()
+                    r_state = self.reward_model.reward_state.mean().detach().item()
+                    self.logger.update(sim_reward_ctrl=r_ctrl)
+                    self.logger.update(sim_reward_state=r_state)
+                except AttributeError:
+                    pass
+                try:
+                    r_o = self.reward_model.reward_dist_to_obj
+                    r_g = self.reward_model.reward_dist_to_goal
                     self.logger.update(
-                        sim_entropy=self.sim_trajectory.entropy.mean().item())
-                    self.logger.update(sim_return=average_return)
-                    self.logger.update(sim_scale=average_scale)
+                        sim_reward_dist_to_obj=r_o.mean().detach().item())
                     self.logger.update(
-                        sim_max_state=self.sim_trajectory.state.abs().max().item())
-                    self.logger.update(
-                        sim_max_action=self.sim_trajectory.action.abs().max().item())
-                    try:
-                        r_ctrl = self.reward_model.reward_ctrl.mean().detach().item()
-                        r_state = self.reward_model.reward_state.mean().detach().item()
-                        self.logger.update(sim_reward_ctrl=r_ctrl)
-                        self.logger.update(sim_reward_state=r_state)
-                    except AttributeError:
-                        pass
-                    try:
-                        r_o = self.reward_model.reward_dist_to_obj
-                        r_g = self.reward_model.reward_dist_to_goal
-                        self.logger.update(
-                            sim_reward_dist_to_obj=r_o.mean().detach().item())
-                        self.logger.update(
-                            sim_reward_dist_to_goal=r_g.mean().detach().item())
-                    except AttributeError:
-                        pass
+                        sim_reward_dist_to_goal=r_g.mean().detach().item())
+                except AttributeError:
+                    pass
 
-                    # self._trajectory_to_experience_replay()
-
-                # if self.logger.current['sim_scale'][-1] > 1:
-                #     print(self.logger.current['sim_scale'][-1])
-                #     break
                 # Step 2: Optimize policy
                 self._optimize_policy()
 
-    def _trajectory_to_experience_replay(self):
-        """Convert trajectories to experience replay."""
-        total_num_trajectories = self.sim_trajectory.state.shape[2]
-        trajectories = [Observation(*[(a[:, 0, i_traj] if a.dim() > 2 else a)
-                                      for a in self.sim_trajectory])
-                        for i_traj in range(total_num_trajectories)]
-
-        for trajectory in trajectories:
-            for i in range(trajectory.state.shape[0]):
-                if i % self.sim_num_subsample == 0:
-                    observation = Observation(*[a[i] for a in trajectory])
-                    self.sim_dataset.append(observation)
+            if self.sim_refresh_interval and (i + 1) % self.sim_refresh_interval == 0:
+                self.sim_dataset.reset()
 
     def _simulate_model(self):
         """Simulate the model.
@@ -405,9 +388,8 @@ class ModelBasedAgent(AbstractAgent):
             - The empirical state distribution.
         """
         # Samples from empirical initial state distribution.
-        idx = torch.randint(self.initial_states.shape[0],
-                            (self.sim_initial_states_num_trajectories,))
-        initial_states = self.initial_states[idx]
+        initial_states = self.initial_states.get_batch(
+            self.sim_initial_states_num_trajectories)
 
         # Samples from initial distribution.
         if self.sim_initial_dist_num_trajectories > 0:
@@ -433,19 +415,15 @@ class ModelBasedAgent(AbstractAgent):
                                    termination=self.termination)
 
         self.sim_trajectory = stack_list_of_tuples(trajectory)
+        states = self.sim_trajectory.state.reshape(-1, self.dynamical_model.dim_state)
+        self.sim_dataset.append(states[::self.sim_num_subsample])
 
     def _optimize_policy(self):
         """Optimize the policy."""
         # Iterate over state batches in the state distribution
-        states = self.sim_trajectory.state.reshape(-1, self.dynamical_model.dim_state)
-        np.random.shuffle(states.numpy())
-        state_batches = torch.split(states[::self.sim_num_subsample],
-                                    self.policy_opt_batch_size)
-
         self.algorithm.reset()
         for _ in range(self.policy_opt_gradient_steps):
-            idx = np.random.choice(len(state_batches))
-            states = state_batches[idx]
+            states = self.sim_dataset.get_batch(self.policy_opt_batch_size)
 
             def closure():
                 """Gradient calculation."""
