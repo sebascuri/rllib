@@ -5,6 +5,7 @@ from typing import Union, Optional, NamedTuple, Tuple
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
+from torch.distributions import Distribution
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 from rllib.dataset.datatypes import Termination
@@ -69,7 +70,7 @@ class MPPO(AbstractAlgorithm):
                  gamma: float = 0.99
                  ) -> None: ...
 
-    def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Tensor]: ...
+    def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
 
     def reset(self) -> None: ...
 
@@ -91,6 +92,7 @@ class MBMPPO(AbstractAlgorithm):
     entropy_reg: float
     reward_transformer: RewardTransformer
     termination: Optional[Termination]
+    dist_params: dict
 
     def __init__(self, dynamical_model: AbstractModel, reward_model: AbstractReward,
                  policy: AbstractPolicy, value_function: AbstractValueFunction,

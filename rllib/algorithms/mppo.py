@@ -355,6 +355,7 @@ class MBMPPO(AbstractAlgorithm):
         self.entropy_reg = entropy_reg
         self.reward_transformer = reward_transformer
         self.termination = termination
+        self.dist_params = {}
 
     def forward(self, states):
         """Compute the losses for one step of MPO.
@@ -399,7 +400,9 @@ class MBMPPO(AbstractAlgorithm):
                 value_function=self.value_target,
                 num_samples=self.num_action_samples,
                 reward_transformer=self.reward_transformer,
-                entropy_reg=self.entropy_reg, termination=self.termination)
+                entropy_reg=self.entropy_reg, termination=self.termination,
+                **self.dist_params
+            )
         q_values = value_estimate
         action_log_probs = pi_dist.log_prob(
             trajectory[0].action / self.policy.action_scale)
