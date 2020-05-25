@@ -27,7 +27,7 @@ class EnvironmentTermination(nn.Module):
 
 
 SEED = 0
-MAX_ITER = 25
+MAX_ITER = 5
 ENVIRONMENT = 'VContinuous-CartPole-v0'
 
 env = GymEnvironment(ENVIRONMENT, SEED)
@@ -37,7 +37,7 @@ dynamical_model = EnvironmentModel(env_model)
 reward_model = EnvironmentReward(env_model)
 termination = EnvironmentTermination(env_model)
 GAMMA = 0.99
-HORIZON = 10
+HORIZON = 5
 NUM_ITER = 5
 NUM_SAMPLES = 50
 NUM_ELITES = 5
