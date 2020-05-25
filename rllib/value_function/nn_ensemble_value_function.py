@@ -36,6 +36,7 @@ class NNEnsembleValueFunction(NNValueFunction):
                              non_linearity=non_linearity, tau=tau,
                              input_transform=input_transform)
              for _ in range(num_heads)])
+        self.tau = tau
 
     @classmethod
     def from_q_function(cls, value_function, num_heads: int):
@@ -93,6 +94,7 @@ class NNEnsembleQFunction(NNQFunction):
                          input_transform=input_transform)
              for _ in range(self.num_heads)]
         )
+        self.tau = tau
 
     @classmethod
     def from_q_function(cls, q_function, num_heads: int):
