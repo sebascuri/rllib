@@ -27,7 +27,7 @@ def step(environment, state, action, pi, render, goal=None):
         entropy = pi.entropy().squeeze()
     except NotImplementedError:
         # Approximate it by MC sampling.
-        entropy = integrate(lambda x: -pi.log_prob(x), pi, num_samples=2)
+        entropy = -pi.log_prob(action)
 
     observation = RawObservation(state=state,
                                  action=action,
@@ -103,7 +103,8 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     agent.end_interaction()
 
 
-def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False):
+def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False,
+                   **kwargs):
     """Conduct a rollout of a policy in an environment.
 
     Parameters
@@ -133,7 +134,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         with torch.no_grad():
             while not done:
                 pi = tensor_to_distribution(policy(
-                    torch.tensor(state, dtype=torch.get_default_dtype())))
+                    torch.tensor(state, dtype=torch.get_default_dtype())), **kwargs)
                 action = pi.sample().numpy()
                 obs, state, done, info = step(environment, state, action, pi, render)
                 trajectory.append(obs)
@@ -144,7 +145,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
 
 
 def rollout_model(dynamical_model, reward_model, policy, initial_state,
-                  termination=None, max_steps=1000):
+                  termination=None, max_steps=1000, **kwargs):
     """Conduct a rollout of a policy interacting with a model.
 
     Parameters
@@ -178,7 +179,7 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
     assert max_steps > 0
     for _ in range(max_steps):
         # Sample an action
-        pi = tensor_to_distribution(policy(state))
+        pi = tensor_to_distribution(policy(state), **kwargs)
         if pi.has_rsample:
             action = pi.rsample()
         else:
@@ -210,10 +211,16 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         if termination is not None:
             done = termination(state, action, next_state)
 
+        try:
+            entropy = pi.entropy().squeeze()
+        except NotImplementedError:
+            # Approximate it by MC sampling.
+            entropy = -pi.log_prob(action)
+
         trajectory.append(
             RawObservation(state, action, reward, next_state, done.float(),
                            log_prob_action=pi.log_prob(action),
-                           entropy=pi.entropy(),
+                           entropy=entropy,
                            next_state_scale_tril=next_state_tril).to_torch()
         )
 

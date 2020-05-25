@@ -34,4 +34,5 @@ def mb_return(state: State, dynamical_model: AbstractModel,
               policy: AbstractPolicy, num_steps: int = 1, gamma: float = 1.0,
               num_samples: int = 1, value_function: AbstractValueFunction = None,
               entropy_reg: float = 0., termination: Termination = None,
-              reward_transformer: RewardTransformer = RewardTransformer()) -> MBValueReturn: ...
+              reward_transformer: RewardTransformer = RewardTransformer(), **kwargs
+              ) -> MBValueReturn: ...

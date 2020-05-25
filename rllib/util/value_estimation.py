@@ -122,7 +122,8 @@ def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.,
 
 def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1.,
               value_function=None, num_samples=1, entropy_reg=0.,
-              reward_transformer=RewardTransformer(), termination=None):
+              reward_transformer=RewardTransformer(), termination=None,
+              **kwargs):
     r"""Estimate the value of a state by propagating the state with a model for N-steps.
 
     Rolls out the model for a number of `steps` and sums up the rewards. After this,
@@ -180,7 +181,7 @@ def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1
     # Repeat states to get a better estimate of the expected value
     state = repeat_along_dimension(state, number=num_samples, dim=0)
     trajectory = rollout_model(dynamical_model, reward_model, policy, state,
-                               max_steps=num_steps, termination=termination)
+                               max_steps=num_steps, termination=termination, **kwargs)
     value = mc_return(trajectory, gamma=gamma, value_function=value_function,
                       entropy_reg=entropy_reg, reward_transformer=reward_transformer)
 

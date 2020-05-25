@@ -80,7 +80,10 @@ class AbstractAgent(object, metaclass=ABCMeta):
         elif self.pi.has_enumerate_support:
             action = torch.argmax(self.pi.probs)
         else:
-            action = self.pi.mean
+            try:
+                action = self.pi.mean
+            except NotImplementedError:
+                action = self.pi.sample((100,)).mean(dim=0)
 
         return action.detach().numpy()
 
