@@ -47,8 +47,7 @@ class SoftActorCritic(AbstractAlgorithm):
 
     def actor_loss(self, state):
         """Get Actor Loss."""
-        pi = tensor_to_distribution(self.policy(state), tanh=True,
-                                    action_scale=self.policy.action_scale)
+        pi = tensor_to_distribution(self.policy(state, normalized=True), tanh=True)
         if pi.has_rsample:
             action = pi.rsample()  # re-parametrization trick.
         else:
@@ -59,13 +58,13 @@ class SoftActorCritic(AbstractAlgorithm):
             if type(q_val) is list:
                 q_val = torch.min(*q_val)
 
-        log_prob = pi.log_prob(action).sum(-1, keepdim=True)  # Add the actions.
+        log_prob = pi.log_prob(action)
         eta_loss = (self.eta() * (-log_prob - self.target_entropy).detach()).mean()
         return (self.eta().detach() * log_prob - q_val).mean(), eta_loss
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
-        pred_q = self.q_function(state, action)
+        pred_q = self.q_function(state, action / self.policy.action_scale)
         if type(pred_q) is not list:
             pred_q = [pred_q]
 
@@ -81,14 +80,14 @@ class SoftActorCritic(AbstractAlgorithm):
         """Get the target of the q function."""
         # Target Q-values
         with torch.no_grad():
-            pi = tensor_to_distribution(self.policy_target(next_state), tanh=True,
-                                        action_scale=self.policy.action_scale)
+            pi = tensor_to_distribution(self.policy_target(next_state, normalized=True),
+                                        tanh=True)
             next_action = pi.sample()
             next_q = self.q_target(next_state, next_action)
             if type(next_q) is list:
                 next_q = torch.min(*next_q)
 
-            log_prob = pi.log_prob(next_action).sum(-1, keepdim=True)
+            log_prob = pi.log_prob(next_action)
             next_v = (next_q - self.eta().detach() * log_prob)
             not_done = 1. - done
             target_q = self.reward_transformer(reward) + self.gamma * next_v * not_done
@@ -99,7 +98,8 @@ class SoftActorCritic(AbstractAlgorithm):
         # Critic Loss
         with torch.no_grad():
             q_target = self.get_q_target(reward, next_state, done)
-        critic_loss, td_error = self.critic_loss(state, action, q_target)
+        critic_loss, td_error = self.critic_loss(
+            state, action / self.policy.action_scale, q_target)
 
         # Actor loss
         policy_loss, eta_loss = self.actor_loss(state)
@@ -131,7 +131,7 @@ class MBSoftActorCritic(SoftActorCritic):
         self.num_steps = num_steps
         self.num_samples = num_samples
         self.value_function = IntegrateQValueFunction(
-            self.q_target, self.policy_target, self.num_samples,
+            self.q_target, self.policy_target, 1,
             dist_params={'tanh': True, 'action_scale': self.policy.action_scale}
         )
 
@@ -149,14 +149,23 @@ class MBSoftActorCritic(SoftActorCritic):
                 num_samples=self.num_samples,
                 termination=self.termination
             )
+            next_state = trajectory[-1].next_state
+            not_done = 1 - trajectory[-1].done
+            pi = tensor_to_distribution(self.policy_target(next_state, normalized=True),
+                                        tanh=True)
+            next_action = pi.sample()
+            log_prob = pi.log_prob(next_action)
+            entropy = self.eta().detach() * log_prob * not_done
+            target_q = mc_return - self.gamma ** self.num_steps * entropy
 
+        # Critic Loss
         critic_loss, td_error = self.critic_loss(
-            trajectory[0].state, trajectory[0].action, mc_return)
+            trajectory[0].state, trajectory[0].action, target_q)
 
         # Actor loss
         policy_loss, eta_loss = self.actor_loss(state)
         self._info = {'eta': self.eta().detach().item()}
 
-        return SACLoss(loss=policy_loss + critic_loss + critic_loss + eta_loss,
-                       policy_loss=policy_loss, critic_loss=critic_loss,
-                       eta_loss=eta_loss, td_error=td_error)
+        combined_loss = policy_loss + critic_loss + eta_loss
+        return SACLoss(loss=combined_loss, policy_loss=policy_loss,
+                       critic_loss=critic_loss, eta_loss=eta_loss, td_error=td_error)

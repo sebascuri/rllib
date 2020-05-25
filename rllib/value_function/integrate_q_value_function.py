@@ -35,7 +35,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
         pi = tensor_to_distribution(self.policy(state), **self.dist_params)
         for i in range(self.q_function.num_heads):
             final_v.append(integrate(
-                lambda a: self.q_function(state, a)[i], pi,
+                lambda a: self.q_function(state, a / self.policy.action_scale)[i], pi,
                 num_samples=self.num_samples)
             )
         final_v = torch.min(*final_v)

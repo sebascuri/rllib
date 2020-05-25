@@ -77,7 +77,7 @@ class NNPolicy(AbstractPolicy):
         new.nn = module
         return new
 
-    def forward(self, state):
+    def forward(self, state, **kwargs):
         """Get distribution over actions."""
         if self.input_transform is not None:
             state = self.input_transform(state)
@@ -86,7 +86,7 @@ class NNPolicy(AbstractPolicy):
             state = one_hot_encode(state.long(), num_classes=self.num_states)
 
         out = self.nn(state)
-        if not self.discrete_action:
+        if (not self.discrete_action) and not kwargs.get('normalized', False):
             out = (self.action_scale * out[0], self.action_scale * out[1])
 
         if self.deterministic:

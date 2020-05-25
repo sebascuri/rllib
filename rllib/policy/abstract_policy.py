@@ -62,12 +62,13 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
         self.action_scale = action_scale
 
-    def random(self, batch_size=None):
+    def random(self, batch_size=None, normalized=False):
         """Return a uniform random distribution of the output space.
 
         Parameters
         ----------
         batch_size: tuple, optional
+        normalized: bool, optional.
 
         Returns
         -------
@@ -81,7 +82,10 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             else:
                 return torch.ones(*batch_size, self.num_actions)
         else:
-            cov = self.action_scale * torch.eye(self.dim_action)
+            cov = torch.eye(self.dim_action)
+            if not normalized:
+                cov *= self.action_scale
+
             if batch_size is None:
                 return torch.zeros(self.dim_action), cov
             else:

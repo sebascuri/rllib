@@ -1,6 +1,6 @@
 """Maximum a Posterior Policy Optimization algorithm stub."""
 
-from typing import Union, Optional, NamedTuple
+from typing import Union, Optional, NamedTuple, Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -68,6 +68,8 @@ class MPPO(AbstractAlgorithm):
                  reward_transformer: RewardTransformer = RewardTransformer(),
                  gamma: float = 0.99
                  ) -> None: ...
+
+    def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Tensor]: ...
 
     def reset(self) -> None: ...
 

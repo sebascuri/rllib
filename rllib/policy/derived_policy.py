@@ -18,9 +18,9 @@ class DerivedPolicy(AbstractPolicy):
             tau=base_policy.tau, deterministic=base_policy.deterministic)
         self.base_policy = base_policy
 
-    def forward(self, state):
+    def forward(self, state, **kwargs):
         """Compute the derived policy."""
-        mean, scale = self.base_policy(state)
+        mean, scale = self.base_policy(state, **kwargs)
         mean = mean[..., :self.dim_action]
         scale = scale[..., :self.dim_action, :self.dim_action]
         return mean, scale

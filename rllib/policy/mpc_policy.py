@@ -14,7 +14,7 @@ class MPCPolicy(AbstractPolicy):
 
         self.solver = mpc_solver
 
-    def forward(self, state):
+    def forward(self, state, **kwargs):
         """Solve the MPC problem."""
         action_sequence = self.solver(state)
         # Return first Step.

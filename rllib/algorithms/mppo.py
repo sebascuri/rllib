@@ -42,8 +42,6 @@ class MPPOWorker(nn.Module):
     Abdolmaleki, et al. "Maximum a Posteriori Policy Optimisation." (2018). ICLR.
     """
 
-    # __constants__ = ['epsilon', 'epsilon_mean', 'epsilon_var']
-
     def __init__(self, epsilon=None, epsilon_mean=None, epsilon_var=None,
                  eta=None, eta_mean=None, eta_var=None):
         super().__init__()
@@ -80,22 +78,6 @@ class MPPOWorker(nn.Module):
         else:  # KL-DIV not separated into mean and var components.
             self.eta_var = Learnable(1., positive=True)
             self.epsilon_var = torch.tensor(0.)
-
-    def project_etas(self):
-        """Project the etas to be positive inplace."""
-        # Since we divide by eta, make sure it doesn't go to zero.
-        self.eta.start.data.clamp_min_(1e-5)
-        self.eta_mean.start.data.clamp_min_(1e-5)
-        self.eta_var.start.data.clamp_min_(1e-5)
-
-    def reset(self):
-        """Reset etas."""
-        if self.epsilon > 0:
-            self.eta = Learnable(1.)
-        if self.epsilon_mean > 0:
-            self.eta_mean = Learnable(1.)
-        if self.epsilon_var > 0:
-            self.eta_var = Learnable(1.)
 
     def forward(self, q_values, action_log_probs, kl_mean, kl_var):
         """Return primal and dual loss terms from MMPO.
@@ -234,8 +216,8 @@ class MPPO(AbstractAlgorithm):
         pi_dist: torch.distribution.Distribution
             Current policy distribution.
         """
-        pi_dist = tensor_to_distribution(self.policy(state))
-        pi_dist_old = tensor_to_distribution(self.old_policy(state))
+        pi_dist = tensor_to_distribution(self.policy(state, normalized=True))
+        pi_dist_old = tensor_to_distribution(self.old_policy(state, normalized=True))
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
             kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
@@ -274,7 +256,7 @@ class MPPO(AbstractAlgorithm):
         kl_div: torch.Tensor
             The average KL divergence of the policy.
         """
-        value_pred = self.q_function(state, action)
+        value_pred = self.q_function(state, action / self.policy.action_scale)
         state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
         next_state = repeat_along_dimension(next_state, number=self.num_action_samples,
                                             dim=0)
@@ -290,7 +272,8 @@ class MPPO(AbstractAlgorithm):
                                 kl_var=kl_var)
 
         with torch.no_grad():
-            next_pi = tensor_to_distribution(self.old_policy(next_state))
+            next_pi = tensor_to_distribution(self.old_policy(next_state,
+                                                             normalized=True))
             next_action = next_pi.sample()
 
             next_values = self.q_target(next_state, next_action) * (1. - done)
@@ -404,10 +387,8 @@ class MBMPPO(AbstractAlgorithm):
         """
         value_prediction = self.value_function(states)
 
-        pi_dist = tensor_to_distribution(self.policy(states), normalized=True,
-                                         action_scale=self.policy.action_scale)
-        pi_dist_old = tensor_to_distribution(self.old_policy(states), normalized=True,
-                                             action_scale=self.policy.action_scale)
+        pi_dist = tensor_to_distribution(self.policy(states, normalized=True))
+        pi_dist_old = tensor_to_distribution(self.old_policy(states, normalized=True))
         kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
 
         with torch.no_grad():
@@ -447,7 +428,6 @@ class MBMPPO(AbstractAlgorithm):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
-        self.update()
 
     def update(self):
         """Update target value function."""
