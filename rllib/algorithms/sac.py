@@ -25,7 +25,6 @@ class SoftActorCritic(AbstractAlgorithm):
         super().__init__()
         # Actor
         self.policy = policy
-        self.policy_target = deep_copy_module(policy)
         self.target_entropy = -policy.dim_action
 
         # Critic
@@ -44,14 +43,12 @@ class SoftActorCritic(AbstractAlgorithm):
 
         self.criterion = criterion
         self.gamma = gamma
+        self.dist_params = {'tanh': True, 'action_scale': self.policy.action_scale}
 
     def actor_loss(self, state):
         """Get Actor Loss."""
         pi = tensor_to_distribution(self.policy(state, normalized=True), tanh=True)
-        if pi.has_rsample:
-            action = pi.rsample()  # re-parametrization trick.
-        else:
-            action = pi.sample()
+        action = pi.rsample()  # re-parametrization trick.
 
         with disable_gradient(self.q_target):
             q_val = self.q_target(state, action)
@@ -59,12 +56,19 @@ class SoftActorCritic(AbstractAlgorithm):
                 q_val = torch.min(*q_val)
 
         log_prob = pi.log_prob(action)
-        eta_loss = (self.eta() * (-log_prob - self.target_entropy).detach()).mean()
-        return (self.eta().detach() * log_prob - q_val).mean(), eta_loss
+        eta_loss = (self.eta() * (-log_prob - self.target_entropy).detach())
+        actor_loss = self.eta().detach() * log_prob - q_val
+
+        if self.criterion.reduction == 'mean':
+            eta_loss, actor_loss = eta_loss.mean(), actor_loss.mean()
+        elif self.criterion.reduction == 'sum':
+            eta_loss, actor_loss = eta_loss.sum(), actor_loss.sum()
+
+        return actor_loss, eta_loss
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
-        pred_q = self.q_function(state, action / self.policy.action_scale)
+        pred_q = self.q_function(state, action)
         if type(pred_q) is not list:
             pred_q = [pred_q]
 
@@ -79,18 +83,16 @@ class SoftActorCritic(AbstractAlgorithm):
     def get_q_target(self, reward, next_state, done):
         """Get the target of the q function."""
         # Target Q-values
-        with torch.no_grad():
-            pi = tensor_to_distribution(self.policy_target(next_state, normalized=True),
-                                        tanh=True)
-            next_action = pi.sample()
-            next_q = self.q_target(next_state, next_action)
-            if type(next_q) is list:
-                next_q = torch.min(*next_q)
+        pi = tensor_to_distribution(self.policy(next_state, normalized=True), tanh=True)
+        next_action = pi.sample()
+        next_q = self.q_target(next_state, next_action)
+        if type(next_q) is list:
+            next_q = torch.min(*next_q)
 
-            log_prob = pi.log_prob(next_action)
-            next_v = (next_q - self.eta().detach() * log_prob)
-            not_done = 1. - done
-            target_q = self.reward_transformer(reward) + self.gamma * next_v * not_done
+        log_prob = pi.log_prob(next_action)
+        next_v = (next_q - self.eta().detach() * log_prob)
+        not_done = 1. - done
+        target_q = self.reward_transformer(reward) + self.gamma * next_v * not_done
         return target_q
 
     def forward(self, state, action, reward, next_state, done):
@@ -112,7 +114,6 @@ class SoftActorCritic(AbstractAlgorithm):
     def update(self):
         """Update the baseline network."""
         update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
-        update_parameters(self.policy_target, self.policy, tau=self.policy.tau)
 
 
 class MBSoftActorCritic(SoftActorCritic):
@@ -131,28 +132,27 @@ class MBSoftActorCritic(SoftActorCritic):
         self.num_steps = num_steps
         self.num_samples = num_samples
         self.value_function = IntegrateQValueFunction(
-            self.q_target, self.policy_target, 1,
-            dist_params={'tanh': True, 'action_scale': self.policy.action_scale}
-        )
+            self.q_target, self.policy, 1, dist_params=self.dist_params)
 
     def forward(self, state):
         """Compute the losses."""
         with torch.no_grad():
             mc_return, trajectory = mb_return(
                 state=state, dynamical_model=self.dynamical_model,
-                policy=self.policy_target,
+                policy=self.policy,
                 reward_model=self.reward_model,
                 num_steps=self.num_steps,
                 gamma=self.gamma,
                 reward_transformer=self.reward_transformer,
                 value_function=self.value_function,
                 num_samples=self.num_samples,
-                termination=self.termination
+                termination=self.termination,
+                **self.dist_params
             )
             next_state = trajectory[-1].next_state
             not_done = 1 - trajectory[-1].done
-            pi = tensor_to_distribution(self.policy_target(next_state, normalized=True),
-                                        tanh=True)
+            pi = tensor_to_distribution(self.policy(next_state),
+                                        **self.dist_params)
             next_action = pi.sample()
             log_prob = pi.log_prob(next_action)
             entropy = self.eta().detach() * log_prob * not_done
@@ -160,7 +160,8 @@ class MBSoftActorCritic(SoftActorCritic):
 
         # Critic Loss
         critic_loss, td_error = self.critic_loss(
-            trajectory[0].state, trajectory[0].action, target_q)
+            trajectory[0].state, trajectory[0].action / self.policy.action_scale,
+            target_q)
 
         # Actor loss
         policy_loss, eta_loss = self.actor_loss(state)

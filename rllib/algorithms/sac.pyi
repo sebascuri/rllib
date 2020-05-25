@@ -19,12 +19,12 @@ class SoftActorCritic(AbstractAlgorithm):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     policy: AbstractPolicy
-    policy_target: AbstractPolicy
     criterion: _Loss
     gamma: float
     reward_transformer: RewardTransformer
     eta: ParameterDecay
-    target_entropy: int
+    target_entropy: Union[float, Tensor]
+    dist_params: dict
 
     def __init__(self, policy: AbstractPolicy, q_function: AbstractQFunction,
                  criterion: _Loss, gamma: float,
