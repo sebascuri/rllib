@@ -1,7 +1,6 @@
 """Python Script Template."""
 
 from lsf_runner import make_commands, init_runner
-from exps.gpucrl.reacher import ACTION_COST
 import os
 
 runner = init_runner(f'gp_regression', num_threads=1, wall_time=1439)
@@ -16,4 +15,5 @@ cmd_list = make_commands(
     algorithm_hyper_args={},
 )
 runner.run(cmd_list)
-os.system("sudo shutdown")
+if 'AWS' in os.environ:
+    os.system("sudo shutdown")

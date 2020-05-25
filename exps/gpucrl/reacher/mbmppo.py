@@ -7,14 +7,15 @@ from exps.gpucrl.plotters import plot_last_rewards
 from exps.gpucrl.util import train_and_evaluate
 from rllib.util.utilities import RewardTransformer
 
-PLAN_HORIZON = 20
+PLAN_HORIZON = 1
 PLAN_SAMPLES = 500
 PLAN_ELITES = 10
 ALGORITHM_NUM_ITER = 50
-SIM_TRAJECTORIES = 25
-SIM_EXP_TRAJECTORIES = 25
-SIM_MEMORY_TRAJECTORIES = 25
-SIM_NUM_STEPS = 10
+SIM_TRAJECTORIES = 2 * TRAIN_EPISODES
+SIM_EXP_TRAJECTORIES = 200
+SIM_MEMORY_TRAJECTORIES = 4 * TRAIN_EPISODES
+SIM_NUM_STEPS = 5
+SIM_SUBSAMPLE = 1
 
 parser.description = 'Run Reacher using Model-Based MPPO.'
 parser.set_defaults(
@@ -27,16 +28,16 @@ parser.set_defaults(
     plan_elites=PLAN_ELITES,
 
     mppo_num_iter=ALGORITHM_NUM_ITER,
-    mppo_eta=1.,
-    mppo_eta_mean=1.,
-    mppo_eta_var=5.,
-    # mppo_eta=None,
-    # mppo_eta_mean=None,
-    # mppo_eta_var=None,
-    # mppo_epsilon=0.1 ,
-    # mppo_epsilon_mean=0.1,
-    # mppo_epsilon_var=0.0001,
-    mppo_opt_lr=5e-4,
+    # mppo_eta=1.,
+    # mppo_eta_mean=1.,
+    # mppo_eta_var=5.,
+    mppo_eta=None,
+    mppo_eta_mean=None,
+    mppo_eta_var=None,
+    mppo_epsilon=0.1,
+    mppo_epsilon_mean=0.01,
+    mppo_epsilon_var=0.0001,
+    mppo_opt_lr=0.0003,
     mppo_batch_size=100,
     mppo_gradient_steps=200,
     mppo_target_frequency_update=10,
@@ -49,22 +50,26 @@ parser.set_defaults(
     model_kind='DeterministicEnsemble',
     model_learn_num_iter=50,
     max_memory=10 * ENVIRONMENT_MAX_STEPS,
-    model_layers=[200, 200, 200, 200],
-    model_non_linearity='Tanh',
+    model_layers=[256, 256, 256],
+    model_non_linearity='swish',
     model_opt_lr=1e-4,
     model_opt_weight_decay=0.0005,
 
-    policy_layers=[200, 200],
+    policy_layers=[100, 100],
+    policy_tau=0.005,
+    policy_non_linearity='ReLU',
     value_function_layers=[200, 200],
-    value_function_tau=0.01,
+    value_function_tau=0.005,
+    value_function_non_linearity='ReLU'
 )
 
 args = parser.parse_args()
 params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, 'mbmppo')
-agent.algorithm.reward_transformer = RewardTransformer(offset=-15, scale=1 / 15,
-                                                       low=0, high=1)
+"All tasks have rewards that are scaled to be between 0 and 1000."
+agent.algorithm.reward_transformer = RewardTransformer(offset=-2, scale=100 / 2,
+                                                       low=0, high=100)
 # agent.exploration_episodes = 3
 train_and_evaluate(agent, environment, params=params,
                    plot_callbacks=[plot_last_rewards])

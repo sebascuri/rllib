@@ -79,7 +79,7 @@ sim_parser.add_argument('--sim-num-steps', type=int, default=400)
 sim_parser.add_argument('--sim-initial-states-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim-initial-dist-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim_memory-num-trajectories', type=int, default=0)
-sim_parser.add_argument('--sim_max-memory', type=int, default=100000)
+sim_parser.add_argument('--sim_max-memory', type=int, default=10000)
 mppo_parser.add_argument('--sim-refresh-frequency', type=int, default=0)
 sim_parser.add_argument('--sim-num-subsample', type=int, default=1)
 
