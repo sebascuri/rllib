@@ -13,13 +13,13 @@ from rllib.reward.mujoco_rewards import HalfCheetahReward
 
 class StateTransform(nn.Module):
     """Transform pendulum states to cos, sin, angular_velocity."""
-    extra_dim = 7
+    extra_dim = 8
 
     def forward(self, states):
         """Transform state before applying function approximation."""
-        angles = states[..., 2:9]
+        angles = states[..., 1:9]
         states_ = torch.cat(
-            (states[..., :2], torch.cos(angles), torch.sin(angles), states[..., 9:]),
+            (states[..., :1], torch.cos(angles), torch.sin(angles), states[..., 9:]),
             dim=-1)
         return states_
 

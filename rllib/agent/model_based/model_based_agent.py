@@ -376,8 +376,9 @@ class ModelBasedAgent(AbstractAgent):
                 # Step 2: Optimize policy
                 self._optimize_policy()
 
-            if self.sim_refresh_interval and (i + 1) % self.sim_refresh_interval == 0:
-                self.sim_dataset.reset()
+                if (self.sim_refresh_interval
+                        and (i + 1) % self.sim_refresh_interval == 0):
+                    self.sim_dataset.reset()
 
     def _simulate_model(self):
         """Simulate the model.

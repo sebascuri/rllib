@@ -28,7 +28,7 @@ try:
             self.goal_pos = np.asarray([0, 0])
             self.cylinder_pos = np.array([-0.25, 0.15]
                                          ) + np.random.normal(0, 0.025, [2])
-            self.goal = self.get_body_com("goal")
+            # self._goal = self.get_body_com("goal")
             self.reset_model()
 
         def step(self, action: np.ndarray):
@@ -104,7 +104,7 @@ try:
                 low=-0.005, high=0.005, size=self.model.nv)
             qvel[-4:] = 0
             self.set_state(qpos, qvel)
-            self.goal = self.get_body_com("goal")
+            self._goal = self.get_body_com("goal")
 
             return self._get_obs()
 

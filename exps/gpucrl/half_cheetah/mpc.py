@@ -6,7 +6,7 @@ from exps.gpucrl.mpc_arguments import parser
 from exps.gpucrl.plotters import plot_last_rewards
 from exps.gpucrl.util import train_and_evaluate
 
-MPC_HORIZON, MPC_NUM_SAMPLES = 300, 500
+MPC_HORIZON, MPC_NUM_SAMPLES = 30, 500
 
 parser.description = 'Run Half Cheetah using Model-Based MPC.'
 parser.set_defaults(action_cost=ACTION_COST,
@@ -15,9 +15,15 @@ parser.set_defaults(action_cost=ACTION_COST,
                     mpc_horizon=MPC_HORIZON,
                     mpc_num_samples=MPC_NUM_SAMPLES,
                     mpc_num_elites=MPC_NUM_SAMPLES // 10,
+
                     model_kind='DeterministicEnsemble',
                     model_learn_num_iter=50,
-                    model_opt_lr=1e-3)
+                    max_memory=10 * ENVIRONMENT_MAX_STEPS,
+                    model_layers=[256, 256, 256],
+                    model_non_linearity='swish',
+                    model_opt_lr=1e-4,
+                    model_opt_weight_decay=0.0005,
+                    )
 
 args = parser.parse_args()
 params = DotMap(vars(args))

@@ -13,7 +13,7 @@ from rllib.policy import FelixPolicy
 from rllib.value_function import NNQFunction
 
 ENVIRONMENT = ['MountainCarContinuous-v0', 'Pendulum-v0'][1]
-NUM_EPISODES = 20
+NUM_EPISODES = 40
 MAX_STEPS = 1000
 TARGET_UPDATE_FREQUENCY = 2
 TARGET_UPDATE_TAU = 0.005
