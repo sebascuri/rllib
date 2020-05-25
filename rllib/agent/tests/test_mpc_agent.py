@@ -1,4 +1,6 @@
 import pytest
+import copy
+import os
 
 import torch.nn as nn
 
@@ -12,7 +14,6 @@ from rllib.util.training import evaluate_agent
 
 from rllib.agent import MPCAgent
 
-import copy
 
 
 class EnvironmentTermination(nn.Module):
@@ -94,6 +95,8 @@ def get_solver(solver_, warm_start_, num_cpu_, default_action_):
 
 
 def test_mpc_solvers(solver, num_cpu):
+    if num_cpu > 1 and 'CI' in os.environ:
+        return
     mpc_solver = get_solver(solver, True, num_cpu, 'mean')
     policy = MPCPolicy(mpc_solver)
 
