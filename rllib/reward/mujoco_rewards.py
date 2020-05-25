@@ -59,12 +59,11 @@ class HalfCheetahReward(MujocoReward):
 
     def __init__(self, action_cost=0.1):
         super().__init__(action_cost)
+        self.dt = 0.05
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
-        bk = get_backend(state)
-        reward_state = next_state[..., 0] - 0.0 * bk.square(next_state[..., 2])
-
+        reward_state = (next_state[..., 0] - state[..., 0]) / self.dt
         return self.get_reward(reward_state, self.action_reward(action))
 
 

@@ -31,12 +31,14 @@ try:
 
         def step(self, action: np.ndarray):
             """See `AbstractEnvironment.step()'."""
-            self.prev_qpos = np.copy(self.sim.data.qpos.flat)
+            ob = self._get_obs()
+            xposbefore = ob[0]
             self.do_simulation(action, self.frame_skip)
             ob = self._get_obs()
+            xposafter = ob[0]
 
             reward_ctrl = -np.square(action).sum()
-            reward_run = ob[0] - 0.0 * np.square(ob[2])
+            reward_run = (xposafter - xposbefore) / self.dt
             reward = reward_run + self.action_cost * reward_ctrl
 
             done = False
@@ -45,8 +47,7 @@ try:
 
         def _get_obs(self):
             return np.concatenate([
-                (self.sim.data.qpos.flat[:1] - self.prev_qpos[:1]) / self.dt,
-                self.sim.data.qpos.flat[1:],
+                self.sim.data.qpos.flat,
                 self.sim.data.qvel.flat,
             ])
 
