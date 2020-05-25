@@ -412,7 +412,8 @@ class ModelBasedAgent(AbstractAgent):
                                    policy=self.plan_policy,
                                    initial_state=initial_states,
                                    max_steps=self.sim_num_steps,
-                                   termination=self.termination)
+                                   termination=self.termination,
+                                   **self.dist_params)
 
         self.sim_trajectory = stack_list_of_tuples(trajectory)
         states = self.sim_trajectory.state.reshape(-1, self.dynamical_model.dim_state)

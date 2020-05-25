@@ -27,8 +27,8 @@ class MPPOAgent(OffPolicyAgent):
                               eta=eta, eta_mean=eta_mean, eta_var=eta_var, gamma=gamma)
 
         self.policy = self.algorithm.policy
-        optimizer = type(optimizer)(self.algorithm.parameters(), **optimizer.defaults)
-
+        optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
+                                     if 'target' not in name], **optimizer.defaults)
         super().__init__(env_name, memory=memory, optimizer=optimizer,
                          num_iter=num_iter,
                          target_update_frequency=target_update_frequency,

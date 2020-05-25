@@ -49,7 +49,8 @@ class SACAgent(OffPolicyAgent):
             gamma=gamma, eta=eta, epsilon=epsilon
         )
 
-        optimizer = type(optimizer)(self.algorithm.parameters(), **optimizer.defaults)
+        optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
+                                     if 'target' not in name], **optimizer.defaults)
         super().__init__(env_name,
                          optimizer=optimizer,
                          memory=memory, batch_size=batch_size, num_iter=num_iter,
@@ -58,26 +59,4 @@ class SACAgent(OffPolicyAgent):
                          gamma=gamma, exploration_steps=exploration_steps,
                          exploration_episodes=exploration_episodes, comment=comment)
         self.policy = self.algorithm.policy
-
-    def act(self, state):
-        """See `AbstractAgent.act'."""
-        if self.total_steps < self.exploration_steps or (
-                self.total_episodes < self.exploration_episodes):
-            policy = self.policy.random()
-        else:
-            if not isinstance(state, torch.Tensor):
-                state = torch.tensor(state, dtype=torch.get_default_dtype())
-            policy = self.policy(state)
-
-        self.pi = tensor_to_distribution(policy, tanh=True,
-                                         action_scale=self.policy.action_scale)
-        if self._training:
-            action = self.pi.sample()
-        else:
-            self.pi = tensor_to_distribution(policy, tanh=False)
-            action = self.policy.action_scale * torch.tanh(
-                self.pi.mean / self.policy.action_scale)
-
-        action = action.detach().numpy().clip(-self.policy.action_scale.numpy(),
-                                              self.policy.action_scale.numpy())
-        return action
+        self.dist_params = self.algorithm.dist_params

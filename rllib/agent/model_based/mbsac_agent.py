@@ -50,7 +50,8 @@ class MBSACAgent(ModelBasedAgent):
             eta=sac_eta, epsilon=sac_epsilon, gamma=gamma, termination=termination,
             num_steps=sac_target_num_steps, num_samples=sac_action_samples)
         optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
-                                     if 'model' not in name], **optimizer.defaults)
+                                     if ('model' not in name and 'target' not in name)],
+                                    **optimizer.defaults)
         self.dist_params = {'tanh': True, 'action_scale': policy.action_scale}
 
         super().__init__(

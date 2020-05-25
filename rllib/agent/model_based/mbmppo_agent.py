@@ -53,7 +53,8 @@ class MBMPPOAgent(ModelBasedAgent):
                                 gamma=gamma,
                                 termination=termination)
         optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
-                                     if 'model' not in name], **optimizer.defaults)
+                                     if ('model' not in name and 'target' not in name)],
+                                    **optimizer.defaults)
 
         super().__init__(
             env_name, policy=policy, dynamical_model=dynamical_model,
