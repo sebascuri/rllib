@@ -48,6 +48,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  sim_memory_num_trajectories: int = 0,
                  sim_num_subsample: int = 1,
                  sim_max_memory: int = 100000,
+                 sim_refresh_interval: int = 1,
                  thompson_sampling: bool = False,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,

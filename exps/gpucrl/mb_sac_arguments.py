@@ -45,7 +45,7 @@ policy_parser.add_argument('--policy-layers', type=list, default=[64, 64])
 policy_parser.add_argument('--policy-non-linearity', type=str, default='ReLU')
 policy_parser.add_argument('--policy-unbiased-head', action='store_false')
 policy_parser.add_argument('--policy-deterministic', action='store_true')
-policy_parser.add_argument('--policy-tau', type=float, default=0)
+policy_parser.add_argument('--policy-tau', type=float, default=0.005)
 
 
 planning_parser = parser.add_argument_group('planning')
@@ -60,13 +60,13 @@ value_function_parser.add_argument('--q-function-non-linearity', type=str,
                                    default='ReLU')
 value_function_parser.add_argument('--q-function-unbiased-head',
                                    action='store_false')
-policy_parser.add_argument('--q-function-tau', type=float, default=0)
+policy_parser.add_argument('--q-function-tau', type=float, default=0.005)
 
 mppo_parser = parser.add_argument_group('sac')
 mppo_parser.add_argument('--sac-num-iter', type=int, default=50)
 mppo_parser.add_argument('--sac-gradient-steps', type=int, default=50)
 mppo_parser.add_argument('--sac-target-update-frequency', type=int, default=4)
-mppo_parser.add_argument('--sac-batch_size', type=int, default=32)
+mppo_parser.add_argument('--sac-batch_size', type=int, default=1024)
 mppo_parser.add_argument('--sac-opt-lr', type=float, default=5e-4)
 mppo_parser.add_argument('--sac-opt-weight-decay', type=float, default=0)
 mppo_parser.add_argument('--sac-eta', type=float, default=.2)
@@ -79,6 +79,8 @@ sim_parser.add_argument('--sim-num-steps', type=int, default=400)
 sim_parser.add_argument('--sim-initial-states-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim-initial-dist-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim_memory-num-trajectories', type=int, default=0)
+sim_parser.add_argument('--sim_max-memory', type=int, default=100000)
+mppo_parser.add_argument('--sim-refresh-frequency', type=int, default=0)
 sim_parser.add_argument('--sim-num-subsample', type=int, default=1)
 
 viz_parser = parser.add_argument_group('visualization')
