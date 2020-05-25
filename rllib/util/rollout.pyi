@@ -26,7 +26,7 @@ def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
 
 
 def rollout_policy(environment: AbstractEnvironment, policy: AbstractPolicy,
-                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False
+                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False,
                    **kwargs) -> List[Trajectory]: ...
 
 

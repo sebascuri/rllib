@@ -15,17 +15,16 @@ from rllib.value_function import NNQFunction
 ENVIRONMENT = ['MountainCarContinuous-v0', 'Pendulum-v0'][1]
 NUM_EPISODES = 20
 MAX_STEPS = 1000
-TARGET_UPDATE_FREQUENCY = 4
-TARGET_UPDATE_TAU = 0.01
+TARGET_UPDATE_FREQUENCY = 2
+TARGET_UPDATE_TAU = 0.005
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
-LEARNING_RATE = 3e-4
+LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
 GAMMA = 0.99
-LAYERS = [64, 64]
+LAYERS = [100, 100]
 SEED = 1
 RENDER = True
-ETA = 1.
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -54,8 +53,8 @@ agent = SACAgent(
     eta=None,
     epsilon=0.1,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
-    num_iter=50,
-    train_frequency=50,
+    num_iter=1,
+    train_frequency=1,
     exploration_episodes=0,
     gamma=GAMMA)
 

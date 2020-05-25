@@ -7,7 +7,7 @@ import torch
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import RawObservation
-from rllib.util.utilities import tensor_to_distribution, integrate
+from rllib.util.utilities import tensor_to_distribution
 
 
 def step(environment, state, action, pi, render, goal=None):

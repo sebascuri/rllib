@@ -1,10 +1,7 @@
 """Implementation of DQNAgent Algorithms."""
-import torch
-
 from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.sac import SoftActorCritic
 from rllib.value_function import NNEnsembleQFunction
-from rllib.util import tensor_to_distribution
 
 
 class SACAgent(OffPolicyAgent):

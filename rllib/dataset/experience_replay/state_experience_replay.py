@@ -110,4 +110,3 @@ class StateExperienceReplay(data.Dataset):
         """Get a batch of data."""
         indices = np.random.choice(len(self), batch_size)
         return default_collate([self[i] for i in indices])
-
