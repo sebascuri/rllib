@@ -62,6 +62,7 @@ jobs:
 
       - run:
           name: Run Unit Tests
+          no_output_timeout: 30m
           command: |
             mkdir test-results
             xvfb-run -a pytest $MODULE --junitxml=test-results/junit.xml

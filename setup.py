@@ -33,7 +33,7 @@ setup(
         ],
         'experiments': [
             'lsf_runner>=0.0.4',
-            'torchvision==0.5.0',
+            'torchvision>=0.5.0',
             'Pillow==5.4.1',
             'pandas==0.25.0',
             'dotmap>=1.3.0,<1.4.0',
