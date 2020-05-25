@@ -439,8 +439,8 @@ class ModelBasedAgent(AbstractAgent):
         # Iterate over state batches in the state distribution
         states = self.sim_trajectory.state.reshape(-1, self.dynamical_model.dim_state)
         np.random.shuffle(states.numpy())
-        state_batches = torch.split(states, self.policy_opt_batch_size
-                                    )[::self.sim_num_subsample]
+        state_batches = torch.split(states[::self.sim_num_subsample],
+                                    self.policy_opt_batch_size)
 
         self.algorithm.reset()
         for _ in range(self.policy_opt_gradient_steps):
