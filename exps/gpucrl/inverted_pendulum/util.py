@@ -320,6 +320,7 @@ def get_agent_and_environment(params, agent_name):
     """Get experiment agent and environment."""
     torch.manual_seed(params.seed)
     np.random.seed(params.seed)
+    torch.set_num_threads(params.num_threads)
 
     # %% Define Environment.
     initial_distribution = torch.distributions.Uniform(

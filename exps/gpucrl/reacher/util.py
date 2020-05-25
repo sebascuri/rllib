@@ -43,24 +43,25 @@ def get_agent_and_environment(params, agent_name):
     """Get experiment agent and environment."""
     torch.manual_seed(params.seed)
     np.random.seed(params.seed)
+    torch.set_num_threads(params.num_threads)
 
     # %% Define Environment.
     environment = GymEnvironment('MBRLReacher3D-v0', action_cost=params.action_cost,
                                  seed=params.seed)
-    action_scale = environment.action_scale / 2
+    action_scale = environment.action_scale
     reward_model = ReacherReward(action_cost=params.action_cost)
 
     # %% Define Helper modules
     low = torch.tensor(
         [-2.2854, -0.5236, -3.9, -2.3213, -1e1, -2.094, -1e1,
          -1e2, -1e2, -1e2, -1e2, -1e2, -1e2, -1e2,
-         -1e2, -1e2, -1e2,
+         -0.4, -0.1, -0.4
          ])
 
     high = torch.tensor(
-        [1.714602, 1.3963, 0.8, 0, 1e10, 0, 1e10,
+        [1.714602, 1.3963, 0.8, 0, 1e1, 0, 1e1,
          1e2, 1e2, 1e2, 1e2, 1e2, 1e2, 1e2,
-         1e2, 1e2, 1e2
+         0.4, 0.6, 0.4
          ])
 
     transformations = [ActionScaler(scale=action_scale),
@@ -71,17 +72,16 @@ def get_agent_and_environment(params, agent_name):
 
     input_transform = QuaternionTransform()
     # input_transform = None
-    angle = np.pi / 12
     exploratory_distribution = torch.distributions.Uniform(
         torch.tensor(
-            [-angle, -angle, -angle, -angle, -angle, -angle, -angle,  # qpos
+            [0.3, -0.3, -1.5, -2.5, -1.5, -2.0, -1.5,
              -0.005, -0.005, -0.005, -0.005, -0.005, -0.005, -0.005,  # qvel
-             0, 0.25, 0  # goal
+             -0.3, -0.1, -0.3  # goal
              ]),
         torch.tensor(
-            [angle, angle, angle, angle, angle, angle, angle,  # qpos
+            [0.8, 0.3, 1.5, -1.5, 1.5, 0, 1.5,  # qpos
              0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005,  # qvel
-             0.3, 0.55, 0.3  # goal
+             0.3, 0.6, 0.3  # goal
              ])
     )
 
