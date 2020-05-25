@@ -15,7 +15,6 @@ from rllib.util.training import evaluate_agent
 from rllib.agent import MPCAgent
 
 
-
 class EnvironmentTermination(nn.Module):
     def __init__(self, environment):
         super().__init__()

@@ -27,6 +27,7 @@ setup(
         'mujoco': [
             'mujoco-py<2.1,>=2.0',
             'imageio-ffmpeg==0.4.1',
+            'dm_control',
         ],
         'logging': [
             'tensorboard>=2.0,<3',
