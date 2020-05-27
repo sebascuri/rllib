@@ -4,22 +4,31 @@ import torch
 import numpy as np
 from rllib.reward import AbstractReward
 from rllib.util.utilities import get_backend
+from rllib.reward.utilities import tolerance
 from abc import ABCMeta
 
 
 class MujocoReward(AbstractReward, metaclass=ABCMeta):
     """Base class for mujoco rewards."""
 
-    def __init__(self, action_cost=0.01):
+    def __init__(self, action_cost=0.01, sparse=False):
         super().__init__()
         self.action_cost = action_cost
+        self.sparse = sparse
         self.reward_ctrl = None
         self.reward_state = None
 
     def action_reward(self, action):
         """Get action reward."""
+        action = action[..., :self.dim_action]  # get only true dimensions.
         bk = get_backend(action)
-        return -bk.square(action[..., :self.dim_action]).sum(-1)
+        if self.sparse:
+            if not isinstance(action, torch.Tensor):
+                action = torch.tensor(action, dtype=torch.get_default_dtype())
+            return tolerance(action.square().sum(-1),
+                             lower=-0.1, upper=0.1, margin=0.1) - 1
+        else:
+            return -bk.square(action).sum(-1)
 
     def get_reward(self, reward_state, reward_control):
         """Get reward distribution from reward_state, reward_control tuple."""
@@ -152,8 +161,8 @@ class ReacherReward(MujocoReward):
 
     dim_action = 7
 
-    def __init__(self, action_cost=0.01):
-        super().__init__(action_cost)
+    def __init__(self, action_cost=0.01, sparse=False):
+        super().__init__(action_cost, sparse)
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
@@ -162,7 +171,15 @@ class ReacherReward(MujocoReward):
             goal = state[..., -3:]
             dist_to_target = self.get_ee_position(next_state) - goal
 
-        reward_state = -bk.square(dist_to_target).sum(-1)
+        if self.sparse:
+            if bk is not torch:
+                dist_to_target = torch.tensor(dist_to_target,
+                                              dtype=torch.get_default_dtype())
+            reward_state = tolerance(dist_to_target.square().sum(-1),
+                                     lower=0, upper=0.2, margin=0.1)
+        else:
+            reward_state = -bk.square(dist_to_target).sum(-1)
+
         return self.get_reward(reward_state, self.action_reward(action))
 
     @staticmethod
@@ -200,7 +217,7 @@ class ReacherReward(MujocoReward):
                 new_rot_perp_axis = torch.tensor(new_rot_perp_axis,
                                                  dtype=torch.get_default_dtype())
 
-            norm = bk.sqrt(bk.square(new_rot_axis).sum(-1))
+            norm = bk.sqrt(bk.square(new_rot_perp_axis).sum(-1))
             new_rot_perp_axis[norm < 1e-30] = rot_perp_axis[norm < 1e-30]
 
             new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1)

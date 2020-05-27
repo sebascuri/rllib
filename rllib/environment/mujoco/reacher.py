@@ -3,7 +3,9 @@
 import os
 
 import numpy as np
+import torch
 from gym import utils
+from rllib.reward.utilities import tolerance
 
 try:
     from gym.envs.mujoco import mujoco_env
@@ -20,20 +22,30 @@ try:
         https://github.com/kchua/handful-of-trials
         """
 
-        def __init__(self, action_cost=0.01):
+        def __init__(self, action_cost=0.01, sparse=False):
             self.action_cost = action_cost
             self.viewer = None
             utils.EzPickle.__init__(self)
             dir_path = os.path.dirname(os.path.realpath(__file__))
             self.goal = np.zeros(3)
+            self.sparse = sparse
             mujoco_env.MujocoEnv.__init__(self, '%s/assets/reacher3d.xml' % dir_path, 2)
 
         def step(self, action: np.ndarray):
             """See `AbstractEnvironment.step()'."""
             self.do_simulation(action, self.frame_skip)
             ob = self._get_obs()
-            reward_dist = -np.sum(np.square(self.get_end_effector_pos(ob) - self.goal))
-            reward_ctrl = -np.square(action).sum()
+            dist = self.get_end_effector_pos(ob) - self.goal
+            if self.sparse:
+                dist = torch.tensor(dist, dtype=torch.get_default_dtype())
+                action = torch.tensor(action, dtype=torch.get_default_dtype())
+                reward_dist = tolerance(dist.square().sum(),
+                                        lower=0, upper=0.2, margin=0.1).numpy()
+                reward_ctrl = tolerance(action.square().sum(-1),
+                                        lower=-0.1, upper=0.1, margin=0.1).numpy() - 1
+            else:
+                reward_dist = -np.sum(np.square(dist))
+                reward_ctrl = -np.square(action).sum()
 
             reward = reward_dist + self.action_cost * reward_ctrl
             done = False
