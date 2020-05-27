@@ -2,6 +2,7 @@
 
 from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.dpg import DPG
+from rllib.util.parameter_decay import ParameterDecay, Constant
 
 
 class DPGAgent(OffPolicyAgent):
@@ -33,8 +34,8 @@ class DPGAgent(OffPolicyAgent):
 
     """
 
-    def __init__(self, env_name, q_function, policy, exploration, criterion,
-                 optimizer, memory, num_iter=1,
+    def __init__(self, env_name, q_function, policy, criterion,
+                 optimizer, memory, exploration_noise, num_iter=1,
                  batch_size=64, target_update_frequency=4,
                  policy_noise=0., noise_clip=1.,
                  train_frequency=1, num_rollouts=0,
@@ -53,16 +54,22 @@ class DPGAgent(OffPolicyAgent):
                              policy_noise, noise_clip
                              )
         self.policy = self.algorithm.policy
-        self.exploration = exploration
 
-    def act(self, state):
-        """See `AbstractAgent.act'.
+        if not isinstance(exploration_noise, ParameterDecay):
+            exploration_noise = Constant(exploration_noise)
 
-        As the policy is deterministic, some noise must be added to aid exploration.
-        """
-        action = super().act(state)
-        if self._training:
-            action += self.exploration().numpy()
+        self.params['exploration_noise'] = exploration_noise
+        self.dist_params = {'add_noise': True,
+                            'policy_noise': self.params['exploration_noise']}
 
-        return action.clip(-self.policy.action_scale.numpy(),
-                           self.policy.action_scale.numpy())
+    def train(self, val=True):
+        """Set the agent in training mode."""
+        super().train(val)
+        self.dist_params = {'add_noise': True,
+                            'policy_noise': self.params['exploration_noise']}
+
+    def eval(self, val=True):
+        """Set the agent in evaluation mode."""
+        super().eval(val)
+        self.dist_params = {'add_noise': False,
+                            'policy_noise': self.params['exploration_noise']}

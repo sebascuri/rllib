@@ -4,7 +4,6 @@ import torch.optim
 from rllib.agent import DPGAgent, TD3Agent
 from rllib.dataset import PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
-from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
 from rllib.util.training import train_agent, evaluate_agent
 from rllib.util.parameter_decay import ExponentialDecay
@@ -54,7 +53,7 @@ def test_ddpg_interaction(environment, agent):
 
     criterion = torch.nn.MSELoss
 
-    noise = GaussianNoise(ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
+    noise = ExponentialDecay(EPS_START, EPS_END, EPS_DECAY)
     memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
     optimizer = torch.optim.Adam([
         {'params': q_function.parameters(), 'lr': CRITIC_LEARNING_RATE},
@@ -62,7 +61,7 @@ def test_ddpg_interaction(environment, agent):
     ], weight_decay=WEIGHT_DECAY)
 
     agent = agent(
-        environment.name, q_function=q_function, policy=policy, exploration=noise,
+        environment.name, q_function=q_function, policy=policy, exploration_noise=noise,
         criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
         gamma=GAMMA, policy_noise=POLICY_NOISE)

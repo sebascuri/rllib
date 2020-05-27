@@ -1,13 +1,13 @@
-"""Model-Based Soft Actor Critic Agent."""
+"""Model-Based Deterministic Policy Gradient Agent."""
 import torch.nn as nn
 
 from .model_based_agent import ModelBasedAgent
-from rllib.algorithms.sac import MBSoftActorCritic
+from rllib.algorithms.dpg import MBDPG
 from rllib.value_function import NNEnsembleQFunction
 
 
-class MBSACAgent(ModelBasedAgent):
-    """Implementation of Model-Based SAC Agent."""
+class MBDPGAgent(ModelBasedAgent):
+    """Implementation of Model-Based DPG Agent."""
 
     def __init__(self,
                  env_name,
@@ -44,11 +44,11 @@ class MBSACAgent(ModelBasedAgent):
 
         q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
                                                          num_heads=2)
-        self.algorithm = MBSoftActorCritic(
+        self.algorithm = MBDPG(
             policy, q_function, dynamical_model, reward_model,
             criterion=sac_value_learning_criterion(reduction='mean'),
-            eta=sac_eta, epsilon=sac_epsilon, gamma=gamma, termination=termination,
-            num_steps=sac_target_num_steps, num_samples=sac_action_samples)
+            gamma=gamma, termination=termination, num_steps=sac_target_num_steps,
+            num_samples=sac_action_samples)
         optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
                                      if ('model' not in name and 'target' not in name)],
                                     **optimizer.defaults)

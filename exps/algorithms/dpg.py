@@ -9,7 +9,6 @@ from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import TD3Agent, DPGAgent
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
-from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.value_function import NNQFunction
@@ -37,7 +36,7 @@ np.random.seed(SEED)
 environment = GymEnvironment(ENVIRONMENT, SEED)
 policy = FelixPolicy(environment.dim_state, environment.dim_action, deterministic=True,
                      tau=TARGET_UPDATE_TAU)
-noise = GaussianNoise(ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
+noise = ExponentialDecay(EPS_START, EPS_END, EPS_DECAY)
 q_function = NNQFunction(environment.dim_state, environment.dim_action,
                          num_states=environment.num_states,
                          num_actions=environment.num_actions,
@@ -51,8 +50,8 @@ critic_optimizer = None
 criterion = torch.nn.MSELoss
 
 agent = DPGAgent(
-    environment.name, q_function, policy, noise, criterion, optimizer=optimizer,
-    memory=memory, batch_size=BATCH_SIZE,
+    environment.name, q_function, policy, criterion, optimizer=optimizer,
+    memory=memory, exploration_noise=noise, batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY, exploration_episodes=1,
     gamma=GAMMA)
 

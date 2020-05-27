@@ -32,8 +32,8 @@ class TD3Agent(DPGAgent):
 
     """
 
-    def __init__(self, env_name, q_function, policy, exploration, criterion,
-                 optimizer, memory, num_iter=1, batch_size=64,
+    def __init__(self, env_name, q_function, policy, criterion,
+                 optimizer, memory, exploration_noise, num_iter=1, batch_size=64,
                  target_update_frequency=4,
                  policy_noise=0., noise_clip=1.,
                  train_frequency=0, num_rollouts=1,
@@ -44,7 +44,8 @@ class TD3Agent(DPGAgent):
         optimizer = type(optimizer)(
             chain(policy.parameters(), q_function.parameters()), **optimizer.defaults)
         super().__init__(env_name, q_function=q_function, policy=policy,
-                         exploration=exploration, criterion=criterion,
+                         exploration_noise=exploration_noise,
+                         criterion=criterion,
                          optimizer=optimizer,
                          memory=memory,
                          num_iter=num_iter, batch_size=batch_size,
