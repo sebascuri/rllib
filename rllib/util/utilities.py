@@ -100,16 +100,29 @@ def tensor_to_distribution(args, **kwargs):
     if not isinstance(args, tuple):
         return Categorical(logits=args)
     elif torch.all(args[1] == 0):
-        return Delta(args[0], event_dim=min(1, args[0].dim()))
+        if kwargs.get('add_noise', False):
+            noise_clip = kwargs.get('noise_clip', np.inf)
+            policy_noise = kwargs.get('policy_noise', 1)
+            action_scale = kwargs.get('action_scale', 1)
+            try:
+                policy_noise = policy_noise()
+            except TypeError:
+                pass
+            noise_scale = policy_noise * action_scale
+            mean = args[0] + (torch.randn_like(args[0]) * noise_scale).clamp(
+                -noise_clip, noise_clip)
+        else:
+            mean = args[0]
+        return Delta(mean, event_dim=min(1, mean.dim()))
     else:
-        if 'tanh' in kwargs and kwargs.get('tanh'):
+        if kwargs.get('tanh', False):
             d = TransformedDistribution(
                 MultivariateNormal(args[0], scale_tril=args[1]),
                 [AffineTransform(loc=0, scale=1 / kwargs.get('action_scale', 1)),
                  TanhTransform(),
                  AffineTransform(loc=0, scale=kwargs.get('action_scale', 1))
                  ])
-        elif 'normalized' in kwargs and kwargs.get('normalized'):
+        elif kwargs.get('normalized', False):
             scale = kwargs.get('action_scale', 1)
             d = MultivariateNormal(args[0] / scale, scale_tril=args[1] / scale)
         else:
