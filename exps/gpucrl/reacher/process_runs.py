@@ -1,6 +1,6 @@
 """Python Script Template."""
 
-from exps.gpucrl.util import parse_results, print_df
+from exps.gpucrl.post_process import parse_results, print_df
 
 base_dir = 'runs/Reacher3Denv'
 for agent in ['MPC', 'MBMPPO']:

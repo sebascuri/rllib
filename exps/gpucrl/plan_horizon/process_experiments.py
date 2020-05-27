@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from exps.gpucrl.util import parse_results
+from exps.gpucrl.post_process import parse_results
 
 
 base_dir = 'runs/Cartpoleenv'
