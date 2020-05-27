@@ -171,6 +171,8 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
     Notes
     -----
     It will try to do the re-parametrization trick with the policy and models.
+
+    TODO: Parallelize it!.
     """
     trajectory = list()
     state = initial_state
