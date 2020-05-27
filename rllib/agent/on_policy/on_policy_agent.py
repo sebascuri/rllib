@@ -69,3 +69,5 @@ class OnPolicyAgent(AbstractAgent):
             self.counters['train_steps'] += 1
             if self.train_steps % self.target_update_frequency == 0:
                 self.algorithm.update()
+                for param in self.params.values():
+                    param.update()

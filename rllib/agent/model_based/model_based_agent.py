@@ -442,5 +442,7 @@ class ModelBasedAgent(AbstractAgent):
             self.counters['train_steps'] += 1
             if self.train_steps % self.policy_opt_target_update_frequency == 0:
                 self.algorithm.update()
+                for param in self.params.values():
+                    param.update()
 
         self.algorithm.reset()

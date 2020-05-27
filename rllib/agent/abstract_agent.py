@@ -51,6 +51,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self.comment = comment
         self.last_trajectory = []
+        self.params = {}
         self.dist_params = {}
 
     def __str__(self):

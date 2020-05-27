@@ -4,7 +4,7 @@ from typing import Dict, List
 from rllib.dataset.datatypes import Observation, State, Action, Distribution
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
-
+from rllib.util.parameter_decay import ParameterDecay
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
@@ -21,7 +21,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     _training: bool
     comment: str
     dist_params: dict
-
+    params: Dict[str, ParameterDecay]
     last_trajectory: List[Observation]
 
     def __init__(self, env_name: str, train_frequency: int, num_rollouts: int,
