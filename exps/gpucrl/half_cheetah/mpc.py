@@ -17,12 +17,14 @@ parser.set_defaults(action_cost=ACTION_COST,
                     mpc_num_elites=MPC_NUM_SAMPLES // 10,
 
                     model_kind='DeterministicEnsemble',
-                    model_learn_num_iter=50,
+                    model_learn_num_iter=5,
                     max_memory=10 * ENVIRONMENT_MAX_STEPS,
                     model_layers=[256, 256, 256],
                     model_non_linearity='swish',
                     model_opt_lr=1e-4,
                     model_opt_weight_decay=0.0005,
+
+                    num_threads=2,
                     )
 
 args = parser.parse_args()
