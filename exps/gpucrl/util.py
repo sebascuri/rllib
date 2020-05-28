@@ -97,7 +97,7 @@ def _get_mpc_policy(dynamical_model, reward_model, params, action_scale,
                              termination=termination,
                              warm_start=not params.mpc_not_warm_start,
                              default_action=params.mpc_default_action,
-                             num_cpu=1)
+                             num_cpu=params.num_threads)
     elif params.mpc_solver == 'random':
         solver = RandomShooting(dynamical_model, reward_model,
                                 horizon=params.mpc_horizon,
@@ -110,7 +110,7 @@ def _get_mpc_policy(dynamical_model, reward_model, params, action_scale,
                                 termination=termination,
                                 warm_start=not params.mpc_not_warm_start,
                                 default_action=params.mpc_default_action,
-                                num_cpu=1)
+                                num_cpu=params.num_threads)
 
     elif params.mpc_solver == 'mppi':
         solver = MPPIShooting(dynamical_model, reward_model,
@@ -126,7 +126,7 @@ def _get_mpc_policy(dynamical_model, reward_model, params, action_scale,
                               default_action=params.mpc_default_action,
                               kappa=params.mpc_kappa,
                               filter_coefficients=params.mpc_filter_coefficients,
-                              num_cpu=1)
+                              num_cpu=params.num_threads)
 
     else:
         raise NotImplementedError(f"{params.mpc_solver.capitalize()} not recognized.")
