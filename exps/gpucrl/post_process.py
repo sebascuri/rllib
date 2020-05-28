@@ -54,10 +54,11 @@ def parse_results(base_dir, agent):
         except KeyError:
             pass
         statistics['id'] = i
+        statistics['episode'] = statistics.index
 
         exp = pd.merge(statistics, params, on='id')
 
-        df = pd.concat((df, exp))
+        df = pd.concat((df, exp), sort=False)
     return df
 
 
