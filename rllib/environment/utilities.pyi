@@ -1,9 +1,11 @@
 """Utilities for environment module."""
 
-from typing import Dict, Tuple, List
+from typing import Dict, List, Tuple
+
 import numpy as np
 
 from rllib.policy import AbstractPolicy
+
 from .gym_environment import GymEnvironment
 from .mdp import MDP
 

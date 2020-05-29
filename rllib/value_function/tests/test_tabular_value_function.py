@@ -3,7 +3,7 @@ import torch
 import torch.testing
 
 from rllib.util.neural_networks import random_tensor
-from rllib.value_function import TabularValueFunction, TabularQFunction
+from rllib.value_function import TabularQFunction, TabularValueFunction
 
 
 @pytest.fixture(params=[4, 2, 1])

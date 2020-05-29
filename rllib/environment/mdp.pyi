@@ -1,6 +1,7 @@
-from typing import List, Union, Callable, Tuple, Dict
+from typing import Callable, Dict, List, Tuple, Union
 
 from rllib.dataset.datatypes import Action, Array
+
 from .abstract_environment import AbstractEnvironment
 
 

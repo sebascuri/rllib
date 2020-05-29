@@ -4,14 +4,15 @@ from typing import Union
 from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
-from .model_based_agent import ModelBasedAgent
 from rllib.algorithms.mppo import MBMPPO
 from rllib.dataset.datatypes import Termination
-from rllib.policy import AbstractPolicy
-from rllib.value_function import AbstractValueFunction
 from rllib.model import AbstractModel
+from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 from rllib.util.parameter_decay import ParameterDecay
+from rllib.value_function import AbstractValueFunction
+
+from .model_based_agent import ModelBasedAgent
 
 
 class MBMPPOAgent(ModelBasedAgent):

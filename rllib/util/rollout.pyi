@@ -1,10 +1,10 @@
-from typing import List, Union, Tuple, Callable
+from typing import Callable, List, Tuple, Union
 
 from numpy import ndarray
 
 from rllib.agent import AbstractAgent
-from rllib.dataset.datatypes import Observation, State, Action, Distribution, \
-    Trajectory, Termination
+from rllib.dataset.datatypes import (Action, Distribution, Observation, State,
+                                     Termination, Trajectory)
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy

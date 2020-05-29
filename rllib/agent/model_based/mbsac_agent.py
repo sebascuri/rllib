@@ -1,9 +1,10 @@
 """Model-Based Soft Actor Critic Agent."""
 import torch.nn as nn
 
-from .model_based_agent import ModelBasedAgent
 from rllib.algorithms.sac import MBSoftActorCritic
 from rllib.value_function import NNEnsembleQFunction
+
+from .model_based_agent import ModelBasedAgent
 
 
 class MBSACAgent(ModelBasedAgent):

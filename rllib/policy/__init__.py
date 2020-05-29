@@ -1,10 +1,11 @@
 """Implementations of policies that control the environment."""
 from .abstract_policy import AbstractPolicy
-from .nn_policy import NNPolicy, FelixPolicy
-from .tabular_policy import TabularPolicy
-from .q_function_policy import AbstractQFunctionPolicy, EpsGreedy, SoftMax, MellowMax
-from .random_policy import RandomPolicy
 from .mpc_policy import MPCPolicy
+from .nn_policy import FelixPolicy, NNPolicy
+from .q_function_policy import (AbstractQFunctionPolicy, EpsGreedy, MellowMax,
+                                SoftMax)
+from .random_policy import RandomPolicy
+from .tabular_policy import TabularPolicy
 
 """
 Policies map states (and goals) to distributions over actions. 

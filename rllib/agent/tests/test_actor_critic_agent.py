@@ -2,11 +2,12 @@ import numpy as np
 import pytest
 import torch
 
-from rllib.agent import ActorCriticAgent, A2CAgent, GAACAgent, ExpectedActorCriticAgent
+from rllib.agent import (A2CAgent, ActorCriticAgent, ExpectedActorCriticAgent,
+                         GAACAgent)
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
-from rllib.util.training import train_agent, evaluate_agent
-from rllib.value_function import NNValueFunction, NNQFunction
+from rllib.util.training import evaluate_agent, train_agent
+from rllib.value_function import NNQFunction, NNValueFunction
 
 MAX_STEPS = 25
 NUM_EPISODES = 25

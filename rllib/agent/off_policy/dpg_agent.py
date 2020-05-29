@@ -1,8 +1,9 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
 
-from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.dpg import DPG
-from rllib.util.parameter_decay import ParameterDecay, Constant
+from rllib.util.parameter_decay import Constant, ParameterDecay
+
+from .off_policy_agent import OffPolicyAgent
 
 
 class DPGAgent(OffPolicyAgent):

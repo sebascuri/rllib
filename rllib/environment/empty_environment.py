@@ -1,8 +1,9 @@
 """Interface for Environments."""
 
-from .abstract_environment import AbstractEnvironment
 import numpy as np
-from gym.spaces import Discrete, Box
+from gym.spaces import Box, Discrete
+
+from .abstract_environment import AbstractEnvironment
 
 
 class EmptyEnvironment(AbstractEnvironment):

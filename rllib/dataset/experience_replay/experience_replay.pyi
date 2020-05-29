@@ -7,7 +7,6 @@ from torch.utils import data
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import AbstractTransform
 
-
 T = TypeVar('T', bound='ExperienceReplay')
 
 

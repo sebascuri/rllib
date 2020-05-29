@@ -2,9 +2,10 @@
 
 import torch
 
-from .abstract_algorithm import TDLoss, AbstractAlgorithm
 from rllib.policy.q_function_policy import SoftMax
 from rllib.util.neural_networks import deep_copy_module, update_parameters
+
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
 class QLearning(AbstractAlgorithm):

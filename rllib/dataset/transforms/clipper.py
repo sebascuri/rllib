@@ -5,8 +5,9 @@ import torch
 import torch.jit
 import torch.nn as nn
 
-from .abstract_transform import AbstractTransform
 from rllib.dataset.datatypes import Observation
+
+from .abstract_transform import AbstractTransform
 
 
 class Clipper(nn.Module):

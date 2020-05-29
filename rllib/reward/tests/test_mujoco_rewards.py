@@ -1,11 +1,11 @@
-import pytest
 import numpy as np
+import pytest
 import torch
 from gym import envs
 
 from rllib.environment import GymEnvironment
-from rllib.reward.mujoco_rewards import CartPoleReward, HalfCheetahReward, \
-     ReacherReward
+from rllib.reward.mujoco_rewards import (CartPoleReward, HalfCheetahReward,
+                                         ReacherReward)
 
 
 @pytest.fixture(params=[0, 0.1, None])

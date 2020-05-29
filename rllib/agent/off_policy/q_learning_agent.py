@@ -1,7 +1,8 @@
 """Implementation of QLearning Algorithms."""
 
-from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.q_learning import QLearning
+
+from .off_policy_agent import OffPolicyAgent
 
 
 class QLearningAgent(OffPolicyAgent):

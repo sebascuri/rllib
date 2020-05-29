@@ -2,7 +2,8 @@ from typing import Tuple
 
 import gym
 
-from rllib.dataset.datatypes import State, Action
+from rllib.dataset.datatypes import Action, State
+
 from .abstract_environment import AbstractEnvironment
 
 

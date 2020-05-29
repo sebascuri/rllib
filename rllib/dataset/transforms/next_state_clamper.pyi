@@ -1,9 +1,10 @@
 from typing import List
 
-from torch import Tensor
 import torch.nn as nn
+from torch import Tensor
 
-from rllib.dataset.datatypes import Observation, Array
+from rllib.dataset.datatypes import Array, Observation
+
 from .abstract_transform import AbstractTransform
 
 

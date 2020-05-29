@@ -1,7 +1,8 @@
 """Implementation of Expected SARSA Agent."""
 
-from .on_policy_agent import OnPolicyAgent
 from rllib.algorithms.esarsa import ESARSA
+
+from .on_policy_agent import OnPolicyAgent
 
 
 class ExpectedSARSAAgent(OnPolicyAgent):

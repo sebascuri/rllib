@@ -1,12 +1,13 @@
 """Implementation of an Experience Replay Buffer with a Bootstrap mask."""
 
 
-from .experience_replay import ExperienceReplay
+import numpy as np
 import torch
 from torch.distributions import Poisson
-import numpy as np
 
 from rllib.dataset.datatypes import Observation
+
+from .experience_replay import ExperienceReplay
 
 
 class BootstrapExperienceReplay(ExperienceReplay):

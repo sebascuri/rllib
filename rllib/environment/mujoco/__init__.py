@@ -1,5 +1,6 @@
 """Mujoco Robots for Experiments from https://github.com/kchua/handful-of-trials."""
 from gym.envs.registration import register
+
 try:
     import mujoco_py
 

@@ -1,8 +1,8 @@
 import pytest
 import torch
-from torch.distributions import MultivariateNormal, Categorical
+from torch.distributions import Categorical, MultivariateNormal
 
-from rllib.policy import NNPolicy, FelixPolicy, TabularPolicy
+from rllib.policy import FelixPolicy, NNPolicy, TabularPolicy
 from rllib.util.neural_networks import random_tensor
 from rllib.util.utilities import tensor_to_distribution
 

@@ -1,8 +1,7 @@
 """On Policy Agent."""
 
 from rllib.agent.abstract_agent import AbstractAgent
-
-from rllib.dataset.utilities import stack_list_of_tuples, average_named_tuple
+from rllib.dataset.utilities import average_named_tuple, stack_list_of_tuples
 
 
 class OnPolicyAgent(AbstractAgent):

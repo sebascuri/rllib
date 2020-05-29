@@ -1,19 +1,20 @@
 """Soft Actor-Critic Algorithm."""
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from .abstract_algorithm import AbstractAlgorithm, SACLoss, TDLoss
-
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
-from rllib.value_function import AbstractQFunction
-from rllib.util.utilities import RewardTransformer
 from rllib.util.parameter_decay import ParameterDecay
+from rllib.util.utilities import RewardTransformer
+from rllib.value_function import AbstractQFunction
+
+from .abstract_algorithm import AbstractAlgorithm, SACLoss, TDLoss
+
 
 class SoftActorCritic(AbstractAlgorithm):
     q_function: AbstractQFunction

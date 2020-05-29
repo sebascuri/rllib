@@ -4,6 +4,7 @@ import scipy.optimize
 import torch
 
 from rllib.util.utilities import mellow_max
+
 from .abstract_q_function_policy import AbstractQFunctionPolicy
 
 

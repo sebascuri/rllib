@@ -1,8 +1,8 @@
 """Implementation of a Logger class."""
 
+import json
 from datetime import datetime
 
-import json
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter

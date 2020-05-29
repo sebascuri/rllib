@@ -2,10 +2,11 @@ from typing import List
 
 from torch.nn.modules.loss import _Loss
 
-from .abstract_algorithm import AbstractAlgorithm, PGLoss
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
+
+from .abstract_algorithm import AbstractAlgorithm, PGLoss
 
 
 class REINFORCE(AbstractAlgorithm):

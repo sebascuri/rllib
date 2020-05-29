@@ -1,8 +1,10 @@
 """Implementation of a Transformation that clamps the next step attributes."""
 
 import torch.jit
-from .abstract_transform import AbstractTransform
+
 from rllib.dataset.datatypes import Observation
+
+from .abstract_transform import AbstractTransform
 
 
 class NextStateClamper(AbstractTransform):

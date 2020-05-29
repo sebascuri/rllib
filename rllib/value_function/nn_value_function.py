@@ -3,9 +3,9 @@
 import torch
 import torch.jit
 
-from rllib.util.neural_networks import DeterministicNN
-from rllib.util.neural_networks import one_hot_encode
-from .abstract_value_function import AbstractValueFunction, AbstractQFunction
+from rllib.util.neural_networks import DeterministicNN, one_hot_encode
+
+from .abstract_value_function import AbstractQFunction, AbstractValueFunction
 
 
 class NNValueFunction(AbstractValueFunction):

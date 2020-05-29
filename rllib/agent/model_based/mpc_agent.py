@@ -4,9 +4,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .model_based_agent import ModelBasedAgent
-from rllib.policy.mpc_policy import MPCPolicy
 from rllib.algorithms.td import ModelBasedTDLearning
+from rllib.policy.mpc_policy import MPCPolicy
+
+from .model_based_agent import ModelBasedAgent
 
 
 class MPCAgent(ModelBasedAgent):

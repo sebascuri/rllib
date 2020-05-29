@@ -1,4 +1,4 @@
-from .parameter_decay import ParameterDecay, ExponentialDecay, LinearDecay
-from .rollout import rollout_policy, rollout_agent
+from .parameter_decay import ExponentialDecay, LinearDecay, ParameterDecay
+from .rollout import rollout_agent, rollout_policy
 from .utilities import *
 from .value_estimation import *

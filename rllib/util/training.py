@@ -2,20 +2,20 @@
 
 import pickle
 
-import numpy as np
 import gpytorch.settings
-import torch
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 from tqdm import tqdm
-
-from .rollout import rollout_agent
-from .logger import Logger
-from .utilities import tensor_to_distribution
-from rllib.util.gaussian_processes.mlls import exact_mll
 
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.model.gp_model import ExactGPModel
 from rllib.model.nn_model import NNModel
+from rllib.util.gaussian_processes.mlls import exact_mll
+
+from .logger import Logger
+from .rollout import rollout_agent
+from .utilities import tensor_to_distribution
 
 
 def _model_mse(model, state, action, next_state):

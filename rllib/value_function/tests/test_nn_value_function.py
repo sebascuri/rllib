@@ -3,8 +3,9 @@ import torch
 import torch.nn as nn
 import torch.testing
 
-from rllib.util.neural_networks import random_tensor, count_vars, DeterministicNN
-from rllib.value_function import NNValueFunction, NNQFunction
+from rllib.util.neural_networks import (DeterministicNN, count_vars,
+                                        random_tensor)
+from rllib.value_function import NNQFunction, NNValueFunction
 
 
 @pytest.fixture(params=[False, True])

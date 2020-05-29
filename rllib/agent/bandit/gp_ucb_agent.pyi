@@ -2,9 +2,9 @@ from torch import Tensor
 
 from rllib.agent import AbstractAgent
 from rllib.dataset.datatypes import TupleDistribution
-from rllib.util.parameter_decay import ParameterDecay
 from rllib.policy import AbstractPolicy
 from rllib.util.gaussian_processes import ExactGP
+from rllib.util.parameter_decay import ParameterDecay
 
 
 class GPUCBPolicy(AbstractPolicy):

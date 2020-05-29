@@ -1,10 +1,11 @@
 from abc import ABCMeta
 from typing import Dict, List
 
-from rllib.dataset.datatypes import Observation, State, Action, Distribution
+from rllib.dataset.datatypes import Action, Distribution, Observation, State
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
 from rllib.util.parameter_decay import ParameterDecay
+
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy

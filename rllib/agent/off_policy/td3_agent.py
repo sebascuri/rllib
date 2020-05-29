@@ -1,8 +1,9 @@
 """Implementation of TD3 Algorithm."""
 from itertools import chain
 
-from .dpg_agent import DPGAgent
 from rllib.value_function import NNEnsembleQFunction
+
+from .dpg_agent import DPGAgent
 
 
 class TD3Agent(DPGAgent):

@@ -1,7 +1,8 @@
 """Policy that Implements MPC."""
 
-from .abstract_policy import AbstractPolicy
 from rllib.algorithms.mpc import MPCSolver
+
+from .abstract_policy import AbstractPolicy
 
 
 class MPCPolicy(AbstractPolicy):

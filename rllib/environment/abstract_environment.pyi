@@ -3,7 +3,7 @@ from typing import Tuple
 
 from gym.spaces import Space
 
-from rllib.dataset.datatypes import State, Action, Reward, Done
+from rllib.dataset.datatypes import Action, Done, Reward, State
 
 
 class AbstractEnvironment(object, metaclass=ABCMeta):

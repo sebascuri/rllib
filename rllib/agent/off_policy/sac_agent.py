@@ -1,7 +1,8 @@
 """Implementation of DQNAgent Algorithms."""
-from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.sac import SoftActorCritic
 from rllib.value_function import NNEnsembleQFunction
+
+from .off_policy_agent import OffPolicyAgent
 
 
 class SACAgent(OffPolicyAgent):

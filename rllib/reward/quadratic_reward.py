@@ -3,6 +3,7 @@
 import torch
 
 from rllib.util.neural_networks import torch_quadratic
+
 from .abstract_reward import AbstractReward
 
 

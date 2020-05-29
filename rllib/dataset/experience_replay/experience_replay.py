@@ -6,7 +6,8 @@ from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
 from rllib.dataset.datatypes import Observation
-from rllib.dataset.utilities import stack_list_of_tuples, concatenate_observations
+from rllib.dataset.utilities import (concatenate_observations,
+                                     stack_list_of_tuples)
 
 
 class ExperienceReplay(data.Dataset):

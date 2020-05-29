@@ -6,12 +6,13 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from .abstract_algorithm import AbstractAlgorithm
 from rllib.algorithms.gae import GAE
-from rllib.util.neural_networks import freeze_parameters
-from rllib.util.utilities import tensor_to_distribution
-from rllib.util.neural_networks import deep_copy_module, update_parameters
+from rllib.util.neural_networks import (deep_copy_module, freeze_parameters,
+                                        update_parameters)
 from rllib.util.parameter_decay import Constant, ParameterDecay
+from rllib.util.utilities import tensor_to_distribution
+
+from .abstract_algorithm import AbstractAlgorithm
 
 PPOReturn = namedtuple(
     'PPOReturn', ['loss', 'value_loss', 'surrogate_loss', 'entropy_bonus',

@@ -2,6 +2,7 @@
 
 from torch import Tensor
 
+
 def rescale(tensor: Tensor, scale: Tensor) -> Tensor: ...
 
 def update_mean(old_mean: Tensor, old_count: Tensor,

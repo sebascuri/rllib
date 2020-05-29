@@ -6,9 +6,9 @@ import scipy
 import scipy.signal
 import torch
 
-from rllib.util.utilities import RewardTransformer
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
+from rllib.util.utilities import RewardTransformer
 
 MBValueReturn = namedtuple('MBValueReturn', ['value_estimate', 'trajectory'])
 

@@ -5,9 +5,9 @@ import torch
 
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
-from rllib.util.parameter_decay import ParameterDecay, Constant
 from rllib.util.gaussian_processes import SparseGP
 from rllib.util.gaussian_processes.utilities import add_data_to_gp, bkb
+from rllib.util.parameter_decay import Constant, ParameterDecay
 
 
 class GPUCBPolicy(AbstractPolicy):

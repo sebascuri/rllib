@@ -1,15 +1,15 @@
 """MPPO Agent Implementation."""
 from typing import Union
 
-from torch.optim.optimizer import Optimizer
 from torch.nn.modules.loss import _Loss
+from torch.optim.optimizer import Optimizer
 
 from rllib.agent.off_policy.off_policy_agent import OffPolicyAgent
 from rllib.algorithms.mppo import MPPO
 from rllib.dataset import ExperienceReplay
 from rllib.policy import AbstractQFunctionPolicy
-from rllib.value_function import AbstractQFunction
 from rllib.util.parameter_decay import ParameterDecay
+from rllib.value_function import AbstractQFunction
 
 
 class MPPOAgent(OffPolicyAgent):

@@ -5,8 +5,8 @@ from collections import defaultdict
 import numpy as np
 import torch
 
-from rllib.util.utilities import tensor_to_distribution
 from rllib.environment.mdp import MDP
+from rllib.util.utilities import tensor_to_distribution
 
 
 def gym2mdp(environment):

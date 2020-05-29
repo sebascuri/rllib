@@ -1,6 +1,7 @@
 """Model-Based MPPO Agent."""
-from .model_based_agent import ModelBasedAgent
 from rllib.algorithms.mppo import MBMPPO
+
+from .model_based_agent import ModelBasedAgent
 
 
 class MBMPPOAgent(ModelBasedAgent):

@@ -1,6 +1,7 @@
 """Utilities for the transformers."""
 import torch
-from gpytorch.distributions import MultivariateNormal, MultitaskMultivariateNormal
+from gpytorch.distributions import (MultitaskMultivariateNormal,
+                                    MultivariateNormal)
 
 
 def rescale(tensor, scale):

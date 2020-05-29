@@ -5,8 +5,8 @@ from rllib.agent import DPGAgent, TD3Agent
 from rllib.dataset import PrioritizedExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy
-from rllib.util.training import train_agent, evaluate_agent
 from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
 NUM_EPISODES = 10

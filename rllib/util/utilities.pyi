@@ -1,11 +1,11 @@
-from typing import Callable, Tuple, List, Union
+from typing import Callable, List, Tuple, Union
 
 import numpy as np
-from torch import Tensor
 import torch.__spec__ as torch_mod
+from torch import Tensor
 
-from rllib.dataset.datatypes import Distribution, Array, Gaussian, TupleDistribution, \
-    Reward
+from rllib.dataset.datatypes import (Array, Distribution, Gaussian, Reward,
+                                     TupleDistribution)
 
 
 def get_backend(array: Array) -> Union[np, torch_mod]: ...

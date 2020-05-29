@@ -3,11 +3,11 @@ from typing import Union
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from .abstract_algorithm import TDLoss, AbstractAlgorithm
 from rllib.policy.q_function_policy import SoftMax
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractQFunction
 
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
 class QLearning(AbstractAlgorithm):

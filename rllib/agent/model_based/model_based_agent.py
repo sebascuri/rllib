@@ -7,24 +7,23 @@ A model based agent has three behaviors:
 """
 
 import gpytorch
-from gym.utils import colorize
-import torch
-from torch.utils.data import DataLoader
 import numpy as np
+import torch
+from gym.utils import colorize
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset.experience_replay import BootstrapExperienceReplay, \
-    StateExperienceReplay
-from rllib.dataset.utilities import stack_list_of_tuples, average_named_tuple
-from rllib.policy.derived_policy import DerivedPolicy
-
+from rllib.dataset.experience_replay import (BootstrapExperienceReplay,
+                                             StateExperienceReplay)
+from rllib.dataset.utilities import average_named_tuple, stack_list_of_tuples
 from rllib.model import ExactGPModel, TransformedModel
+from rllib.policy.derived_policy import DerivedPolicy
 from rllib.util.gaussian_processes import SparseGP
 from rllib.util.neural_networks.utilities import disable_gradient
 from rllib.util.rollout import rollout_model
-from rllib.util.utilities import tensor_to_distribution
 from rllib.util.training import train_model
+from rllib.util.utilities import tensor_to_distribution
 from rllib.util.value_estimation import mb_return
 
 

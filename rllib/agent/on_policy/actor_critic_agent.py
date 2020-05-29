@@ -1,7 +1,8 @@
 """Implementation of Model-Free Policy Gradient Algorithms."""
 
-from .on_policy_agent import OnPolicyAgent
 from rllib.algorithms.ac import ActorCritic
+
+from .on_policy_agent import OnPolicyAgent
 
 
 class ActorCriticAgent(OnPolicyAgent):

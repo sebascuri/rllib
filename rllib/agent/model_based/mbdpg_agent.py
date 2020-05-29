@@ -1,9 +1,10 @@
 """Model-Based Deterministic Policy Gradient Agent."""
 import torch.nn as nn
 
-from .model_based_agent import ModelBasedAgent
 from rllib.algorithms.dpg import MBDPG
 from rllib.value_function import NNEnsembleQFunction
+
+from .model_based_agent import ModelBasedAgent
 
 
 class MBDPGAgent(ModelBasedAgent):

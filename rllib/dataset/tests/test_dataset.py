@@ -3,8 +3,9 @@ import pytest
 import torch
 
 from rllib.dataset import TrajectoryDataset
-from rllib.dataset.datatypes import RawObservation, Observation
-from rllib.dataset.transforms import MeanFunction, StateNormalizer, ActionNormalizer
+from rllib.dataset.datatypes import Observation, RawObservation
+from rllib.dataset.transforms import (ActionNormalizer, MeanFunction,
+                                      StateNormalizer)
 
 
 @pytest.fixture(params=[(10, 200, 3, 2, 4, 2), (10, 200, 3, 2, 4, 8),

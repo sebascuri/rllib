@@ -1,9 +1,10 @@
 """Implementation of REPS Agent stubs."""
 from torch.optim.optimizer import Optimizer
 
-from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.reps import REPS
 from rllib.dataset import ExperienceReplay
+
+from .off_policy_agent import OffPolicyAgent
 
 
 class REPSAgent(OffPolicyAgent):

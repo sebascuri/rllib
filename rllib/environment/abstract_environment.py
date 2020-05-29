@@ -1,6 +1,7 @@
 """Interface for Environments."""
 
 from abc import ABCMeta, abstractmethod
+
 from gym.spaces import Box
 
 

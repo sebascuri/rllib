@@ -1,9 +1,9 @@
 from .abstract_transform import AbstractTransform
-from .next_state_clamper import NextStateClamper
-from .clipper import RewardClipper, ActionClipper
-from .mean_function import MeanFunction, DeltaState
-from .normalizer import StateNormalizer, ActionNormalizer, StateActionNormalizer, \
-    NextStateNormalizer
-from .scaler import RewardScaler, ActionScaler
 from .angle_wrapper import AngleWrapper
+from .clipper import ActionClipper, RewardClipper
+from .mean_function import DeltaState, MeanFunction
+from .next_state_clamper import NextStateClamper
+from .normalizer import (ActionNormalizer, NextStateNormalizer,
+                         StateActionNormalizer, StateNormalizer)
+from .scaler import ActionScaler, RewardScaler
 from .utilities import *

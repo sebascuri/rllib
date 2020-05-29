@@ -1,14 +1,14 @@
 import pytest
+import torch
 import torch.optim
 import torch.testing
-import torch
 
-from rllib.agent import QLearningAgent, DQNAgent, DDQNAgent
+from rllib.agent import DDQNAgent, DQNAgent, QLearningAgent
 from rllib.dataset import ExperienceReplay
-from rllib.environment import GymEnvironment, EasyGridWorld
-from rllib.policy import EpsGreedy, SoftMax, MellowMax
-from rllib.util.training import train_agent, evaluate_agent
+from rllib.environment import EasyGridWorld, GymEnvironment
+from rllib.policy import EpsGreedy, MellowMax, SoftMax
 from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 
 NUM_EPISODES = 10

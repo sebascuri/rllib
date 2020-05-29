@@ -3,7 +3,7 @@ from typing import List, Type, TypeVar
 import torch.nn
 from torch import Tensor
 
-from .abstract_value_function import AbstractValueFunction, AbstractQFunction
+from .abstract_value_function import AbstractQFunction, AbstractValueFunction
 
 T = TypeVar('T', bound='AbstractQFunction')
 
@@ -50,4 +50,3 @@ class NNQFunction(AbstractQFunction):
 
 
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
-

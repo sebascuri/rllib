@@ -1,4 +1,4 @@
-from typing import Union, Type, TypeVar
+from typing import Type, TypeVar, Union
 
 from torch import Tensor
 
@@ -17,4 +17,3 @@ class TabularPolicy(NNPolicy):
     def table(self) -> Tensor: ...
 
     def set_value(self, state: Tensor, new_value: Union[Tensor, float]) -> None: ...
-

@@ -2,7 +2,7 @@
 
 import torch.nn as nn
 
-from .nn_value_function import NNValueFunction, NNQFunction
+from .nn_value_function import NNQFunction, NNValueFunction
 
 
 class TabularValueFunction(NNValueFunction):

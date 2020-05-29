@@ -1,8 +1,9 @@
 """N-Step TD Learning Algorithm."""
 import torch
 
-from rllib.util.neural_networks import update_parameters, deep_copy_module
 from rllib.util import discount_sum, mb_return
+from rllib.util.neural_networks import deep_copy_module, update_parameters
+
 from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 

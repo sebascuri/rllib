@@ -2,8 +2,9 @@ from typing import List
 
 import numpy as np
 
-from .abstract_transform import AbstractTransform
 from rllib.dataset.datatypes import Observation
+
+from .abstract_transform import AbstractTransform
 
 
 class AngleWrapper(AbstractTransform):

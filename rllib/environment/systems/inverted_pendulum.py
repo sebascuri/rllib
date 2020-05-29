@@ -5,13 +5,13 @@ import os
 import numpy as np
 from gym.spaces import Box
 
+from rllib.environment.systems.ode_system import ODESystem
+from rllib.util.utilities import get_backend
+
 try:
     from gym.envs.classic_control import rendering
 except Exception:  # No display.
     pass
-
-from rllib.environment.systems.ode_system import ODESystem
-from rllib.util.utilities import get_backend
 
 
 class InvertedPendulum(ODESystem):

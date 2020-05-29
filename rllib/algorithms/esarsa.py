@@ -2,9 +2,10 @@
 
 import torch
 
-from rllib.util.utilities import integrate, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
-from .abstract_algorithm import TDLoss, AbstractAlgorithm
+from rllib.util.utilities import integrate, tensor_to_distribution
+
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
 class ESARSA(AbstractAlgorithm):

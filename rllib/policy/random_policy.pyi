@@ -1,6 +1,7 @@
 from torch import Tensor
 
-from rllib.dataset.datatypes import TupleDistribution, Action
+from rllib.dataset.datatypes import Action, TupleDistribution
+
 from .abstract_policy import AbstractPolicy
 
 

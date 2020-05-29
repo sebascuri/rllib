@@ -1,18 +1,17 @@
-import pytest
 import copy
 import os
 
+import pytest
 import torch.nn as nn
 
-from rllib.algorithms.mpc import RandomShooting, CEMShooting, MPPIShooting
-from rllib.environment import GymEnvironment
-from rllib.policy.mpc_policy import MPCPolicy
-from rllib.model.environment_model import EnvironmentModel
-from rllib.reward.environment_reward import EnvironmentReward
-from rllib.dataset.experience_replay import ExperienceReplay
-from rllib.util.training import evaluate_agent
-
 from rllib.agent import MPCAgent
+from rllib.algorithms.mpc import CEMShooting, MPPIShooting, RandomShooting
+from rllib.dataset.experience_replay import ExperienceReplay
+from rllib.environment import GymEnvironment
+from rllib.model.environment_model import EnvironmentModel
+from rllib.policy.mpc_policy import MPCPolicy
+from rllib.reward.environment_reward import EnvironmentReward
+from rllib.util.training import evaluate_agent
 
 
 class EnvironmentTermination(nn.Module):

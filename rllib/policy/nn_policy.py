@@ -3,8 +3,9 @@
 import torch
 import torch.nn.functional
 
-from rllib.util.neural_networks import HeteroGaussianNN, CategoricalNN, FelixNet
-from rllib.util.neural_networks import one_hot_encode
+from rllib.util.neural_networks import (CategoricalNN, FelixNet,
+                                        HeteroGaussianNN, one_hot_encode)
+
 from .abstract_policy import AbstractPolicy
 
 

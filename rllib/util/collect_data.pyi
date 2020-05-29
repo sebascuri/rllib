@@ -1,7 +1,7 @@
 """Utilities to collect data."""
 from typing import List, Union
 
-from rllib.dataset.datatypes import Observation, Distribution
+from rllib.dataset.datatypes import Distribution, Observation
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy

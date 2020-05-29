@@ -2,8 +2,8 @@
 
 import torch
 
-from rllib.policy import TabularPolicy
 from rllib.algorithms.tabular_planning.utilities import init_value_function
+from rllib.policy import TabularPolicy
 
 
 def value_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):

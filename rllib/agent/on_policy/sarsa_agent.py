@@ -2,8 +2,9 @@
 
 import torch
 
-from .on_policy_agent import OnPolicyAgent
 from rllib.algorithms.sarsa import SARSA
+
+from .on_policy_agent import OnPolicyAgent
 
 
 class SARSAAgent(OnPolicyAgent):

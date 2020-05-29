@@ -1,9 +1,9 @@
 """Implementation of a Logger class."""
 
-from typing import List, Dict, Tuple, Iterator, Union
+from typing import Dict, Iterator, List, Tuple, Union
 
-import tensorboardX
 import numpy as np
+import tensorboardX
 import torch
 
 

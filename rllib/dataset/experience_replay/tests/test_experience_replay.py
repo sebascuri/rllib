@@ -3,9 +3,9 @@ import pytest
 import torch
 
 from rllib.dataset import ExperienceReplay
-from rllib.dataset.datatypes import RawObservation, Observation
-from rllib.dataset.transforms import MeanFunction, RewardClipper, StateNormalizer, \
-    ActionNormalizer
+from rllib.dataset.datatypes import Observation, RawObservation
+from rllib.dataset.transforms import (ActionNormalizer, MeanFunction,
+                                      RewardClipper, StateNormalizer)
 
 
 @pytest.fixture(params=[(10000, 1000), (10000, 100), (100, 101)])

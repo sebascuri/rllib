@@ -4,8 +4,9 @@ import warnings
 import numpy as np
 import torch
 import torch.distributions
-from torch.distributions import Categorical, MultivariateNormal, TransformedDistribution
-from torch.distributions.transforms import TanhTransform, AffineTransform
+from torch.distributions import (Categorical, MultivariateNormal,
+                                 TransformedDistribution)
+from torch.distributions.transforms import AffineTransform, TanhTransform
 
 from rllib.util.distributions import Delta
 

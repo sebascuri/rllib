@@ -5,8 +5,9 @@ import torch
 from torch.utils.data._utils.collate import default_collate
 
 from rllib.dataset.datatypes import Observation
-from .experience_replay import ExperienceReplay
 from rllib.util.parameter_decay import Constant, ParameterDecay
+
+from .experience_replay import ExperienceReplay
 
 
 class PrioritizedExperienceReplay(ExperienceReplay):

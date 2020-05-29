@@ -1,6 +1,7 @@
 """Implementation of DQNAgent Algorithms."""
-from .q_learning_agent import QLearningAgent
 from rllib.algorithms.q_learning import SoftQLearning
+
+from .q_learning_agent import QLearningAgent
 
 
 class SoftQLearningAgent(QLearningAgent):

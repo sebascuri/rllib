@@ -1,8 +1,8 @@
 """Helper functions to conduct a rollout with policies or agents."""
 
 import pickle
-import numpy as np
 
+import numpy as np
 import torch
 from tqdm import tqdm
 

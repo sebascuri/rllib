@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 from gym import spaces
 
-from rllib.dataset.datatypes import State, Action
+from rllib.dataset.datatypes import Action, State
 
 
 class AbstractSystem(object, metaclass=ABCMeta):

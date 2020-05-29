@@ -1,6 +1,7 @@
 import torch.nn as nn
 
-from rllib.dataset.datatypes import Observation, Array
+from rllib.dataset.datatypes import Array, Observation
+
 from .abstract_transform import AbstractTransform
 
 

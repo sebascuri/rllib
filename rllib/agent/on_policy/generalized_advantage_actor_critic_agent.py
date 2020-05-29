@@ -1,6 +1,7 @@
 """Implementation of Advantage-Actor Critic Agent."""
 
 from rllib.algorithms.gaac import GAAC
+
 from .actor_critic_agent import ActorCriticAgent
 
 

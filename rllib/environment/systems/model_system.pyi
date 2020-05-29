@@ -1,6 +1,7 @@
-from .abstract_system import AbstractSystem
 from rllib.dataset.datatypes import Action, State
 from rllib.model import AbstractModel
+
+from .abstract_system import AbstractSystem
 
 
 class ModelSystem(AbstractSystem):

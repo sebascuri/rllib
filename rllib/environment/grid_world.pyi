@@ -1,8 +1,9 @@
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 import numpy as np
 
-from rllib.dataset.datatypes import State, Action
+from rllib.dataset.datatypes import Action, State
+
 from .mdp import MDP
 
 

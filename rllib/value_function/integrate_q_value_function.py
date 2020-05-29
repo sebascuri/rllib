@@ -1,9 +1,10 @@
 """Value function that is computed by integrating a q-function."""
 import torch
 
+from rllib.util.utilities import integrate, tensor_to_distribution
+
 from .abstract_value_function import AbstractValueFunction
 from .nn_ensemble_value_function import NNEnsembleQFunction
-from rllib.util.utilities import integrate, tensor_to_distribution
 
 
 class IntegrateQValueFunction(AbstractValueFunction):

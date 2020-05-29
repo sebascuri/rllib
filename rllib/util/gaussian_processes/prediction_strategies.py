@@ -2,9 +2,9 @@
 import functools
 
 from gpytorch import settings
-from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy, \
-    clear_cache_hook
 from gpytorch.lazy import delazify
+from gpytorch.models.exact_prediction_strategies import (
+    DefaultPredictionStrategy, clear_cache_hook)
 from gpytorch.utils.memoize import cached
 
 

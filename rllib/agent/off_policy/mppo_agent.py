@@ -1,6 +1,7 @@
 """MPPO Agent Implementation."""
-from .off_policy_agent import OffPolicyAgent
 from rllib.algorithms.mppo import MPPO
+
+from .off_policy_agent import OffPolicyAgent
 
 
 class MPPOAgent(OffPolicyAgent):

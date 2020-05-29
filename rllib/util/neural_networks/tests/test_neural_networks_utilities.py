@@ -1,13 +1,17 @@
 import pytest
 import torch
 import torch.functional
-import torch.testing
 import torch.nn as nn
+import torch.testing
 
-from rllib.util.neural_networks import DeterministicNN, FelixNet, \
-    CategoricalNN, Ensemble, MultiHeadNN, HomoGaussianNN, HeteroGaussianNN
-from rllib.util.neural_networks.utilities import inverse_softplus, zero_bias, \
-    update_parameters, TileCode, one_hot_encode, get_batch_size, random_tensor
+from rllib.util.neural_networks import (CategoricalNN, DeterministicNN,
+                                        Ensemble, FelixNet, HeteroGaussianNN,
+                                        HomoGaussianNN, MultiHeadNN)
+from rllib.util.neural_networks.utilities import (TileCode, get_batch_size,
+                                                  inverse_softplus,
+                                                  one_hot_encode,
+                                                  random_tensor,
+                                                  update_parameters, zero_bias)
 
 
 def test_inverse_softplus():

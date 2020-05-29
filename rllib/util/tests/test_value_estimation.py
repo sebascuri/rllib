@@ -3,8 +3,10 @@ import pytest
 import scipy
 import torch
 import torch.testing
+
 from rllib.dataset.datatypes import RawObservation
-from rllib.util.value_estimation import discount_cumsum, discount_sum, mc_return
+from rllib.util.value_estimation import (discount_cumsum, discount_sum,
+                                         mc_return)
 
 
 class TestDiscountedCumSum(object):

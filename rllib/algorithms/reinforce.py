@@ -2,9 +2,10 @@
 
 import torch
 
-from .abstract_algorithm import AbstractAlgorithm, PGLoss
-from rllib.util.utilities import tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
+from rllib.util.utilities import tensor_to_distribution
+
+from .abstract_algorithm import AbstractAlgorithm, PGLoss
 from .gae import GAE
 
 

@@ -1,12 +1,14 @@
 """MPC Agent Implementation."""
 
 from typing import Optional
-from torch.optim.optimizer import Optimizer
+
 from torch.distributions import Distribution
+from torch.optim.optimizer import Optimizer
+
+from rllib.algorithms.td import ModelBasedTDLearning
+from rllib.policy.mpc_policy import MPCPolicy
 
 from .model_based_agent import ModelBasedAgent
-from rllib.policy.mpc_policy import MPCPolicy
-from rllib.algorithms.td import ModelBasedTDLearning
 
 
 class MPCAgent(ModelBasedAgent):

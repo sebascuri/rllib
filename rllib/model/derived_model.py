@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Observation
+
 from .abstract_model import AbstractModel
 
 

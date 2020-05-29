@@ -5,7 +5,7 @@ import torch
 from rllib.agent import REINFORCEAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
-from rllib.util.training import train_agent, evaluate_agent
+from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNValueFunction
 
 MAX_STEPS = 25

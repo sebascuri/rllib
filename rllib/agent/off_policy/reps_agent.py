@@ -1,7 +1,8 @@
 """Implementation of REPS Agent."""
 
-from .off_policy_agent import OffPolicyAgent
 from rllib.util.neural_networks.utilities import deep_copy_module
+
+from .off_policy_agent import OffPolicyAgent
 
 
 class REPSAgent(OffPolicyAgent):

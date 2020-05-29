@@ -3,9 +3,10 @@ import torch
 import torch.testing
 
 from rllib.dataset.datatypes import RawObservation
-from rllib.dataset.transforms import ActionNormalizer, StateNormalizer, DeltaState, \
-    ActionClipper, RewardClipper, ActionScaler, RewardScaler, MeanFunction
-
+from rllib.dataset.transforms import (ActionClipper, ActionNormalizer,
+                                      ActionScaler, DeltaState, MeanFunction,
+                                      RewardClipper, RewardScaler,
+                                      StateNormalizer)
 from rllib.dataset.utilities import stack_list_of_tuples
 
 

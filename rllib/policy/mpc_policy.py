@@ -1,7 +1,8 @@
 """Policy that Implements MPC."""
 
-from .abstract_policy import AbstractPolicy
 import torch
+
+from .abstract_policy import AbstractPolicy
 
 
 class MPCPolicy(AbstractPolicy):

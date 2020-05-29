@@ -4,8 +4,9 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from .abstract_algorithm import AbstractAlgorithm, TDLoss
 from rllib.value_function import AbstractQFunction
+
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
 class SARSA(AbstractAlgorithm):

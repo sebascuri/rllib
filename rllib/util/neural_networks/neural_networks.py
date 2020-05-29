@@ -1,12 +1,13 @@
 """Implementation of different Neural Networks with pytorch."""
 
 import torch
+import torch.jit
 import torch.nn as nn
 import torch.nn.functional as functional
-import torch.jit
+
+from rllib.util.utilities import safe_cholesky
 
 from .utilities import inverse_softplus, parse_layers, update_parameters
-from rllib.util.utilities import safe_cholesky
 
 
 class FeedForwardNN(nn.Module):

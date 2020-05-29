@@ -1,11 +1,10 @@
 """Vectorized Gym Acrobot Environment."""
 import numpy as np
-
 from gym.envs.classic_control.acrobot import AcrobotEnv
 from gym.envs.classic_control.pendulum import angle_normalize
 from gym.spaces.box import Box
 
-from rllib.environment.vectorized.util import rk4, VectorizedEnv
+from rllib.environment.vectorized.util import VectorizedEnv, rk4
 
 
 class VectorizedAcrobotEnv(AcrobotEnv, VectorizedEnv):

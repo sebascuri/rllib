@@ -1,6 +1,7 @@
 """Interface for Grid World."""
 
 from collections import defaultdict
+
 import numpy as np
 
 from .mdp import MDP

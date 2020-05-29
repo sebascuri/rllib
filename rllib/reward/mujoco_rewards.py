@@ -1,11 +1,13 @@
 """Rewards of Mujoco Environments."""
 
-import torch
-import numpy as np
-from rllib.reward import AbstractReward
-from rllib.util.utilities import get_backend
-from rllib.reward.utilities import tolerance
 from abc import ABCMeta
+
+import numpy as np
+import torch
+
+from rllib.reward import AbstractReward
+from rllib.reward.utilities import tolerance
+from rllib.util.utilities import get_backend
 
 
 class MujocoReward(AbstractReward, metaclass=ABCMeta):

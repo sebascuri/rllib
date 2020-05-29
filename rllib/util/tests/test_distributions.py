@@ -1,9 +1,10 @@
 import pytest
 import torch
 import torch.testing
-from torch.distributions import MultivariateNormal, ComposeTransform, \
-    TransformedDistribution
+from torch.distributions import (ComposeTransform, MultivariateNormal,
+                                 TransformedDistribution)
 from torch.distributions.transforms import AffineTransform, SigmoidTransform
+
 from rllib.util.distributions import Delta, TanhTransform
 
 

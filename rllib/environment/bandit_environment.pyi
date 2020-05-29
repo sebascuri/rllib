@@ -2,8 +2,9 @@ from typing import Tuple
 
 import numpy as np
 
-from rllib.dataset.datatypes import State, Action, Reward, Done
+from rllib.dataset.datatypes import Action, Done, Reward, State
 from rllib.reward import AbstractReward
+
 from .abstract_environment import AbstractEnvironment
 
 

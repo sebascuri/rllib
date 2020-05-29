@@ -2,10 +2,11 @@ import numpy as np
 import pytest
 import torch
 import torch.testing
-from torch.distributions import kl_divergence, MultivariateNormal, Categorical
+from torch.distributions import Categorical, MultivariateNormal, kl_divergence
+
 from rllib.util.distributions import Delta
-from rllib.util.utilities import separated_kl, integrate, mellow_max, get_backend, \
-    tensor_to_distribution
+from rllib.util.utilities import (get_backend, integrate, mellow_max,
+                                  separated_kl, tensor_to_distribution)
 
 
 class TestGetBackend(object):

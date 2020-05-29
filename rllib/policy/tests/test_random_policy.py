@@ -1,5 +1,5 @@
 import pytest
-from torch.distributions import MultivariateNormal, Categorical
+from torch.distributions import Categorical, MultivariateNormal
 
 from rllib.policy import RandomPolicy
 from rllib.util.neural_networks import random_tensor

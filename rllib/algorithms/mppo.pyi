@@ -1,20 +1,21 @@
 """Maximum a Posterior Policy Optimization algorithm stub."""
 
-from typing import Union, Optional, NamedTuple, Tuple
+from typing import NamedTuple, Optional, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
-from torch.nn.modules.loss import _Loss
 from torch.distributions import Distribution
+from torch.nn.modules.loss import _Loss
 
-from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
-from rllib.value_function import AbstractValueFunction, AbstractQFunction
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.util.utilities import RewardTransformer
+from rllib.value_function import AbstractQFunction, AbstractValueFunction
+
+from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 
 
 class MPOLosses(NamedTuple):

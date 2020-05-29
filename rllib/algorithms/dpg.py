@@ -2,12 +2,15 @@
 
 import torch
 
-from rllib.util.neural_networks.utilities import disable_gradient, deep_copy_module, \
-    update_parameters
-from rllib.util.utilities import tensor_to_distribution, RewardTransformer
-from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
-from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
+from rllib.util.neural_networks.utilities import (deep_copy_module,
+                                                  disable_gradient,
+                                                  update_parameters)
+from rllib.util.utilities import RewardTransformer, tensor_to_distribution
 from rllib.util.value_estimation import mb_return
+from rllib.value_function.integrate_q_value_function import \
+    IntegrateQValueFunction
+
+from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
 
 class DPG(AbstractAlgorithm):

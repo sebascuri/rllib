@@ -3,8 +3,8 @@
 from abc import ABCMeta
 from collections import namedtuple
 
-import torch.nn as nn
 import torch.jit
+import torch.nn as nn
 
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):

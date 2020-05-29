@@ -3,6 +3,7 @@ from typing import List
 from rllib.dataset import TrajectoryDataset
 from rllib.dataset.datatypes import Observation
 from rllib.policy import RandomPolicy
+
 from .abstract_agent import AbstractAgent
 
 

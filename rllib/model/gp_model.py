@@ -4,8 +4,11 @@ import torch
 import torch.jit
 import torch.nn
 
-from rllib.util.gaussian_processes.gps import ExactGP, SparseGP, RandomFeatureGP
-from rllib.util.gaussian_processes.utilities import add_data_to_gp, summarize_gp, bkb
+from rllib.util.gaussian_processes.gps import (ExactGP, RandomFeatureGP,
+                                               SparseGP)
+from rllib.util.gaussian_processes.utilities import (add_data_to_gp, bkb,
+                                                     summarize_gp)
+
 from .abstract_model import AbstractModel
 
 

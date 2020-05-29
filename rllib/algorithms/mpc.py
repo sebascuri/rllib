@@ -1,18 +1,18 @@
 """MPC Algorithms."""
-from abc import ABCMeta, abstractmethod
 import time
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal
 
-from rllib.util.neural_networks.utilities import repeat_along_dimension
-from rllib.util.rollout import rollout_actions
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util import discount_sum, sample_mean_and_cov
-from rllib.util.parameter_decay import ParameterDecay, Constant
 from rllib.util.multiprocessing import modify_parallel
+from rllib.util.neural_networks.utilities import repeat_along_dimension
+from rllib.util.parameter_decay import Constant, ParameterDecay
+from rllib.util.rollout import rollout_actions
 
 
 class MPCSolver(nn.Module, metaclass=ABCMeta):

@@ -6,14 +6,15 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from .abstract_algorithm import AbstractAlgorithm, MPOLoss
-
-from rllib.util.neural_networks import freeze_parameters
-from rllib.util.utilities import separated_kl, tensor_to_distribution, RewardTransformer
+from rllib.util.neural_networks import (deep_copy_module, freeze_parameters,
+                                        repeat_along_dimension,
+                                        update_parameters)
+from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
+from rllib.util.utilities import (RewardTransformer, separated_kl,
+                                  tensor_to_distribution)
 from rllib.util.value_estimation import mb_return
-from rllib.util.neural_networks import deep_copy_module, repeat_along_dimension, \
-    update_parameters
-from rllib.util.parameter_decay import Learnable, Constant, ParameterDecay
+
+from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 
 MPOLosses = namedtuple('MPOLosses', ['primal_loss', 'dual_loss'])
 

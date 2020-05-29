@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import List, Union
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -7,6 +7,7 @@ from rllib.algorithms.sarsa import SARSA
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
+
 from .abstract_agent import AbstractAgent
 
 

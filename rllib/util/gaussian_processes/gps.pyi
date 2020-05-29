@@ -1,11 +1,12 @@
 """Exact GP Model."""
+from typing import Union
+
 import gpytorch
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.kernels import Kernel
 from gpytorch.likelihoods import Likelihood
 from gpytorch.means import Mean
 from torch import Tensor
-from typing import Union
 
 
 class ExactGP(gpytorch.models.ExactGP):

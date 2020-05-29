@@ -1,14 +1,15 @@
 import pytest
 import torch
-import torch.jit
 import torch.distributions
+import torch.jit
 import torch.testing
 
-from rllib.util.neural_networks import CategoricalNN, DeterministicNN, FelixNet, \
-    HomoGaussianNN, HeteroGaussianNN, Ensemble
+from rllib.util.distributions import Delta
+from rllib.util.neural_networks import (CategoricalNN, DeterministicNN,
+                                        Ensemble, FelixNet, HeteroGaussianNN,
+                                        HomoGaussianNN)
 from rllib.util.neural_networks.utilities import count_vars
 from rllib.util.utilities import tensor_to_distribution
-from rllib.util.distributions import Delta
 
 
 @pytest.fixture(params=[None, [], [32], [64, 32]])

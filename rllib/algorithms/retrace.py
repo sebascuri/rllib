@@ -4,10 +4,10 @@ from abc import ABCMeta, abstractmethod
 import torch
 import torch.nn as nn
 
-from rllib.util.neural_networks import update_parameters, deep_copy_module
-from rllib.util import tensor_to_distribution, integrate
+from rllib.util import integrate, tensor_to_distribution
+from rllib.util.neural_networks import deep_copy_module, update_parameters
 
-from .abstract_algorithm import TDLoss, AbstractAlgorithm
+from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
 
 class OffPolicyTDLearning(AbstractAlgorithm, metaclass=ABCMeta):

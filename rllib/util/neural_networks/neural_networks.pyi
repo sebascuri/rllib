@@ -1,6 +1,7 @@
 """Implementation of different Neural Networks with pytorch."""
 
-from typing import List, Dict, Tuple, TypeVar, Type, Any
+from typing import Any, Dict, List, Tuple, Type, TypeVar
+
 import torch.nn as nn
 from torch import Tensor
 

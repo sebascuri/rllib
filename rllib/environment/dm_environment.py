@@ -1,8 +1,8 @@
 """Wrapper for DMSuite Environments."""
 
-from gym.spaces import Box
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from gym.spaces import Box
 
 from .abstract_environment import AbstractEnvironment
 

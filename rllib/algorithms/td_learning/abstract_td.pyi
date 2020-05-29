@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, List
+from typing import List, Tuple
 
 from torch import Tensor
 
@@ -43,4 +43,3 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
     @abstractmethod
     def _update(self, td_error: Tensor, phi: Tensor, next_phi: Tensor, weight: Tensor
                 ) -> None: ...
-

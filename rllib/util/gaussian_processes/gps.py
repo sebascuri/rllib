@@ -1,11 +1,13 @@
 """Exact GP Model."""
 import gpytorch
-from .prediction_strategies import SparsePredictionStrategy
-from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy
-from gpytorch.lazy import MatmulLazyTensor, lazify, delazify
-import torch
 import numpy as np
+import torch
+from gpytorch.lazy import MatmulLazyTensor, delazify, lazify
+from gpytorch.models.exact_prediction_strategies import \
+    DefaultPredictionStrategy
 from scipy.stats.distributions import chi
+
+from .prediction_strategies import SparsePredictionStrategy
 
 
 class ExactGP(gpytorch.models.ExactGP):

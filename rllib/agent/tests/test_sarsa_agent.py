@@ -1,11 +1,11 @@
 import pytest
 import torch.optim
 
-from rllib.agent import SARSAAgent, ExpectedSARSAAgent
-from rllib.environment import GymEnvironment, EasyGridWorld
-from rllib.policy import EpsGreedy, SoftMax, MellowMax
-from rllib.util.training import train_agent, evaluate_agent
+from rllib.agent import ExpectedSARSAAgent, SARSAAgent
+from rllib.environment import EasyGridWorld, GymEnvironment
+from rllib.policy import EpsGreedy, MellowMax, SoftMax
 from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 
 NUM_EPISODES = 10

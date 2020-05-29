@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Callable
+from typing import Callable, List, TypeVar
 
 import numpy as np
 

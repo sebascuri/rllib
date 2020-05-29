@@ -2,8 +2,9 @@
 
 import torch
 
-from .abstract_reward import AbstractReward
 from rllib.environment.abstract_environment import AbstractEnvironment
+
+from .abstract_reward import AbstractReward
 
 
 class EnvironmentReward(AbstractReward):

@@ -4,7 +4,8 @@ import torch
 from torch.utils import data
 
 from rllib.dataset.datatypes import Observation
-from .utilities import stack_list_of_tuples, map_and_cast
+
+from .utilities import map_and_cast, stack_list_of_tuples
 
 
 class TrajectoryDataset(data.Dataset):

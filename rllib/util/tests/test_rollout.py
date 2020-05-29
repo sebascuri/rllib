@@ -1,9 +1,9 @@
 import pytest
 
 from rllib.agent import RandomAgent
-from rllib.environment import GymEnvironment, EasyGridWorld
+from rllib.environment import EasyGridWorld, GymEnvironment
 from rllib.policy import RandomPolicy
-from rllib.util import rollout_policy, rollout_agent
+from rllib.util import rollout_agent, rollout_policy
 
 
 @pytest.fixture(params=['CartPole-v0', 'Pendulum-v0', 'MountainCarContinuous-v0',

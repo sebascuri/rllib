@@ -1,9 +1,10 @@
 """Actor-Critic Algorithm."""
 import torch
 
-from .abstract_algorithm import AbstractAlgorithm, ACLoss
-from rllib.util import integrate, discount_sum, tensor_to_distribution
+from rllib.util import discount_sum, integrate, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
+
+from .abstract_algorithm import AbstractAlgorithm, ACLoss
 
 
 class ActorCritic(AbstractAlgorithm):

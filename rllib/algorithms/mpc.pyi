@@ -1,17 +1,16 @@
 """MPC Algorithms."""
 from abc import ABCMeta, abstractmethod
+from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 
-from typing import List, Union, Optional
-
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.reward import AbstractReward
-from rllib.value_function import AbstractValueFunction
 from rllib.util.parameter_decay import ParameterDecay
+from rllib.value_function import AbstractValueFunction
 
 
 class MPCSolver(nn.Module, metaclass=ABCMeta):

@@ -2,11 +2,12 @@ from typing import NamedTuple
 
 from torch import Tensor
 
-from rllib.dataset.datatypes import Termination, Array, State, Trajectory
+from rllib.dataset.datatypes import Array, State, Termination, Trajectory
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
+
 from .utilities import RewardTransformer
 
 

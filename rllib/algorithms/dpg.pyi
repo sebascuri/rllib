@@ -2,13 +2,14 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from rllib.value_function import AbstractQFunction
-from rllib.util.utilities import RewardTransformer
-from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
+from rllib.util.utilities import RewardTransformer
+from rllib.value_function import AbstractQFunction
+
+from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
 
 class DPG(AbstractAlgorithm):

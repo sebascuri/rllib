@@ -2,8 +2,9 @@
 
 import torch.nn as nn
 
-from .on_policy_agent import OnPolicyAgent
 from rllib.algorithms.reinforce import REINFORCE
+
+from .on_policy_agent import OnPolicyAgent
 
 
 class REINFORCEAgent(OnPolicyAgent):

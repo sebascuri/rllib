@@ -4,7 +4,7 @@ from typing import Tuple
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import TupleDistribution, Action
+from rllib.dataset.datatypes import Action, TupleDistribution
 
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):

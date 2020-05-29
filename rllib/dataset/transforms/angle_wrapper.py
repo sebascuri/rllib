@@ -3,8 +3,9 @@
 import torch
 import torch.jit
 
-from .abstract_transform import AbstractTransform
 from rllib.dataset.datatypes import Observation
+
+from .abstract_transform import AbstractTransform
 
 
 class AngleWrapper(AbstractTransform):

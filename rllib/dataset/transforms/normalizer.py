@@ -4,9 +4,10 @@ import torch
 import torch.jit
 import torch.nn as nn
 
-from rllib.dataset.transforms.utilities import update_var, update_mean, rescale
-from .abstract_transform import AbstractTransform
 from rllib.dataset.datatypes import Observation
+from rllib.dataset.transforms.utilities import rescale, update_mean, update_var
+
+from .abstract_transform import AbstractTransform
 
 
 class Normalizer(nn.Module):

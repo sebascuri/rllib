@@ -3,9 +3,10 @@
 import torch
 import torch.jit
 
-from .nn_model import NNModel
 from rllib.util.neural_networks import Ensemble
 from rllib.util.neural_networks.utilities import one_hot_encode
+
+from .nn_model import NNModel
 
 
 class EnsembleModel(NNModel):

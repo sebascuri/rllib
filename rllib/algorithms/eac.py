@@ -1,9 +1,10 @@
 """Expected Actor-Critic Algorithm."""
 import torch
 
-from rllib.util import integrate, discount_sum, tensor_to_distribution
-from .ac import ActorCritic
+from rllib.util import discount_sum, integrate, tensor_to_distribution
+
 from .abstract_algorithm import ACLoss
+from .ac import ActorCritic
 
 
 class ExpectedActorCritic(ActorCritic):

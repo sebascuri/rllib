@@ -4,8 +4,8 @@ import math
 
 import gpytorch
 import torch
-from torch.distributions.transforms import Transform
 from torch.distributions import constraints
+from torch.distributions.transforms import Transform
 from torch.nn.functional import softplus
 
 
