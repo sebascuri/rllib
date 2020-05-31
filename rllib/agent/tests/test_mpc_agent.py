@@ -63,7 +63,7 @@ def default_action(request):
     return request.param
 
 
-@pytest.fixture(params=[1, 2])
+@pytest.fixture(params=[1])
 def num_cpu(request):
     return request.param
 

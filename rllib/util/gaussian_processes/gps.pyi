@@ -47,6 +47,8 @@ class SparseGP(ExactGP):
 
 
 class RandomFeatureGP(ExactGP):
+    full_predictive_covariance: bool
+
     def __init__(self, train_x: Tensor, train_y: Tensor, likelihood: Likelihood,
                  num_features: int, approximation='RFF',
                  mean: Mean = None, kernel: Kernel = None) -> None: ...
@@ -54,7 +56,9 @@ class RandomFeatureGP(ExactGP):
     @ExactGP.length_scale.setter  # type: ignore
     def length_scale(self, new_length_scale: Union[float, Tensor]) -> None: ...
 
-    def sample_features(self) -> Union[Tensor, Tensor, Tensor]: ...
+    def sample_features(self) -> None: ...
+
+    def _sample_features(self) -> Union[Tensor, Tensor, Tensor]: ...
 
     @property
     def num_features(self) -> int: ...

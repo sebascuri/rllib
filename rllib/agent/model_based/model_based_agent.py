@@ -7,7 +7,6 @@ A model based agent has three behaviors:
 """
 
 import gpytorch
-import numpy as np
 import torch
 from gym.utils import colorize
 from torch.utils.data import DataLoader
@@ -173,7 +172,7 @@ class ModelBasedAgent(AbstractAgent):
         self.thompson_sampling = thompson_sampling
 
         if self.thompson_sampling:
-            self.dynamical_model.base_model.set_prediction_strategy('set_head')
+            self.dynamical_model.set_prediction_strategy('posterior')
 
         if hasattr(self.dynamical_model.base_model, 'num_heads'):
             num_heads = self.dynamical_model.base_model.num_heads
@@ -234,9 +233,7 @@ class ModelBasedAgent(AbstractAgent):
         self.new_episode = True
 
         if self.thompson_sampling:
-            self.dynamical_model.base_model.set_head(
-                np.random.choice(self.dynamical_model.base_model.num_heads)
-            )
+            self.dynamical_model.sample_posterior()
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'.

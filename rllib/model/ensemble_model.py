@@ -1,5 +1,6 @@
 """Dynamical Model parametrized with a (P or D) ensemble of Neural Networks."""
 
+import numpy as np
 import torch
 import torch.jit
 
@@ -40,6 +41,10 @@ class EnsembleModel(NNModel):
 
         state_action = torch.cat((state, action), dim=-1)
         return self.nn(state_action)
+
+    def sample_posterior(self) -> None:
+        """Set an ensemble head."""
+        self.set_head(np.random.choice(self.num_heads))
 
     @torch.jit.export
     def set_head(self, head_ptr: int):

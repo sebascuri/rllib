@@ -63,3 +63,11 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def name(self):
         """Get Model name."""
         return self.__class__.__name__
+
+    def sample_posterior(self):
+        """Sample a model from the (approximate) posterior."""
+        raise NotImplementedError
+
+    def set_prediction_strategy(self, val: str):
+        """Set prediction strategy of model."""
+        raise NotImplementedError

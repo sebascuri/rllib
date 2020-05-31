@@ -19,6 +19,14 @@ class TransformedModel(AbstractModel):
         self.forward_transformations = nn.ModuleList(transformations)
         self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
 
+    def sample_posterior(self):
+        """Sample a posterior from the base model."""
+        self.base_model.sample_posterior()
+
+    def set_prediction_strategy(self, val: str) -> None:
+        """Set prediction strategy."""
+        self.base_model.set_prediction_strategy(val)
+
     def forward(self, state, action):
         """Predict next state distribution."""
         return self.next_state(state, action)

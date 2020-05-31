@@ -264,7 +264,7 @@ class Ensemble(HeteroGaussianNN):
             head_ptr = torch.randint(self.num_heads, (1,))
             mean = out[..., head_ptr]
             scale = torch.diag_embed(scale[..., head_ptr])
-        elif self.prediction_strategy == 'set_head':  # Thompson sampling
+        elif self.prediction_strategy in ['set_head', 'posterior']:  # Thompson sampling
             mean = out[..., self.head_ptr]
             scale = torch.diag_embed(scale[..., self.head_ptr])
         elif self.prediction_strategy == 'sample_multiple_head':  # TS-1

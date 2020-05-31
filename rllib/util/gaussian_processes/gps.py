@@ -283,7 +283,9 @@ class RandomFeatureGP(ExactGP):
 
         self.dim = train_x.shape[-1]
 
-        self.w, self.b, self._feature_scale = self.sample_features()
+        self.w, self.b, self._feature_scale = self._sample_features()
+
+        self.full_predictive_covariance = True  # by default make it full predictive.
 
     @property
     def name(self):
@@ -291,6 +293,10 @@ class RandomFeatureGP(ExactGP):
         return f"{self.approximation.upper()} GP"
 
     def sample_features(self):
+        """Sample a new set of features."""
+        self.w, self.b, self._feature_scale = self._sample_features()
+
+    def _sample_features(self):
         """Sample a new set of random features."""
         # Only squared-exponential kernels are implemented.
         if self.approximation == 'RFF':
@@ -325,13 +331,14 @@ class RandomFeatureGP(ExactGP):
             raise NotImplementedError(f"{self.approximation} not implemented.")
 
         b = 2 * torch.tensor(np.pi) * torch.rand(self.num_features)
+        self.prediction_strategy = None  # reset prediction strategy.
         return w, b, scale
 
     @ExactGP.length_scale.setter
     def length_scale(self, value):
         """Set length scale."""
         self.covar_module.base_kernel.lengthscale = value
-        self.w, self.b, self._feature_scale = self.sample_features()
+        self.sample_features()
 
     @property
     def num_features(self):
@@ -342,7 +349,7 @@ class RandomFeatureGP(ExactGP):
     def num_features(self, value):
         """Set number of features."""
         self._num_features = value
-        self.w, self.b, self._feature_scale = self.sample_features()
+        self.sample_features()
 
     @property
     def scale(self):
@@ -377,15 +384,20 @@ class RandomFeatureGP(ExactGP):
         #
         z = self.forward(inputs)
         pred_mean = self.mean_module(inputs) + z @ self.prediction_strategy.mean_cache
-        precomputed_cache = self.prediction_strategy.covar_cache
-        covar_inv_quad_form_root = z @ precomputed_cache
 
-        pred_cov = MatmulLazyTensor(
-            covar_inv_quad_form_root, covar_inv_quad_form_root.transpose(-1, -2)
-        ).mul(self.likelihood.noise)
+        if self.full_predictive_covariance:
+            precomputed_cache = self.prediction_strategy.covar_cache
+            covar_inv_quad_form_root = z @ precomputed_cache
+
+            pred_cov = MatmulLazyTensor(
+                covar_inv_quad_form_root, covar_inv_quad_form_root.transpose(-1, -2)
+            ).mul(self.likelihood.noise).add_jitter()
+        else:
+            dim = pred_mean.shape[-1]
+            pred_cov = 1e-6 * torch.eye(dim)
 
         return gpytorch.distributions.MultivariateNormal(pred_mean,
-                                                         pred_cov.add_jitter())
+                                                         pred_cov)
 
     def forward(self, x):
         """Compute features at location x."""

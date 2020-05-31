@@ -179,6 +179,20 @@ class RandomFeatureGPModel(ExactGPModel):
         """Get Model name."""
         return f"{self.approximation} {super().name}"
 
+    def sample_posterior(self):
+        """Sample a set of feature vectors."""
+        for gp in self.gp:
+            gp.sample_features()
+
+    def set_prediction_strategy(self, val):
+        """Set GP prediction strategy."""
+        if val == 'posterior':
+            for gp in self.gp:
+                gp.full_predictive_covariance = False
+        else:
+            for gp in self.gp:
+                gp.full_predictive_covariance = True
+
 
 class SparseGPModel(ExactGPModel):
     """Sparse approximation of Exact GP models."""
