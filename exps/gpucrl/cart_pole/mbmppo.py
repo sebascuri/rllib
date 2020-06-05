@@ -6,9 +6,9 @@ from exps.gpucrl.mb_mppo_arguments import parser
 from exps.gpucrl.plotters import plot_last_sim_and_real_trajectory
 from exps.gpucrl.util import train_and_evaluate
 
-PLAN_HORIZON = 4
+PLAN_HORIZON = 1
 MPPO_ETA, MPPO_ETA_MEAN, MPPO_ETA_VAR = 0.5, .7, 5.0
-MPPO_NUM_ITER = 50  #200
+MPPO_NUM_ITER = 50
 SIM_TRAJECTORIES = 8
 SIM_EXP_TRAJECTORIES = 32
 SIM_NUM_STEPS = ENVIRONMENT_MAX_STEPS

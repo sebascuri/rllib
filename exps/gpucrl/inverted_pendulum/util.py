@@ -227,14 +227,15 @@ def _optimize_policy(mppo, state_batches, optimizer, num_gradient_steps):
         optimizer.step()
 
         # Track statistics
-        value_episode_loss += losses.value_loss.item()
+        value_episode_loss += losses.critic_loss.item()
         policy_episode_loss += losses.policy_loss.item()
-        episode_kl_div += losses.kl_div.item()
+        # episode_kl_div += losses.kl_div.item()
+        mppo.update()
 
     return policy_episode_loss, value_episode_loss, episode_kl_div
 
 
-def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
+def solve_mppo(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
               num_gradient_steps, num_trajectories, num_action_samples, num_episodes,
               epsilon, epsilon_mean, epsilon_var, eta, eta_mean, eta_var, lr):
     reward_model = PendulumReward(action_cost)
@@ -253,7 +254,7 @@ def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
     mppo = MBMPPO(dynamical_model, reward_model, policy, value_function, gamma=0.99,
                   epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
                   eta=eta, eta_mean=eta_mean, eta_var=eta_var,
-                  num_action_samples=num_action_samples)
+                  num_action_samples=num_action_samples, criterion=nn.MSELoss)
 
     optimizer = optim.Adam([p for p in mppo.parameters() if p.requires_grad], lr=lr)
 
@@ -278,14 +279,14 @@ def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
         entropy += entropy_
         kl_div += kl_div_
 
-        # %% Test controller on Model.
-        test_policy_on_model(mppo.dynamical_model, mppo.reward_model, mppo.policy,
-                             test_state)
-        _, trajectory = test_policy_on_model(
-            mppo.dynamical_model, mppo.reward_model,
-            lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
-                       torch.zeros(1)),
-            test_state, policy_str='Expected Policy')
+        # # %% Test controller on Model.
+        # test_policy_on_model(mppo.dynamical_model, mppo.reward_model, mppo.policy,
+        #                      test_state)
+        # _, trajectory = test_policy_on_model(
+        #     mppo.dynamical_model, mppo.reward_model,
+        #     lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
+        #                torch.zeros(1)),
+        #     test_state, policy_str='Expected Policy')
 
         # %% Test controller on Environment.
         environment = SystemEnvironment(
@@ -313,7 +314,7 @@ def solve_mpc(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size,
     # Plot losses.
     plot_learning_losses(policy_losses, value_losses, horizon=20)
 
-    return environment_rewards
+    return returns
 
 
 def get_agent_and_environment(params, agent_name):

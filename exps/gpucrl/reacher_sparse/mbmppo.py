@@ -7,10 +7,10 @@ from exps.gpucrl.plotters import plot_last_rewards
 from exps.gpucrl.util import train_and_evaluate
 from rllib.util.utilities import RewardTransformer
 
-PLAN_HORIZON = 4
+PLAN_HORIZON = 30
 PLAN_SAMPLES = 500
-PLAN_ELITES = 10
-ALGORITHM_NUM_ITER = 50
+PLAN_ELITES = 20
+ALGORITHM_NUM_ITER = 10
 SIM_TRAJECTORIES = 50
 SIM_EXP_TRAJECTORIES = 150
 SIM_MEMORY_TRAJECTORIES = 80
@@ -20,7 +20,7 @@ SIM_SUBSAMPLE = 1
 parser.description = 'Run Reacher using Model-Based MPPO.'
 parser.set_defaults(
     # exploration='expected',
-    action_cost=ACTION_COST,
+    action_cost=1 * ACTION_COST,
     train_episodes=TRAIN_EPISODES,
     environment_max_steps=ENVIRONMENT_MAX_STEPS,
     plan_horizon=PLAN_HORIZON,
@@ -39,7 +39,7 @@ parser.set_defaults(
     mppo_epsilon_var=0.0001,
     mppo_opt_lr=1e-4,
     mppo_batch_size=100,
-    mppo_gradient_steps=200,
+    mppo_gradient_steps=30,
     mppo_target_frequency_update=1,
 
     sim_num_steps=SIM_NUM_STEPS,

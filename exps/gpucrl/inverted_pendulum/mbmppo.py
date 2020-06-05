@@ -24,5 +24,6 @@ args = parser.parse_args()
 params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, 'mbmppo')
+agent.exploration_episodes = 3
 train_and_evaluate(agent, environment, params,
-                   plot_callbacks=[plot_pendulum_trajectories])
+                   plot_callbacks=[])

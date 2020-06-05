@@ -10,7 +10,7 @@ algorithm_hyper_args = {
 
 runner = init_runner(
     f"GPUCRL_Inverted_Pendulum_{algorithm_hyper_args['model-kind'][0]}",
-    num_threads=1, num_workers=12)
+    num_threads=1, num_workers=15)
 
 cmd_list = make_commands(
     'mbmppo.py',
