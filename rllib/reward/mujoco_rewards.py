@@ -6,7 +6,6 @@ import numpy as np
 import torch
 
 from rllib.reward import AbstractReward
-from rllib.reward.utilities import tolerance
 from rllib.util.utilities import get_backend
 
 
@@ -15,6 +14,7 @@ class MujocoReward(AbstractReward, metaclass=ABCMeta):
 
     def __init__(self, action_cost=0.01, sparse=False):
         super().__init__()
+        self.action_scale = 1
         self.action_cost = action_cost
         self.sparse = sparse
         self.reward_ctrl = None
@@ -25,10 +25,8 @@ class MujocoReward(AbstractReward, metaclass=ABCMeta):
         action = action[..., :self.dim_action]  # get only true dimensions.
         bk = get_backend(action)
         if self.sparse:
-            if not isinstance(action, torch.Tensor):
-                action = torch.tensor(action, dtype=torch.get_default_dtype())
-            return tolerance(action.square().sum(-1),
-                             lower=-0.1, upper=0.1, margin=0.1) - 1
+            return bk.exp(
+                -bk.square(action / self.action_scale).sum(-1)) - 1
         else:
             return -bk.square(action).sum(-1)
 
@@ -165,6 +163,8 @@ class ReacherReward(MujocoReward):
 
     def __init__(self, action_cost=0.01, sparse=False):
         super().__init__(action_cost, sparse)
+        self.action_scale = 2.
+        self.length_scale = .45
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
@@ -174,11 +174,8 @@ class ReacherReward(MujocoReward):
             dist_to_target = self.get_ee_position(next_state) - goal
 
         if self.sparse:
-            if bk is not torch:
-                dist_to_target = torch.tensor(dist_to_target,
-                                              dtype=torch.get_default_dtype())
-            reward_state = tolerance(dist_to_target.square().sum(-1),
-                                     lower=0, upper=0.2, margin=0.1)
+            reward_state = bk.exp(-bk.square(dist_to_target).sum(-1) / (
+                    self.length_scale ** 2))
         else:
             reward_state = -bk.square(dist_to_target).sum(-1)
 

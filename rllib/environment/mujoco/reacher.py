@@ -3,10 +3,7 @@
 import os
 
 import numpy as np
-import torch
 from gym import utils
-
-from rllib.reward.utilities import tolerance
 
 try:
     from gym.envs.mujoco import mujoco_env
@@ -26,6 +23,9 @@ try:
         def __init__(self, action_cost=0.01, sparse=False):
             self.action_cost = action_cost
             self.viewer = None
+            self.length_scale = .45  # .5 is solved by all.
+            self.action_scale = 2.  # 5.
+
             utils.EzPickle.__init__(self)
             dir_path = os.path.dirname(os.path.realpath(__file__))
             self.goal = np.zeros(3)
@@ -38,12 +38,10 @@ try:
             ob = self._get_obs()
             dist = self.get_end_effector_pos(ob) - self.goal
             if self.sparse:
-                dist = torch.tensor(dist, dtype=torch.get_default_dtype())
-                action = torch.tensor(action, dtype=torch.get_default_dtype())
-                reward_dist = tolerance(dist.square().sum(),
-                                        lower=0, upper=0.2, margin=0.1).numpy()
-                reward_ctrl = tolerance(action.square().sum(-1),
-                                        lower=-0.1, upper=0.1, margin=0.1).numpy() - 1
+                reward_dist = np.exp(
+                    -np.sum(np.square(dist)) / (self.length_scale ** 2))
+                reward_ctrl = np.exp(
+                    -np.sum(np.square(action)) / (self.action_scale ** 2)) - 1
             else:
                 reward_dist = -np.sum(np.square(dist))
                 reward_ctrl = -np.square(action).sum()
