@@ -64,6 +64,10 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         """Get Model name."""
         return self.__class__.__name__
 
+    def scale(self, state, action):
+        """Get epistemic variance at a given state, action pair."""
+        raise NotImplementedError
+
     def sample_posterior(self):
         """Sample a model from the (approximate) posterior."""
         raise NotImplementedError

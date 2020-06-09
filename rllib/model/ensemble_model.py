@@ -46,6 +46,20 @@ class EnsembleModel(NNModel):
         """Set an ensemble head."""
         self.set_head(np.random.choice(self.num_heads))
 
+    def scale(self, state, action):
+        """Get epistemic variance at a state-action pair."""
+        # Save state.
+        prediction_strategy = self.get_prediction_strategy()
+
+        # Compute epistemic uncertainty through moment matching.
+        self.set_prediction_strategy('moment_matching')
+        _, scale = self.scale(state, action[..., :self.dim_action])
+
+        # Set state.
+        self.set_prediction_strategy(prediction_strategy)
+
+        return scale
+
     @torch.jit.export
     def set_head(self, head_ptr: int):
         """Set ensemble head."""
@@ -58,7 +72,7 @@ class EnsembleModel(NNModel):
 
     @torch.jit.export
     def set_head_idx(self, head_ptr):
-        """Set ensemble head for particles.."""
+        """Set ensemble head for particles."""
         self.nn.set_head_idx(head_ptr)
 
     @torch.jit.export

@@ -31,6 +31,28 @@ class TransformedModel(AbstractModel):
         """Predict next state distribution."""
         return self.next_state(state, action)
 
+    def scale(self, state, action):
+        """Get epistemic scale of model."""
+        none = torch.tensor(0)
+        obs = Observation(state, action, none, none, none, none, none, none, none,
+                          none)
+        for transformation in self.forward_transformations:
+            obs = transformation(obs)
+
+        # Predict next-state
+        scale = self.base_model.scale(obs.state, obs.action)
+
+        # Back-transform
+        obs = Observation(obs.state, obs.action, reward=none, done=none,
+                          next_action=none, log_prob_action=none, entropy=none,
+                          state_scale_tril=none,
+                          next_state=obs.state,
+                          next_state_scale_tril=scale)
+
+        for transformation in self.reverse_transformations:
+            obs = transformation.inverse(obs)
+        return obs.next_state_scale_tril
+
     # @torch.jit.export
     def next_state(self, state, action):
         """Get next_state distribution."""
@@ -61,7 +83,7 @@ class ExpectedModel(TransformedModel):
         """Get Expected Next state."""
         ns, ns_scale_tril = self.next_state(state, action)
 
-        return ns, torch.zeros_like(ns_scale_tril), ns_scale_tril
+        return ns, torch.zeros_like(ns_scale_tril)  # , ns_scale_tril
 
 
 class OptimisticModel(TransformedModel):
@@ -80,4 +102,4 @@ class OptimisticModel(TransformedModel):
 
         mean, tril = self.next_state(state, control_action)
         return (mean + self.beta * (tril @ optimism_vars.unsqueeze(-1)).squeeze(-1),
-                torch.zeros_like(tril), tril)
+                torch.zeros_like(tril))  # , tril)

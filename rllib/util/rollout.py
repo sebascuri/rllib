@@ -189,7 +189,10 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         next_state_distribution = tensor_to_distribution(next_state_out)
 
         # Compute the epistemic scale of the model
-        next_state_tril = dynamical_model.scale(state, action)
+        try:
+            next_state_tril = dynamical_model.scale(state, action)
+        except NotImplementedError:
+            next_state_tril = torch.tensor(0.)
 
         if next_state_distribution.has_rsample:
             next_state = next_state_distribution.rsample()

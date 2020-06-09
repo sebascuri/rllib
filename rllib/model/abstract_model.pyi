@@ -1,7 +1,7 @@
 from abc import ABCMeta
 
 import torch.nn as nn
-
+from torch import Tensor
 
 class AbstractModel(nn.Module, metaclass=ABCMeta):
     dim_state: int
@@ -23,3 +23,5 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def sample_posterior(self) -> None: ...
 
     def set_prediction_strategy(self, val: str) -> None: ...
+
+    def scale(self, state: Tensor, action: Tensor) -> Tensor: ...
