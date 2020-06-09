@@ -53,7 +53,7 @@ class EnsembleModel(NNModel):
 
         # Compute epistemic uncertainty through moment matching.
         self.set_prediction_strategy('moment_matching')
-        _, scale = self.scale(state, action[..., :self.dim_action])
+        _, scale = self.forward(state, action[..., :self.dim_action])
 
         # Set state.
         self.set_prediction_strategy(prediction_strategy)
