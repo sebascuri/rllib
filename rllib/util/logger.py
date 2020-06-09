@@ -121,5 +121,8 @@ class Logger(object):
 
     def log_hparams(self, hparams, metrics=None):
         """Log hyper parameters together with a metric dictionary."""
+        for k, v in hparams:
+            if v is None:
+                hparams[k] = 0
         self.writer.add_hparams(hparam_dict=hparams, metric_dict=metrics,
                                 name='hparams', global_step=1)

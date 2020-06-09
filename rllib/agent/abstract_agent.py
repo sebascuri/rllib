@@ -3,6 +3,8 @@
 from abc import ABCMeta
 
 import torch
+import torch.nn as nn
+import torch.optim as optim
 
 from rllib.util.logger import Logger
 from rllib.util.utilities import tensor_to_distribution
@@ -153,3 +155,52 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def name(self):
         """Return class name."""
         return self.__class__.__name__
+
+    def save(self, filename, directory=None):
+        """Save agent.
+
+        Parameters
+        ----------
+        filename: str.
+            Filename with which to save the agent.
+        directory: str, optional.
+            Directory where to save the agent. By default use the log directory.
+
+        Returns
+        -------
+        path: str.
+            Path where agent is saved.
+        """
+        if directory is None:
+            directory = self.logger.writer.logdir
+        path = f"{directory}/{filename}"
+
+        params = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, Logger):
+                pass
+            elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
+                params[key] = value.state_dict()
+            else:
+                params[key] = value
+
+        torch.save(params, path)
+        return path
+
+    def load(self, path):
+        """Load agent.
+
+        Parameters
+        ----------
+        path: str.
+            Full path to agent.
+        """
+        agent_dict = torch.load(path)
+
+        for key, value in self.__dict__.items():
+            if isinstance(value, Logger):
+                pass
+            elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
+                value.load_state_dict(agent_dict[key])
+            else:
+                self.__dict__[key] = agent_dict[key]

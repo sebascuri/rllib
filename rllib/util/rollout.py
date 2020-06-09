@@ -1,7 +1,5 @@
 """Helper functions to conduct a rollout with policies or agents."""
 
-import pickle
-
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -44,7 +42,7 @@ def step(environment, state, action, pi, render, goal=None):
 
 
 def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
-                  print_frequency=0, plot_frequency=0, milestones=None,
+                  print_frequency=0, plot_frequency=0, save_milestones=None,
                   plot_callbacks=None):
     """Conduct a rollout of an agent in an environment.
 
@@ -64,12 +62,12 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         Print agent stats every `print_frequency' episodes if > 0.
     plot_frequency: int, optional.
         Plot agent callbacks every `plot_frequency' episodes if > 0.
-    milestones: List[int], optional.
+    save_milestones: List[int], optional.
         List with episodes in which to save the agent.
     plot_callbacks: List[Callable[[AbstractAgent], None]], optional.
         List of functions for plotting the agent.
     """
-    milestones = list() if milestones is None else milestones
+    save_milestones = list() if save_milestones is None else save_milestones
     plot_callbacks = list() if plot_callbacks is None else plot_callbacks
     for episode in tqdm(range(num_episodes)):
         state = environment.reset()
@@ -96,10 +94,8 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
             for plot_callback in plot_callbacks:
                 plot_callback(agent, episode)
 
-        if episode in milestones:
-            file_name = f"{environment.name}_{agent.name}_{episode}.pkl"
-            with open(file_name, 'wb') as file:
-                pickle.dump(agent, file)
+        if episode in save_milestones:
+            agent.save(f"{agent.name}_{episode}.pkl")
     agent.end_interaction()
 
 
@@ -191,10 +187,9 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         # Sample a next state
         next_state_out = dynamical_model(state, action)
         next_state_distribution = tensor_to_distribution(next_state_out)
-        if len(next_state_out) == 3:
-            next_state_tril = next_state_out[2]
-        else:
-            next_state_tril = next_state_out[1]
+
+        # Compute the epistemic scale of the model
+        next_state_tril = dynamical_model.scale(state, action)
 
         if next_state_distribution.has_rsample:
             next_state = next_state_distribution.rsample()

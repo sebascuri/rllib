@@ -20,7 +20,7 @@ def step(environment: AbstractEnvironment, state: Union[int, ndarray],
 def rollout_agent(environment: AbstractEnvironment, agent: AbstractAgent,
                   num_episodes: int = 1, max_steps: int = 1000, render: bool = False,
                   print_frequency: int = 0, plot_frequency: int = 0,
-                  milestones: List[int] = None,
+                  save_milestones: List[int] = None,
                   plot_callbacks: List[Callable[[AbstractAgent, int], None]] = None
                   ) -> None: ...
 
