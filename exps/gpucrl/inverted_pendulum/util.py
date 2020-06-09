@@ -161,7 +161,6 @@ def test_policy_on_environment(environment, policy, test_state,
     return env_rewards, trajectory
 
 
-
 def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
                num_iter, num_trajectories, num_simulation_steps, num_gradient_steps,
                batch_size, num_subsample):

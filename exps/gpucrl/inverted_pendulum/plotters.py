@@ -242,7 +242,7 @@ def plot_pendulum_trajectories(agent, episode: int):
     else:
         fig, axes = plt.subplots(1, 2, sharex='col', sharey='row')
         axes = axes[np.newaxis]
-
+    fig.set_size_inches(5.5, 2.0)
     # Plot real trajectory
     sin, cos = torch.sin(trajectory.state[:, 0]), torch.cos(trajectory.state[:, 0])
     axes[0, 0].scatter(torch.atan2(sin, cos) * 180 / np.pi, trajectory.state[:, 1],
@@ -250,10 +250,10 @@ def plot_pendulum_trajectories(agent, episode: int):
     axes[0, 0].set_title('Real Trajectory.')
 
     # Plot sim trajectory
-    sin = torch.sin(sim_obs.state[:, 0, :, 0])
-    cos = torch.cos(sim_obs.state[:, 0, :, 0])
-    axes[0, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi, sim_obs.state[:, 0, :, 1],
-                       c=sim_obs.action[:, 0, :, 0], cmap='jet', vmin=-1, vmax=1)
+    sin = torch.sin(sim_obs.state[:, 0, 0, 0])
+    cos = torch.cos(sim_obs.state[:, 0, 0, 0])
+    axes[0, 1].scatter(torch.atan2(sin, cos) * 180 / np.pi, sim_obs.state[:, 0, 0, 1],
+                       c=sim_obs.action[:, 0, 0, 0], cmap='jet', vmin=-1, vmax=1)
     axes[0, 1].set_title('Sim Trajectory.')
 
     if isinstance(model, ExactGPModel):
@@ -297,5 +297,5 @@ def plot_pendulum_trajectories(agent, episode: int):
 
     if 'DISPLAY' in os.environ:
         plt.show()
-    else:
-        plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
+    plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
+    plt.close(fig)
