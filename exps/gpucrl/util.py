@@ -414,7 +414,8 @@ def large_state_termination(state, action, next_state=None):
         torch.abs(action) > 15, dim=-1))
 
 
-def train_and_evaluate(agent, environment, params, plot_callbacks):
+def train_and_evaluate(agent, environment, params, plot_callbacks=None,
+                       save_milestones=None):
     """Train and evaluate agent on environment."""
     # %% Train Agent
     agent.logger.save_hparams(params.toDict())
@@ -425,10 +426,11 @@ def train_and_evaluate(agent, environment, params, plot_callbacks):
                     max_steps=params.environment_max_steps,
                     plot_flag=params.plot_train_results,
                     print_frequency=params.print_frequency,
+                    save_milestones=save_milestones,
                     render=params.render_train,
                     plot_callbacks=plot_callbacks
                     )
-    agent.logger.export_to_json()
+    agent.logger.export_to_json()  # Save statistics.
 
     # %% Test agent.
     metrics = dict()
