@@ -80,6 +80,7 @@ mppo_parser.add_argument('--mppo-num-action-samples', type=int, default=16)
 
 sim_parser = parser.add_argument_group('simulation')
 sim_parser.add_argument('--sim-num-steps', type=int, default=400)
+sim_parser.add_argument('--sim-refresh-interval', type=int, default=400)
 sim_parser.add_argument('--sim-initial-states-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim-initial-dist-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim_memory-num-trajectories', type=int, default=0)

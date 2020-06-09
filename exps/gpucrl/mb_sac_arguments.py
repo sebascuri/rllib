@@ -54,25 +54,22 @@ planning_parser.add_argument('--plan-samples', type=int, default=8)
 planning_parser.add_argument('--plan-elites', type=int, default=1)
 
 value_function_parser = parser.add_argument_group('q function')
-value_function_parser.add_argument('--q-function-layers', type=list,
-                                   default=[64, 64])
+value_function_parser.add_argument('--q-function-layers', type=list, default=[64, 64])
 value_function_parser.add_argument('--q-function-non-linearity', type=str,
                                    default='ReLU')
-value_function_parser.add_argument('--q-function-unbiased-head',
-                                   action='store_false')
+value_function_parser.add_argument('--q-function-unbiased-head', action='store_false')
 policy_parser.add_argument('--q-function-tau', type=float, default=0.005)
 
-mppo_parser = parser.add_argument_group('sac')
-mppo_parser.add_argument('--sac-num-iter', type=int, default=50)
-mppo_parser.add_argument('--sac-gradient-steps', type=int, default=50)
-mppo_parser.add_argument('--sac-target-update-frequency', type=int, default=4)
-mppo_parser.add_argument('--sac-batch_size', type=int, default=1024)
-mppo_parser.add_argument('--sac-opt-lr', type=float, default=5e-4)
-mppo_parser.add_argument('--sac-opt-weight-decay', type=float, default=0)
-mppo_parser.add_argument('--sac-eta', type=float, default=.2)
-mppo_parser.add_argument('--sac-epsilon', type=float, default=None)
-
-mppo_parser.add_argument('--sac-num-action-samples', type=int, default=16)
+sac_parser = parser.add_argument_group('sac')
+sac_parser.add_argument('--sac-num-iter', type=int, default=50)
+sac_parser.add_argument('--sac-gradient-steps', type=int, default=50)
+sac_parser.add_argument('--sac-target-update-frequency', type=int, default=4)
+sac_parser.add_argument('--sac-batch_size', type=int, default=1024)
+sac_parser.add_argument('--sac-opt-lr', type=float, default=5e-4)
+sac_parser.add_argument('--sac-opt-weight-decay', type=float, default=0)
+sac_parser.add_argument('--sac-eta', type=float, default=.2)
+sac_parser.add_argument('--sac-epsilon', type=float, default=None)
+sac_parser.add_argument('--sac-num-action-samples', type=int, default=16)
 
 sim_parser = parser.add_argument_group('simulation')
 sim_parser.add_argument('--sim-num-steps', type=int, default=400)
@@ -80,7 +77,7 @@ sim_parser.add_argument('--sim-initial-states-num-trajectories', type=int, defau
 sim_parser.add_argument('--sim-initial-dist-num-trajectories', type=int, default=4)
 sim_parser.add_argument('--sim_memory-num-trajectories', type=int, default=0)
 sim_parser.add_argument('--sim_max-memory', type=int, default=10000)
-mppo_parser.add_argument('--sim-refresh-frequency', type=int, default=0)
+sim_parser.add_argument('--sim-refresh-interval', type=int, default=0)
 sim_parser.add_argument('--sim-num-subsample', type=int, default=1)
 
 viz_parser = parser.add_argument_group('visualization')
