@@ -50,7 +50,7 @@ def _test_from_other(object_, class_):
 
     try:
         other = torch.jit.script(other)
-    except:  # noqa: E731,E123
+    except:  # noqa: E722
         pass
     other_state_dict = other.state_dict()
     for name, param in object_.named_parameters():
@@ -66,7 +66,7 @@ def _test_from_other_with_copy(object_, class_):
     assert other is not object_
     try:
         other = torch.jit.script(other)
-    except:  # noqa: E731,E123
+    except:  # noqa: E722
         pass
     other_state_dict = other.state_dict()
 

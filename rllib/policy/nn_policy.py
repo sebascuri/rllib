@@ -133,4 +133,4 @@ class FelixPolicy(NNPolicy):
                          action_scale=action_scale)
         self.nn = FelixNet(self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'])
         if self.discrete_state or self.discrete_action:
-            raise ValueError(f"num_states and num_actions have to be set to -1.")
+            raise ValueError("num_states and num_actions have to be set to -1.")
