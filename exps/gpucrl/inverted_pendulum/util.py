@@ -354,7 +354,7 @@ def get_agent_and_environment(params, agent_name):
     )
 
     if agent_name == 'mpc':
-        agent = get_mpc_agent(environment.name, environment.dim_state,
+        agent = get_mpc_agent(environment.dim_state,
                               environment.dim_action,
                               params, reward_model,
                               action_scale=action_scale,
@@ -364,7 +364,7 @@ def get_agent_and_environment(params, agent_name):
                               initial_distribution=exploratory_distribution)
     elif agent_name == 'mbmppo':
         agent = get_mb_mppo_agent(
-            environment.name, environment.dim_state, environment.dim_action,
+            environment.dim_state, environment.dim_action,
             params, reward_model, input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
@@ -373,7 +373,7 @@ def get_agent_and_environment(params, agent_name):
 
     elif agent_name == 'mbsac':
         agent = get_mb_sac_agent(
-            environment.name, environment.dim_state, environment.dim_action,
+            environment.dim_state, environment.dim_action,
             params, reward_model, input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,

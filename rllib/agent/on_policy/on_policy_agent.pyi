@@ -18,9 +18,10 @@ class OnPolicyAgent(AbstractAgent):
     target_update_frequency: int
     num_iter: int
 
-
-    def __init__(self, env_name: str, optimizer: Optimizer,
-                 batch_size: int = 1, target_update_frequency: int = 1, num_iter: int = 1,
+    def __init__(self, optimizer: Optimizer,
+                 batch_size: int = 1, target_update_frequency: int = 1,
+                 num_iter: int = 1,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,
+                 tensorboard: bool = False,
                  comment: str = '') -> None: ...

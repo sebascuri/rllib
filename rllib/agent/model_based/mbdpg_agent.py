@@ -11,7 +11,6 @@ class MBDPGAgent(ModelBasedAgent):
     """Implementation of Model-Based DPG Agent."""
 
     def __init__(self,
-                 env_name,
                  model_optimizer,
                  policy, q_function, dynamical_model, reward_model,
                  optimizer,
@@ -41,6 +40,7 @@ class MBDPGAgent(ModelBasedAgent):
                  exploration_steps=0,
                  exploration_episodes=0,
                  termination=None,
+                 tensorboard=False,
                  comment=''):
 
         q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
@@ -56,7 +56,7 @@ class MBDPGAgent(ModelBasedAgent):
         self.dist_params = {'tanh': True, 'action_scale': policy.action_scale}
 
         super().__init__(
-            env_name, policy=policy, dynamical_model=dynamical_model,
+            policy=policy, dynamical_model=dynamical_model,
             reward_model=reward_model, model_optimizer=model_optimizer,
             termination=termination, value_function=self.algorithm.value_function,
             plan_horizon=plan_horizon, plan_samples=plan_samples,
@@ -79,4 +79,6 @@ class MBDPGAgent(ModelBasedAgent):
             initial_distribution=initial_distribution,
             thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes, comment=comment)
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=comment)

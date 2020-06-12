@@ -44,16 +44,18 @@ class QLearningAgent(OffPolicyAgent):
 
     """
 
-    def __init__(self, env_name, q_function, policy, criterion, optimizer,
+    def __init__(self, q_function, policy, criterion, optimizer,
                  memory, num_iter=1, batch_size=64, target_update_frequency=4,
                  train_frequency=1, num_rollouts=0,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, optimizer=optimizer, memory=memory,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(optimizer=optimizer, memory=memory,
                          batch_size=batch_size,
                          train_frequency=train_frequency, num_rollouts=num_rollouts,
                          num_iter=num_iter,
                          target_update_frequency=target_update_frequency,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         self.policy = policy
         self.algorithm = QLearning(q_function, criterion(reduction='none'), gamma)

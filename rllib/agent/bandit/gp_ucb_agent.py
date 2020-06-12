@@ -81,10 +81,11 @@ class GPUCBAgent(AbstractAgent):
     On kernelized multi-armed bandits. JMLR.
     """
 
-    def __init__(self, env_name, gp, x, beta=2.0):
+    def __init__(self, gp, x, beta=2.0, tensorboard=False):
         self.policy = GPUCBPolicy(gp, x, beta)
-        super().__init__(env_name, train_frequency=1, num_rollouts=0, gamma=1,
-                         exploration_episodes=0, exploration_steps=0, comment=gp.name)
+        super().__init__(train_frequency=1, num_rollouts=0, gamma=1,
+                         exploration_episodes=0, exploration_steps=0,
+                         tensorboard=tensorboard, comment=gp.name)
 
     def observe(self, observation) -> None:
         """Observe and update GP."""

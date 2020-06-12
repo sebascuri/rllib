@@ -55,7 +55,6 @@ class ModelBasedAgent(AbstractAgent):
     thompson_sampling: bool
 
     def __init__(self,
-                 env_name: str,
                  dynamical_model: AbstractModel,
                  reward_model: AbstractReward,
                  policy: AbstractPolicy,
@@ -85,6 +84,7 @@ class ModelBasedAgent(AbstractAgent):
                  thompson_sampling: bool = False,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,
+                 tensorboard: bool = False,
                  comment: str = '') -> None: ...
 
     def _plan(self, state: Tensor) -> None: ...

@@ -13,8 +13,9 @@ class Logger(object):
     writer: tensorboardX.SummaryWriter
     episode: int
     keys: set
+    _tensorboard: bool
 
-    def __init__(self, name: str, comment: str = '') -> None: ...
+    def __init__(self, name: str, comment: str = '', tensorboard: bool=False) -> None: ...
 
     def __len__(self) -> int: ...
 

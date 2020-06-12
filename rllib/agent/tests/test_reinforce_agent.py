@@ -60,7 +60,7 @@ def test_REINFORCE(environment, num_rollouts, baseline):
 
     criterion = torch.nn.MSELoss
 
-    agent = REINFORCEAgent(environment.name, policy=policy, baseline=value_function,
+    agent = REINFORCEAgent(policy=policy, baseline=value_function,
                            optimizer=optimizer, criterion=criterion,
                            num_rollouts=num_rollouts, gamma=GAMMA)
 

@@ -33,13 +33,13 @@ class SACAgent(OffPolicyAgent):
 
     """
 
-    def __init__(self, env_name, q_function, policy,
+    def __init__(self, q_function, policy,
                  criterion, optimizer, memory, eta=None, epsilon=None,
                  num_iter=1, batch_size=64,
                  target_update_frequency=4, policy_update_frequency=1,
                  policy_noise=0., noise_clip=1., train_frequency=1, num_rollouts=0,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
         q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
                                                          num_heads=2)
         self.algorithm = SoftActorCritic(
@@ -49,12 +49,12 @@ class SACAgent(OffPolicyAgent):
 
         optimizer = type(optimizer)([p for name, p in self.algorithm.named_parameters()
                                      if 'target' not in name], **optimizer.defaults)
-        super().__init__(env_name,
-                         optimizer=optimizer,
+        super().__init__(optimizer=optimizer,
                          memory=memory, batch_size=batch_size, num_iter=num_iter,
                          target_update_frequency=target_update_frequency,
                          train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         self.policy = self.algorithm.policy
         self.dist_params = self.algorithm.dist_params

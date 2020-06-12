@@ -18,7 +18,6 @@ class MPCAgent(ModelBasedAgent):
     value_learning: ModelBasedTDLearning
 
     def __init__(self,
-                 env_name: str,
                  mpc_policy: MPCPolicy,
                  model_learn_num_iter: int = 0,
                  model_learn_batch_size: int = 64,
@@ -38,4 +37,5 @@ class MPCAgent(ModelBasedAgent):
                  thompson_sampling: bool = False,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,
+                 tensorboard: bool = False,
                  comment: str = '') -> None: ...

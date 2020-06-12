@@ -18,10 +18,12 @@ class REINFORCEAgent(OnPolicyAgent):
     target_update_frequency: int
     num_iter: int
 
-    def __init__(self, env_name: str, policy: AbstractPolicy, optimizer: Optimizer,
-                 baseline: AbstractValueFunction = None, critic: AbstractQFunction = None,
+    def __init__(self, policy: AbstractPolicy, optimizer: Optimizer,
+                 baseline: AbstractValueFunction = None,
+                 critic: AbstractQFunction = None,
                  criterion: _Loss = None, num_iter: int = 1,
                  target_update_frequency: int = 1,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,
+                 tensorboard: bool = False,
                  comment: str = '') -> None: ...

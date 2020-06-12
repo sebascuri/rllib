@@ -13,7 +13,7 @@ from .model_based_agent import ModelBasedAgent
 class MPCAgent(ModelBasedAgent):
     """Implementation of an agent that runs an MPC policy."""
 
-    def __init__(self, env_name, mpc_policy: MPCPolicy,
+    def __init__(self, mpc_policy: MPCPolicy,
                  model_learn_num_iter=0,
                  model_learn_batch_size=64,
                  model_optimizer=None,
@@ -29,9 +29,9 @@ class MPCAgent(ModelBasedAgent):
                  sim_memory_num_trajectories=0,
                  initial_distribution=None,
                  thompson_sampling=False,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
         super().__init__(
-            env_name,
             dynamical_model=mpc_policy.solver.dynamical_model,
             reward_model=mpc_policy.solver.reward_model,
             policy=mpc_policy,
@@ -53,7 +53,8 @@ class MPCAgent(ModelBasedAgent):
             initial_distribution=initial_distribution,
             thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes, comment=comment)
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard, comment=comment)
 
         self.value_optimizer = value_optimizer
         self.value_gradient_steps = value_gradient_steps

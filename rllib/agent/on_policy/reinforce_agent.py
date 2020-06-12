@@ -19,14 +19,16 @@ class REINFORCEAgent(OnPolicyAgent):
     connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
     """
 
-    def __init__(self, env_name, policy, optimizer, baseline=None, criterion=nn.MSELoss,
+    def __init__(self, policy, optimizer, baseline=None, criterion=nn.MSELoss,
                  num_iter=1,
                  target_update_frequency=1, train_frequency=0, num_rollouts=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, optimizer=optimizer, num_iter=num_iter,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(optimizer=optimizer, num_iter=num_iter,
                          target_update_frequency=target_update_frequency,
                          train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         self.algorithm = REINFORCE(policy, baseline, criterion(reduction='mean'), gamma)
         self.policy = self.algorithm.policy

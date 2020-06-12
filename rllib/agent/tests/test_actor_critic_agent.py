@@ -56,7 +56,7 @@ def test_ac_agent(environment, agent, num_rollouts):
 
     criterion = torch.nn.MSELoss
 
-    agent = agent(environment.name, policy=policy, critic=critic, optimizer=optimizer,
+    agent = agent(policy=policy, critic=critic, optimizer=optimizer,
                   criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
@@ -81,7 +81,7 @@ def test_gaac_agent(environment, num_rollouts):
     ])
     criterion = torch.nn.MSELoss
 
-    agent = GAACAgent(environment.name, policy=policy,
+    agent = GAACAgent(policy=policy,
                       critic=critic, optimizer=optimizer,
                       criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
 

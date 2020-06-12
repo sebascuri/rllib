@@ -36,10 +36,14 @@ class AbstractAgent(object, metaclass=ABCMeta):
         End an interaction with an environment.
     """
 
-    def __init__(self, env_name, train_frequency, num_rollouts,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        self.env_name = env_name
-        self.logger = Logger(f"{env_name.title()}/{self.name}", comment=comment)
+    def __init__(self, train_frequency, num_rollouts,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        self.logger = Logger(
+            self.name,
+            tensorboard=tensorboard,
+            comment=comment
+        )
         self.counters = {'total_episodes': 0, 'total_steps': 0, 'train_steps': 0}
         self.episode_steps = []
 
@@ -60,7 +64,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """Generate string to parse the agent."""
         comment = self.comment if len(self.comment) else self.policy.__class__.__name__
         opening = "=" * 88
-        str_ = f"\n{opening}\n{self.name} in {self.env_name} with {comment}\n"
+        str_ = f"\n{opening}\n{self.name} with {comment}\n"
         str_ += f"Total episodes {self.total_episodes}\n"
         str_ += f"Total steps {self.total_steps}\n"
         str_ += f"Train steps {self.train_steps}\n"

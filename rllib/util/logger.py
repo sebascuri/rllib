@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime
+import os
 
 import numpy as np
 import torch
@@ -14,17 +15,31 @@ class Logger(object):
     Parameters
     ----------
     name: str
+        Name of logger. This create a folder at runs/`name'.
+    comment: str, optional.
+        This is useful to separate equivalent runs.
+        The folder is runs/`name'/`comment_date'.
+    tensorboard: bool, optional.
+        Flag that indicates whether or not to save the results in the tensorboard.
     """
 
-    def __init__(self, name, comment=''):
+    def __init__(self, name, comment='', tensorboard=False):
         self.statistics = list()
         self.current = dict()
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
         self.writer = SummaryWriter(
-            f"runs/{name}/{comment + '_' + current_time if comment else current_time}"
+            f"runs/{name}/"
+            f"{comment + '_' + current_time if len(comment) else current_time}"
         )
+        self._tensorboard = tensorboard
+
         self.episode = 0
         self.keys = set()
+
+        if not self._tensorboard:
+            for file in filter(lambda x: x.startswith('events'),
+                               os.listdir(self.writer.logdir)):
+                os.remove(f"{self.writer.logdir}/{file}")
 
     def __len__(self):
         """Return the number of episodes."""
@@ -81,9 +96,12 @@ class Logger(object):
                 new_value = old_value + (value - old_value) * (1 / new_count)
                 self.current[key] = (new_count, new_value)
 
-            self.writer.add_scalar(f"episode_{self.episode}/{key}",
-                                   self.current[key][1],
-                                   global_step=self.current[key][0])
+            if self._tensorboard:
+                self.writer.add_scalar(
+                    f"episode_{self.episode}/{key}",
+                    self.current[key][1],
+                    global_step=self.current[key][0]
+                )
 
     def end_episode(self, **kwargs):
         """Finalize collected data and add final fixed values.
@@ -102,8 +120,12 @@ class Logger(object):
         for key, value in data.items():
             self.keys.add(key)
             if isinstance(value, float) or isinstance(value, int):
-                self.writer.add_scalar(f"average/{key}", value,
-                                       global_step=self.episode)
+                if self._tensorboard:
+                    self.writer.add_scalar(
+                        f"average/{key}",
+                        value,
+                        global_step=self.episode
+                    )
 
         self.statistics.append(data)
         self.current = dict()
@@ -121,7 +143,9 @@ class Logger(object):
 
     def log_hparams(self, hparams, metrics=None):
         """Log hyper parameters together with a metric dictionary."""
-        for k, v in hparams:
+        if not self._tensorboard:  # Do not save.
+            return
+        for k, v in hparams.items():
             if v is None:
                 hparams[k] = 0
         self.writer.add_hparams(hparam_dict=hparams, metric_dict=metrics,

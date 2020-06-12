@@ -188,7 +188,7 @@ def _get_nn_policy(dim_state, dim_action, params, action_scale,
     return policy
 
 
-def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
+def get_mb_mppo_agent(dim_state, dim_action, params, reward_model,
                       transformations, action_scale, input_transform=None,
                       termination=None, initial_distribution=None):
     """Get a MB-MPPO agent."""
@@ -227,7 +227,6 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
     comment = f"{model_name} {params.exploration.capitalize()} {params.action_cost}"
 
     agent = MBMPPOAgent(
-        env_name,
         policy=policy,
         value_function=value_function,
         reward_model=reward_model, dynamical_model=dynamical_model,
@@ -269,7 +268,7 @@ def get_mb_mppo_agent(env_name, dim_state, dim_action, params, reward_model,
     return agent
 
 
-def get_mb_sac_agent(env_name, dim_state, dim_action, params, reward_model,
+def get_mb_sac_agent(dim_state, dim_action, params, reward_model,
                      transformations, action_scale, input_transform=None,
                      termination=None, initial_distribution=None
                      ):
@@ -309,7 +308,6 @@ def get_mb_sac_agent(env_name, dim_state, dim_action, params, reward_model,
     init_head_weight(dynamical_model)
 
     agent = MBSACAgent(
-        env_name,
         dynamical_model=dynamical_model,
         reward_model=reward_model,
         policy=policy,
@@ -347,7 +345,7 @@ def get_mb_sac_agent(env_name, dim_state, dim_action, params, reward_model,
     return agent
 
 
-def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
+def get_mpc_agent(dim_state, dim_action, params, reward_model,
                   transformations, action_scale, input_transform=None, termination=None,
                   initial_distribution=None):
     """Get an MPC based agent."""
@@ -382,7 +380,7 @@ def get_mpc_agent(env_name, dim_state, dim_action, params, reward_model,
     comment = f"{model_name} {params.exploration.capitalize()} {params.action_cost}"
 
     agent = MPCAgent(
-        env_name, policy,
+        policy,
         model_optimizer=model_optimizer,
         model_learn_num_iter=params.model_learn_num_iter,
         model_learn_batch_size=params.model_learn_batch_size,

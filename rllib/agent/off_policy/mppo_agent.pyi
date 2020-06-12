@@ -19,7 +19,7 @@ class MPPOAgent(OffPolicyAgent):
     target_update_frequency: int
     num_iter: int
 
-    def __init__(self, env_name: str,
+    def __init__(self,
                  policy: AbstractQFunction, q_function: AbstractQFunctionPolicy,
                  optimizer: Optimizer,
                  memory: ExperienceReplay,
@@ -36,4 +36,5 @@ class MPPOAgent(OffPolicyAgent):
                  target_update_frequency: int = 4,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,
+                 tensorboard: bool = False,
                  comment: str = '') -> None: ...

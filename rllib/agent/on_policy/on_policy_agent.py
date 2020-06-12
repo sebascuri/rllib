@@ -7,14 +7,16 @@ from rllib.dataset.utilities import average_named_tuple, stack_list_of_tuples
 class OnPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(self, env_name, optimizer,
+    def __init__(self, optimizer,
                  batch_size=1, target_update_frequency=1, num_iter=1,
                  train_frequency=0, num_rollouts=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, train_frequency=train_frequency,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(train_frequency=train_frequency,
                          num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         self.trajectories = []
         self.batch_size = batch_size
         self.target_update_frequency = target_update_frequency

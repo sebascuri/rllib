@@ -17,15 +17,17 @@ class REPSAgent(OffPolicyAgent):
     A survey on policy search for robotics. Foundations and Trends® in Robotics.
     """
 
-    def __init__(self, env_name, reps_loss, optimizer, memory,
+    def __init__(self, reps_loss, optimizer, memory,
                  batch_size, num_iter,
                  train_frequency=0, num_rollouts=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, memory=memory, batch_size=batch_size,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(memory=memory, batch_size=batch_size,
                          optimizer=optimizer, num_iter=num_iter,
                          train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
 
         self.policy = reps_loss.policy
         self.algorithm = reps_loss

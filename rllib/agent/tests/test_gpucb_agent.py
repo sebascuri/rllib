@@ -48,6 +48,6 @@ def test_GPUCB(reward, model_class):
     model = model_class(x0, y0, likelihood)
     environment = BanditEnvironment(reward,
                                     x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
-    agent = GPUCBAgent(environment.name, model, x, beta=2.0)
+    agent = GPUCBAgent(model, x, beta=2.0)
 
     rollout_agent(environment, agent, num_episodes=1, max_steps=STEPS)

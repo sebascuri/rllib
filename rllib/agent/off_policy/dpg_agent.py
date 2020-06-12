@@ -35,20 +35,22 @@ class DPGAgent(OffPolicyAgent):
 
     """
 
-    def __init__(self, env_name, q_function, policy, criterion,
+    def __init__(self, q_function, policy, criterion,
                  optimizer, memory, exploration_noise, num_iter=1,
                  batch_size=64, target_update_frequency=4,
                  policy_noise=0., noise_clip=1.,
                  train_frequency=1, num_rollouts=0,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name,
-                         optimizer=optimizer,
-                         memory=memory, batch_size=batch_size,
-                         num_iter=num_iter,
-                         target_update_frequency=target_update_frequency,
-                         train_frequency=train_frequency, num_rollouts=num_rollouts,
-                         gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(
+            optimizer=optimizer,
+            memory=memory, batch_size=batch_size,
+            num_iter=num_iter,
+            target_update_frequency=target_update_frequency,
+            train_frequency=train_frequency, num_rollouts=num_rollouts,
+            gamma=gamma, exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard, comment=comment)
 
         assert policy.deterministic, "Policy must be deterministic."
         self.algorithm = DPG(q_function, policy, criterion(reduction='none'), gamma,

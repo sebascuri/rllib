@@ -92,7 +92,7 @@ class ModelBasedAgent(AbstractAgent):
     comment: str, optional. (default: '').
     """
 
-    def __init__(self, env_name, dynamical_model, reward_model, model_optimizer,
+    def __init__(self, dynamical_model, reward_model, model_optimizer,
                  policy,
                  value_function=None,
                  termination=None,
@@ -117,10 +117,12 @@ class ModelBasedAgent(AbstractAgent):
                  sim_num_subsample=1,
                  initial_distribution=None,
                  thompson_sampling=False,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, train_frequency=0, num_rollouts=0,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(train_frequency=0, num_rollouts=0,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         if not isinstance(dynamical_model, TransformedModel):
             dynamical_model = TransformedModel(dynamical_model, [])
         self.dynamical_model = dynamical_model

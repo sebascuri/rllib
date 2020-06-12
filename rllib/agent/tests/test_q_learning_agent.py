@@ -56,7 +56,7 @@ def test_nnq_interaction(environment, agent):
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
-    agent = agent(environment.name, q_function=q_function, policy=policy,
+    agent = agent(q_function=q_function, policy=policy,
                   criterion=criterion, optimizer=optimizer, memory=memory,
                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
                   gamma=GAMMA, batch_size=BATCH_SIZE,
@@ -82,7 +82,6 @@ def test_policies(environment, policy):
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = DDQNAgent(
-        environment.name,
         q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
@@ -102,7 +101,7 @@ def test_tabular_interaction(agent, policy):
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = agent(
-        environment.name, q_function=q_function, policy=policy,
+        q_function=q_function, policy=policy,
         criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY, gamma=GAMMA)
 

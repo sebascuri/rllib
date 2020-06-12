@@ -16,16 +16,18 @@ class ExpectedActorCriticAgent(ActorCriticAgent):
     Expected policy gradients. AAAI.
     """
 
-    def __init__(self, env_name, policy, critic, optimizer,
+    def __init__(self, policy, critic, optimizer,
                  criterion, num_iter=1, target_update_frequency=1,
                  train_frequency=0, num_rollouts=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0, comment=''):
-        super().__init__(env_name, policy=policy, critic=critic, optimizer=optimizer,
+                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(policy=policy, critic=critic, optimizer=optimizer,
                          criterion=criterion, num_iter=num_iter,
                          target_update_frequency=target_update_frequency,
                          train_frequency=train_frequency, num_rollouts=num_rollouts,
                          gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes, comment=comment)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         self.algorithm = ExpectedActorCritic(
             policy, critic, criterion(reduction='none'), gamma)
         self.policy = self.algorithm.policy

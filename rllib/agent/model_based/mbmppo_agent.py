@@ -8,7 +8,6 @@ class MBMPPOAgent(ModelBasedAgent):
     """Implementation of Model-Based MPPO Agent."""
 
     def __init__(self,
-                 env_name,
                  model_optimizer,
                  policy, value_function, dynamical_model, reward_model,
                  optimizer, mppo_value_learning_criterion,
@@ -41,6 +40,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  gamma=1.0,
                  exploration_steps=0,
                  exploration_episodes=0,
+                 tensorboard=False,
                  comment=''):
 
         self.algorithm = MBMPPO(dynamical_model, reward_model, policy, value_function,
@@ -59,7 +59,7 @@ class MBMPPOAgent(ModelBasedAgent):
                                     **optimizer.defaults)
 
         super().__init__(
-            env_name, policy=policy, dynamical_model=dynamical_model,
+            policy=policy, dynamical_model=dynamical_model,
             reward_model=reward_model, model_optimizer=model_optimizer,
             termination=termination, value_function=self.algorithm.value_function,
             plan_horizon=plan_horizon,
@@ -84,4 +84,6 @@ class MBMPPOAgent(ModelBasedAgent):
             initial_distribution=initial_distribution,
             thompson_sampling=thompson_sampling,
             gamma=gamma, exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes, comment=comment)
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=comment)

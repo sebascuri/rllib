@@ -61,7 +61,7 @@ def test_ddpg_interaction(environment, agent):
     ], weight_decay=WEIGHT_DECAY)
 
     agent = agent(
-        environment.name, q_function=q_function, policy=policy, exploration_noise=noise,
+        q_function=q_function, policy=policy, exploration_noise=noise,
         criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
         gamma=GAMMA, policy_noise=POLICY_NOISE)

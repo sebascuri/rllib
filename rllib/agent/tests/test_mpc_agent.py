@@ -98,7 +98,7 @@ def test_mpc_solvers(solver, num_cpu):
     mpc_solver = get_solver(solver, True, num_cpu, 'mean')
     policy = MPCPolicy(mpc_solver)
 
-    agent = MPCAgent(env.name, mpc_policy=policy)
+    agent = MPCAgent(mpc_policy=policy)
     evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_ITER,
                    render=False)
 
@@ -107,7 +107,7 @@ def test_mpc_warm_start(solver, warm_start):
     mpc_solver = get_solver(solver, warm_start, 1, 'mean')
     policy = MPCPolicy(mpc_solver)
 
-    agent = MPCAgent(env.name, mpc_policy=policy)
+    agent = MPCAgent(mpc_policy=policy)
     evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_ITER,
                    render=False)
 
@@ -116,6 +116,6 @@ def test_mpc_default_action(solver, default_action):
     mpc_solver = get_solver(solver, True, 1, default_action)
     policy = MPCPolicy(mpc_solver)
 
-    agent = MPCAgent(env.name, mpc_policy=policy)
+    agent = MPCAgent(mpc_policy=policy)
     evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_ITER,
                    render=False)

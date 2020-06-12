@@ -9,7 +9,6 @@ from rllib.util.parameter_decay import ParameterDecay
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
-    env_name: str
     pi: Distribution
     counters: Dict[str, int]
     episode_steps: List[int]
@@ -25,9 +24,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
     params: Dict[str, ParameterDecay]
     last_trajectory: List[Observation]
 
-    def __init__(self, env_name: str, train_frequency: int, num_rollouts: int,
+    def __init__(self, train_frequency: int, num_rollouts: int,
                  gamma: float = 1.0, exploration_steps: int = 0,
-                 exploration_episodes: int = 0, comment: str = '') -> None: ...
+                 exploration_episodes: int = 0,
+                 tensorboard: bool = False,
+                 comment: str = '') -> None: ...
 
     def act(self, state: State) -> Action: ...
 
@@ -57,6 +58,6 @@ class AbstractAgent(object, metaclass=ABCMeta):
     @property
     def name(self) -> str: ...
 
-    def save(self, filename: str, directory: str=None) -> str: ...
+    def save(self, filename: str, directory: str = None) -> str: ...
 
     def load(self, path: str) -> None: ...

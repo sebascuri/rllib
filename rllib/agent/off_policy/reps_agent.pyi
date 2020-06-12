@@ -10,11 +10,12 @@ from .off_policy_agent import OffPolicyAgent
 class REPSAgent(OffPolicyAgent):
     algorithm: REPS
 
-    def __init__(self, env_name: str, reps_loss: REPS, optimizer: Optimizer,
+    def __init__(self, reps_loss: REPS, optimizer: Optimizer,
                  memory: ExperienceReplay, batch_size: int,
                  num_iter: int,
                  train_frequency: int = 0, num_rollouts: int = 1, gamma: float = 1.0,
                  exploration_steps: int = 0, exploration_episodes: int = 0,
+                 tensorboard: bool = False,
                  comment: str = '') -> None: ...
 
     def _optimizer_dual(self) -> None: ...

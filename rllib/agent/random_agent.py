@@ -9,11 +9,13 @@ from .abstract_agent import AbstractAgent
 class RandomAgent(AbstractAgent):
     """Agent that interacts randomly in an environment."""
 
-    def __init__(self, env_name, dim_state, dim_action, num_states=-1,
-                 num_actions=-1, gamma=1, exploration_steps=0, exploration_episodes=0):
-        super().__init__(env_name, train_frequency=0, num_rollouts=0, gamma=gamma,
+    def __init__(self, dim_state, dim_action, num_states=-1,
+                 num_actions=-1, gamma=1, exploration_steps=0, exploration_episodes=0,
+                 tensorboard=False, comment=''):
+        super().__init__(train_frequency=0, num_rollouts=0, gamma=gamma,
                          exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes)
+                         exploration_episodes=exploration_episodes,
+                         tensorboard=tensorboard, comment=comment)
         self.policy = RandomPolicy(dim_state, dim_action, num_states=num_states,
                                    num_actions=num_actions)
         self.dataset = TrajectoryDataset(sequence_length=1)
