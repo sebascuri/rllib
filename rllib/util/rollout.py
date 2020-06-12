@@ -192,7 +192,7 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
         try:
             next_state_tril = dynamical_model.scale(state, action)
         except NotImplementedError:
-            next_state_tril = torch.tensor(0.)
+            next_state_tril = next_state_out[-1]
 
         if next_state_distribution.has_rsample:
             next_state = next_state_distribution.rsample()
