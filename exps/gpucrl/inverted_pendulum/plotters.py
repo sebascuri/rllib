@@ -1,13 +1,10 @@
 """Plotters for gp_ucrl pendulum experiments."""
 import itertools
 import os
-import io
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import PIL.Image
-from torchvision.transforms import ToTensor
 
 from rllib.model.gp_model import ExactGPModel
 from rllib.util.utilities import moving_average_filter
@@ -278,24 +275,25 @@ def plot_pendulum_trajectories(agent, episode: int):
             ax.set_ylim([-15, 15])
 
     for i in range(axes.shape[0]):
-        axes[i, 0].set_ylabel('Angular Velocity')
+        axes[i, 0].set_ylabel('Angular Velocity [rad/s]')
 
     for j in range(axes.shape[1]):
-        axes[-1, j].set_xlabel('Angle')
+        axes[-1, j].set_xlabel('Angle [degree]')
 
-    img_name = f"{agent.comment.title()}"
-    plt.suptitle(f'{img_name} Episode {episode + 1}', y=1.0)
+    # img_name = f"{agent.comment.title()}"
+    if 'optimistic' in agent.comment.lower():
+        name = 'H-UCRL'
+    elif 'expected' in agent.comment.lower():
+        name = 'Greedy'
+    elif 'thompson' in agent.comment.lower():
+        name = 'Thompson'
+    else:
+        raise NotImplementedError
+    plt.suptitle(f'{name} Episode {episode + 1}', x=0.53, y=0.96)
 
-    buf = io.BytesIO()
-    plt.savefig(buf, format='jpeg')
-    buf.seek(0)
+    plt.tight_layout()
+    plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.pdf")
 
-    image = PIL.Image.open(buf)
-    image = ToTensor()(image)
-
-    agent.logger.writer.add_image(img_name, image, episode)
-
-    if 'DISPLAY' in os.environ:
-        plt.show()
-    plt.savefig(f"{agent.logger.writer.logdir}/{episode + 1}.png")
+    # if 'DISPLAY' in os.environ:
+    #     plt.show()
     plt.close(fig)

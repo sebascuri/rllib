@@ -26,6 +26,8 @@ model_parser.add_argument('--model-kind', type=str, default='ExactGP',
                                    ])
 model_parser.add_argument('--model-learn-num-iter', type=int, default=0)
 model_parser.add_argument('--model-learn-batch-size', type=int, default=32)
+model_parser.add_argument('--not-bootstrap', action='store_true')
+
 model_parser.add_argument('--model-sparse-approximation', type=str, default='DTC',
                           choices=['DTC', 'SOR', 'FITC'])
 model_parser.add_argument('--model-feature-approximation', type=str, default='QFF',

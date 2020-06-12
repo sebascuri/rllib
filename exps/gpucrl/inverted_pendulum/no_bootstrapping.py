@@ -6,8 +6,11 @@ from collections import OrderedDict
 from exps.gpucrl.plotters import set_figure_params, COLORS, LABELS
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle('inverted_mbmppo_scale.pkl')
-df = df[df.seed < 4]
+df = pd.read_pickle('inverted_mbmppo_no_bootstrap.pkl')
+df_0 = df[df.action_cost == 0]
+df_01 = df[(df.seed != 1) & (df.action_cost == 0.1)]
+df_02 = df[(df.seed != 3) & (df.action_cost == 0.2)]
+df = pd.concat((df_0, df_01, df_02))
 
 action_costs = [0, 0.1, 0.2]
 fig, axes = plt.subplots(1, len(action_costs), sharey='row')
@@ -22,10 +25,10 @@ for i, action_cost in enumerate(action_costs):
         learn_df = df[(df.action_cost == action_cost) & (df.model_kind == model_kind)]
 
         mean = learn_df.groupby(
-            ['exploration', 'episode', 'seed']).sim_return.max().mean(
+            ['exploration', 'episode', 'seed']).best_return.min().mean(
             level=[0, 1])
         std = learn_df.groupby(
-            ['exploration', 'episode', 'seed']).sim_return.max().std(
+            ['exploration', 'episode', 'seed']).best_return.min().std(
             level=[0, 1]).fillna(20)
 
         episodes = np.arange(len(mean.expected))
@@ -36,12 +39,12 @@ for i, action_cost in enumerate(action_costs):
                                  mean[exploration] + std[exploration],
                                  alpha=0.2, color=COLORS[exploration])
     # axes[i].axhline(OPTIMAL[action_cost], linestyle='--', color='grey')
-    axes[i].set_ylim([-100, 400])
+    axes[i].set_ylim([0, 300])
     axes[i].set_xlabel('Episode')
     axes[i].set_title(f"Action Penalty {action_cost}")
     axes[i].set_xlim([0, 20])
 
-axes[0].set_ylabel('Simulated Return')
+axes[0].set_ylabel('Uncertainty Scale')
 for key, label in LABELS.items():
     axes[0].plot(0, 0, color=COLORS[key], linestyle='-', label=label)
 
@@ -56,4 +59,4 @@ axes[0].legend(handles, labels, loc='lower right', frameon=False,
 # plt.show()
 plt.tight_layout(pad=0.2)
 # plt.show()
-plt.savefig('simulated_returns.pdf')
+plt.savefig('no_bootstrapping.pdf')

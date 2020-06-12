@@ -1,6 +1,7 @@
 """Plotters for GP-UCRL experiments."""
 import os
 import io
+from collections import OrderedDict
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
@@ -8,6 +9,18 @@ import PIL.Image
 from torchvision.transforms import ToTensor
 
 from rllib.dataset.utilities import stack_list_of_tuples
+
+LABELS = OrderedDict(
+    optimistic=r"\textbf{H-UCRL}",
+    expected='Greedy',
+    thompson='Thompson',
+)
+
+COLORS = {
+    'thompson': 'C2',
+    'expected': 'C3',
+    'optimistic': 'C0',
+}
 
 
 def set_figure_params(serif=False, fontsize=9):

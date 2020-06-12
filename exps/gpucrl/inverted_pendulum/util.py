@@ -140,10 +140,10 @@ def test_policy_on_model(dynamical_model, reward_model, policy, test_state,
 
     states = trajectory.state[:, 0]
     rewards = trajectory.reward
-    plot_trajectory_states_and_rewards(states, rewards)
+    # plot_trajectory_states_and_rewards(states, rewards)
 
     model_rewards = torch.sum(rewards).item()
-    print(f"Model with {policy_str} Cumulative reward: {model_rewards:.2f}")
+    # print(f"Model with {policy_str} Cumulative reward: {model_rewards:.2f}")
 
     return model_rewards, trajectory
 
@@ -156,7 +156,7 @@ def test_policy_on_environment(environment, policy, test_state,
 
     trajectory = stack_list_of_tuples(trajectory)
     env_rewards = torch.sum(trajectory.reward).item()
-    print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
+    # print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
 
     return env_rewards, trajectory
 
@@ -190,8 +190,9 @@ def train_mppo(mppo: MBMPPO, initial_distribution, optimizer,
 def _simulate_model(mppo, initial_distribution, num_trajectories, num_simulation_steps,
                     batch_size, num_subsample, returns, entropy):
     with torch.no_grad():
-        initial_states = initial_distribution.sample((num_trajectories,))
-
+        test_states = torch.tensor([np.pi, 0]).repeat(num_trajectories // 2, 1)
+        initial_states = initial_distribution.sample((num_trajectories // 2,))
+        initial_states = torch.cat((initial_states, test_states), dim=0)
         trajectory = rollout_model(mppo.dynamical_model,
                                    reward_model=mppo.reward_model,
                                    policy=mppo.policy,
@@ -245,7 +246,7 @@ def solve_mppo(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size
     policy = NNPolicy(dim_state=2, dim_action=1, layers=[64, 64], biased_head=False,
                       squashed_output=True, input_transform=StateTransform())
 
-    value_function = torch.jit.script(value_function)
+    # value_function = torch.jit.script(value_function)
     init_distribution = torch.distributions.Uniform(torch.tensor([-np.pi, -0.05]),
                                                     torch.tensor([np.pi, 0.05]))
 
@@ -261,7 +262,7 @@ def solve_mppo(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size
     test_state = torch.tensor(np.array([np.pi, 0.]), dtype=torch.get_default_dtype())
 
     policy_losses, value_losses, kl_div, returns, entropy = [], [], [], [], []
-    environment_rewards, trajectory = 0, None
+    model_rewards, trajectory = 0, None
 
     for _ in range(num_episodes):
         with gpytorch.settings.fast_pred_var(), gpytorch.settings.detach_test_caches():
@@ -287,33 +288,38 @@ def solve_mppo(dynamical_model, action_cost, num_iter, num_sim_steps, batch_size
         #                torch.zeros(1)),
         #     test_state, policy_str='Expected Policy')
 
+        model_rewards, _ = test_policy_on_model(
+            mppo.dynamical_model, mppo.reward_model, mppo.policy, test_state)
+
         # %% Test controller on Environment.
-        environment = SystemEnvironment(
-            # ModelSystem(PendulumModel(mass=0.3, length=0.5, friction=0.005)),
-            InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-                             step_size=1 / 80),
-            reward=reward_model)
-        test_policy_on_environment(environment, mppo.policy, test_state)
+        # environment = SystemEnvironment(
+        #     # ModelSystem(PendulumModel(mass=0.3, length=0.5, friction=0.005)),
+        #     InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
+        #                      step_size=1 / 80),
+        #     reward=reward_model)
+        # environment_rewards, trajectory = test_policy_on_environment(
+        #     environment, mppo.policy, test_state
+        # )
 
-        environment_rewards, _ = test_policy_on_environment(
-            environment,
-            lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
-                       torch.zeros(1)),
-            test_state, policy_str='Expected Policy')
+        # environment_rewards, _ = test_policy_on_environment(
+        #     environment,
+        #     lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
+        #                torch.zeros(1)),
+        #     test_state, policy_str='Expected Policy')
 
-    # %% Plots
-    # Plot value funciton and policy.
-    plot_values_and_policy(value_function, policy, trajectory=trajectory,
-                           num_entries=[200, 200],
-                           bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)])
+    # # %% Plots
+    # # Plot value funciton and policy.
+    # plot_values_and_policy(value_function, policy, trajectory=trajectory,
+    #                        num_entries=[200, 200],
+    #                        bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)])
+    #
+    # # Plot returns and losses.
+    # plot_returns_entropy_kl(returns, entropy, kl_div)
+    #
+    # # Plot losses.
+    # plot_learning_losses(policy_losses, value_losses, horizon=20)
 
-    # Plot returns and losses.
-    plot_returns_entropy_kl(returns, entropy, kl_div)
-
-    # Plot losses.
-    plot_learning_losses(policy_losses, value_losses, horizon=20)
-
-    return returns
+    return model_rewards
 
 
 def get_agent_and_environment(params, agent_name):
