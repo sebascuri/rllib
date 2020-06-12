@@ -7,7 +7,7 @@ from torch.optim.optimizer import Optimizer
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Observation, Termination
-from rllib.dataset.experience_replay import (BootstrapExperienceReplay,
+from rllib.dataset.experience_replay import (ExperienceReplay,
                                              StateExperienceReplay)
 from rllib.model import AbstractModel
 from rllib.model.derived_model import TransformedModel
@@ -24,13 +24,12 @@ class ModelBasedAgent(AbstractAgent):
     value_function: AbstractValueFunction
 
     model_optimizer: Optimizer
-    dataset: BootstrapExperienceReplay
+    dataset: ExperienceReplay
     sim_dataset: StateExperienceReplay
     sim_trajectory: Observation
 
     model_learn_num_iter: int
     model_learn_batch_size: int
-
     plan_horizon: int
     plan_samples: int
     plan_elites: int
@@ -68,6 +67,7 @@ class ModelBasedAgent(AbstractAgent):
                  plan_elites: int = 1,
                  model_learn_num_iter: int = 0,
                  model_learn_batch_size: int = 64,
+                 bootstrap: bool = True,
                  max_memory: int = 10000,
                  policy_opt_num_iter: int = 0,
                  policy_opt_batch_size: int = None,

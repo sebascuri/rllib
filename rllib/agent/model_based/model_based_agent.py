@@ -101,6 +101,7 @@ class ModelBasedAgent(AbstractAgent):
                  plan_elites=1,
                  model_learn_num_iter=0,
                  model_learn_batch_size=64,
+                 bootstrap=True,
                  max_memory=10000,
                  policy_opt_num_iter=0,
                  policy_opt_batch_size=None,
@@ -144,8 +145,11 @@ class ModelBasedAgent(AbstractAgent):
             num_heads = 1
 
         self.dataset = BootstrapExperienceReplay(
-            max_len=max_memory, transformations=dynamical_model.forward_transformations,
-            num_bootstraps=num_heads)
+            max_len=max_memory,
+            transformations=dynamical_model.forward_transformations,
+            num_bootstraps=num_heads,
+            bootstrap=bootstrap,
+        )
         self.sim_dataset = StateExperienceReplay(
             max_len=sim_max_memory, dim_state=self.dynamical_model.dim_state)
         self.initial_states = StateExperienceReplay(

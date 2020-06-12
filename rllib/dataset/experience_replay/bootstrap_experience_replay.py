@@ -39,10 +39,11 @@ class BootstrapExperienceReplay(ExperienceReplay):
     Deep exploration via bootstrapped DQN. NeuRIPS.
     """
 
-    def __init__(self, max_len, transformations=None, num_bootstraps=1):
+    def __init__(self, max_len, transformations=None, num_bootstraps=1, bootstrap=True):
         super().__init__(max_len, transformations)
         self.weights = np.empty((self.max_len, num_bootstraps), dtype=np.int)
         self.mask_distribution = Poisson(torch.ones(num_bootstraps))
+        self.bootstrap = bootstrap
 
     def append(self, observation):
         """Append new observation to the dataset.
@@ -62,5 +63,8 @@ class BootstrapExperienceReplay(ExperienceReplay):
             raise TypeError(
                 f"input has to be of type Observation, and it was {type(observation)}")
 
-        self.weights[self._ptr] = self.mask_distribution.sample()
+        if self.bootstrap:
+            self.weights[self._ptr] = self.mask_distribution.sample()
+        else:
+            self.weights[self._ptr] = torch.ones(self.mask_distribution.batch_shape)
         super().append(observation)

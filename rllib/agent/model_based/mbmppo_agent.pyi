@@ -32,6 +32,7 @@ class MBMPPOAgent(ModelBasedAgent):
                  max_memory: int = 10000,
                  model_learn_batch_size: int = 64,
                  model_learn_num_iter: int = 30,
+                 bootstrap: bool = True,
                  mppo_epsilon: Union[ParameterDecay, float] = None,
                  mppo_epsilon_mean: Union[ParameterDecay, float] = None,
                  mppo_epsilon_var: Union[ParameterDecay, float] = None,

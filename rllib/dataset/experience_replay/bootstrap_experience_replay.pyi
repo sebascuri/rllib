@@ -12,6 +12,7 @@ from .experience_replay import ExperienceReplay
 
 class BootstrapExperienceReplay(ExperienceReplay):
     mask_distribution: Poisson
+    bootstrap: bool
 
-    def __init__(self, max_len: int, num_bootstraps: int = 1,
-                 transformations: List[AbstractTransform] = None) -> None: ...
+    def __init__(self, max_len: int, transformations: List[AbstractTransform] = None,
+                 num_bootstraps: int = 1, bootstrap: bool = True) -> None: ...

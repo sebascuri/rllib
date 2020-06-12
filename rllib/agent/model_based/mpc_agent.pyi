@@ -22,6 +22,7 @@ class MPCAgent(ModelBasedAgent):
                  mpc_policy: MPCPolicy,
                  model_learn_num_iter: int = 0,
                  model_learn_batch_size: int = 64,
+                 bootstrap: bool = True,
                  model_optimizer: Optimizer = None,
                  value_optimizer: Optimizer = None,
                  max_memory: int = 1000,
