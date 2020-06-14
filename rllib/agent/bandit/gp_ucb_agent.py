@@ -33,25 +33,32 @@ class GPUCBPolicy(AbstractPolicy):
     design.
     """
 
-    def __init__(self, gp, x, beta=2.0):
+    def __init__(self, gp, x, beta=2.0, noisy=False):
         super().__init__(dim_state=1, dim_action=x.shape[0],
                          num_states=1, num_actions=-1, deterministic=True)
         self.gp = gp
         self.gp.eval()
         self.gp.likelihood.eval()
         self.x = x
+        self.noisy = noisy
         if not isinstance(beta, ParameterDecay):
             beta = Constant(beta)
         self.beta = beta
 
     def forward(self, state):
         """Call the GP-UCB algorithm."""
+        if self.noisy:
+            lower, upper = self.x[0], self.x[-1]
+            test_x = lower + torch.rand(len(self.x)) * (upper - lower)
+        else:
+            test_x = self.x
+
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            pred = self.gp(self.x)
+            pred = self.gp(test_x)
             ucb = pred.mean + self.beta() * pred.stddev
 
             max_id = torch.argmax(ucb)
-            next_point = self.x[[[max_id]]]
+            next_point = test_x[[[max_id]]]
             return next_point, torch.zeros(1)
 
     def update(self):
@@ -81,8 +88,8 @@ class GPUCBAgent(AbstractAgent):
     On kernelized multi-armed bandits. JMLR.
     """
 
-    def __init__(self, gp, x, beta=2.0, tensorboard=False):
-        self.policy = GPUCBPolicy(gp, x, beta)
+    def __init__(self, gp, x, beta=2.0, noisy=False, tensorboard=False):
+        self.policy = GPUCBPolicy(gp, x, beta, noisy=noisy)
         super().__init__(train_frequency=1, num_rollouts=0, gamma=1,
                          exploration_episodes=0, exploration_steps=0,
                          tensorboard=tensorboard, comment=gp.name)

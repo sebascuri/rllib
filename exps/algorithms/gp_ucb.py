@@ -4,7 +4,7 @@ import gpytorch
 import matplotlib.pyplot as plt
 import torch
 
-from rllib.agent.gp_ucb_agent import GPUCBAgent
+from rllib.agent.bandit import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.reward.gp_reward import GPBanditReward
 from rllib.util import rollout_agent
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         model.length_scale = 1
         environment = BanditEnvironment(objective,
                                         x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
-        agent = GPUCBAgent(environment.name, model, x, beta=2.0)
+        agent = GPUCBAgent(model, x, beta=2.0)
         state = environment.reset()
 
         fig, axes = plt.subplots(5, 2)
