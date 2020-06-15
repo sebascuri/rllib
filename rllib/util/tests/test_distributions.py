@@ -1,8 +1,11 @@
 import pytest
 import torch
 import torch.testing
-from torch.distributions import (ComposeTransform, MultivariateNormal,
-                                 TransformedDistribution)
+from torch.distributions import (
+    ComposeTransform,
+    MultivariateNormal,
+    TransformedDistribution,
+)
 from torch.distributions.transforms import AffineTransform, SigmoidTransform
 
 from rllib.util.distributions import Delta, TanhTransform
@@ -13,21 +16,26 @@ class TestTanhTransform(object):
     def get_distribution(dist_type):
         base_dist = MultivariateNormal(torch.zeros(3), 3 * torch.eye(3))
 
-        if dist_type == 'base':
+        if dist_type == "base":
             return base_dist
-        elif dist_type == 'tanh':
+        elif dist_type == "tanh":
             tanh = TanhTransform()
             return TransformedDistribution(base_dist, tanh)
-        elif dist_type == 'equiv':
-            equiv_tanh = ComposeTransform([AffineTransform(0., 2.), SigmoidTransform(),
-                                           AffineTransform(-1., 2.)])
+        elif dist_type == "equiv":
+            equiv_tanh = ComposeTransform(
+                [
+                    AffineTransform(0.0, 2.0),
+                    SigmoidTransform(),
+                    AffineTransform(-1.0, 2.0),
+                ]
+            )
             return TransformedDistribution(base_dist, equiv_tanh)
 
-    @pytest.fixture(scope="class", params=['base', 'tanh', 'equiv'])
+    @pytest.fixture(scope="class", params=["base", "tanh", "equiv"])
     def distribution(self, request):
         return self.get_distribution(request.param)
 
-    @pytest.mark.parametrize("distribution_type", ['base', 'tanh', 'equiv'])
+    @pytest.mark.parametrize("distribution_type", ["base", "tanh", "equiv"])
     def test_range(self, distribution_type):
         distribution = self.get_distribution(distribution_type)
         x = distribution.rsample((10,))
@@ -48,8 +56,8 @@ class TestTanhTransform(object):
         if isinstance(distribution, MultivariateNormal):
             x = x.tanh()
 
-        tanh_dist = self.get_distribution('tanh')
-        etanh_dist = self.get_distribution('equiv')
+        tanh_dist = self.get_distribution("tanh")
+        etanh_dist = self.get_distribution("equiv")
         torch.testing.assert_allclose(tanh_dist.log_prob(x), etanh_dist.log_prob(x))
 
 
@@ -78,7 +86,7 @@ class TestDelta(object):
         assert dist.entropy().shape == torch.Size([32])
         assert dist.variance.shape == torch.Size([32, 4])
 
-        dist = Delta(torch.randn(32, 4))   # event_dim = 0
+        dist = Delta(torch.randn(32, 4))  # event_dim = 0
         assert dist.batch_shape == torch.Size([32, 4])
         assert dist.event_shape == torch.Size([])
         assert dist.entropy().shape == torch.Size([32, 4])
@@ -90,7 +98,7 @@ class TestDelta(object):
         assert dist.entropy().shape == torch.Size([])
         assert dist.variance.shape == torch.Size([16])
 
-        dist = Delta(torch.randn(16))   # event_dim = 0
+        dist = Delta(torch.randn(16))  # event_dim = 0
         assert dist.batch_shape == torch.Size([16])
         assert dist.event_shape == torch.Size([])
         assert dist.entropy().shape == torch.Size([16])

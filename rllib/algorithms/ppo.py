@@ -7,16 +7,26 @@ import torch.distributions
 import torch.nn as nn
 
 from rllib.algorithms.gae import GAE
-from rllib.util.neural_networks import (deep_copy_module, freeze_parameters,
-                                        update_parameters)
+from rllib.util.neural_networks import (
+    deep_copy_module,
+    freeze_parameters,
+    update_parameters,
+)
 from rllib.util.parameter_decay import Constant, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm
 
 PPOReturn = namedtuple(
-    'PPOReturn', ['loss', 'value_loss', 'surrogate_loss', 'entropy_bonus',
-                  'kl_div', 'approx_kl_div']
+    "PPOReturn",
+    [
+        "loss",
+        "value_loss",
+        "surrogate_loss",
+        "entropy_bonus",
+        "kl_div",
+        "approx_kl_div",
+    ],
 )
 
 
@@ -50,9 +60,16 @@ class PPO(AbstractAlgorithm):
     Proximal policy optimization algorithms. ArXiv.
     """
 
-    def __init__(self, policy, value_function,
-                 epsilon=0.2, weight_value_function=1, weight_entropy=0, lambda_=.97,
-                 gamma=1.):
+    def __init__(
+        self,
+        policy,
+        value_function,
+        epsilon=0.2,
+        weight_value_function=1,
+        weight_entropy=0,
+        lambda_=0.97,
+        gamma=1.0,
+    ):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
 
@@ -68,7 +85,7 @@ class PPO(AbstractAlgorithm):
             epsilon = Constant(epsilon)
         self.epsilon = epsilon
 
-        self.value_loss = nn.MSELoss(reduction='mean')
+        self.value_loss = nn.MSELoss(reduction="mean")
         self.weight_value_function = weight_value_function
         self.weight_entropy = weight_entropy
 
@@ -99,11 +116,11 @@ class PPO(AbstractAlgorithm):
         kl_div: torch.Tensor
             The average KL divergence of the policy.
         """
-        surrogate_loss = torch.tensor(0.)
-        value_loss = torch.tensor(0.)
-        entropy_bonus = torch.tensor(0.)
-        kl_div = torch.tensor(0.)
-        approx_kl_div = torch.tensor(0.)
+        surrogate_loss = torch.tensor(0.0)
+        value_loss = torch.tensor(0.0)
+        entropy_bonus = torch.tensor(0.0)
+        kl_div = torch.tensor(0.0)
+        approx_kl_div = torch.tensor(0.0)
 
         for trajectory in trajectories:
             with torch.no_grad():
@@ -131,15 +148,22 @@ class PPO(AbstractAlgorithm):
             approx_kl_div += (log_p_old - log_p).mean()
 
         combined_loss = (
-                surrogate_loss + self.weight_value_function * value_loss
-                + self.weight_entropy * entropy_bonus)
+            surrogate_loss
+            + self.weight_value_function * value_loss
+            + self.weight_entropy * entropy_bonus
+        )
 
         return PPOReturn(
-            loss=combined_loss, value_loss=value_loss, surrogate_loss=surrogate_loss,
-            entropy_bonus=entropy_bonus, kl_div=kl_div, approx_kl_div=approx_kl_div
+            loss=combined_loss,
+            value_loss=value_loss,
+            surrogate_loss=surrogate_loss,
+            entropy_bonus=entropy_bonus,
+            kl_div=kl_div,
+            approx_kl_div=approx_kl_div,
         )
 
     def update(self):
         """Update the baseline network."""
-        update_parameters(self.value_function_target, self.value_function,
-                          self.value_function.tau)
+        update_parameters(
+            self.value_function_target, self.value_function, self.value_function.tau
+        )

@@ -1,8 +1,8 @@
 """Implementation of a Logger class."""
 
 import json
-from datetime import datetime
 import os
+from datetime import datetime
 
 import numpy as np
 import torch
@@ -23,10 +23,10 @@ class Logger(object):
         Flag that indicates whether or not to save the results in the tensorboard.
     """
 
-    def __init__(self, name, comment='', tensorboard=False):
+    def __init__(self, name, comment="", tensorboard=False):
         self.statistics = list()
         self.current = dict()
-        current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+        current_time = datetime.now().strftime("%b%d_%H-%M-%S")
         self.writer = SummaryWriter(
             f"runs/{name}/"
             f"{comment + '_' + current_time if len(comment) else current_time}"
@@ -37,8 +37,9 @@ class Logger(object):
         self.keys = set()
 
         if not self._tensorboard:
-            for file in filter(lambda x: x.startswith('events'),
-                               os.listdir(self.writer.logdir)):
+            for file in filter(
+                lambda x: x.startswith("events"), os.listdir(self.writer.logdir)
+            ):
                 os.remove(f"{self.writer.logdir}/{file}")
 
     def __len__(self):
@@ -58,7 +59,7 @@ class Logger(object):
         str_ = ""
         for key in sorted(self.keys):
             values = self.get(key)
-            key = ' '.join(key.split('_')).title()
+            key = " ".join(key.split("_")).title()
             str_ += f"{key} Last: {values[-1]:.2g}. "
             str_ += f"Average: {np.mean(values):.2g}. "
             str_ += f"10-Episode: {np.mean(values[-10:]):.2g}.\n"
@@ -100,7 +101,7 @@ class Logger(object):
                 self.writer.add_scalar(
                     f"episode_{self.episode}/{key}",
                     self.current[key][1],
-                    global_step=self.current[key][0]
+                    global_step=self.current[key][0],
                 )
 
     def end_episode(self, **kwargs):
@@ -122,9 +123,7 @@ class Logger(object):
             if isinstance(value, float) or isinstance(value, int):
                 if self._tensorboard:
                     self.writer.add_scalar(
-                        f"average/{key}",
-                        value,
-                        global_step=self.episode
+                        f"average/{key}", value, global_step=self.episode
                     )
 
         self.statistics.append(data)
@@ -148,5 +147,6 @@ class Logger(object):
         for k, v in hparams.items():
             if v is None:
                 hparams[k] = 0
-        self.writer.add_hparams(hparam_dict=hparams, metric_dict=metrics,
-                                name='hparams', global_step=1)
+        self.writer.add_hparams(
+            hparam_dict=hparams, metric_dict=metrics, name="hparams", global_step=1
+        )

@@ -31,9 +31,9 @@ class ExpectedActorCritic(ActorCritic):
 
     def forward(self, trajectories):
         """Compute the losses."""
-        actor_loss = torch.tensor(0.)
-        critic_loss = torch.tensor(0.)
-        td_error = torch.tensor(0.)
+        actor_loss = torch.tensor(0.0)
+        critic_loss = torch.tensor(0.0)
+        td_error = torch.tensor(0.0)
 
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory
@@ -45,11 +45,12 @@ class ExpectedActorCritic(ActorCritic):
 
             def iq(a):
                 return self.critic(state, a) - integrate(
-                    lambda a_: self.critic(state, a_), pi)
+                    lambda a_: self.critic(state, a_), pi
+                )
 
-            actor_loss += discount_sum(integrate(
-                lambda a: -pi.log_prob(a) * iq(a).detach(), pi
-            ).sum(), 1)
+            actor_loss += discount_sum(
+                integrate(lambda a: -pi.log_prob(a) * iq(a).detach(), pi).sum(), 1
+            )
 
             # CRITIC LOSS
             with torch.no_grad():
@@ -62,6 +63,9 @@ class ExpectedActorCritic(ActorCritic):
             td_error += (pred_q - target_q).detach().mean()
 
         num_trajectories = len(trajectories)
-        return ACLoss((actor_loss + critic_loss) / num_trajectories,
-                      actor_loss / num_trajectories, critic_loss / num_trajectories,
-                      td_error / num_trajectories)
+        return ACLoss(
+            (actor_loss + critic_loss) / num_trajectories,
+            actor_loss / num_trajectories,
+            critic_loss / num_trajectories,
+            td_error / num_trajectories,
+        )

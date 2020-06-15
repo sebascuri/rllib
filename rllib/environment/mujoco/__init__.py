@@ -5,26 +5,22 @@ try:
     import mujoco_py
 
     register(
-        id='MBRLCartPole-v0',
-        entry_point='rllib.environment.mujoco.cartpole:CartPoleEnv'
+        id="MBRLCartPole-v0",
+        entry_point="rllib.environment.mujoco.cartpole:CartPoleEnv",
     )
 
-
     register(
-        id='MBRLReacher3D-v0',
-        entry_point='rllib.environment.mujoco.reacher:Reacher3DEnv'
+        id="MBRLReacher3D-v0",
+        entry_point="rllib.environment.mujoco.reacher:Reacher3DEnv",
     )
 
-
     register(
-        id='MBRLPusher-v0',
-        entry_point='rllib.environment.mujoco.pusher:PusherEnv'
+        id="MBRLPusher-v0", entry_point="rllib.environment.mujoco.pusher:PusherEnv"
     )
 
-
     register(
-        id='MBRLHalfCheetah-v0',
-        entry_point='rllib.environment.mujoco.half_cheetah:HalfCheetahEnv'
+        id="MBRLHalfCheetah-v0",
+        entry_point="rllib.environment.mujoco.half_cheetah:HalfCheetahEnv",
     )
 
 except ImportError:

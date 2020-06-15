@@ -17,8 +17,17 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
 
     double_sample = False
 
-    def __init__(self, environment, policy, sampler, value_function, gamma,
-                 lr_theta=0.1, lr_omega=0.1, exact_value_function=None):
+    def __init__(
+        self,
+        environment,
+        policy,
+        sampler,
+        value_function,
+        gamma,
+        lr_theta=0.1,
+        lr_omega=0.1,
+        exact_value_function=None,
+    ):
         self.dimension = value_function.dimension
         self.omega = torch.zeros(self.dimension)
         self.theta = torch.zeros(self.dimension)

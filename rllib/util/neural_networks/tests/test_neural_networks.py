@@ -5,9 +5,14 @@ import torch.jit
 import torch.testing
 
 from rllib.util.distributions import Delta
-from rllib.util.neural_networks import (CategoricalNN, DeterministicNN,
-                                        Ensemble, FelixNet, HeteroGaussianNN,
-                                        HomoGaussianNN)
+from rllib.util.neural_networks import (
+    CategoricalNN,
+    DeterministicNN,
+    Ensemble,
+    FelixNet,
+    HeteroGaussianNN,
+    HomoGaussianNN,
+)
 from rllib.util.neural_networks.utilities import count_vars
 from rllib.util.utilities import tensor_to_distribution
 
@@ -17,7 +22,7 @@ def layers(request):
     return request.param
 
 
-@pytest.fixture(params=['ReLU', 'tanh'])
+@pytest.fixture(params=["ReLU", "tanh"])
 def non_linearity(request):
     return request.param
 
@@ -80,10 +85,12 @@ class TestDeterministicNN(object):
     def net(self):
         return DeterministicNN
 
-    def test_output_shape(self, net, in_dim, out_dim, layers, non_linearity,
-                          batch_size):
+    def test_output_shape(
+        self, net, in_dim, out_dim, layers, non_linearity, batch_size
+    ):
         net = torch.jit.script(
-            net(in_dim, out_dim, layers, non_linearity=non_linearity))
+            net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        )
         if batch_size is None:
             t = torch.randn(in_dim)
             o = net(t)
@@ -139,7 +146,8 @@ class TestHeteroGaussianNN(object):
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else []
+        )
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = torch.jit.script(net(in_dim, out_dim, layers))
@@ -153,7 +161,7 @@ class TestHeteroGaussianNN(object):
         layers.append(out_dim)
         i = 0
         for name, param in net.named_parameters():
-            if name.startswith('_scale'):
+            if name.startswith("_scale"):
                 assert param.shape[0] == out_dim  # * out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
@@ -193,7 +201,8 @@ class TestHomoGaussianNN(object):
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else []
+        )
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = torch.jit.script(net(in_dim, out_dim, layers))
@@ -206,7 +215,7 @@ class TestHomoGaussianNN(object):
         layers.append(out_dim)
         i = 0
         for name, param in net.named_parameters():
-            if name.startswith('_scale'):
+            if name.startswith("_scale"):
                 assert param.shape[0] == out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
@@ -246,7 +255,8 @@ class TestCategoricalNN(object):
         assert not o.has_rsample
         assert o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else []
+        )
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = torch.jit.script(net(in_dim, out_dim, layers))
@@ -306,17 +316,19 @@ class TestEnsembleNN(object):
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else []
+        )
 
-        net.set_prediction_strategy('set_head')
+        net.set_prediction_strategy("set_head")
         net.set_head(0)
         o = tensor_to_distribution(net(t))
         if deterministic:
             assert isinstance(o, Delta)
         else:
             assert isinstance(o, torch.distributions.MultivariateNormal)
-        assert o.batch_shape == torch.Size([batch_size, 2] if batch_size is not None
-                                           else [])
+        assert o.batch_shape == torch.Size(
+            [batch_size, 2] if batch_size is not None else []
+        )
 
         assert o.has_rsample
         assert not o.has_enumerate_support
@@ -338,7 +350,7 @@ class TestEnsembleNN(object):
         # Check shapes
         i = 0
         for name, param in net.named_parameters():
-            if name.startswith('_scale'):
+            if name.startswith("_scale"):
                 assert param.shape[0] == out_dim * num_heads  # * out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
@@ -370,7 +382,7 @@ class TestEnsembleNN(object):
         layers.append(out_dim * num_heads)
         i = 0
         for name, param in n1.named_parameters():
-            if name.startswith('_scale'):
+            if name.startswith("_scale"):
                 assert param.shape[0] == out_dim * num_heads  # * out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
@@ -422,7 +434,8 @@ class TestFelixNet(object):
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else [])
+            [batch_size, 2] if batch_size is not None else []
+        )
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = torch.jit.script(net(in_dim, out_dim))

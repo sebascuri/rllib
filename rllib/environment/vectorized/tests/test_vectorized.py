@@ -2,11 +2,13 @@ import numpy as np
 import torch
 from gym.envs.classic_control import AcrobotEnv, CartPoleEnv, PendulumEnv
 
-from rllib.environment.vectorized import (DiscreteVectorizedAcrobotEnv,
-                                          DiscreteVectorizedCartPoleEnv,
-                                          VectorizedAcrobotEnv,
-                                          VectorizedCartPoleEnv,
-                                          VectorizedPendulumEnv)
+from rllib.environment.vectorized import (
+    DiscreteVectorizedAcrobotEnv,
+    DiscreteVectorizedCartPoleEnv,
+    VectorizedAcrobotEnv,
+    VectorizedCartPoleEnv,
+    VectorizedPendulumEnv,
+)
 
 
 class TestAcrobot(object):

@@ -13,20 +13,40 @@ from .nn_model import NNModel
 class EnsembleModel(NNModel):
     """Ensemble Model."""
 
-    def __init__(self, dim_state, dim_action, num_heads, num_states=-1, num_actions=-1,
-                 prediction_strategy='moment_matching',
-                 layers=None, biased_head=True, non_linearity='ReLU',
-                 input_transform=None, deterministic=False):
-        super().__init__(dim_state, dim_action, num_states, num_actions,
-                         input_transform=input_transform)
+    def __init__(
+        self,
+        dim_state,
+        dim_action,
+        num_heads,
+        num_states=-1,
+        num_actions=-1,
+        prediction_strategy="moment_matching",
+        layers=None,
+        biased_head=True,
+        non_linearity="ReLU",
+        input_transform=None,
+        deterministic=False,
+    ):
+        super().__init__(
+            dim_state,
+            dim_action,
+            num_states,
+            num_actions,
+            input_transform=input_transform,
+        )
         self.num_heads = num_heads
         # if deterministic
         self.nn = Ensemble(
-            self.nn.kwargs['in_dim'], self.nn.kwargs['out_dim'],
+            self.nn.kwargs["in_dim"],
+            self.nn.kwargs["out_dim"],
             prediction_strategy=prediction_strategy,
             layers=layers,
-            biased_head=biased_head, non_linearity=non_linearity, squashed_output=False,
-            num_heads=num_heads, deterministic=deterministic)
+            biased_head=biased_head,
+            non_linearity=non_linearity,
+            squashed_output=False,
+            num_heads=num_heads,
+            deterministic=deterministic,
+        )
         self.deterministic = deterministic
 
     def forward(self, state, action):
@@ -52,8 +72,8 @@ class EnsembleModel(NNModel):
         prediction_strategy = self.get_prediction_strategy()
 
         # Compute epistemic uncertainty through moment matching.
-        self.set_prediction_strategy('moment_matching')
-        _, scale = self.forward(state, action[..., :self.dim_action])
+        self.set_prediction_strategy("moment_matching")
+        _, scale = self.forward(state, action[..., : self.dim_action])
 
         # Set state.
         self.set_prediction_strategy(prediction_strategy)

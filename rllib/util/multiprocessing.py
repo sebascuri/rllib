@@ -2,8 +2,9 @@
 import torch.multiprocessing as mp
 
 
-def run_parallel_returns(function, args_list, num_cpu=None, max_process_time=300,
-                         max_timeouts=4):
+def run_parallel_returns(
+    function, args_list, num_cpu=None, max_process_time=300, max_timeouts=4
+):
     """Run a function in parallel and gather the return value of the function.
 
     Parameters
@@ -35,8 +36,9 @@ def run_parallel_returns(function, args_list, num_cpu=None, max_process_time=300
         results = [function(*args_list[0])]
     else:
         pool = mp.Pool(processes=num_cpu, maxtasksperchild=1)
-        parallel_runs = [pool.apply_async(function, args=(*args_list[i],))
-                         for i in range(num_cpu)]
+        parallel_runs = [
+            pool.apply_async(function, args=(*args_list[i],)) for i in range(num_cpu)
+        ]
         try:
             results = [p.get(timeout=max_process_time) for p in parallel_runs]
         except Exception as e:
@@ -45,8 +47,9 @@ def run_parallel_returns(function, args_list, num_cpu=None, max_process_time=300
             pool.close()
             pool.terminate()
             pool.join()
-            return run_parallel_returns(function, args_list, num_cpu, max_process_time,
-                                        max_timeouts - 1)
+            return run_parallel_returns(
+                function, args_list, num_cpu, max_process_time, max_timeouts - 1
+            )
 
         pool.close()
         pool.terminate()
@@ -83,8 +86,7 @@ def modify_parallel(function, args_list, num_cpu=None):
     else:
         processes = []
         for rank in range(num_cpu):
-            p = mp.Process(target=function,
-                           args=(*args_list[rank],))
+            p = mp.Process(target=function, args=(*args_list[rank],))
             p.start()
             processes.append(p)
         for p in processes:

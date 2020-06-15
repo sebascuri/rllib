@@ -35,13 +35,20 @@ try:
             end_effector = self._get_end_effector_pos(ob)
 
             reward_dist = np.exp(
-                -np.sum(np.square(end_effector)) / (pendulum_length ** 2))
+                -np.sum(np.square(end_effector)) / (pendulum_length ** 2)
+            )
             reward_ctrl = -np.sum(np.square(action))
             reward = reward_dist + self.action_cost * reward_ctrl
 
             done = False
-            return ob, reward, done, dict(reward_dist=reward_dist,
-                                          reward_ctrl=self.action_cost * reward_ctrl)
+            return (
+                ob,
+                reward,
+                done,
+                dict(
+                    reward_dist=reward_dist, reward_ctrl=self.action_cost * reward_ctrl
+                ),
+            )
 
         def reset_model(self):
             """Reset the model."""
@@ -64,6 +71,7 @@ try:
             v = self.viewer
             v.cam.trackbodyid = 0
             v.cam.distance = self.model.stat.extent
+
 
 except Exception:  # Mujoco not installed.
     pass

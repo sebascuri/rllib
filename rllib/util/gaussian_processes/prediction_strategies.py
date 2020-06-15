@@ -4,17 +4,33 @@ import functools
 from gpytorch import settings
 from gpytorch.lazy import delazify
 from gpytorch.models.exact_prediction_strategies import (
-    DefaultPredictionStrategy, clear_cache_hook)
+    DefaultPredictionStrategy,
+    clear_cache_hook,
+)
 from gpytorch.utils.memoize import cached
 
 
 class SparsePredictionStrategy(DefaultPredictionStrategy):
     """Prediction strategy for Sparse GPs."""
 
-    def __init__(self, train_inputs, train_prior_dist, train_labels, likelihood, k_uu,
-                 root=None, inv_root=None):
-        super().__init__(train_inputs, train_prior_dist, train_labels, likelihood,
-                         root=root, inv_root=inv_root)
+    def __init__(
+        self,
+        train_inputs,
+        train_prior_dist,
+        train_labels,
+        likelihood,
+        k_uu,
+        root=None,
+        inv_root=None,
+    ):
+        super().__init__(
+            train_inputs,
+            train_prior_dist,
+            train_labels,
+            likelihood,
+            root=root,
+            inv_root=inv_root,
+        )
         self.k_uu = k_uu
         self.lik_train_train_covar = train_prior_dist.lazy_covariance_matrix
 
@@ -24,7 +40,8 @@ class SparsePredictionStrategy(DefaultPredictionStrategy):
         """Get K_uu^-1/2."""
         train_train_covar = self.k_uu
         train_train_covar_inv_root = delazify(
-            train_train_covar.root_inv_decomposition().root)
+            train_train_covar.root_inv_decomposition().root
+        )
         return train_train_covar_inv_root
 
     @property  # type: ignore

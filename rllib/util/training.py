@@ -34,7 +34,7 @@ def _model_loss(model, state, action, next_state):
 
         scale_tril_inv = torch.inverse(scale_tril)
         delta = scale_tril_inv @ ((mean - y).unsqueeze(-1))
-        loss = (delta.transpose(-2, -1) @  delta).squeeze()
+        loss = (delta.transpose(-2, -1) @ delta).squeeze()
 
         # log det \Sigma = 2 trace log (scale_tril)
         idx = torch.arange(mean.shape[-1])
@@ -46,8 +46,9 @@ def train_nn_step(model, observation, optimizer):
     """Train a Neural Network Model."""
     model.train()
     optimizer.zero_grad()
-    loss = _model_loss(model, observation.state, observation.action,
-                       observation.next_state).mean()
+    loss = _model_loss(
+        model, observation.state, observation.action, observation.next_state
+    ).mean()
     loss.backward()
     optimizer.step()
 
@@ -61,13 +62,17 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
     for i in range(model.num_heads):
         optimizer.zero_grad()
         model.set_head(i)
-        model.set_prediction_strategy('set_head')
-        loss = (mask[:, i] * _model_loss(
-            model, observation.state, observation.action, observation.next_state)
-                ).mean()
+        model.set_prediction_strategy("set_head")
+        loss = (
+            mask[:, i]
+            * _model_loss(
+                model, observation.state, observation.action, observation.next_state
+            )
+        ).mean()
         with torch.no_grad():
-            mse = _model_mse(model, observation.state, observation.action,
-                             observation.next_state).mean()
+            mse = _model_mse(
+                model, observation.state, observation.action, observation.next_state
+            ).mean()
         loss.backward()
         optimizer.step()
         ensemble_loss += loss.item()
@@ -82,8 +87,9 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
     optimizer.zero_grad()
     # model.training = True
     model.train()
-    output = tensor_to_distribution(model(observation.state[:, 0],
-                                          observation.action[:, 0]))
+    output = tensor_to_distribution(
+        model(observation.state[:, 0], observation.action[:, 0])
+    )
     with gpytorch.settings.fast_pred_var():
         val = torch.stack(tuple([gp.train_targets for gp in model.gp]), 0)
         loss = exact_mll(output, val, model.gp)
@@ -106,8 +112,9 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
                 current_head = model.get_head()
                 current_pred = model.get_prediction_strategy()
 
-                model_loss = train_ensemble_step(model, observation, mask, optimizer,
-                                                 logger)
+                model_loss = train_ensemble_step(
+                    model, observation, mask, optimizer, logger
+                )
                 model.set_head(current_head)
                 model.set_prediction_strategy(current_pred)
 
@@ -120,9 +127,18 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
             logger.update(model_loss=model_loss)
 
 
-def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
-                print_frequency=0, plot_frequency=1, save_milestones=None, render=False,
-                plot_callbacks=None):
+def train_agent(
+    agent,
+    environment,
+    num_episodes,
+    max_steps,
+    plot_flag=True,
+    print_frequency=0,
+    plot_frequency=1,
+    save_milestones=None,
+    render=False,
+    plot_callbacks=None,
+):
     """Train an agent in an environment.
 
     Parameters
@@ -141,16 +157,23 @@ def train_agent(agent, environment, num_episodes, max_steps, plot_flag=True,
 
     """
     agent.train()
-    rollout_agent(environment, agent, num_episodes=num_episodes, max_steps=max_steps,
-                  print_frequency=print_frequency, plot_frequency=plot_frequency,
-                  save_milestones=save_milestones,
-                  render=render, plot_callbacks=plot_callbacks)
+    rollout_agent(
+        environment,
+        agent,
+        num_episodes=num_episodes,
+        max_steps=max_steps,
+        print_frequency=print_frequency,
+        plot_frequency=plot_frequency,
+        save_milestones=save_milestones,
+        render=render,
+        plot_callbacks=plot_callbacks,
+    )
 
     if plot_flag:
         for key in agent.logger.keys:
             plt.plot(agent.logger.get(key))
             plt.xlabel("Episode")
-            plt.ylabel(" ".join(key.split('_')).title())
+            plt.ylabel(" ".join(key.split("_")).title())
             plt.title(f"{agent.name} in {environment.name}")
             plt.show()
     print(agent)
@@ -168,9 +191,14 @@ def evaluate_agent(agent, environment, num_episodes, max_steps, render=True):
     render: bool
     """
     agent.eval()
-    rollout_agent(environment, agent, max_steps=max_steps, num_episodes=num_episodes,
-                  render=render)
-    returns = np.mean(agent.logger.get('environment_return')[-num_episodes:])
+    rollout_agent(
+        environment,
+        agent,
+        max_steps=max_steps,
+        num_episodes=num_episodes,
+        render=render,
+    )
+    returns = np.mean(agent.logger.get("environment_return")[-num_episodes:])
     print(f"Test Cumulative Rewards: {returns}")
 
 
@@ -183,7 +211,7 @@ def save_agent(agent, file_name):
     file_name: str.
 
     """
-    with open(file_name, 'wb') as file:
+    with open(file_name, "wb") as file:
         pickle.dump(agent, file)
 
 
@@ -198,7 +226,7 @@ def load_agent(file_name):
     -------
     agent: AbstractAgent.
     """
-    with open(file_name, 'rb') as f:
+    with open(file_name, "rb") as f:
         agent = pickle.load(f)
 
     return agent

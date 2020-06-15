@@ -9,8 +9,9 @@ class TabularValueFunction(NNValueFunction):
     """Implement tabular value function."""
 
     def __init__(self, num_states, tau=0.0, biased_head=False):
-        super().__init__(dim_state=1, num_states=num_states, tau=tau,
-                         biased_head=biased_head)
+        super().__init__(
+            dim_state=1, num_states=num_states, tau=tau, biased_head=biased_head
+        )
         nn.init.zeros_(self.nn.head.weight)
 
     @property
@@ -36,9 +37,14 @@ class TabularQFunction(NNQFunction):
     """Implement tabular value function."""
 
     def __init__(self, num_states, num_actions, tau=0.0, biased_head=False):
-        super().__init__(dim_state=1, dim_action=1,
-                         num_states=num_states, num_actions=num_actions,
-                         tau=tau, biased_head=biased_head)
+        super().__init__(
+            dim_state=1,
+            dim_action=1,
+            num_states=num_states,
+            num_actions=num_actions,
+            tau=tau,
+            biased_head=biased_head,
+        )
 
         nn.init.zeros_(self.nn.head.weight)
 

@@ -1,6 +1,7 @@
 """Post-Processing utilities."""
-import os
 import json
+import os
+
 import pandas as pd
 
 
@@ -24,47 +25,56 @@ def parse_results(base_dir, agent):
     df = pd.DataFrame()
     for i, log_dir in enumerate(log_dirs):
         try:
-            with open(f"{base_dir}/{agent}Agent/{log_dir}/hparams.json", 'r') as f:
+            with open(f"{base_dir}/{agent}Agent/{log_dir}/hparams.json", "r") as f:
                 params = json.load(f)
-        except (json.JSONDecodeError,
-                FileNotFoundError):  # If experiment did not finish, just continue.
+        except (
+            json.JSONDecodeError,
+            FileNotFoundError,
+        ):  # If experiment did not finish, just continue.
             continue
 
         for key, value in params.items():
             if isinstance(value, list):
-                params[key] = ','.join(str(s) for s in value)
+                params[key] = ",".join(str(s) for s in value)
 
-        if 'exploration' not in params:
-            params['exploration'] = 'optimistic' if params['optimistic'] else 'expected'
+        if "exploration" not in params:
+            params["exploration"] = "optimistic" if params["optimistic"] else "expected"
 
-        params['agent'] = agent
+        params["agent"] = agent
         params = pd.DataFrame(params, index=(0,))
-        params['id'] = i
+        params["id"] = i
 
         try:
-            with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", 'r') as f:
+            with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", "r") as f:
                 statistics = pd.read_json(f)
-        except (json.JSONDecodeError,
-                FileNotFoundError):  # If experiment did not finish, just continue.
+        except (
+            json.JSONDecodeError,
+            FileNotFoundError,
+        ):  # If experiment did not finish, just continue.
             continue
 
-        statistics['best_return'] = statistics['environment_return'].cummax()
+        statistics["best_return"] = statistics["environment_return"].cummax()
         try:
-            statistics['best_model_return'] = statistics['model_return'].cummax()
+            statistics["best_model_return"] = statistics["model_return"].cummax()
         except KeyError:
             pass
-        statistics['id'] = i
-        statistics['episode'] = statistics.index
+        statistics["id"] = i
+        statistics["episode"] = statistics.index
 
-        exp = pd.merge(statistics, params, on='id')
+        exp = pd.merge(statistics, params, on="id")
 
         df = pd.concat((df, exp), sort=False)
     return df
 
 
-def print_df(df, idx=None, sort_key='best_return', keep='first',
-             group_keys=('action_cost', 'exploration', 'model_kind'),
-             print_keys=('best_return', 'environment_return', 'id')):
+def print_df(
+    df,
+    idx=None,
+    sort_key="best_return",
+    keep="first",
+    group_keys=("action_cost", "exploration", "model_kind"),
+    print_keys=("best_return", "environment_return", "id"),
+):
     """Print data frame by grouping and sorting data.
 
     It will group the data frame by group_keys in order and then print, per group,
@@ -114,10 +124,10 @@ def parse_statistics(base_dir, agent):
 
     df = pd.DataFrame()
     for i, log_dir in enumerate(log_dirs):
-        with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", 'r') as f:
+        with open(f"{base_dir}/{agent}Agent/{log_dir}/statistics.json", "r") as f:
             statistics = pd.read_json(f)
-        statistics['best_return'] = statistics.loc[:, 'environment_return'].cummax()
-        statistics['id'] = i
+        statistics["best_return"] = statistics.loc[:, "environment_return"].cummax()
+        statistics["id"] = i
 
         df = pd.concat((df, statistics))
     return df

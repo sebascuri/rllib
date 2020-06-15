@@ -31,8 +31,10 @@ class TestTabularValueFunction(object):
 
     def test_set_value(self):
         value_function = TabularValueFunction(num_states=4)
-        value_function.set_value(2, 1.)
-        torch.testing.assert_allclose(value_function.table, torch.tensor([0, 0, 1., 0]))
+        value_function.set_value(2, 1.0)
+        torch.testing.assert_allclose(
+            value_function.table, torch.tensor([0, 0, 1.0, 0])
+        )
 
     def test_forward(self, num_states, batch_size):
         value_function = TabularValueFunction(num_states=num_states)
@@ -53,9 +55,10 @@ class TestTabularQFunction(object):
 
     def test_set_value(self):
         value_function = TabularQFunction(num_states=4, num_actions=2)
-        value_function.set_value(2, 1, 1.)
-        torch.testing.assert_allclose(value_function.table, torch.tensor(
-            [[0, 0, 0., 0], [0, 0, 1., 0]]))
+        value_function.set_value(2, 1, 1.0)
+        torch.testing.assert_allclose(
+            value_function.table, torch.tensor([[0, 0, 0.0, 0], [0, 0, 1.0, 0]])
+        )
 
     def test_forward(self, num_states, num_actions, batch_size):
         q_function = TabularQFunction(num_states=num_states, num_actions=num_actions)
@@ -67,8 +70,7 @@ class TestTabularQFunction(object):
         assert value.dtype is torch.get_default_dtype()
 
     def test_partial_q_function(self, num_states, num_actions, batch_size):
-        q_function = TabularQFunction(num_states=num_states,
-                                      num_actions=num_actions)
+        q_function = TabularQFunction(num_states=num_states, num_actions=num_actions)
         state = random_tensor(True, num_states, batch_size)
 
         action_value = q_function(state)

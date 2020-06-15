@@ -3,8 +3,7 @@ import torch
 import torch.nn as nn
 import torch.testing
 
-from rllib.util.neural_networks import (DeterministicNN, count_vars,
-                                        random_tensor)
+from rllib.util.neural_networks import DeterministicNN, count_vars, random_tensor
 from rllib.value_function import NNQFunction, NNValueFunction
 
 
@@ -39,8 +38,9 @@ class StateTransform(nn.Module):
     def forward(self, states_):
         """Transform state before applying function approximation."""
         angle, angular_velocity = torch.split(states_, 1, dim=-1)
-        states_ = torch.cat((torch.cos(angle), torch.sin(angle), angular_velocity),
-                            dim=-1)
+        states_ = torch.cat(
+            (torch.cos(angle), torch.sin(angle), angular_velocity), dim=-1
+        )
         return states_
 
 
@@ -87,8 +87,9 @@ class TestNNValueFunction(object):
 
     def test_num_states(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
-        assert (self.num_states if self.num_states is not None else -1
-                ) == self.value_function.num_states
+        assert (
+            self.num_states if self.num_states is not None else -1
+        ) == self.value_function.num_states
         assert discrete_state == self.value_function.discrete_state
 
     def test_dim_states(self, discrete_state, dim_state):
@@ -107,8 +108,13 @@ class TestNNValueFunction(object):
         assert embeddings.dtype is torch.get_default_dtype()
 
     def test_input_transform(self, batch_size):
-        value_function = NNValueFunction(2, -1, layers=[64, 64], non_linearity='Tanh',
-                                         input_transform=StateTransform())
+        value_function = NNValueFunction(
+            2,
+            -1,
+            layers=[64, 64],
+            non_linearity="Tanh",
+            input_transform=StateTransform(),
+        )
         value = value_function(random_tensor(False, 2, batch_size))
         assert value.shape == torch.Size([batch_size] if batch_size else [])
         assert value.dtype is torch.get_default_dtype()
@@ -120,12 +126,18 @@ class TestNNValueFunction(object):
 
     def test_from_nn(self, discrete_state, dim_state, batch_size):
         self.init(discrete_state, dim_state)
-        value_function = torch.jit.script(NNValueFunction.from_nn(
-            DeterministicNN(
-                self.value_function.nn.kwargs['in_dim'],
-                self.value_function.nn.kwargs['out_dim'], layers=[20, 20],
-                biased_head=False),
-            dim_state, num_states=self.num_states))
+        value_function = torch.jit.script(
+            NNValueFunction.from_nn(
+                DeterministicNN(
+                    self.value_function.nn.kwargs["in_dim"],
+                    self.value_function.nn.kwargs["out_dim"],
+                    layers=[20, 20],
+                    biased_head=False,
+                ),
+                dim_state,
+                num_states=self.num_states,
+            )
+        )
 
         state = random_tensor(discrete_state, dim_state, batch_size)
         value = value_function(state)
@@ -154,8 +166,9 @@ class TestNNQFunction(object):
             self.dim_action = dim_action
 
         layers = [32, 32]
-        self.q_function = NNQFunction(self.dim_state, self.dim_action,
-                                      self.num_states, self.num_actions, layers)
+        self.q_function = NNQFunction(
+            self.dim_state, self.dim_action, self.num_states, self.num_actions, layers
+        )
 
     def test_compile(self, discrete_state, discrete_action, dim_state, dim_action):
         if discrete_state and not discrete_action:
@@ -169,34 +182,45 @@ class TestNNQFunction(object):
                 self.init(discrete_state, discrete_action, dim_state, dim_action)
 
     def test_input_transform(self, batch_size):
-        q_function = NNQFunction(2, 1, layers=[64, 64], non_linearity='Tanh',
-                                 input_transform=StateTransform())
-        value = q_function(random_tensor(False, 2, batch_size),
-                           random_tensor(False, 1, batch_size))
+        q_function = NNQFunction(
+            2,
+            1,
+            layers=[64, 64],
+            non_linearity="Tanh",
+            input_transform=StateTransform(),
+        )
+        value = q_function(
+            random_tensor(False, 2, batch_size), random_tensor(False, 1, batch_size)
+        )
         assert value.shape == torch.Size([batch_size] if batch_size else [])
         assert value.dtype is torch.get_default_dtype()
 
-    def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
-                                dim_action):
+    def test_num_states_actions(
+        self, discrete_state, discrete_action, dim_state, dim_action
+    ):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
-            assert (self.num_states if self.num_states is not None else -1
-                    ) == self.q_function.num_states
-            assert (self.num_actions if self.num_actions is not None else -1
-                    ) == self.q_function.num_actions
+            assert (
+                self.num_states if self.num_states is not None else -1
+            ) == self.q_function.num_states
+            assert (
+                self.num_actions if self.num_actions is not None else -1
+            ) == self.q_function.num_actions
 
             assert discrete_state == self.q_function.discrete_state
             assert discrete_action == self.q_function.discrete_action
 
-    def test_dim_state_actions(self, discrete_state, discrete_action, dim_state,
-                               dim_action):
+    def test_dim_state_actions(
+        self, discrete_state, discrete_action, dim_state, dim_action
+    ):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
             assert self.dim_state == self.q_function.dim_state
             assert self.dim_action == self.q_function.dim_action
 
-    def test_forward(self, discrete_state, discrete_action, dim_state, dim_action,
-                     batch_size):
+    def test_forward(
+        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+    ):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
             state = random_tensor(discrete_state, dim_state, batch_size)
@@ -205,8 +229,9 @@ class TestNNQFunction(object):
             assert value.shape == torch.Size([batch_size] if batch_size else [])
             assert value.dtype is torch.get_default_dtype()
 
-    def test_partial_q_function(self, discrete_state, discrete_action, dim_state,
-                                dim_action, batch_size):
+    def test_partial_q_function(
+        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+    ):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
             state = random_tensor(discrete_state, dim_state, batch_size)
@@ -227,15 +252,21 @@ class TestNNQFunction(object):
             _test_from_other(self.q_function, NNQFunction)
             _test_from_other_with_copy(self.q_function, NNQFunction)
 
-    def test_from_nn(self, discrete_state, discrete_action, dim_state, dim_action,
-                     batch_size):
+    def test_from_nn(
+        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+    ):
         if not (discrete_state and not discrete_action):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
             q_function = NNQFunction.from_nn(
-                nn.Linear(self.q_function.nn.kwargs['in_dim'],
-                          self.q_function.nn.kwargs['out_dim']),
-                dim_state, dim_action, num_states=self.num_states,
-                num_actions=self.num_actions)
+                nn.Linear(
+                    self.q_function.nn.kwargs["in_dim"],
+                    self.q_function.nn.kwargs["out_dim"],
+                ),
+                dim_state,
+                dim_action,
+                num_states=self.num_states,
+                num_actions=self.num_actions,
+            )
 
             state = random_tensor(discrete_state, dim_state, batch_size)
             action = random_tensor(discrete_action, dim_action, batch_size)

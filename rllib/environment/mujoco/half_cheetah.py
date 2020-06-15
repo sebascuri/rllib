@@ -24,8 +24,9 @@ try:
             self.action_cost = action_cost
             self.prev_qpos = None
             dir_path = os.path.dirname(os.path.realpath(__file__))
-            mujoco_env.MujocoEnv.__init__(self, f"{dir_path}/assets/half_cheetah.xml", 5
-                                          )
+            mujoco_env.MujocoEnv.__init__(
+                self, f"{dir_path}/assets/half_cheetah.xml", 5
+            )
             utils.EzPickle.__init__(self)
             self.reset_model()
 
@@ -42,21 +43,24 @@ try:
             reward = reward_run + self.action_cost * reward_ctrl
 
             done = False
-            return ob, reward, done, dict(reward_run=reward_run,
-                                          reward_ctrl=self.action_cost * reward_ctrl)
+            return (
+                ob,
+                reward,
+                done,
+                dict(reward_run=reward_run, reward_ctrl=self.action_cost * reward_ctrl),
+            )
 
         def _get_obs(self):
-            return np.concatenate([
-                self.sim.data.qpos.flat,
-                self.sim.data.qvel.flat,
-            ])
+            return np.concatenate([self.sim.data.qpos.flat, self.sim.data.qvel.flat])
 
         def reset_model(self):
             """Reset the model."""
-            qpos = self.init_qpos + np.random.normal(loc=0, scale=0.001,
-                                                     size=self.model.nq)
-            qvel = self.init_qvel + np.random.normal(loc=0, scale=0.001,
-                                                     size=self.model.nv)
+            qpos = self.init_qpos + np.random.normal(
+                loc=0, scale=0.001, size=self.model.nq
+            )
+            qvel = self.init_qvel + np.random.normal(
+                loc=0, scale=0.001, size=self.model.nv
+            )
             self.set_state(qpos, qvel)
             self.prev_qpos = np.copy(self.sim.data.qpos.flat)
             return self._get_obs()
@@ -65,6 +69,7 @@ try:
             """Set-up the viewer."""
             self.viewer.cam.distance = self.model.stat.extent * 0.25
             self.viewer.cam.elevation = -55
+
 
 except Exception:  # Mujoco not installed.
     pass

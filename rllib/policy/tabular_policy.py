@@ -12,9 +12,13 @@ class TabularPolicy(NNPolicy):
     """Implement tabular policy."""
 
     def __init__(self, num_states, num_actions):
-        super().__init__(dim_state=1, dim_action=1,
-                         num_states=num_states, num_actions=num_actions,
-                         biased_head=False)
+        super().__init__(
+            dim_state=1,
+            dim_action=1,
+            num_states=num_states,
+            num_actions=num_actions,
+            biased_head=False,
+        )
         nn.init.ones_(self.nn.head.weight)
 
     @classmethod

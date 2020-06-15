@@ -60,13 +60,15 @@ class TDLearning(AbstractAlgorithm):
         return self._build_return(pred_v, target_v)
 
     def _build_return(self, pred_v, target_v):
-        return TDLoss(loss=self.criterion(pred_v, target_v),
-                      td_error=(pred_v - target_v).detach())
+        return TDLoss(
+            loss=self.criterion(pred_v, target_v), td_error=(pred_v - target_v).detach()
+        )
 
     def update(self):
         """Update the target network."""
-        update_parameters(self.value_target, self.value_function,
-                          tau=self.value_function.tau)
+        update_parameters(
+            self.value_target, self.value_function, tau=self.value_function.tau
+        )
 
 
 class ModelBasedTDLearning(TDLearning):
@@ -104,8 +106,17 @@ class ModelBasedTDLearning(TDLearning):
 
     """
 
-    def __init__(self, value_function, criterion, policy, dynamical_model, reward_model,
-                 termination=None, num_steps=1, gamma=0.99):
+    def __init__(
+        self,
+        value_function,
+        criterion,
+        policy,
+        dynamical_model,
+        reward_model,
+        termination=None,
+        num_steps=1,
+        gamma=0.99,
+    ):
         super().__init__(value_function, gamma=gamma, criterion=criterion)
         self.policy = policy
         self.dynamical_model = dynamical_model
@@ -120,9 +131,14 @@ class ModelBasedTDLearning(TDLearning):
 
         with torch.no_grad():
             value_estimate, trajectory = mb_return(
-                state, dynamical_model=self.dynamical_model, policy=self.policy,
-                reward_model=self.reward_model, num_steps=self.num_steps,
-                value_function=self.value_target, gamma=self.gamma,
-                termination=self.termination)
+                state,
+                dynamical_model=self.dynamical_model,
+                policy=self.policy,
+                reward_model=self.reward_model,
+                num_steps=self.num_steps,
+                value_function=self.value_target,
+                gamma=self.gamma,
+                termination=self.termination,
+            )
 
         return self._build_return(pred_v, value_estimate.mean(dim=0))

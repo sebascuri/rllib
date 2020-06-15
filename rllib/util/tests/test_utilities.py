@@ -5,8 +5,13 @@ import torch.testing
 from torch.distributions import Categorical, MultivariateNormal, kl_divergence
 
 from rllib.util.distributions import Delta
-from rllib.util.utilities import (get_backend, integrate, mellow_max,
-                                  separated_kl, tensor_to_distribution)
+from rllib.util.utilities import (
+    get_backend,
+    integrate,
+    mellow_max,
+    separated_kl,
+    tensor_to_distribution,
+)
 
 
 class TestGetBackend(object):
@@ -41,8 +46,9 @@ class TestIntegrate(object):
         def _function(a):
             return 2 * a
 
-        torch.testing.assert_allclose(integrate(_function, d, num_samples=100), 0.4,
-                                      rtol=1e-3, atol=1e-3)
+        torch.testing.assert_allclose(
+            integrate(_function, d, num_samples=100), 0.4, rtol=1e-3, atol=1e-3
+        )
 
 
 class TestMellowMax(object):
@@ -67,9 +73,10 @@ class TestMellowMax(object):
         mm = mellow_max(x, omega)
 
         torch.testing.assert_allclose(
-            mm, 1 / omega * torch.log(torch.mean(torch.exp(omega * x), dim=-1)))
+            mm, 1 / omega * torch.log(torch.mean(torch.exp(omega * x), dim=-1))
+        )
         if batch_size:
-            torch.testing.assert_allclose(mm.shape, torch.Size([batch_size, ]))
+            torch.testing.assert_allclose(mm.shape, torch.Size([batch_size]))
         else:
             torch.testing.assert_allclose(mm.shape, torch.Size([]))
 
@@ -148,7 +155,8 @@ class TestSeparatedKL(object):
             lower = torch.tril(torch.randn(dim, dim))
 
         lower[..., torch.arange(dim), torch.arange(dim)] = torch.nn.functional.softplus(
-            lower[..., torch.arange(dim), torch.arange(dim)])
+            lower[..., torch.arange(dim), torch.arange(dim)]
+        )
         if batch_size:
             lower += torch.eye(dim).repeat(batch_size, 1, 1)
         else:
@@ -174,22 +182,30 @@ class TestSeparatedKL(object):
         kl_mean, kl_var = separated_kl(p, q)
         if batch_size is None:
             kl_mean_ = (
-                    0.5 * (q.loc - p.loc) @ torch.inverse(q.covariance_matrix)
-                    @ (q.loc - p.loc)
+                0.5
+                * (q.loc - p.loc)
+                @ torch.inverse(q.covariance_matrix)
+                @ (q.loc - p.loc)
             ).mean()
         else:
-            kl_mean_ = (0.5
-                        * (q.loc - p.loc).unsqueeze(1)
-                        @ torch.inverse(q.covariance_matrix)
-                        @ (q.loc - p.loc).unsqueeze(-1)
-                        ).mean()
+            kl_mean_ = (
+                0.5
+                * (q.loc - p.loc).unsqueeze(1)
+                @ torch.inverse(q.covariance_matrix)
+                @ (q.loc - p.loc).unsqueeze(-1)
+            ).mean()
 
         n = q.covariance_matrix.shape[-1]
         ratio = torch.inverse(q.covariance_matrix) @ p.covariance_matrix
-        kl_var_ = (0.5 * (
-                torch.logdet(q.covariance_matrix) - torch.logdet(p.covariance_matrix)
-                + ratio[..., torch.arange(n), torch.arange(n)].sum(-1) - n
-        )).mean()
+        kl_var_ = (
+            0.5
+            * (
+                torch.logdet(q.covariance_matrix)
+                - torch.logdet(p.covariance_matrix)
+                + ratio[..., torch.arange(n), torch.arange(n)].sum(-1)
+                - n
+            )
+        ).mean()
 
         torch.testing.assert_allclose(kl_mean, kl_mean_)
 

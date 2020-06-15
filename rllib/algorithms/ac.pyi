@@ -11,7 +11,6 @@ from rllib.value_function import AbstractQFunction
 
 from .abstract_algorithm import AbstractAlgorithm, ACLoss
 
-
 class ActorCritic(AbstractAlgorithm):
     policy: AbstractPolicy
     policy_target: AbstractPolicy
@@ -20,10 +19,12 @@ class ActorCritic(AbstractAlgorithm):
     criterion: _Loss
     gamma: float
     eps: float = 1e-12
-
-    def __init__(self, policy: AbstractPolicy, critic: AbstractQFunction,
-                 criterion: _Loss, gamma: float) -> None: ...
-
+    def __init__(
+        self,
+        policy: AbstractPolicy,
+        critic: AbstractQFunction,
+        criterion: _Loss,
+        gamma: float,
+    ) -> None: ...
     def returns(self, trajectory: Observation) -> Tensor: ...
-
     def forward(self, *args: List[Observation], **kwargs) -> ACLoss: ...

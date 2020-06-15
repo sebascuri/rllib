@@ -34,7 +34,7 @@ class NextStateClamper(AbstractTransform):
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
         next_state = torch.max(torch.min(observation.next_state, self.high), self.low)
-        next_state[..., self.constant_idx] = 0.
+        next_state[..., self.constant_idx] = 0.0
         idx = torch.diag_embed(observation.next_state != next_state)
         next_scale_tril = observation.next_state_scale_tril
         try:
@@ -53,5 +53,5 @@ class NextStateClamper(AbstractTransform):
             log_prob_action=observation.log_prob_action,
             entropy=observation.entropy,
             state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=next_scale_tril
+            next_state_scale_tril=next_scale_tril,
         )

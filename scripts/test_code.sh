@@ -21,6 +21,14 @@ cd $(get_script_dir)/..
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+# Format code
+echo -e "${GREEN}Formatting code.${NC}"
+black -t py37 $module || { exit 1; }
+
+# Format imports
+echo -e "${GREEN}Formatting imports.${NC}"
+isort -rc $module || { exit 1; }
+
 # Run style tests
 echo -e "${GREEN}Running style tests.${NC}"
 flake8 $module --exclude '__init__.py' --show-source || { exit 1; }

@@ -2,13 +2,14 @@
 
 import torch
 
-from rllib.util.neural_networks.utilities import (deep_copy_module,
-                                                  disable_gradient,
-                                                  update_parameters)
+from rllib.util.neural_networks.utilities import (
+    deep_copy_module,
+    disable_gradient,
+    update_parameters,
+)
 from rllib.util.utilities import RewardTransformer, tensor_to_distribution
 from rllib.util.value_estimation import mb_return
-from rllib.value_function.integrate_q_value_function import \
-    IntegrateQValueFunction
+from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
@@ -40,8 +41,16 @@ class DPG(AbstractAlgorithm):
     Continuous Control with Deep Reinforcement Learning. ICLR.
     """
 
-    def __init__(self, q_function, policy, criterion, gamma, policy_noise, noise_clip,
-                 reward_transformer=RewardTransformer()):
+    def __init__(
+        self,
+        q_function,
+        policy,
+        criterion,
+        gamma,
+        policy_noise,
+        noise_clip,
+        reward_transformer=RewardTransformer(),
+    ):
         super().__init__()
         # Critic
         self.q_function = q_function
@@ -68,12 +77,15 @@ class DPG(AbstractAlgorithm):
 
     def get_q_target(self, reward, next_state, done):
         """Get q function target."""
-        next_action = tensor_to_distribution(self.policy_target(next_state), **{
-            'add_noise': True,
-            'action_scale': self.policy.action_scale,
-            'policy_noise': self.policy_noise,
-            'noise_clip': self.noise_clip}
-                                             ).sample()
+        next_action = tensor_to_distribution(
+            self.policy_target(next_state),
+            **{
+                "add_noise": True,
+                "action_scale": self.policy.action_scale,
+                "policy_noise": self.policy_noise,
+                "noise_clip": self.noise_clip,
+            },
+        ).sample()
         next_v = self.q_target(next_state, next_action)
         if type(next_v) is list:
             next_v = torch.min(*next_v)
@@ -90,7 +102,7 @@ class DPG(AbstractAlgorithm):
         critic_loss = self.criterion(pred_q[0], q_target)
         td_error = pred_q[0].detach() - q_target.detach()
         for q in pred_q[1:]:
-            critic_loss += (self.criterion(q, q_target))
+            critic_loss += self.criterion(q, q_target)
             td_error += q.detach() - q_target.detach()
 
         return TDLoss(critic_loss, td_error)
@@ -109,7 +121,8 @@ class DPG(AbstractAlgorithm):
             loss=(actor_loss + critic_loss).squeeze(-1),
             policy_loss=actor_loss.squeeze(-1),
             critic_loss=critic_loss.squeeze(-1),
-            td_error=td_error.squeeze(-1))
+            td_error=td_error.squeeze(-1),
+        )
 
     def update(self):
         """Update the target network."""
@@ -120,26 +133,45 @@ class DPG(AbstractAlgorithm):
 class MBDPG(DPG):
     """Model based implementation of DPG."""
 
-    def __init__(self, policy, q_function, dynamical_model, reward_model, criterion,
-                 policy_noise, noise_clip, gamma,
-                 reward_transformer=RewardTransformer(),
-                 termination=None, num_steps=1, num_samples=15):
-        super().__init__(policy=policy, q_function=q_function, criterion=criterion,
-                         gamma=gamma, reward_transformer=reward_transformer,
-                         policy_noise=policy_noise, noise_clip=noise_clip)
+    def __init__(
+        self,
+        policy,
+        q_function,
+        dynamical_model,
+        reward_model,
+        criterion,
+        policy_noise,
+        noise_clip,
+        gamma,
+        reward_transformer=RewardTransformer(),
+        termination=None,
+        num_steps=1,
+        num_samples=15,
+    ):
+        super().__init__(
+            policy=policy,
+            q_function=q_function,
+            criterion=criterion,
+            gamma=gamma,
+            reward_transformer=reward_transformer,
+            policy_noise=policy_noise,
+            noise_clip=noise_clip,
+        )
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
         self.termination = termination
         self.num_steps = num_steps
         self.num_samples = num_samples
         self.value_function = IntegrateQValueFunction(
-            self.q_target, self.policy, 1, dist_params=self.dist_params)
+            self.q_target, self.policy, 1, dist_params=self.dist_params
+        )
 
     def forward(self, state):
         """Compute the losses."""
         with torch.no_grad():
             q_target, trajectory = mb_return(
-                state=state, dynamical_model=self.dynamical_model,
+                state=state,
+                dynamical_model=self.dynamical_model,
                 policy=self.policy,
                 reward_model=self.reward_model,
                 num_steps=self.num_steps,
@@ -148,12 +180,12 @@ class MBDPG(DPG):
                 value_function=self.value_function,
                 num_samples=self.num_samples,
                 termination=self.termination,
-                **self.dist_params
+                **self.dist_params,
             )
 
-        critic_loss, td_error = self.critic_loss(trajectory[0].state,
-                                                 trajectory[0].action,
-                                                 q_target)
+        critic_loss, td_error = self.critic_loss(
+            trajectory[0].state, trajectory[0].action, q_target
+        )
 
         # Actor loss
         actor_loss = self.actor_loss(state)
@@ -162,5 +194,5 @@ class MBDPG(DPG):
             loss=(actor_loss + critic_loss).squeeze(-1),
             policy_loss=actor_loss.squeeze(-1),
             critic_loss=critic_loss.squeeze(-1),
-            td_error=td_error.squeeze(-1)
+            td_error=td_error.squeeze(-1),
         )

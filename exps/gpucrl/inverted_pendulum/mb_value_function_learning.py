@@ -6,22 +6,23 @@ from tqdm import tqdm
 
 import rllib.algorithms.control
 import rllib.util.neural_networks
+from exps.gpucrl.inverted_pendulum.plotters import (
+    plot_learning_losses,
+    plot_values_and_policy,
+)
 from rllib.environment import SystemEnvironment
 from rllib.environment.systems import InvertedPendulum
 from rllib.model import LinearModel
 from rllib.policy import NNPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
-from rllib.value_function import NNValueFunction
 from rllib.util import mb_return
-
-from exps.gpucrl.inverted_pendulum.plotters import plot_values_and_policy, \
-    plot_learning_losses
+from rllib.value_function import NNValueFunction
 
 num_steps = 1
-discount = 1.
+discount = 1.0
 batch_size = 40
 
-system = InvertedPendulum(mass=0.1, length=0.5, friction=0.)
+system = InvertedPendulum(mass=0.1, length=0.5, friction=0.0)
 system = system.linearize()
 q = np.eye(2)
 r = 0.01 * np.eye(1)
@@ -31,19 +32,31 @@ K, P = rllib.algorithms.control.dlqr(system.a, system.b, q, r, gamma=gamma)
 K = torch.from_numpy(K.T).type(torch.get_default_dtype())
 P = torch.from_numpy(P).type(torch.get_default_dtype())
 
-reward_model = QuadraticReward(torch.from_numpy(q).type(torch.get_default_dtype()),
-                               torch.from_numpy(r).type(torch.get_default_dtype()))
-environment = SystemEnvironment(system, initial_state=None, termination=None,
-                                reward=lambda x, u: reward_model(x, u)[0])
+reward_model = QuadraticReward(
+    torch.from_numpy(q).type(torch.get_default_dtype()),
+    torch.from_numpy(r).type(torch.get_default_dtype()),
+)
+environment = SystemEnvironment(
+    system,
+    initial_state=None,
+    termination=None,
+    reward=lambda x, u: reward_model(x, u)[0],
+)
 
 model = LinearModel(system.a, system.b)
 
-policy = NNPolicy(dim_state=system.dim_state, dim_action=system.dim_action,
-                  layers=[], biased_head=False, deterministic=True)  # Linear policy.
-print(f'initial: {policy.nn.head.weight}')
+policy = NNPolicy(
+    dim_state=system.dim_state,
+    dim_action=system.dim_action,
+    layers=[],
+    biased_head=False,
+    deterministic=True,
+)  # Linear policy.
+print(f"initial: {policy.nn.head.weight}")
 
-value_function = NNValueFunction(dim_state=system.dim_state, layers=[64, 64],
-                                 biased_head=False)
+value_function = NNValueFunction(
+    dim_state=system.dim_state, layers=[64, 64], biased_head=False
+)
 
 policy = torch.jit.script(policy)
 model = torch.jit.script(model)
@@ -65,9 +78,15 @@ for i in tqdm(range(num_iter)):
     states = 0.5 * torch.randn(batch_size, 2)
     with rllib.util.neural_networks.disable_gradient(value_function):
         value_estimate, trajectory = mb_return(
-            state=states, dynamical_model=model, policy=policy,
-            reward_model=reward_model, num_steps=1, gamma=gamma,
-            value_function=value_function, num_samples=15)
+            state=states,
+            dynamical_model=model,
+            policy=policy,
+            reward_model=reward_model,
+            num_steps=1,
+            gamma=gamma,
+            value_function=value_function,
+            num_samples=15,
+        )
 
     prediction = value_function(states)
     value_loss = loss_function(prediction, value_estimate.mean(dim=0))
@@ -84,14 +103,18 @@ for i in tqdm(range(num_iter)):
 horizon = 20
 plot_learning_losses(policy_losses, value_losses, horizon)
 
-print(f'optimal: {K}')
-print(f'learned: {policy.nn.head.weight}')
+print(f"optimal: {K}")
+print(f"learned: {policy.nn.head.weight}")
 
 bounds = [(-0.5, 0.5), (-0.5, 0.5)]
 num_entries = [100, 100]
 
 plot_values_and_policy(
     lambda x: rllib.util.neural_networks.torch_quadratic(x, matrix=-P),
-    lambda x: (x @ K, 0), bounds, num_entries, suptitle='Exact')
+    lambda x: (x @ K, 0),
+    bounds,
+    num_entries,
+    suptitle="Exact",
+)
 
-plot_values_and_policy(value_function, policy, bounds, num_entries, suptitle='Learnt')
+plot_values_and_policy(value_function, policy, bounds, num_entries, suptitle="Learnt")

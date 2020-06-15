@@ -40,8 +40,16 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         Magnitude of output scale.
     """
 
-    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 tau=0.0, deterministic=False, action_scale=1.):
+    def __init__(
+        self,
+        dim_state,
+        dim_action,
+        num_states=-1,
+        num_actions=-1,
+        tau=0.0,
+        deterministic=False,
+        action_scale=1.0,
+    ):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action
@@ -89,8 +97,10 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             if batch_size is None:
                 return torch.zeros(self.dim_action), cov
             else:
-                return torch.zeros(*batch_size, self.dim_action), \
-                       cov.expand(*batch_size, self.dim_action, self.dim_action)
+                return (
+                    torch.zeros(*batch_size, self.dim_action),
+                    cov.expand(*batch_size, self.dim_action, self.dim_action),
+                )
 
     @torch.jit.export
     def reset(self, **kwargs):

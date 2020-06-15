@@ -39,6 +39,7 @@ class MellowMax(AbstractQFunctionPolicy):
         beta = torch.zeros_like(mm)
 
         for i in range(len(mm)):
+
             def f(beta_):
                 """Solve for beta."""
                 return (torch.exp(beta_ * adv[i]) * adv[i]).sum().detach().numpy()

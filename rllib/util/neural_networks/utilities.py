@@ -13,7 +13,7 @@ def deep_copy_module(module):
     if isinstance(module, torch.jit.ScriptModule):
         module.save(module.original_name)
         out = torch.jit.load(module.original_name)
-        os.system(f'rm {module.original_name}')
+        os.system(f"rm {module.original_name}")
         return out
     return copy.deepcopy(module)
 
@@ -38,7 +38,7 @@ def parse_nonlinearity(non_linearity):
         return getattr(nn, non_linearity.capitalize())
     elif hasattr(nn, non_linearity.upper()):
         return getattr(nn, non_linearity.upper())
-    elif non_linearity.lower() == 'swish':
+    elif non_linearity.lower() == "swish":
         return Swish
     else:
         raise NotImplementedError(f"non-linearity {non_linearity} not implemented")
@@ -84,8 +84,9 @@ def update_parameters(target_module, new_module, tau=0.0):
                 continue
             else:
                 target_state_dict[name].data[:] = (
-                        tau * target_state_dict[name].data
-                        + (1 - tau) * new_state_dict[name].data)
+                    tau * target_state_dict[name].data
+                    + (1 - tau) * new_state_dict[name].data
+                )
 
         # It is not necessary to load the dict again as it modifies the pointer.
         # target_module.load_state_dict(target_state_dict)
@@ -105,7 +106,7 @@ def zero_bias(module):
 
     """
     for name, param in module.named_parameters():
-        if name.endswith('bias'):
+        if name.endswith("bias"):
             nn.init.zeros_(param)
 
 
@@ -121,9 +122,9 @@ def init_head_weight(module):
 
     """
     for name, param in module.named_parameters():
-        if name.endswith('head.weight'):
+        if name.endswith("head.weight"):
             torch.nn.init.uniform_(param, -0.1, 0.1)
-        elif name.endswith('scale.weight'):
+        elif name.endswith("scale.weight"):
             torch.nn.init.uniform_(param, -0.01, 0.01)
 
 
@@ -202,7 +203,7 @@ def inverse_softplus(x):
     """
     if not isinstance(x, torch.Tensor):
         x = torch.tensor(x, dtype=torch.get_default_dtype())
-    return torch.log(torch.exp(x) - 1.)
+    return torch.log(torch.exp(x) - 1.0)
 
 
 class TileCode(nn.Module):
@@ -233,9 +234,13 @@ class TileCode(nn.Module):
         dim = len(low)
         assert dim == len(high)
 
-        self.tiles = torch.stack([
-            torch.linspace(low_, high_, bins + 1)[1:] - (high_ - low_) / (2 * bins)
-            for low_, high_ in zip(low, high)], dim=-1)
+        self.tiles = torch.stack(
+            [
+                torch.linspace(low_, high_, bins + 1)[1:] - (high_ - low_) / (2 * bins)
+                for low_, high_ in zip(low, high)
+            ],
+            dim=-1,
+        )
 
         bins = torch.tensor([bins] * dim)
         self.bins = bins + 1
@@ -334,7 +339,7 @@ def get_batch_size(tensor):
         return None
     elif tensor.dim() == 1:
         if tensor.dtype is torch.long:
-            return len(tensor),
+            return (len(tensor),)
         else:
             return None
     else:

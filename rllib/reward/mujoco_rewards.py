@@ -22,11 +22,10 @@ class MujocoReward(AbstractReward, metaclass=ABCMeta):
 
     def action_reward(self, action):
         """Get action reward."""
-        action = action[..., :self.dim_action]  # get only true dimensions.
+        action = action[..., : self.dim_action]  # get only true dimensions.
         bk = get_backend(action)
         if self.sparse:
-            return bk.exp(
-                -bk.square(action / self.action_scale).sum(-1)) - 1
+            return bk.exp(-bk.square(action / self.action_scale).sum(-1)) - 1
         else:
             return -bk.square(action).sum(-1)
 
@@ -100,8 +99,8 @@ class PusherReward(MujocoReward):
         dist_to_obj = obj_pos - tip_pos
         dist_to_goal = obj_pos - goal
 
-        reward_dist_to_obj = - bk.abs(dist_to_obj).sum(-1)
-        reward_dist_to_goal = - bk.abs(dist_to_goal)[..., :-1].sum(-1)
+        reward_dist_to_obj = -bk.abs(dist_to_obj).sum(-1)
+        reward_dist_to_goal = -bk.abs(dist_to_goal)[..., :-1].sum(-1)
         reward_state = 1.25 * reward_dist_to_goal + 0.5 * reward_dist_to_obj
 
         self.reward_dist_to_obj = 0.5 * reward_dist_to_obj
@@ -116,23 +115,33 @@ class PusherReward(MujocoReward):
         theta1, theta2 = state[..., 0], state[..., 1]
         theta3, theta4 = state[..., 2:3], state[..., 3:4]
 
-        rot_axis = bk.stack([bk.cos(theta2) * bk.cos(theta1),
-                             bk.cos(theta2) * bk.sin(theta1),
-                             -bk.sin(theta2)], -1)
-        rot_perp_axis = bk.stack([-bk.sin(theta1), bk.cos(theta1),
-                                  bk.zeros_like(theta1)], -1)
+        rot_axis = bk.stack(
+            [
+                bk.cos(theta2) * bk.cos(theta1),
+                bk.cos(theta2) * bk.sin(theta1),
+                -bk.sin(theta2),
+            ],
+            -1,
+        )
+        rot_perp_axis = bk.stack(
+            [-bk.sin(theta1), bk.cos(theta1), bk.zeros_like(theta1)], -1
+        )
 
-        cur_end = bk.stack([
-            0.1 * bk.cos(theta1) + 0.4 * bk.cos(theta1) * bk.cos(theta2),
-            0.1 * bk.sin(theta1) + 0.4 * bk.sin(theta1) * bk.cos(theta2) - 0.6,
-            -0.4 * bk.sin(theta2)
-        ], -1)
+        cur_end = bk.stack(
+            [
+                0.1 * bk.cos(theta1) + 0.4 * bk.cos(theta1) * bk.cos(theta2),
+                0.1 * bk.sin(theta1) + 0.4 * bk.sin(theta1) * bk.cos(theta2) - 0.6,
+                -0.4 * bk.sin(theta2),
+            ],
+            -1,
+        )
 
         for length, hinge, roll in [(0.321, theta4, theta3)]:
             perp_all_axis = np.cross(rot_axis, rot_perp_axis)
             if bk is torch:
-                perp_all_axis = torch.tensor(perp_all_axis,
-                                             dtype=torch.get_default_dtype())
+                perp_all_axis = torch.tensor(
+                    perp_all_axis, dtype=torch.get_default_dtype()
+                )
 
             x = rot_axis * bk.cos(hinge)
             y = bk.sin(hinge) * bk.sin(roll) * rot_perp_axis
@@ -141,14 +150,16 @@ class PusherReward(MujocoReward):
             new_rot_axis = x + y + z
             new_rot_perp_axis = np.cross(new_rot_axis, rot_axis)
             if bk is torch:
-                new_rot_perp_axis = torch.tensor(new_rot_perp_axis,
-                                                 dtype=torch.get_default_dtype())
+                new_rot_perp_axis = torch.tensor(
+                    new_rot_perp_axis, dtype=torch.get_default_dtype()
+                )
 
             norm = bk.sqrt(bk.square(new_rot_axis).sum(-1))
             new_rot_perp_axis[norm < 1e-30] = rot_perp_axis[norm < 1e-30]
 
-            new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1)
-                                         )[..., None]
+            new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1))[
+                ..., None
+            ]
 
             rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
             cur_end = cur_end + length * new_rot_axis
@@ -163,8 +174,8 @@ class ReacherReward(MujocoReward):
 
     def __init__(self, action_cost=0.01, sparse=False):
         super().__init__(action_cost, sparse)
-        self.action_scale = 2.
-        self.length_scale = .45
+        self.action_scale = 2.0
+        self.length_scale = 0.45
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
@@ -174,8 +185,9 @@ class ReacherReward(MujocoReward):
             dist_to_target = self.get_ee_position(next_state) - goal
 
         if self.sparse:
-            reward_state = bk.exp(-bk.square(dist_to_target).sum(-1) / (
-                    self.length_scale ** 2))
+            reward_state = bk.exp(
+                -bk.square(dist_to_target).sum(-1) / (self.length_scale ** 2)
+            )
         else:
             reward_state = -bk.square(dist_to_target).sum(-1)
 
@@ -189,22 +201,32 @@ class ReacherReward(MujocoReward):
         theta3, theta4 = state[..., 2:3], state[..., 3:4]
         theta5, theta6 = state[..., 4:5], state[..., 5:6]
 
-        rot_axis = bk.stack([bk.cos(theta2) * bk.cos(theta1),
-                             bk.cos(theta2) * bk.sin(theta1),
-                             -bk.sin(theta2)], -1)
-        rot_perp_axis = bk.stack([-bk.sin(theta1), bk.cos(theta1),
-                                  bk.zeros_like(theta1)], -1)
+        rot_axis = bk.stack(
+            [
+                bk.cos(theta2) * bk.cos(theta1),
+                bk.cos(theta2) * bk.sin(theta1),
+                -bk.sin(theta2),
+            ],
+            -1,
+        )
+        rot_perp_axis = bk.stack(
+            [-bk.sin(theta1), bk.cos(theta1), bk.zeros_like(theta1)], -1
+        )
 
-        cur_end = bk.stack([
-            0.1 * bk.cos(theta1) + 0.4 * bk.cos(theta1) * bk.cos(theta2),
-            0.1 * bk.sin(theta1) + 0.4 * bk.sin(theta1) * bk.cos(theta2) - 0.188,
-            -0.4 * bk.sin(theta2)
-        ], -1)
+        cur_end = bk.stack(
+            [
+                0.1 * bk.cos(theta1) + 0.4 * bk.cos(theta1) * bk.cos(theta2),
+                0.1 * bk.sin(theta1) + 0.4 * bk.sin(theta1) * bk.cos(theta2) - 0.188,
+                -0.4 * bk.sin(theta2),
+            ],
+            -1,
+        )
         for length, hinge, roll in [(0.321, theta4, theta3), (0.16828, theta6, theta5)]:
             perp_all_axis = np.cross(rot_axis, rot_perp_axis)
             if bk is torch:
-                perp_all_axis = torch.tensor(perp_all_axis,
-                                             dtype=torch.get_default_dtype())
+                perp_all_axis = torch.tensor(
+                    perp_all_axis, dtype=torch.get_default_dtype()
+                )
 
             x = rot_axis * bk.cos(hinge)
             y = bk.sin(hinge) * bk.sin(roll) * rot_perp_axis
@@ -213,14 +235,16 @@ class ReacherReward(MujocoReward):
             new_rot_axis = x + y + z
             new_rot_perp_axis = np.cross(new_rot_axis, rot_axis)
             if bk is torch:
-                new_rot_perp_axis = torch.tensor(new_rot_perp_axis,
-                                                 dtype=torch.get_default_dtype())
+                new_rot_perp_axis = torch.tensor(
+                    new_rot_perp_axis, dtype=torch.get_default_dtype()
+                )
 
             norm = bk.sqrt(bk.square(new_rot_perp_axis).sum(-1))
             new_rot_perp_axis[norm < 1e-30] = rot_perp_axis[norm < 1e-30]
 
-            new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1)
-                                         )[..., None]
+            new_rot_perp_axis /= bk.sqrt(bk.square(new_rot_perp_axis).sum(-1))[
+                ..., None
+            ]
 
             rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
             cur_end = cur_end + length * new_rot_axis

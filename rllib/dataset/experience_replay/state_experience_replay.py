@@ -46,8 +46,9 @@ class StateExperienceReplay(data.Dataset):
         super().__init__()
         self.max_len = max_len
         self.dim_state = dim_state
-        self.memory = torch.empty((self.max_len, self.dim_state),
-                                  dtype=torch.get_default_dtype())
+        self.memory = torch.empty(
+            (self.max_len, self.dim_state), dtype=torch.get_default_dtype()
+        )
         self._ptr = 0
         self.is_full = False
 
@@ -76,8 +77,9 @@ class StateExperienceReplay(data.Dataset):
 
     def reset(self):
         """Reset memory to empty."""
-        self.memory = torch.empty((self.max_len, self.dim_state),
-                                  dtype=torch.get_default_dtype())
+        self.memory = torch.empty(
+            (self.max_len, self.dim_state), dtype=torch.get_default_dtype()
+        )
         self._ptr = 0
         self.is_full = False
 
@@ -97,12 +99,12 @@ class StateExperienceReplay(data.Dataset):
         num_states, dim_state = state.shape
         assert dim_state == self.dim_state
         if num_states + self._ptr < self.max_len:
-            self.memory[self._ptr:self._ptr + num_states] = state
+            self.memory[self._ptr : self._ptr + num_states] = state
             self._ptr += num_states
         else:
             self.is_full = True
             delta = num_states + self._ptr - self.max_len
-            self.memory[self._ptr:] = state[delta:]
+            self.memory[self._ptr :] = state[delta:]
             self.memory[:delta] = state[:delta]
             self._ptr = delta
 

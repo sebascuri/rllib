@@ -16,9 +16,12 @@ class EnvironmentModel(AbstractModel):
     """
 
     def __init__(self, environment: AbstractEnvironment):
-        super().__init__(environment.dim_state, environment.dim_action,
-                         num_states=environment.num_states,
-                         num_actions=environment.num_actions)
+        super().__init__(
+            environment.dim_state,
+            environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+        )
         self.environment = environment
 
     def forward(self, state, action):

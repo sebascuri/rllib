@@ -44,8 +44,10 @@ class ESARSA(AbstractAlgorithm):
         self.gamma = gamma
 
     def _build_return(self, pred_q, target_q):
-        return TDLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
-                      td_error=(pred_q - target_q).detach().squeeze(-1))
+        return TDLoss(
+            loss=self.criterion(pred_q, target_q).squeeze(-1),
+            td_error=(pred_q - target_q).detach().squeeze(-1),
+        )
 
     def forward(self, trajectories):
         """Compute the loss and the td-error."""

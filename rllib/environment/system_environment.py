@@ -26,7 +26,7 @@ class SystemEnvironment(AbstractEnvironment):
             dim_action=system.dim_action,
             dim_observation=system.dim_observation,
             action_space=system.action_space,
-            observation_space=system.observation_space
+            observation_space=system.observation_space,
         )
         self.reward = reward
         self.system = system
@@ -41,7 +41,7 @@ class SystemEnvironment(AbstractEnvironment):
         else:
             self.initial_state = initial_state
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         """See `AbstractEnvironment.render'."""
         self.system.render(mode=mode)
 
@@ -49,7 +49,7 @@ class SystemEnvironment(AbstractEnvironment):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         state = self.system.state  # this might be noisy.
-        reward = float('nan')
+        reward = float("nan")
         if self.reward is not None:
             reward = tensor_to_distribution(self.reward(state, action, None)).sample()
 

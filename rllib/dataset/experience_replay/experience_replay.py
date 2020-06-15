@@ -6,8 +6,7 @@ from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
 from rllib.dataset.datatypes import Observation
-from rllib.dataset.utilities import (concatenate_observations,
-                                     stack_list_of_tuples)
+from rllib.dataset.utilities import concatenate_observations, stack_list_of_tuples
 
 
 class ExperienceReplay(data.Dataset):
@@ -134,7 +133,8 @@ class ExperienceReplay(data.Dataset):
         """
         if not type(observation) == Observation:
             raise TypeError(
-                f"input has to be of type Observation, and it was {type(observation)}")
+                f"input has to be of type Observation, and it was {type(observation)}"
+            )
 
         if self.new_observation:
             observation = Observation(*[o.unsqueeze(0) for o in observation])
@@ -144,8 +144,10 @@ class ExperienceReplay(data.Dataset):
 
         self.memory[self._ptr] = observation
 
-        if self.memory[self._ptr].state.shape[0] == self.num_steps or \
-                self.memory[self._ptr].done[-1]:
+        if (
+            self.memory[self._ptr].state.shape[0] == self.num_steps
+            or self.memory[self._ptr].done[-1]
+        ):
             self._ptr = (self._ptr + 1) % self.max_len
             self.new_observation = True
 
@@ -171,7 +173,7 @@ class ExperienceReplay(data.Dataset):
     @property
     def all_data(self):
         """Get all the data."""
-        all_obs = stack_list_of_tuples(self.memory[:self._ptr])
+        all_obs = stack_list_of_tuples(self.memory[: self._ptr])
 
         for transformation in self.transformations:
             all_obs = transformation(all_obs)

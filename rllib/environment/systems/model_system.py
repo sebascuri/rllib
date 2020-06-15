@@ -17,17 +17,18 @@ class ModelSystem(AbstractSystem):
 
     def __init__(self, dynamical_model):
         self.dynamical_model = dynamical_model
-        super().__init__(dim_state=dynamical_model.dim_state,
-                         dim_action=dynamical_model.dim_action)
+        super().__init__(
+            dim_state=dynamical_model.dim_state, dim_action=dynamical_model.dim_action
+        )
 
     def step(self, action):
         """See `AbstractSystem.step'."""
         if not isinstance(action, torch.Tensor):
             action = torch.tensor(action, dtype=torch.get_default_dtype())
         state = torch.tensor(self.state, dtype=torch.get_default_dtype())
-        self.state = tensor_to_distribution(
-            self.dynamical_model(state, action)
-        ).sample().numpy()
+        self.state = (
+            tensor_to_distribution(self.dynamical_model(state, action)).sample().numpy()
+        )
         return self.state
 
     def reset(self, state):

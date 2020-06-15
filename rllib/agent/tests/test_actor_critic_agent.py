@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from rllib.agent import (A2CAgent, ActorCriticAgent, ExpectedActorCriticAgent,
-                         GAACAgent)
+from rllib.agent import A2CAgent, ActorCriticAgent, ExpectedActorCriticAgent, GAACAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
 from rllib.util.training import evaluate_agent, train_agent
@@ -21,7 +20,7 @@ LAYERS = [200, 200]
 SEED = 0
 
 
-@pytest.fixture(params=['CartPole-v0', 'NChain-v0'])
+@pytest.fixture(params=["CartPole-v0", "NChain-v0"])
 def environment(request):
     return request.param
 
@@ -41,23 +40,38 @@ def test_ac_agent(environment, agent, num_rollouts):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    policy = NNPolicy(environment.dim_state, environment.dim_action,
-                      num_states=environment.num_states,
-                      num_actions=environment.num_actions,
-                      layers=LAYERS)
+    policy = NNPolicy(
+        environment.dim_state,
+        environment.dim_action,
+        num_states=environment.num_states,
+        num_actions=environment.num_actions,
+        layers=LAYERS,
+    )
 
-    critic = NNQFunction(environment.dim_state, environment.dim_action,
-                         num_states=environment.num_states,
-                         num_actions=environment.num_actions, layers=LAYERS)
-    optimizer = torch.optim.Adam([
-        {'params': critic.parameters(), 'lr': CRITIC_LEARNING_RATE},
-        {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
-    ])
+    critic = NNQFunction(
+        environment.dim_state,
+        environment.dim_action,
+        num_states=environment.num_states,
+        num_actions=environment.num_actions,
+        layers=LAYERS,
+    )
+    optimizer = torch.optim.Adam(
+        [
+            {"params": critic.parameters(), "lr": CRITIC_LEARNING_RATE},
+            {"params": policy.parameters(), "lr": ACTOR_LEARNING_RATE},
+        ]
+    )
 
     criterion = torch.nn.MSELoss
 
-    agent = agent(policy=policy, critic=critic, optimizer=optimizer,
-                  criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+    agent = agent(
+        policy=policy,
+        critic=critic,
+        optimizer=optimizer,
+        criterion=criterion,
+        num_rollouts=NUM_ROLLOUTS,
+        gamma=GAMMA,
+    )
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
@@ -68,22 +82,33 @@ def test_gaac_agent(environment, num_rollouts):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    policy = NNPolicy(environment.dim_state, environment.dim_action,
-                      num_states=environment.num_states,
-                      num_actions=environment.num_actions,
-                      layers=LAYERS)
+    policy = NNPolicy(
+        environment.dim_state,
+        environment.dim_action,
+        num_states=environment.num_states,
+        num_actions=environment.num_actions,
+        layers=LAYERS,
+    )
 
-    critic = NNValueFunction(environment.dim_state, num_states=environment.num_states,
-                             layers=LAYERS)
-    optimizer = torch.optim.Adam([
-        {'params': critic.parameters(), 'lr': CRITIC_LEARNING_RATE},
-        {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
-    ])
+    critic = NNValueFunction(
+        environment.dim_state, num_states=environment.num_states, layers=LAYERS
+    )
+    optimizer = torch.optim.Adam(
+        [
+            {"params": critic.parameters(), "lr": CRITIC_LEARNING_RATE},
+            {"params": policy.parameters(), "lr": ACTOR_LEARNING_RATE},
+        ]
+    )
     criterion = torch.nn.MSELoss
 
-    agent = GAACAgent(policy=policy,
-                      critic=critic, optimizer=optimizer,
-                      criterion=criterion, num_rollouts=NUM_ROLLOUTS, gamma=GAMMA)
+    agent = GAACAgent(
+        policy=policy,
+        critic=critic,
+        optimizer=optimizer,
+        criterion=criterion,
+        num_rollouts=NUM_ROLLOUTS,
+        gamma=GAMMA,
+    )
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

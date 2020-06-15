@@ -29,7 +29,7 @@ LAYERS = [64, 64]
 SEED = 0
 
 
-@pytest.fixture(params=['Pendulum-v0', 'MountainCarContinuous-v0'])
+@pytest.fixture(params=["Pendulum-v0", "MountainCarContinuous-v0"])
 def environment(request):
     return request.param
 
@@ -42,29 +42,45 @@ def agent(request):
 def test_ddpg_interaction(environment, agent):
     environment = GymEnvironment(environment, SEED)
 
-    q_function = NNQFunction(environment.dim_observation, environment.dim_action,
-                             num_states=environment.num_states,
-                             num_actions=environment.num_actions,
-                             layers=LAYERS,
-                             tau=TARGET_UPDATE_TAU,
-                             )
-    policy = FelixPolicy(environment.dim_state, environment.dim_action,
-                         tau=TARGET_UPDATE_TAU, deterministic=True)
+    q_function = NNQFunction(
+        environment.dim_observation,
+        environment.dim_action,
+        num_states=environment.num_states,
+        num_actions=environment.num_actions,
+        layers=LAYERS,
+        tau=TARGET_UPDATE_TAU,
+    )
+    policy = FelixPolicy(
+        environment.dim_state,
+        environment.dim_action,
+        tau=TARGET_UPDATE_TAU,
+        deterministic=True,
+    )
 
     criterion = torch.nn.MSELoss
 
     noise = ExponentialDecay(EPS_START, EPS_END, EPS_DECAY)
     memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
-    optimizer = torch.optim.Adam([
-        {'params': q_function.parameters(), 'lr': CRITIC_LEARNING_RATE},
-        {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
-    ], weight_decay=WEIGHT_DECAY)
+    optimizer = torch.optim.Adam(
+        [
+            {"params": q_function.parameters(), "lr": CRITIC_LEARNING_RATE},
+            {"params": policy.parameters(), "lr": ACTOR_LEARNING_RATE},
+        ],
+        weight_decay=WEIGHT_DECAY,
+    )
 
     agent = agent(
-        q_function=q_function, policy=policy, exploration_noise=noise,
-        criterion=criterion, optimizer=optimizer, memory=memory, batch_size=BATCH_SIZE,
+        q_function=q_function,
+        policy=policy,
+        exploration_noise=noise,
+        criterion=criterion,
+        optimizer=optimizer,
+        memory=memory,
+        batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
-        gamma=GAMMA, policy_noise=POLICY_NOISE)
+        gamma=GAMMA,
+        policy_noise=POLICY_NOISE,
+    )
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

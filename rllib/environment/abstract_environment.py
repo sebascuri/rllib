@@ -31,9 +31,17 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, dim_state, dim_action, observation_space, action_space,
-                 dim_observation=-1, num_states=-1, num_actions=-1,
-                 num_observations=-1):
+    def __init__(
+        self,
+        dim_state,
+        dim_action,
+        observation_space,
+        action_space,
+        dim_observation=-1,
+        num_states=-1,
+        num_actions=-1,
+        num_observations=-1,
+    ):
         super().__init__()
         self.dim_action = dim_action
         self.dim_state = dim_state
@@ -94,7 +102,7 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         """Render the environment.
 
         The set of supported modes varies per environment. (And some
@@ -145,13 +153,13 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         """Return current goal of environment."""
         return None
 
-    @property
+    @property  # type: ignore
     @abstractmethod
     def state(self):
         """Return current state of environment."""
         raise NotImplementedError
 
-    @state.setter
+    @state.setter  # type: ignore
     @abstractmethod
     def state(self, value):
         raise NotImplementedError

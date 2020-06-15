@@ -34,12 +34,13 @@ class EpsGreedy(AbstractQFunctionPolicy):
             aux_size = aux_size[0]
 
         # Epsilon part.
-        probs = self.epsilon / self.num_actions * torch.ones((aux_size,
-                                                              self.num_actions))
+        probs = (
+            self.epsilon / self.num_actions * torch.ones((aux_size, self.num_actions))
+        )
 
         # Greedy part.
         a = torch.argmax(self.q_function(state), dim=-1)
-        probs[torch.arange(aux_size), a] += (1 - self.epsilon)
+        probs[torch.arange(aux_size), a] += 1 - self.epsilon
 
         if not batch_size:
             probs = probs.squeeze(0)

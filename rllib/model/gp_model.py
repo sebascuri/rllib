@@ -4,10 +4,8 @@ import torch
 import torch.jit
 import torch.nn
 
-from rllib.util.gaussian_processes.gps import (ExactGP, RandomFeatureGP,
-                                               SparseGP)
-from rllib.util.gaussian_processes.utilities import (add_data_to_gp, bkb,
-                                                     summarize_gp)
+from rllib.util.gaussian_processes.gps import ExactGP, RandomFeatureGP, SparseGP
+from rllib.util.gaussian_processes.utilities import add_data_to_gp, bkb, summarize_gp
 
 from .abstract_model import AbstractModel
 
@@ -15,8 +13,16 @@ from .abstract_model import AbstractModel
 class ExactGPModel(AbstractModel):
     """An Exact GP State Space Model."""
 
-    def __init__(self, state, action, next_state, mean=None, kernel=None,
-                 input_transform=None, max_num_points=None):
+    def __init__(
+        self,
+        state,
+        action,
+        next_state,
+        mean=None,
+        kernel=None,
+        input_transform=None,
+        max_num_points=None,
+    ):
         dim_state = state.shape[-1]
         dim_action = action.shape[-1]
         self.max_num_points = max_num_points
@@ -41,22 +47,30 @@ class ExactGPModel(AbstractModel):
         test_x = self.state_actions_to_input_data(state, action)
 
         if self.training:
-            out = [likelihood(gp(gp.train_inputs[0]))
-                   for gp, likelihood in zip(self.gp, self.likelihood)]
+            out = [
+                likelihood(gp(gp.train_inputs[0]))
+                for gp, likelihood in zip(self.gp, self.likelihood)
+            ]
 
             mean = torch.stack(tuple(o.mean for o in out), dim=0)
             scale_tril = torch.stack(tuple(o.scale_tril for o in out), dim=0)
             return mean, scale_tril
         else:
-            out = [likelihood(gp(test_x))
-                   for gp, likelihood in zip(self.gp, self.likelihood)]
+            out = [
+                likelihood(gp(test_x))
+                for gp, likelihood in zip(self.gp, self.likelihood)
+            ]
             mean = torch.stack(tuple(o.mean for o in out), dim=-1)
 
             # Sometimes, gpytorch returns negative variances due to numerical errors.
             # Hence, clamp the output variance to the noise of the likelihood.
             stddev = torch.stack(
-                tuple(torch.sqrt(o.variance.clamp(l.noise.item() ** 2, float('inf')))
-                      for o, l in zip(out, self.likelihood)), dim=-1)
+                tuple(
+                    torch.sqrt(o.variance.clamp(l.noise.item() ** 2, float("inf")))
+                    for o, l in zip(out, self.likelihood)
+                ),
+                dim=-1,
+            )
             return mean, torch.diag_embed(stddev)
 
     def add_data(self, state, action, next_state):
@@ -84,8 +98,10 @@ class ExactGPModel(AbstractModel):
         """
         for gp in self.gp:
             summarize_gp(
-                gp, self.max_num_points,
-                weight_function=self._transform_weight_function(weight_function))
+                gp,
+                self.max_num_points,
+                weight_function=self._transform_weight_function(weight_function),
+            )
 
     def _transform_weight_function(self, weight_function=None):
         """Transform weight function according to input transform of the GP."""
@@ -93,15 +109,19 @@ class ExactGPModel(AbstractModel):
             return None
 
         if self.input_transform is None:
+
             def _wf(x):
-                s = x[:, :-self.dim_action]
-                a = x[:, -self.dim_action:]
+                s = x[:, : -self.dim_action]
+                a = x[:, -self.dim_action :]
                 return weight_function(s, a)
+
         else:
+
             def _wf(x):
-                s = self.input_transform.inverse(x[:, :-self.dim_action])
-                a = x[:, -self.dim_action:]
+                s = self.input_transform.inverse(x[:, : -self.dim_action])
+                a = x[:, -self.dim_action :]
                 return weight_function(s, a)
+
         return _wf
 
     # @torch.jit.export
@@ -160,16 +180,33 @@ class ExactGPModel(AbstractModel):
 class RandomFeatureGPModel(ExactGPModel):
     """GP Model approximated by Random Fourier Features."""
 
-    def __init__(self, state, action, next_state, num_features, approximation='RFF',
-                 mean=None, kernel=None, input_transform=None, max_num_points=None):
-        super().__init__(state, action, next_state, mean, kernel, input_transform,
-                         max_num_points)
+    def __init__(
+        self,
+        state,
+        action,
+        next_state,
+        num_features,
+        approximation="RFF",
+        mean=None,
+        kernel=None,
+        input_transform=None,
+        max_num_points=None,
+    ):
+        super().__init__(
+            state, action, next_state, mean, kernel, input_transform, max_num_points
+        )
         gps = []
         train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
         for train_y_i, likelihood in zip(train_y, self.likelihood):
-            gp = RandomFeatureGP(train_x, train_y_i, likelihood,
-                                 num_features=num_features, approximation=approximation,
-                                 mean=mean, kernel=kernel)
+            gp = RandomFeatureGP(
+                train_x,
+                train_y_i,
+                likelihood,
+                num_features=num_features,
+                approximation=approximation,
+                mean=mean,
+                kernel=kernel,
+            )
             gps.append(gp)
         self.gp = torch.nn.ModuleList(gps)
         self.approximation = approximation
@@ -186,7 +223,7 @@ class RandomFeatureGPModel(ExactGPModel):
 
     def set_prediction_strategy(self, val):
         """Set GP prediction strategy."""
-        if val == 'posterior':
+        if val == "posterior":
             for gp in self.gp:
                 gp.full_predictive_covariance = False
         else:
@@ -197,19 +234,37 @@ class RandomFeatureGPModel(ExactGPModel):
 class SparseGPModel(ExactGPModel):
     """Sparse approximation of Exact GP models."""
 
-    def __init__(self, state, action, next_state, inducing_points=None, q_bar=1,
-                 approximation='DTC', mean=None, kernel=None, input_transform=None,
-                 max_num_points=None):
-        super().__init__(state, action, next_state, mean, kernel, input_transform,
-                         max_num_points)
+    def __init__(
+        self,
+        state,
+        action,
+        next_state,
+        inducing_points=None,
+        q_bar=1,
+        approximation="DTC",
+        mean=None,
+        kernel=None,
+        input_transform=None,
+        max_num_points=None,
+    ):
+        super().__init__(
+            state, action, next_state, mean, kernel, input_transform, max_num_points
+        )
         gps = []
         train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
         if inducing_points is None:
             inducing_points = train_x
 
         for train_y_i, likelihood in zip(train_y, self.likelihood):
-            gp = SparseGP(train_x, train_y_i, likelihood, inducing_points,
-                          approximation=approximation, mean=mean, kernel=kernel)
+            gp = SparseGP(
+                train_x,
+                train_y_i,
+                likelihood,
+                inducing_points,
+                approximation=approximation,
+                mean=mean,
+                kernel=kernel,
+            )
             gps.append(gp)
         self.gp = torch.nn.ModuleList(gps)
         self.approximation = approximation

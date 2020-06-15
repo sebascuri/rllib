@@ -86,33 +86,38 @@ class OffPolicyTDLearning(AbstractAlgorithm, metaclass=ABCMeta):
         target_q = pred_q.detach()
 
         with torch.no_grad():
-            discount = 1.
-            factor = 1.
+            discount = 1.0
+            factor = 1.0
 
             for t in range(n_steps + 1):
                 pi = tensor_to_distribution(self.policy(state[:, t]))
                 next_pi = tensor_to_distribution(self.policy(next_state[:, t]))
-                next_v = integrate(lambda a: self.critic_target(next_state[:, t], a),
-                                   next_pi)
-                td = reward[:, t] + self.gamma * next_v * done[:, t] - self.q_function(
-                    state[:, t], action[:, t])
+                next_v = integrate(
+                    lambda a: self.critic_target(next_state[:, t], a), next_pi
+                )
+                td = (
+                    reward[:, t]
+                    + self.gamma * next_v * done[:, t]
+                    - self.q_function(state[:, t], action[:, t])
+                )
 
                 target_q += discount * factor * td
 
                 discount *= self.gamma
-                factor *= self.correction(pi.log_prob(action[:, t]),
-                                          action_log_prob[:, t])
+                factor *= self.correction(
+                    pi.log_prob(action[:, t]), action_log_prob[:, t]
+                )
 
         return self._build_return(pred_q, target_q)
 
     def _build_return(self, pred_q, target_q):
-        return TDLoss(loss=self.criterion(pred_q, target_q),
-                      td_error=(pred_q - target_q).detach())
+        return TDLoss(
+            loss=self.criterion(pred_q, target_q), td_error=(pred_q - target_q).detach()
+        )
 
     def update(self):
         """Update the target network."""
-        update_parameters(self.q_target, self.q_function,
-                          tau=self.value_function.tau)
+        update_parameters(self.q_target, self.q_function, tau=self.value_function.tau)
 
 
 class ImportanceSamplingOffPolicyTD(nn.Module, metaclass=ABCMeta):
@@ -187,4 +192,4 @@ class Retrace(nn.Module, metaclass=ABCMeta):
 
     def correction(self, pi_log_prob, mu_log_prob):
         """Return the correction at time step t."""
-        return self._lambda * torch.exp(pi_log_prob - mu_log_prob).clamp_max(1.)
+        return self._lambda * torch.exp(pi_log_prob - mu_log_prob).clamp_max(1.0)

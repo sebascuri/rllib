@@ -11,10 +11,12 @@ class TransformedModel(AbstractModel):
     """Transformed Model computes the next state distribution."""
 
     def __init__(self, base_model, transformations):
-        super().__init__(dim_state=base_model.dim_state,
-                         dim_action=base_model.dim_action,
-                         num_states=base_model.num_states,
-                         num_actions=base_model.num_actions)
+        super().__init__(
+            dim_state=base_model.dim_state,
+            dim_action=base_model.dim_action,
+            num_states=base_model.num_states,
+            num_actions=base_model.num_actions,
+        )
         self.base_model = base_model
         self.forward_transformations = nn.ModuleList(transformations)
         self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
@@ -34,8 +36,7 @@ class TransformedModel(AbstractModel):
     def scale(self, state, action):
         """Get epistemic scale of model."""
         none = torch.tensor(0)
-        obs = Observation(state, action, none, none, none, none, none, none, none,
-                          none)
+        obs = Observation(state, action, none, none, none, none, none, none, none, none)
         for transformation in self.forward_transformations:
             obs = transformation(obs)
 
@@ -43,11 +44,18 @@ class TransformedModel(AbstractModel):
         scale = self.base_model.scale(obs.state, obs.action)
 
         # Back-transform
-        obs = Observation(obs.state, obs.action, reward=none, done=none,
-                          next_action=none, log_prob_action=none, entropy=none,
-                          state_scale_tril=none,
-                          next_state=obs.state,
-                          next_state_scale_tril=scale)
+        obs = Observation(
+            obs.state,
+            obs.action,
+            reward=none,
+            done=none,
+            next_action=none,
+            log_prob_action=none,
+            entropy=none,
+            state_scale_tril=none,
+            next_state=obs.state,
+            next_state_scale_tril=scale,
+        )
 
         for transformation in self.reverse_transformations:
             obs = transformation.inverse(obs)
@@ -65,11 +73,18 @@ class TransformedModel(AbstractModel):
         next_state = self.base_model(obs.state, obs.action)
 
         # Back-transform
-        obs = Observation(obs.state, obs.action, reward=none, done=none,
-                          next_action=none, log_prob_action=none, entropy=none,
-                          state_scale_tril=none,
-                          next_state=next_state[0],
-                          next_state_scale_tril=next_state[1])
+        obs = Observation(
+            obs.state,
+            obs.action,
+            reward=none,
+            done=none,
+            next_action=none,
+            log_prob_action=none,
+            entropy=none,
+            state_scale_tril=none,
+            next_state=next_state[0],
+            next_state_scale_tril=next_state[1],
+        )
 
         for transformation in self.reverse_transformations:
             obs = transformation.inverse(obs)
@@ -96,10 +111,12 @@ class OptimisticModel(TransformedModel):
 
     def forward(self, state, action):
         """Get Optimistic Next state."""
-        control_action = action[..., :-self.dim_state]
-        optimism_vars = action[..., -self.dim_state:]
-        optimism_vars = torch.clamp(optimism_vars, -1., 1.)
+        control_action = action[..., : -self.dim_state]
+        optimism_vars = action[..., -self.dim_state :]
+        optimism_vars = torch.clamp(optimism_vars, -1.0, 1.0)
 
         mean, tril = self.next_state(state, control_action)
-        return (mean + self.beta * (tril @ optimism_vars.unsqueeze(-1)).squeeze(-1),
-                torch.zeros_like(tril))  # , tril)
+        return (
+            mean + self.beta * (tril @ optimism_vars.unsqueeze(-1)).squeeze(-1),
+            torch.zeros_like(tril),
+        )  # , tril)

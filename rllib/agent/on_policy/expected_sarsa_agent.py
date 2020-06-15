@@ -37,17 +37,35 @@ class ExpectedSARSAAgent(OnPolicyAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(self, q_function, policy, criterion, optimizer,
-                 num_iter=1, batch_size=1, target_update_frequency=1,
-                 train_frequency=1, num_rollouts=0,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 tensorboard=False, comment=''
-                 ):
-        super().__init__(optimizer=optimizer, num_iter=num_iter, batch_size=batch_size,
-                         train_frequency=train_frequency, num_rollouts=num_rollouts,
-                         target_update_frequency=target_update_frequency,
-                         gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes,
-                         tensorboard=tensorboard, comment=comment)
-        self.algorithm = ESARSA(q_function, criterion(reduction='mean'), policy, gamma)
+    def __init__(
+        self,
+        q_function,
+        policy,
+        criterion,
+        optimizer,
+        num_iter=1,
+        batch_size=1,
+        target_update_frequency=1,
+        train_frequency=1,
+        num_rollouts=0,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
+        super().__init__(
+            optimizer=optimizer,
+            num_iter=num_iter,
+            batch_size=batch_size,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            target_update_frequency=target_update_frequency,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=comment,
+        )
+        self.algorithm = ESARSA(q_function, criterion(reduction="mean"), policy, gamma)
         self.policy = policy

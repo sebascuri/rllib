@@ -15,8 +15,8 @@ SEED = 42
 
 @pytest.fixture
 def reward():
-    X = torch.tensor([-1., 1., 2.5, 4., 6])
-    Y = 2 * torch.tensor([-0.5, 0.3, -0.2, .6, -0.5])
+    X = torch.tensor([-1.0, 1.0, 2.5, 4.0, 6])
+    Y = 2 * torch.tensor([-0.5, 0.3, -0.2, 0.6, -0.5])
 
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     likelihood.noise_covar.noise = 0.1 ** 2
@@ -26,14 +26,17 @@ def reward():
     return GPBanditReward(objective_function)
 
 
-@pytest.fixture(params=[ExactGP,
-                        lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, 'DTC'),
-                        lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, 'SOR'),
-                        lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, 'FITC'),
-                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, 'RFF'),
-                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, 'OFF'),
-                        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 20, 'QFF'),
-                        ])
+@pytest.fixture(
+    params=[
+        ExactGP,
+        lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, "DTC"),
+        lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, "SOR"),
+        lambda x_, y_, lik: SparseGP(x_, y_, lik, x_, "FITC"),
+        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, "RFF"),
+        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 50, "OFF"),
+        lambda x_, y_, lik: RandomFeatureGP(x_, y_, lik, 20, "QFF"),
+    ]
+)
 def model_class(request):
     return request.param
 
@@ -46,8 +49,7 @@ def test_GPUCB(reward, model_class):
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
     likelihood.noise_covar.noise = 0.1 ** 2
     model = model_class(x0, y0, likelihood)
-    environment = BanditEnvironment(reward,
-                                    x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
+    environment = BanditEnvironment(reward, x_min=x[[0]].numpy(), x_max=x[[-1]].numpy())
     agent = GPUCBAgent(model, x, beta=2.0)
 
     rollout_agent(environment, agent, num_episodes=1, max_steps=STEPS)

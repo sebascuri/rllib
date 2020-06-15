@@ -20,7 +20,7 @@ class GaussianSystem(AbstractSystem):
         super().__init__(
             dim_state=system.dim_state,
             dim_action=system.dim_action,
-            dim_observation=system.dim_observation
+            dim_observation=system.dim_observation,
         )
         self._system = system
         self._transition_noise_scale = transition_noise_scale

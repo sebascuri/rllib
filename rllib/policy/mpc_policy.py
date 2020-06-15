@@ -9,9 +9,11 @@ class MPCPolicy(AbstractPolicy):
     """MPC Policy."""
 
     def __init__(self, mpc_solver):
-        super().__init__(mpc_solver.dynamical_model.dim_state,
-                         mpc_solver.dynamical_model.dim_action,
-                         action_scale=mpc_solver.action_scale)
+        super().__init__(
+            mpc_solver.dynamical_model.dim_state,
+            mpc_solver.dynamical_model.dim_action,
+            action_scale=mpc_solver.action_scale,
+        )
 
         self.solver = mpc_solver
 

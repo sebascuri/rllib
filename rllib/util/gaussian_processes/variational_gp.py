@@ -8,10 +8,13 @@ class ApproximateGPModel(gpytorch.models.ApproximateGP):
 
     def __init__(self, inducing_points, learn_loc=True, mean=None, kernel=None):
         variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(
-            inducing_points.size(-1))
+            inducing_points.size(-1)
+        )
         variational_strategy = gpytorch.variational.VariationalStrategy(
-            self, inducing_points, variational_distribution,
-            learn_inducing_locations=learn_loc
+            self,
+            inducing_points,
+            variational_distribution,
+            learn_inducing_locations=learn_loc,
         )
         super().__init__(variational_strategy)
 

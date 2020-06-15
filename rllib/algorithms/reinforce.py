@@ -57,8 +57,8 @@ class REINFORCE(AbstractAlgorithm):
 
     def forward(self, trajectories):
         """Compute the losses."""
-        actor_loss = torch.tensor(0.)
-        baseline_loss = torch.tensor(0.)
+        actor_loss = torch.tensor(0.0)
+        baseline_loss = torch.tensor(0.0)
 
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory

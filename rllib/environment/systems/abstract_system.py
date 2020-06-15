@@ -36,13 +36,13 @@ class AbstractSystem(object, metaclass=ABCMeta):
         self.dim_observation = dim_observation
         self._time = 0
 
-    @property
+    @property  # type: ignore
     @abstractmethod
     def state(self):
         """Return the state of the system."""
         raise NotImplementedError
 
-    @state.setter
+    @state.setter  # type: ignore
     @abstractmethod
     def state(self, value):
         raise NotImplementedError
@@ -79,18 +79,20 @@ class AbstractSystem(object, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         """Render system."""
         pass
 
     @property
     def action_space(self):
         """Return action space."""
-        return spaces.Box(np.array([-1] * self.dim_action),
-                          np.array([1] * self.dim_action))
+        return spaces.Box(
+            np.array([-1] * self.dim_action), np.array([1] * self.dim_action)
+        )
 
     @property
     def observation_space(self):
         """Return observation space."""
-        return spaces.Box(np.array([-1] * self.dim_observation),
-                          np.array([1] * self.dim_observation))
+        return spaces.Box(
+            np.array([-1] * self.dim_observation), np.array([1] * self.dim_observation)
+        )

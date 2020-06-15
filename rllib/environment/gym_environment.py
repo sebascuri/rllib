@@ -42,7 +42,7 @@ class GymEnvironment(AbstractEnvironment):
             observation_space=self.env.observation_space,
             num_actions=num_actions,
             num_states=num_states,
-            num_observations=num_states
+            num_observations=num_states,
         )
         self._time = 0
 
@@ -54,7 +54,7 @@ class GymEnvironment(AbstractEnvironment):
             next_state = self.num_states - 1
         return next_state, reward, done, info
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         """See `AbstractEnvironment.render'."""
         self.env.render(mode)
 
@@ -70,33 +70,35 @@ class GymEnvironment(AbstractEnvironment):
     @property
     def goal(self):
         """Return current goal of environment."""
-        if hasattr(self.env, 'goal'):
+        if hasattr(self.env, "goal"):
             return self.env.goal
         return None
 
     @property
     def state(self):
         """See `AbstractEnvironment.state'."""
-        if hasattr(self.env, 'state'):
+        if hasattr(self.env, "state"):
             return self.env.state
-        elif hasattr(self.env, 's'):
+        elif hasattr(self.env, "s"):
             return self.env.s
-        elif hasattr(self.env, '_get_obs'):
-            return getattr(self.env, '_get_obs')()
+        elif hasattr(self.env, "_get_obs"):
+            return getattr(self.env, "_get_obs")()
         else:
-            raise NotImplementedError('Strange state')
+            raise NotImplementedError("Strange state")
 
     @state.setter
     def state(self, value):
-        if hasattr(self.env, 'state'):
+        if hasattr(self.env, "state"):
             self.env.state = value
-        elif hasattr(self.env, 's'):
+        elif hasattr(self.env, "s"):
             self.env.s = value
-        elif hasattr(self.env, 'set_state'):
-            self.env.set_state(value[:len(self.env.sim.data.qpos)],
-                               value[len(self.env.sim.data.qpos):])
+        elif hasattr(self.env, "set_state"):
+            self.env.set_state(
+                value[: len(self.env.sim.data.qpos)],
+                value[len(self.env.sim.data.qpos) :],
+            )
         else:
-            raise NotImplementedError('Strange state')
+            raise NotImplementedError("Strange state")
 
     @property
     def time(self):

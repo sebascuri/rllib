@@ -62,19 +62,21 @@ class EXP3ExperienceReplay(PrioritizedExperienceReplay):
     @property
     def probabilities(self):
         """Get list of probabilities."""
-        probs = self.weights[:len(self)].reciprocal()
+        probs = self.weights[: len(self)].reciprocal()
         return probs / torch.sum(probs)
 
     def update(self, indexes, td):
         """Update experience replay sampling distribution with set of weights."""
-        idx, inverse_idx, counts = torch.unique(indexes, return_counts=True,
-                                                return_inverse=True)
+        idx, inverse_idx, counts = torch.unique(
+            indexes, return_counts=True, return_inverse=True
+        )
 
         inv_prob = self.probabilities[indexes].reciprocal()
         self._priorities[indexes] += self.alpha() * td * inv_prob * counts[inverse_idx]
 
-        self.max_priority = max(self.max_priority,
-                                torch.max(self._priorities[idx]).item())
+        self.max_priority = max(
+            self.max_priority, torch.max(self._priorities[idx]).item()
+        )
         self.alpha.update()
         self.beta.update()
         self._update_weights()
@@ -85,5 +87,5 @@ class EXP3ExperienceReplay(PrioritizedExperienceReplay):
         probs = torch.exp(self._priorities[:num] - self.max_priority)
         probs = (1 - self.beta()) * probs / torch.sum(probs) + self.beta() / num
         # assert torch.all(probs * num > self.beta() - 1e-4)
-        weights = 1. / (probs * num)
+        weights = 1.0 / (probs * num)
         self.weights[:num] = weights

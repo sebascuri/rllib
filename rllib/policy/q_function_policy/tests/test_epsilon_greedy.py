@@ -24,8 +24,9 @@ def test_epsilon(eps_start, q_function):
         assert policy.param() == eps_start
         policy.update()
 
-    policy = EpsGreedy(q_function,
-                       ExponentialDecay(start=eps_start, end=0.1, decay=100))
+    policy = EpsGreedy(
+        q_function, ExponentialDecay(start=eps_start, end=0.1, decay=100)
+    )
     for t in range(100):
         torch.testing.assert_allclose(
             policy.param(), 0.1 + (eps_start - 0.1) * torch.exp(-torch.tensor(t / 100))
@@ -39,6 +40,6 @@ def test_discrete(eps_start, q_function):
         state = torch.randint(4, ())
         action = q_function(state).argmax(dim=-1)
         probs = eps_start / 2 * torch.ones(2)
-        probs[action] += (1 - eps_start)
+        probs[action] += 1 - eps_start
 
         assert (tensor_to_distribution(policy(state)).probs == probs).all()

@@ -35,8 +35,9 @@ def summarize_gp(gp_model, max_num_points: int = None, weight_function=None):
         return
 
     # Remove all data points but one
-    gp_model.set_train_data(inputs[0].unsqueeze(0), targets[0].unsqueeze(-1),
-                            strict=False)
+    gp_model.set_train_data(
+        inputs[0].unsqueeze(0), targets[0].unsqueeze(-1), strict=False
+    )
     gp_model.eval()
     for _ in range(max_num_points - 1):
         with gpytorch.settings.fast_pred_var():
@@ -61,8 +62,8 @@ def summarize_gp(gp_model, max_num_points: int = None, weight_function=None):
 
         # Remove data from input space
         idx = int(index.item())
-        inputs = torch.cat((inputs[:idx], inputs[idx + 1:]), dim=0)
-        targets = torch.cat((targets[:idx], targets[idx + 1:]), dim=-1)
+        inputs = torch.cat((inputs[:idx], inputs[idx + 1 :]), dim=0)
+        targets = torch.cat((targets[:idx], targets[idx + 1 :]), dim=-1)
 
 
 def bkb(gp_model, inducing_points, q_bar=1):
@@ -80,8 +81,7 @@ def bkb(gp_model, inducing_points, q_bar=1):
     gp_model.eval()
 
     # Scaled predictive variance of arms under current model.
-    p = q_bar * gp_model(inducing_points).variance / (
-        gp_model.likelihood.noise)
+    p = q_bar * gp_model(inducing_points).variance / (gp_model.likelihood.noise)
     q = Bernoulli(probs=p.clamp_(0, 1)).sample()
     idx = torch.where(q == 1)[0]
     if len(idx) == 0:  # the GP has to have at least one point.

@@ -50,8 +50,15 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     Prioritized experience replay. ICLR.
     """
 
-    def __init__(self, max_len, alpha=0.6, beta=0.4, epsilon=0.01, max_priority=10.,
-                 transformations=None):
+    def __init__(
+        self,
+        max_len,
+        alpha=0.6,
+        beta=0.4,
+        epsilon=0.01,
+        max_priority=10.0,
+        transformations=None,
+    ):
         super().__init__(max_len, transformations)
         if not isinstance(alpha, ParameterDecay):
             alpha = Constant(alpha)
@@ -72,9 +79,14 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     @classmethod
     def from_other(cls, other):
         """Initialize EXP3Experience Replay from another one."""
-        new = cls(max_len=other.max_len, alpha=other.alpha, beta=other.beta,
-                  epsilon=other.epsilon, max_priority=other.max_priority,
-                  transformations=other.transformations)
+        new = cls(
+            max_len=other.max_len,
+            alpha=other.alpha,
+            beta=other.beta,
+            epsilon=other.epsilon,
+            max_priority=other.max_priority,
+            transformations=other.transformations,
+        )
 
         for observation in other.memory:
             if isinstance(observation, Observation):

@@ -4,8 +4,12 @@ import torch
 
 from rllib.dataset import ExperienceReplay
 from rllib.dataset.datatypes import Observation, RawObservation
-from rllib.dataset.transforms import (ActionNormalizer, MeanFunction,
-                                      RewardClipper, StateNormalizer)
+from rllib.dataset.transforms import (
+    ActionNormalizer,
+    MeanFunction,
+    RewardClipper,
+    StateNormalizer,
+)
 
 
 @pytest.fixture(params=[(10000, 1000), (10000, 100), (100, 101)])
@@ -20,12 +24,15 @@ def memory(request):
     # ]
     memory_ = ExperienceReplay(max_len, transformations=transformations)
     for _ in range(number_of_samples):
-        memory_.append(RawObservation(state=np.random.randn(state_dim),
-                                      action=np.random.randn(action_dim),
-                                      reward=np.random.randn(),
-                                      next_state=np.random.randn(state_dim),
-                                      done=False).to_torch()
-                       )
+        memory_.append(
+            RawObservation(
+                state=np.random.randn(state_dim),
+                action=np.random.randn(action_dim),
+                reward=np.random.randn(),
+                next_state=np.random.randn(state_dim),
+                done=False,
+            ).to_torch()
+        )
     return memory_, max_len, number_of_samples
 
 
@@ -40,18 +47,25 @@ def experience_replay(n_steps):
     state_dim = 3
     action_dim = 2
 
-    transformations = [MeanFunction(lambda state, action: state),
-                       StateNormalizer(), ActionNormalizer(), RewardClipper(),
-                       ]
-    memory_ = ExperienceReplay(max_len, transformations=transformations,
-                               num_steps=n_steps)
+    transformations = [
+        MeanFunction(lambda state, action: state),
+        StateNormalizer(),
+        ActionNormalizer(),
+        RewardClipper(),
+    ]
+    memory_ = ExperienceReplay(
+        max_len, transformations=transformations, num_steps=n_steps
+    )
     for _ in range(number_of_samples):
-        memory_.append(RawObservation(state=np.random.randn(state_dim),
-                                      action=np.random.randn(action_dim),
-                                      reward=np.random.randn(),
-                                      next_state=np.random.randn(state_dim),
-                                      done=False).to_torch()
-                       )
+        memory_.append(
+            RawObservation(
+                state=np.random.randn(state_dim),
+                action=np.random.randn(action_dim),
+                reward=np.random.randn(),
+                next_state=np.random.randn(state_dim),
+                done=False,
+            ).to_torch()
+        )
     return memory_
 
 
@@ -70,7 +84,7 @@ def test_get_item(memory):
     for idx in range(len(memory)):
         observation, idx, weight = memory.__getitem__(idx)
         assert idx == idx
-        assert weight == 1.
+        assert weight == 1.0
         assert observation is memory.memory[idx]
         assert observation == memory.memory[idx]
         assert type(observation) is Observation
@@ -85,7 +99,7 @@ def test_n_steps(n_steps):
     for idx in range(len(er)):
         observation, idx, weight = er.__getitem__(idx)
         assert idx == idx
-        assert weight == 1.
+        assert weight == 1.0
         assert type(observation) is Observation
         assert observation is not er.memory[idx]
         assert type(observation) is Observation
@@ -96,11 +110,14 @@ def test_n_steps(n_steps):
             assert observation.next_state.shape == torch.Size([n_steps, 3])
         else:
             assert observation.state.shape == torch.Size(
-                [len(er) % n_steps + n_steps, 3])
+                [len(er) % n_steps + n_steps, 3]
+            )
             assert observation.action.shape == torch.Size(
-                [len(er) % n_steps + n_steps, 2])
+                [len(er) % n_steps + n_steps, 2]
+            )
             assert observation.next_state.shape == torch.Size(
-                [len(er) % n_steps + n_steps, 3])
+                [len(er) % n_steps + n_steps, 3]
+            )
 
 
 def test_iter(memory):
@@ -109,12 +126,12 @@ def test_iter(memory):
         if idx >= len(memory):
             continue
         assert idx == idx_
-        assert weight == 1.
+        assert weight == 1.0
         assert observation is memory.memory[idx]
         assert observation == memory.memory[idx]
-        assert observation.state.shape == torch.Size([1, 3, ])
-        assert observation.action.shape == torch.Size([1, 2, ])
-        assert observation.next_state.shape == torch.Size([1, 3, ])
+        assert observation.state.shape == torch.Size([1, 3])
+        assert observation.action.shape == torch.Size([1, 2])
+        assert observation.next_state.shape == torch.Size([1, 3])
 
 
 def test_append_error():

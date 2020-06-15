@@ -10,7 +10,7 @@ from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import RewardTransformer
 
-MBValueReturn = namedtuple('MBValueReturn', ['value_estimate', 'trajectory'])
+MBValueReturn = namedtuple("MBValueReturn", ["value_estimate", "trajectory"])
 
 
 def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
@@ -40,8 +40,7 @@ def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
     rewards = reward_transformer(rewards)
     if type(rewards) is np.ndarray:
         # The copy is for future transforms to pytorch
-        return scipy.signal.lfilter([1], [1, -float(gamma)], rewards[::-1]
-                                    )[::-1].copy()
+        return scipy.signal.lfilter([1], [1, -float(gamma)], rewards[::-1])[::-1].copy()
 
     val = torch.zeros_like(rewards)
     r = 0
@@ -75,17 +74,25 @@ def discount_sum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
         return rewards
     elif rewards.dim() == 1:
         steps = len(rewards)
-        return (torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards
-                ).sum()
+        return (
+            torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards
+        ).sum()
     else:
         steps = rewards.shape[0]
-        return torch.einsum('i,i...->...',
-                            torch.pow(gamma * torch.ones(steps), torch.arange(steps)),
-                            rewards)
+        return torch.einsum(
+            "i,i...->...",
+            torch.pow(gamma * torch.ones(steps), torch.arange(steps)),
+            rewards,
+        )
 
 
-def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.,
-              reward_transformer=RewardTransformer()):
+def mc_return(
+    trajectory,
+    gamma=1.0,
+    value_function=None,
+    entropy_reg=0.0,
+    reward_transformer=RewardTransformer(),
+):
     r"""Calculate n-step MC return from the trajectory.
 
     The N-step return of a trajectory is calculated as:
@@ -105,25 +112,36 @@ def mc_return(trajectory, gamma=1.0, value_function=None, entropy_reg=0.,
 
     """
     if len(trajectory) == 0:
-        return 0.
-    discount = 1.
+        return 0.0
+    discount = 1.0
     value = torch.zeros_like(trajectory[0].reward)
     for observation in trajectory:
-        value += discount * (reward_transformer(observation.reward)
-                             + entropy_reg * observation.entropy)
+        value += discount * (
+            reward_transformer(observation.reward) + entropy_reg * observation.entropy
+        )
         discount *= gamma
 
     if value_function is not None:
         final_state = trajectory[-1].next_state
         is_terminal = trajectory[-1].done
-        value += discount * value_function(final_state) * (1. - is_terminal)
+        value += discount * value_function(final_state) * (1.0 - is_terminal)
     return value
 
 
-def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1.,
-              value_function=None, num_samples=1, entropy_reg=0.,
-              reward_transformer=RewardTransformer(), termination=None,
-              **kwargs):
+def mb_return(
+    state,
+    dynamical_model,
+    reward_model,
+    policy,
+    num_steps=1,
+    gamma=1.0,
+    value_function=None,
+    num_samples=1,
+    entropy_reg=0.0,
+    reward_transformer=RewardTransformer(),
+    termination=None,
+    **kwargs,
+):
     r"""Estimate the value of a state by propagating the state with a model for N-steps.
 
     Rolls out the model for a number of `steps` and sums up the rewards. After this,
@@ -180,9 +198,21 @@ def mb_return(state, dynamical_model, reward_model, policy, num_steps=1, gamma=1
     """
     # Repeat states to get a better estimate of the expected value
     state = repeat_along_dimension(state, number=num_samples, dim=0)
-    trajectory = rollout_model(dynamical_model, reward_model, policy, state,
-                               max_steps=num_steps, termination=termination, **kwargs)
-    value = mc_return(trajectory, gamma=gamma, value_function=value_function,
-                      entropy_reg=entropy_reg, reward_transformer=reward_transformer)
+    trajectory = rollout_model(
+        dynamical_model,
+        reward_model,
+        policy,
+        state,
+        max_steps=num_steps,
+        termination=termination,
+        **kwargs,
+    )
+    value = mc_return(
+        trajectory,
+        gamma=gamma,
+        value_function=value_function,
+        entropy_reg=entropy_reg,
+        reward_transformer=reward_transformer,
+    )
 
     return MBValueReturn(value, trajectory)

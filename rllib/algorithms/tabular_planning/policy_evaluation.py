@@ -23,8 +23,9 @@ def linear_system_policy_evaluation(policy, model, gamma, value_function=None):
 
     mrp = mdp2mrp(environment=model, policy=policy)
 
-    kernel, reward = transitions2kernelreward(mrp.transitions,
-                                              model.num_states, model.num_actions)
+    kernel, reward = transitions2kernelreward(
+        mrp.transitions, model.num_states, model.num_actions
+    )
 
     A = torch.eye(model.num_states) - gamma * kernel[:, 0, :]
     # torch.testing.assert_allclose(A.inverse() @ A, torch.eye(model.num_states))
@@ -35,8 +36,9 @@ def linear_system_policy_evaluation(policy, model, gamma, value_function=None):
     return value_function
 
 
-def iterative_policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
-                                value_function=None):
+def iterative_policy_evaluation(
+    policy, model, gamma, eps=1e-6, max_iter=1000, value_function=None
+):
     """Implement Policy Evaluation algorithm (policy iteration without max).
 
     Parameters
@@ -80,16 +82,18 @@ def iterative_policy_evaluation(policy, model, gamma, eps=1e-6, max_iter=1000,
             if state in model.terminal_states:
                 continue
 
-            value_estimate = torch.tensor(0.)
+            value_estimate = torch.tensor(0.0)
             state = torch.tensor(state).long()
             policy_ = tensor_to_distribution(policy(state))
             for action in np.where(policy_.probs.detach().numpy())[0]:
                 p_action = policy_.probs[action].item()
                 for transition in model.transitions[(state.item(), action)]:
-                    next_state = torch.tensor(transition['next_state']).long()
+                    next_state = torch.tensor(transition["next_state"]).long()
 
-                    value_estimate += p_action * transition['probability'] * (
-                        transition['reward'] + gamma * value_function(next_state)
+                    value_estimate += (
+                        p_action
+                        * transition["probability"]
+                        * (transition["reward"] + gamma * value_function(next_state))
                     )
 
             value = value_function(state)

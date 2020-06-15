@@ -5,14 +5,15 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
-from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState
+from exps.gpucrl.util import get_mb_mppo_agent, get_mpc_agent
+from rllib.dataset.transforms import ActionScaler, DeltaState, MeanFunction
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import HalfCheetahReward
 
 
 class StateTransform(nn.Module):
     """Transform pendulum states to cos, sin, angular_velocity."""
+
     extra_dim = 8
 
     def forward(self, states):
@@ -20,7 +21,8 @@ class StateTransform(nn.Module):
         angles = states[..., 1:9]
         states_ = torch.cat(
             (states[..., :1], torch.cos(angles), torch.sin(angles), states[..., 9:]),
-            dim=-1)
+            dim=-1,
+        )
         return states_
 
     def inverse(self, states):
@@ -38,8 +40,9 @@ def large_state_termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (torch.any(torch.abs(state[..., 1:]) > 2000, dim=-1) | torch.any(
-        torch.abs(action) > 25 * 4, dim=-1))
+    return torch.any(torch.abs(state[..., 1:]) > 2000, dim=-1) | torch.any(
+        torch.abs(action) > 25 * 4, dim=-1
+    )
 
 
 def get_agent_and_environment(params, agent_name):
@@ -49,39 +52,49 @@ def get_agent_and_environment(params, agent_name):
     torch.set_num_threads(params.num_threads)
 
     # %% Define Environment.
-    environment = GymEnvironment('MBRLHalfCheetah-v0', action_cost=params.action_cost,
-                                 seed=params.seed)
+    environment = GymEnvironment(
+        "MBRLHalfCheetah-v0", action_cost=params.action_cost, seed=params.seed
+    )
     action_scale = environment.action_scale
     reward_model = HalfCheetahReward(action_cost=params.action_cost)
 
     # %% Define Helper modules
-    transformations = [ActionScaler(scale=action_scale),
-                       MeanFunction(DeltaState()),  # AngleWrapper(indexes=[1])
-                       ]
+    transformations = [
+        ActionScaler(scale=action_scale),
+        MeanFunction(DeltaState()),  # AngleWrapper(indexes=[1])
+    ]
 
     input_transform = None
     exploratory_distribution = torch.distributions.MultivariateNormal(
-        torch.zeros(environment.dim_state),
-        1e-6 * torch.eye(environment.dim_state)
+        torch.zeros(environment.dim_state), 1e-6 * torch.eye(environment.dim_state)
     )
 
-    if agent_name == 'mpc':
-        agent = get_mpc_agent(environment.name, environment.dim_state,
-                              environment.dim_action,
-                              params, reward_model,
-                              action_scale=action_scale,
-                              transformations=transformations,
-                              input_transform=input_transform,
-                              termination=large_state_termination,
-                              initial_distribution=exploratory_distribution)
-    elif agent_name == 'mbmppo':
+    if agent_name == "mpc":
+        agent = get_mpc_agent(
+            environment.name,
+            environment.dim_state,
+            environment.dim_action,
+            params,
+            reward_model,
+            action_scale=action_scale,
+            transformations=transformations,
+            input_transform=input_transform,
+            termination=large_state_termination,
+            initial_distribution=exploratory_distribution,
+        )
+    elif agent_name == "mbmppo":
         agent = get_mb_mppo_agent(
-            environment.name, environment.dim_state, environment.dim_action,
-            params, reward_model, input_transform=input_transform,
+            environment.name,
+            environment.dim_state,
+            environment.dim_action,
+            params,
+            reward_model,
+            input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,
-            initial_distribution=exploratory_distribution)
+            initial_distribution=exploratory_distribution,
+        )
     else:
         raise NotImplementedError
 

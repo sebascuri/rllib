@@ -69,4 +69,4 @@ class TanhTransform(Transform):
         ----------
         https://github.com/tensorflow/probability/blob/master/tensorflow_probability/python/bijectors/tanh.py#L69-L80
         """
-        return 2. * (math.log(2.) - x - softplus(-2. * x))
+        return 2.0 * (math.log(2.0) - x - softplus(-2.0 * x))

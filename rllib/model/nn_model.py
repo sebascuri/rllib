@@ -1,8 +1,7 @@
 """Model implemented by a Neural Network."""
 import torch
 
-from rllib.util.neural_networks import (CategoricalNN, HeteroGaussianNN,
-                                        one_hot_encode)
+from rllib.util.neural_networks import CategoricalNN, HeteroGaussianNN, one_hot_encode
 
 from .abstract_model import AbstractModel
 
@@ -27,11 +26,21 @@ class NNModel(AbstractModel):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1,
-                 layers=None, biased_head=True, non_linearity='ReLU',
-                 input_transform=None, deterministic=False):
-        super().__init__(dim_state, dim_action, num_states=num_states,
-                         num_actions=num_actions)
+    def __init__(
+        self,
+        dim_state,
+        dim_action,
+        num_states=-1,
+        num_actions=-1,
+        layers=None,
+        biased_head=True,
+        non_linearity="ReLU",
+        input_transform=None,
+        deterministic=False,
+    ):
+        super().__init__(
+            dim_state, dim_action, num_states=num_states, num_actions=num_actions
+        )
         self.input_transform = input_transform
 
         if self.discrete_state:
@@ -44,16 +53,26 @@ class NNModel(AbstractModel):
         else:
             in_dim = out_dim + self.dim_action
 
-        if hasattr(input_transform, 'extra_dim'):
-            in_dim += getattr(input_transform, 'extra_dim')
+        if hasattr(input_transform, "extra_dim"):
+            in_dim += getattr(input_transform, "extra_dim")
 
         if self.discrete_action:
-            self.nn = CategoricalNN(in_dim, out_dim, layers, biased_head=biased_head,
-                                    non_linearity=non_linearity)
+            self.nn = CategoricalNN(
+                in_dim,
+                out_dim,
+                layers,
+                biased_head=biased_head,
+                non_linearity=non_linearity,
+            )
         else:
-            self.nn = HeteroGaussianNN(in_dim, out_dim, layers, biased_head=biased_head,
-                                       non_linearity=non_linearity,
-                                       squashed_output=False)
+            self.nn = HeteroGaussianNN(
+                in_dim,
+                out_dim,
+                layers,
+                biased_head=biased_head,
+                non_linearity=non_linearity,
+                squashed_output=False,
+            )
 
         self.deterministic = deterministic
 

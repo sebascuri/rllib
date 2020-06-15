@@ -48,4 +48,3 @@
 		<motor gear="100" joint="slider" name="slide"/>
 	</actuator>
 </mujoco>
-

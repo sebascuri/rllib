@@ -4,14 +4,14 @@ import numpy as np
 import torch.nn.functional as func
 import torch.optim
 
-from rllib.util.training import train_agent, evaluate_agent
 from rllib.agent import ExpectedSARSAAgent, SARSAAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
-ENVIRONMENT = 'CartPole-v0'
+ENVIRONMENT = "CartPole-v0"
 
 NUM_EPISODES = 500
 MAX_STEPS = 200
@@ -31,18 +31,28 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
-q_function = NNQFunction(environment.dim_state, environment.dim_action,
-                         num_states=environment.num_states,
-                         num_actions=environment.num_actions,
-                         layers=LAYERS,
-                         tau=TARGET_UPDATE_TAU)
+q_function = NNQFunction(
+    environment.dim_state,
+    environment.dim_action,
+    num_states=environment.num_states,
+    num_actions=environment.num_actions,
+    layers=LAYERS,
+    tau=TARGET_UPDATE_TAU,
+)
 policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
-agent = SARSAAgent(environment.name, q_function, policy, criterion, optimizer,
-                   target_update_frequency=TARGET_UPDATE_FREQUENCY,
-                   gamma=GAMMA, batch_size=BATCH_SIZE)
+agent = SARSAAgent(
+    environment.name,
+    q_function,
+    policy,
+    criterion,
+    optimizer,
+    target_update_frequency=TARGET_UPDATE_FREQUENCY,
+    gamma=GAMMA,
+    batch_size=BATCH_SIZE,
+)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

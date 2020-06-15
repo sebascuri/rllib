@@ -14,7 +14,7 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
         g = self.g
         m = self.m
         length = self.l
-        inertia = (m * length ** 2)
+        inertia = m * length ** 2
         bk = self.bk
         dt = self.dt
         theta, theta_dot = self.state[..., 0], self.state[..., 1]
@@ -23,9 +23,9 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
 
         if not u.shape:
             self.last_u = u  # for rendering
-        costs = angle_normalize(theta) ** 2 + .1 * theta_dot ** 2 + .001 * (u ** 2)
+        costs = angle_normalize(theta) ** 2 + 0.1 * theta_dot ** 2 + 0.001 * (u ** 2)
 
-        theta_d_dot = -3 * g / (2 * length) * bk.sin(theta + np.pi) + 3. / inertia * u
+        theta_d_dot = -3 * g / (2 * length) * bk.sin(theta + np.pi) + 3.0 / inertia * u
         new_theta_dot = theta_dot + theta_d_dot * dt
         new_theta = theta + new_theta_dot * dt
         new_theta_dot = self.clip(new_theta_dot, -self.max_speed, self.max_speed)

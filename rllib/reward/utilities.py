@@ -33,7 +33,7 @@ def tolerance(x, lower, upper, margin=None):
     margin: A margin over which to smooth out the box-reward.
         If a positive margin is provided, uses a `gaussian` smoothing on the boundary.
     """
-    if margin is None or margin == 0.:
+    if margin is None or margin == 0.0:
         in_bounds = (lower <= x) & (x <= upper)
         return in_bounds.type(torch.get_default_dtype())
     else:

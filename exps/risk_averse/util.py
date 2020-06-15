@@ -1,19 +1,26 @@
 """Utilities for risk averse experiments."""
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import Bernoulli
-import matplotlib.pyplot as plt
 
-from rllib.reward import AbstractReward
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.reward import AbstractReward
 
 
 class Cart1dReward(AbstractReward):
     """Reward class for Cart-1D experiment."""
 
-    def __init__(self, goal_x=1., reward_goal=50., reward_step=-1.,
-                 high_v=1., reward_high_v=-10., prob_reward_high_v=0.):
+    def __init__(
+        self,
+        goal_x=1.0,
+        reward_goal=50.0,
+        reward_step=-1.0,
+        high_v=1.0,
+        reward_high_v=-10.0,
+        prob_reward_high_v=0.0,
+    ):
         super().__init__()
         self.goal_x = goal_x
         dtype = torch.get_default_dtype()
@@ -48,18 +55,18 @@ class Cart1dTermination(nn.Module):
 def plot_cart_trajectories(agent, episode: int):
     trajectory = stack_list_of_tuples(agent.last_trajectory)
 
-    fig, axes = plt.subplots(4, 1, sharex='row')
+    fig, axes = plt.subplots(4, 1, sharex="row")
     axes[0].plot(trajectory.state[..., 0].numpy())
     axes[1].plot(trajectory.state[..., 1].numpy())
     axes[2].plot(trajectory.action[..., 0].numpy())
     axes[3].plot(trajectory.reward.numpy())
 
-    axes[0].set_ylabel('Position')
-    axes[1].set_ylabel('Velocity')
-    axes[2].set_ylabel('Acceleration')
-    axes[3].set_ylabel('Reward')
+    axes[0].set_ylabel("Position")
+    axes[1].set_ylabel("Velocity")
+    axes[2].set_ylabel("Acceleration")
+    axes[3].set_ylabel("Reward")
 
-    axes[-1].set_xlabel('Time Steps.')
+    axes[-1].set_xlabel("Time Steps.")
     axes[0].set_title(f"Episode {episode + 1}")
 
     plt.show()

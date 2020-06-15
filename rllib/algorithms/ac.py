@@ -64,9 +64,9 @@ class ActorCritic(AbstractAlgorithm):
 
     def forward(self, trajectories):
         """Compute the losses."""
-        actor_loss = torch.tensor(0.)
-        critic_loss = torch.tensor(0.)
-        td_error = torch.tensor(0.)
+        actor_loss = torch.tensor(0.0)
+        critic_loss = torch.tensor(0.0)
+        td_error = torch.tensor(0.0)
 
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory
@@ -92,10 +92,12 @@ class ActorCritic(AbstractAlgorithm):
             td_error += (pred_q - target_q).detach().mean()
 
         num_trajectories = len(trajectories)
-        return ACLoss((actor_loss + critic_loss) / num_trajectories,
-                      actor_loss / num_trajectories,
-                      critic_loss / num_trajectories,
-                      td_error / num_trajectories)
+        return ACLoss(
+            (actor_loss + critic_loss) / num_trajectories,
+            actor_loss / num_trajectories,
+            critic_loss / num_trajectories,
+            td_error / num_trajectories,
+        )
 
     def update(self):
         """Update the baseline network."""

@@ -27,12 +27,24 @@ class FeedForwardNN(nn.Module):
 
     """
 
-    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=False):
+    def __init__(
+        self,
+        in_dim,
+        out_dim,
+        layers=None,
+        non_linearity="ReLU",
+        biased_head=True,
+        squashed_output=False,
+    ):
         super().__init__()
-        self.kwargs = {'in_dim': in_dim, 'out_dim': out_dim, 'layers': layers,
-                       'non_linearity': non_linearity, 'biased_head': biased_head,
-                       'squashed_output': squashed_output}
+        self.kwargs = {
+            "in_dim": in_dim,
+            "out_dim": out_dim,
+            "layers": layers,
+            "non_linearity": non_linearity,
+            "biased_head": biased_head,
+            "squashed_output": squashed_output,
+        }
 
         self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
@@ -95,10 +107,23 @@ class DeterministicNN(FeedForwardNN):
 class HeteroGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=False):
-        super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
-                         biased_head=biased_head, squashed_output=squashed_output)
+    def __init__(
+        self,
+        in_dim,
+        out_dim,
+        layers=None,
+        non_linearity="ReLU",
+        biased_head=True,
+        squashed_output=False,
+    ):
+        super().__init__(
+            in_dim,
+            out_dim,
+            layers=layers,
+            non_linearity=non_linearity,
+            biased_head=biased_head,
+            squashed_output=squashed_output,
+        )
         in_dim = self.head.in_features
         self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
 
@@ -126,7 +151,7 @@ class HeteroGaussianNN(FeedForwardNN):
         # TODO: Verify if this is useful or is just the action sample that gets big.
         # If the latter is the case, consider a tanh/sigmoid constrained multivariate
         # normal distribution.
-        scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.) + 1e-6
+        scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.0) + 1e-6
         scale = torch.diag_embed(scale)
         return mean, scale
 
@@ -134,10 +159,23 @@ class HeteroGaussianNN(FeedForwardNN):
 class HomoGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=False):
-        super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
-                         biased_head=biased_head, squashed_output=squashed_output)
+    def __init__(
+        self,
+        in_dim,
+        out_dim,
+        layers=None,
+        non_linearity="ReLU",
+        biased_head=True,
+        squashed_output=False,
+    ):
+        super().__init__(
+            in_dim,
+            out_dim,
+            layers=layers,
+            non_linearity=non_linearity,
+            biased_head=biased_head,
+            squashed_output=squashed_output,
+        )
         initial_scale = inverse_softplus(torch.rand(out_dim))
         self._scale = nn.Parameter(initial_scale, requires_grad=True)
 
@@ -168,11 +206,18 @@ class HomoGaussianNN(FeedForwardNN):
 class CategoricalNN(FeedForwardNN):
     """A Module that parametrizes a Categorical distribution."""
 
-    def __init__(self, in_dim, out_dim, layers=None, non_linearity='ReLU',
-                 biased_head=True):
-        super().__init__(in_dim, out_dim, layers=layers, non_linearity=non_linearity,
-                         biased_head=biased_head, squashed_output=False)
-        self.kwargs.pop('squashed_output')
+    def __init__(
+        self, in_dim, out_dim, layers=None, non_linearity="ReLU", biased_head=True
+    ):
+        super().__init__(
+            in_dim,
+            out_dim,
+            layers=layers,
+            non_linearity=non_linearity,
+            biased_head=biased_head,
+            squashed_output=False,
+        )
+        self.kwargs.pop("squashed_output")
 
 
 class Ensemble(HeteroGaussianNN):
@@ -206,16 +251,32 @@ class Ensemble(HeteroGaussianNN):
     head_ptr: int
     prediction_strategy: str
 
-    def __init__(self, in_dim, out_dim, num_heads,
-                 prediction_strategy='moment_matching',
-                 layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=False, deterministic=True):
-        super().__init__(in_dim, out_dim * num_heads, layers=layers,
-                         non_linearity=non_linearity, biased_head=biased_head,
-                         squashed_output=squashed_output)
+    def __init__(
+        self,
+        in_dim,
+        out_dim,
+        num_heads,
+        prediction_strategy="moment_matching",
+        layers=None,
+        non_linearity="ReLU",
+        biased_head=True,
+        squashed_output=False,
+        deterministic=True,
+    ):
+        super().__init__(
+            in_dim,
+            out_dim * num_heads,
+            layers=layers,
+            non_linearity=non_linearity,
+            biased_head=biased_head,
+            squashed_output=squashed_output,
+        )
 
-        self.kwargs.update(out_dim=out_dim, num_heads=num_heads,
-                           prediction_strategy=prediction_strategy)
+        self.kwargs.update(
+            out_dim=out_dim,
+            num_heads=num_heads,
+            prediction_strategy=prediction_strategy,
+        )
         self.num_heads = num_heads
         self.head_ptr = 0
         self.head_indexes = torch.zeros(1).long()
@@ -223,11 +284,14 @@ class Ensemble(HeteroGaussianNN):
         self.prediction_strategy = prediction_strategy
 
     @classmethod
-    def from_feedforward(cls, other, num_heads, prediction_strategy='moment_matching'):
+    def from_feedforward(cls, other, num_heads, prediction_strategy="moment_matching"):
         """Initialize from a feed-forward network."""
-        return cls(**other.kwargs, num_heads=num_heads,
-                   prediction_strategy=prediction_strategy,
-                   deterministic=isinstance(other, DeterministicNN))
+        return cls(
+            **other.kwargs,
+            num_heads=num_heads,
+            prediction_strategy=prediction_strategy,
+            deterministic=isinstance(other, DeterministicNN),
+        )
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -253,25 +317,25 @@ class Ensemble(HeteroGaussianNN):
         if self.deterministic:
             scale = torch.zeros_like(out)
         else:
-            scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.) + 1e-6
+            scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.0) + 1e-6
             scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
-        if self.prediction_strategy == 'moment_matching':
+        if self.prediction_strategy == "moment_matching":
             mean = out.mean(-1)
-            variance = ((scale.square() + out.square()).mean(-1) - mean.square())
+            variance = (scale.square() + out.square()).mean(-1) - mean.square()
             scale = safe_cholesky(torch.diag_embed(variance))
-        elif self.prediction_strategy == 'sample_head':  # TS-1
+        elif self.prediction_strategy == "sample_head":  # TS-1
             head_ptr = torch.randint(self.num_heads, (1,))
             mean = out[..., head_ptr]
             scale = torch.diag_embed(scale[..., head_ptr])
-        elif self.prediction_strategy in ['set_head', 'posterior']:  # Thompson sampling
+        elif self.prediction_strategy in ["set_head", "posterior"]:  # Thompson sampling
             mean = out[..., self.head_ptr]
             scale = torch.diag_embed(scale[..., self.head_ptr])
-        elif self.prediction_strategy == 'sample_multiple_head':  # TS-1
+        elif self.prediction_strategy == "sample_multiple_head":  # TS-1
             head_idx = torch.randint(self.num_heads, out.shape[:-1]).unsqueeze(-1)
             mean = out.gather(-1, head_idx).squeeze(-1)
             scale = torch.diag_embed(scale.gather(-1, head_idx).squeeze(-1))
-        elif self.prediction_strategy == 'set_head_idx':  # TS-INF
+        elif self.prediction_strategy == "set_head_idx":  # TS-INF
             mean = out.gather(-1, self.head_idx)
             scale = torch.diag_embed(scale.gather(-1, self.head_idx))
         else:
@@ -294,7 +358,7 @@ class Ensemble(HeteroGaussianNN):
         ValueError: If new_head > num_heads.
         """
         self.head_ptr = new_head
-        if not(0 <= self.head_ptr < self.num_heads):
+        if not (0 <= self.head_ptr < self.num_heads):
             raise ValueError("head_ptr has to be between zero and num_heads - 1.")
 
     @torch.jit.export
@@ -323,50 +387,19 @@ class Ensemble(HeteroGaussianNN):
         return self.prediction_strategy
 
 
-class MultiHeadNN(FeedForwardNN):
-    """Multi-Head deterministic NN."""
-
-    def __init__(self, in_dim, out_dim, num_heads, layers=None, non_linearity='ReLU',
-                 biased_head=True, squashed_output=False):
-        super().__init__(in_dim, out_dim, layers=layers,
-                         non_linearity=non_linearity, biased_head=biased_head,
-                         squashed_output=squashed_output)
-
-        self.kwargs.update(num_heads=num_heads)
-        self.head = nn.ModuleList(
-            [nn.Linear(self.head.in_features, self.head.out_features)
-             for _ in range(num_heads)])
-        self.num_heads = num_heads
-
-    @classmethod
-    def from_feedforward(cls, other, num_heads):
-        """Initialize from a feed-forward network."""
-        return cls(**other.kwargs, num_heads=num_heads)
-
-    def forward(self, x, i: int):
-        """Execute forward computation of the Neural Network.
-
-        Parameters
-        ----------
-        x: torch.Tensor.
-            Tensor of size [batch_size x in_dim] where the NN is evaluated.
-
-        Returns
-        -------
-        out: torch.Tensor.
-            Output of size [batch_size x out_dim] of current head.
-        """
-        x = self.hidden_layers(x)
-        return self.heads[i](x)
-
-
 class FelixNet(FeedForwardNN):
     """A Module that implements FelixNet."""
 
     def __init__(self, in_dim, out_dim):
-        super().__init__(in_dim, out_dim, layers=[64, 64], non_linearity='ReLU',
-                         squashed_output=True, biased_head=False)
-        self.kwargs = {'in_dim': in_dim, 'out_dim': out_dim}
+        super().__init__(
+            in_dim,
+            out_dim,
+            layers=[64, 64],
+            non_linearity="ReLU",
+            squashed_output=True,
+            biased_head=False,
+        )
+        self.kwargs = {"in_dim": in_dim, "out_dim": out_dim}
 
         torch.nn.init.zeros_(self.hidden_layers[0].bias)
         torch.nn.init.zeros_(self.hidden_layers[2].bias)

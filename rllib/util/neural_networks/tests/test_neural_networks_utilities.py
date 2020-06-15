@@ -4,14 +4,23 @@ import torch.functional
 import torch.nn as nn
 import torch.testing
 
-from rllib.util.neural_networks import (CategoricalNN, DeterministicNN,
-                                        Ensemble, FelixNet, HeteroGaussianNN,
-                                        HomoGaussianNN, MultiHeadNN)
-from rllib.util.neural_networks.utilities import (TileCode, get_batch_size,
-                                                  inverse_softplus,
-                                                  one_hot_encode,
-                                                  random_tensor,
-                                                  update_parameters, zero_bias)
+from rllib.util.neural_networks import (
+    CategoricalNN,
+    DeterministicNN,
+    Ensemble,
+    FelixNet,
+    HeteroGaussianNN,
+    HomoGaussianNN,
+)
+from rllib.util.neural_networks.utilities import (
+    TileCode,
+    get_batch_size,
+    inverse_softplus,
+    one_hot_encode,
+    random_tensor,
+    update_parameters,
+    zero_bias,
+)
 
 
 def test_inverse_softplus():
@@ -27,18 +36,26 @@ def test_zero_bias():
     zero_bias(n)
 
     for name, param in n.named_parameters():
-        if name.endswith('bias'):
+        if name.endswith("bias"):
             torch.testing.assert_allclose(param, torch.zeros_like(param.data))
 
 
 class TestUpdateParams(object):
-    @pytest.fixture(params=[1., 0.9, 0.5, 0.2, 0.], scope="class")
+    @pytest.fixture(params=[1.0, 0.9, 0.5, 0.2, 0.0], scope="class")
     def tau(self, request):
         return request.param
 
-    @pytest.fixture(params=[DeterministicNN, FelixNet, CategoricalNN, Ensemble,
-                            MultiHeadNN, HomoGaussianNN, HeteroGaussianNN],
-                    scope="class")
+    @pytest.fixture(
+        params=[
+            DeterministicNN,
+            FelixNet,
+            CategoricalNN,
+            Ensemble,
+            HomoGaussianNN,
+            HeteroGaussianNN,
+        ],
+        scope="class",
+    )
     def network(self, request):
         return request.param
 
@@ -47,7 +64,7 @@ class TestUpdateParams(object):
         in_dim = 16
         out_dim = 4
         layers = [32, 4]
-        if class_ is MultiHeadNN or class_ is Ensemble:
+        if class_ is Ensemble:
             net1 = class_(in_dim, out_dim, num_heads=5, layers=layers)
             net1c = class_(in_dim, out_dim, num_heads=5, layers=layers)
             net2 = class_(in_dim, out_dim, num_heads=5, layers=layers)
@@ -83,9 +100,9 @@ class TestUpdateParams(object):
 
             assert param1 is not param1c
             if tau == 0:
-                assert (torch.allclose(param1.data, param2c.data))
+                assert torch.allclose(param1.data, param2c.data)
             elif tau == 1:
-                assert (torch.allclose(param1.data, param1c.data))
+                assert torch.allclose(param1.data, param1c.data)
             elif not torch.allclose(param1.data, torch.zeros_like(param1.data)):
                 assert not (torch.allclose(param1.data, param1c.data))
                 assert not (torch.allclose(param2.data, param1c.data))
@@ -97,9 +114,9 @@ class TestTileCode(object):
         return request.param
 
     def test_1d(self, one_hot):
-        encoding = TileCode([-1.], [1.], bins=10, one_hot=one_hot)
+        encoding = TileCode([-1.0], [1.0], bins=10, one_hot=one_hot)
         encoding = torch.jit.script(encoding)
-        t_in = torch.linspace(-1., 1., 11).unsqueeze(-1)
+        t_in = torch.linspace(-1.0, 1.0, 11).unsqueeze(-1)
         code = encoding(t_in)
 
         if one_hot:
@@ -115,14 +132,16 @@ class TestTileCode(object):
         torch.testing.assert_allclose(code, code_eps)
 
         torch.testing.assert_allclose(
-            encoding.tiles[..., 0], torch.linspace(-.9, .9, 10))
+            encoding.tiles[..., 0], torch.linspace(-0.9, 0.9, 10)
+        )
 
     def test_2d(self, one_hot):
-        encoding = TileCode([-1., -2.], [1., 2.], bins=10, one_hot=one_hot)
+        encoding = TileCode([-1.0, -2.0], [1.0, 2.0], bins=10, one_hot=one_hot)
         encoding = torch.jit.script(encoding)
 
-        t_in = torch.cartesian_prod(torch.linspace(-1., 1., 11),
-                                    torch.linspace(-2., 2., 11))
+        t_in = torch.cartesian_prod(
+            torch.linspace(-1.0, 1.0, 11), torch.linspace(-2.0, 2.0, 11)
+        )
         code = encoding(t_in)
 
         if one_hot:
@@ -133,23 +152,30 @@ class TestTileCode(object):
             torch.testing.assert_allclose(code, torch.arange(11 * 11).long())
 
         t_in_eps = t_in + (torch.rand_like(t_in) - 0.5) @ torch.diag(
-            torch.tensor([0.2, 0.4]))
+            torch.tensor([0.2, 0.4])
+        )
         code_eps = encoding(t_in_eps)
 
         torch.testing.assert_allclose(code, code_eps)
 
         torch.testing.assert_allclose(
-            encoding.tiles[..., 0], torch.linspace(-.9, .9, 10))
+            encoding.tiles[..., 0], torch.linspace(-0.9, 0.9, 10)
+        )
         torch.testing.assert_allclose(
-            encoding.tiles[..., 1], torch.linspace(-1.8, 1.8, 10))
+            encoding.tiles[..., 1], torch.linspace(-1.8, 1.8, 10)
+        )
 
     def test_3d(self, one_hot):
-        encoding = TileCode([-1., -5., -3.], [1., 5., 5.], bins=5, one_hot=one_hot)
+        encoding = TileCode(
+            [-1.0, -5.0, -3.0], [1.0, 5.0, 5.0], bins=5, one_hot=one_hot
+        )
         encoding = torch.jit.script(encoding)
 
-        t_in = torch.cartesian_prod(torch.linspace(-1., 1., 6),
-                                    torch.linspace(-5., 5., 6),
-                                    torch.linspace(-3., 5., 6))
+        t_in = torch.cartesian_prod(
+            torch.linspace(-1.0, 1.0, 6),
+            torch.linspace(-5.0, 5.0, 6),
+            torch.linspace(-3.0, 5.0, 6),
+        )
         code = encoding(t_in)
 
         if one_hot:
@@ -160,17 +186,19 @@ class TestTileCode(object):
             torch.testing.assert_allclose(code, torch.arange(6 ** 3))
 
         t_in_eps = t_in + (torch.rand_like(t_in) - 0.5) @ torch.diag(
-            torch.tensor([0.2, 1.0, 0.8]))
+            torch.tensor([0.2, 1.0, 0.8])
+        )
         code_eps = encoding(t_in_eps)
 
         torch.testing.assert_allclose(code, code_eps)
 
         torch.testing.assert_allclose(
-            encoding.tiles[..., 0], torch.linspace(-.8, .8, 5))
+            encoding.tiles[..., 0], torch.linspace(-0.8, 0.8, 5)
+        )
+        torch.testing.assert_allclose(encoding.tiles[..., 1], torch.linspace(-4, 4, 5))
         torch.testing.assert_allclose(
-            encoding.tiles[..., 1], torch.linspace(-4, 4, 5))
-        torch.testing.assert_allclose(
-            encoding.tiles[..., 2], torch.linspace(-2.2, 4.2, 5))
+            encoding.tiles[..., 2], torch.linspace(-2.2, 4.2, 5)
+        )
 
 
 class TestOneHotEncode(object):
@@ -198,12 +226,13 @@ class TestOneHotEncode(object):
     def test_correctness(self):
         tensor = torch.tensor([2])
         out_tensor = one_hot_encode(tensor, 4)
-        torch.testing.assert_allclose(out_tensor, torch.tensor([0., 0., 1., 0.]))
+        torch.testing.assert_allclose(out_tensor, torch.tensor([0.0, 0.0, 1.0, 0.0]))
 
         tensor = torch.tensor([2, 1])
         out_tensor = one_hot_encode(tensor, 4)
-        torch.testing.assert_allclose(out_tensor, torch.tensor([[0., 0., 1., 0.],
-                                                                [0., 1., 0., 0.]]))
+        torch.testing.assert_allclose(
+            out_tensor, torch.tensor([[0.0, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 0.0]])
+        )
 
     def test_output_sum_one(self, batch_size):
         num_classes = 4
@@ -211,7 +240,7 @@ class TestOneHotEncode(object):
         out_tensor = one_hot_encode(tensor, num_classes)
         torch.testing.assert_allclose(
             out_tensor.sum(dim=-1),
-            torch.ones(batch_size if batch_size else 1).squeeze(-1)
+            torch.ones(batch_size if batch_size else 1).squeeze(-1),
         )
 
     def test_indexing(self, batch_size):
@@ -271,7 +300,7 @@ class TestRandomTensor(object):
         assert tensor.dtype is torch.get_default_dtype()
         if batch_size:
             assert tensor.dim() == 2
-            assert tensor.shape == (batch_size, dim,)
+            assert tensor.shape == (batch_size, dim)
         else:
             assert tensor.dim() == 1
             assert tensor.shape == (dim,)

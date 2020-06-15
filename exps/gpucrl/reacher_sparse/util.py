@@ -5,15 +5,21 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent, get_mb_sac_agent
-from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState, \
-    AngleWrapper, NextStateClamper
+from exps.gpucrl.util import get_mb_mppo_agent, get_mb_sac_agent, get_mpc_agent
+from rllib.dataset.transforms import (
+    ActionScaler,
+    AngleWrapper,
+    DeltaState,
+    MeanFunction,
+    NextStateClamper,
+)
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import ReacherReward
 
 
 class QuaternionTransform(nn.Module):
     """Transform reacher states to quaternion representation."""
+
     extra_dim = 7
 
     def forward(self, states):
@@ -35,8 +41,9 @@ def large_state_termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (torch.any(torch.abs(state) > 1e2, dim=-1) | torch.any(
-        torch.abs(action) > 25, dim=-1))
+    return torch.any(torch.abs(state) > 1e2, dim=-1) | torch.any(
+        torch.abs(action) > 25, dim=-1
+    )
 
 
 def get_agent_and_environment(params, agent_name):
@@ -46,73 +53,154 @@ def get_agent_and_environment(params, agent_name):
     torch.set_num_threads(params.num_threads)
 
     # %% Define Environment.
-    environment = GymEnvironment('MBRLReacher3D-v0', action_cost=params.action_cost,
-                                 sparse=True,
-                                 seed=params.seed)
+    environment = GymEnvironment(
+        "MBRLReacher3D-v0",
+        action_cost=params.action_cost,
+        sparse=True,
+        seed=params.seed,
+    )
     action_scale = environment.action_scale
     reward_model = ReacherReward(action_cost=params.action_cost, sparse=True)
 
     # %% Define Helper modules
     low = torch.tensor(
-        [-2.2854, -0.5236, -3.9, -2.3213, -1e1, -2.094, -1e1,
-         -1e2, -1e2, -1e2, -1e2, -1e2, -1e2, -1e2,
-         -0.4, -0.1, -0.4
-         ])
+        [
+            -2.2854,
+            -0.5236,
+            -3.9,
+            -2.3213,
+            -1e1,
+            -2.094,
+            -1e1,
+            -1e2,
+            -1e2,
+            -1e2,
+            -1e2,
+            -1e2,
+            -1e2,
+            -1e2,
+            -0.4,
+            -0.1,
+            -0.4,
+        ]
+    )
 
     high = torch.tensor(
-        [1.714602, 1.3963, 0.8, 0, 1e1, 0, 1e1,
-         1e2, 1e2, 1e2, 1e2, 1e2, 1e2, 1e2,
-         0.4, 0.6, 0.4
-         ])
+        [
+            1.714602,
+            1.3963,
+            0.8,
+            0,
+            1e1,
+            0,
+            1e1,
+            1e2,
+            1e2,
+            1e2,
+            1e2,
+            1e2,
+            1e2,
+            1e2,
+            0.4,
+            0.6,
+            0.4,
+        ]
+    )
 
-    transformations = [ActionScaler(scale=action_scale),
-                       AngleWrapper(indexes=[0, 1, 2, 3, 4, 5, 6]),
-                       MeanFunction(DeltaState()),  #
-                       NextStateClamper(low, high, constant_idx=[14, 15, 16])
-                       ]
+    transformations = [
+        ActionScaler(scale=action_scale),
+        AngleWrapper(indexes=[0, 1, 2, 3, 4, 5, 6]),
+        MeanFunction(DeltaState()),  #
+        NextStateClamper(low, high, constant_idx=[14, 15, 16]),
+    ]
 
     input_transform = QuaternionTransform()
     # input_transform = None
     exploratory_distribution = torch.distributions.Uniform(
         torch.tensor(
-            [0.3, -0.3, -1.5, -2.5, -1.5, -2.0, -1.5,
-             -0.005, -0.005, -0.005, -0.005, -0.005, -0.005, -0.005,  # qvel
-             -0.3, -0.1, -0.3  # goal
-             ]),
+            [
+                0.3,
+                -0.3,
+                -1.5,
+                -2.5,
+                -1.5,
+                -2.0,
+                -1.5,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,  # qvel
+                -0.3,
+                -0.1,
+                -0.3,  # goal
+            ]
+        ),
         torch.tensor(
-            [0.8, 0.3, 1.5, -1.5, 1.5, 0, 1.5,  # qpos
-             0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005,  # qvel
-             0.3, 0.6, 0.3  # goal
-             ])
+            [
+                0.8,
+                0.3,
+                1.5,
+                -1.5,
+                1.5,
+                0,
+                1.5,  # qpos
+                0.005,
+                0.005,
+                0.005,
+                0.005,
+                0.005,
+                0.005,
+                0.005,  # qvel
+                0.3,
+                0.6,
+                0.3,  # goal
+            ]
+        ),
     )
 
-    if agent_name == 'mpc':
-        agent = get_mpc_agent(environment.name, environment.dim_state + 3,
-                              environment.dim_action,
-                              params, reward_model,
-                              action_scale=action_scale,
-                              transformations=transformations,
-                              input_transform=input_transform,
-                              termination=large_state_termination,
-                              initial_distribution=exploratory_distribution)
-    elif agent_name == 'mbmppo':
+    if agent_name == "mpc":
+        agent = get_mpc_agent(
+            environment.name,
+            environment.dim_state + 3,
+            environment.dim_action,
+            params,
+            reward_model,
+            action_scale=action_scale,
+            transformations=transformations,
+            input_transform=input_transform,
+            termination=large_state_termination,
+            initial_distribution=exploratory_distribution,
+        )
+    elif agent_name == "mbmppo":
         agent = get_mb_mppo_agent(
-            environment.name, environment.dim_state + 3, environment.dim_action,
-            params=params, reward_model=reward_model,
+            environment.name,
+            environment.dim_state + 3,
+            environment.dim_action,
+            params=params,
+            reward_model=reward_model,
             input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,
-            initial_distribution=exploratory_distribution)
+            initial_distribution=exploratory_distribution,
+        )
 
-    elif agent_name == 'mbsac':
+    elif agent_name == "mbsac":
         agent = get_mb_sac_agent(
-            environment.name, environment.dim_state + 3, environment.dim_action,
-            params, reward_model, input_transform=input_transform,
+            environment.name,
+            environment.dim_state + 3,
+            environment.dim_action,
+            params,
+            reward_model,
+            input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,
-            initial_distribution=exploratory_distribution)
+            initial_distribution=exploratory_distribution,
+        )
 
     else:
         raise NotImplementedError

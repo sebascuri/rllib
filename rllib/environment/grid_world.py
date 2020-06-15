@@ -17,8 +17,12 @@ class EasyGridWorld(MDP):
         self.num_actions = num_actions
         transitions = self._build_mdp(terminal_states)
         print(transitions)
-        super().__init__(transitions, self.num_states, self.num_actions,
-                         terminal_states=terminal_states)
+        super().__init__(
+            transitions,
+            self.num_states,
+            self.num_actions,
+            terminal_states=terminal_states,
+        )
 
     def _build_mdp(self, terminal_states=None):
         transitions = defaultdict(list)
@@ -26,10 +30,10 @@ class EasyGridWorld(MDP):
             for action in range(self.num_actions):
                 g_state = self._state_to_grid(state)
                 if (g_state == np.array([0, 1])).all():
-                    g_next_state = np.array([self.height-1, 1])
+                    g_next_state = np.array([self.height - 1, 1])
                     r = 10
-                elif (g_state == np.array([0, self.width-2])).all():
-                    g_next_state = np.array([self.height // 2, self.width-2])
+                elif (g_state == np.array([0, self.width - 2])).all():
+                    g_next_state = np.array([self.height // 2, self.width - 2])
                     r = 5
                 else:
                     g_action = self._action_to_grid(action)
@@ -43,11 +47,11 @@ class EasyGridWorld(MDP):
                 next_state = self._grid_to_state(g_next_state)
                 if state in terminal_states if terminal_states else []:
                     transitions[(state, action)].append(
-                        {'next_state': state, 'reward': 0, 'probability': 1.}
+                        {"next_state": state, "reward": 0, "probability": 1.0}
                     )
                 else:
                     transitions[(state, action)].append(
-                        {'next_state': next_state, 'reward': r, 'probability': 1.}
+                        {"next_state": next_state, "reward": r, "probability": 1.0}
                     )
 
         return transitions

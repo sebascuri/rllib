@@ -29,12 +29,14 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         return self._info
 
 
-TDLoss = namedtuple('TDLoss', ['loss', 'td_error'])
-ACLoss = namedtuple('ACLoss', ['loss', 'policy_loss', 'critic_loss', 'td_error'])
-PGLoss = namedtuple('PGLoss', ['loss', 'policy_loss', 'baseline_loss'])
-LPLoss = namedtuple('LPLoss', ['loss', 'dual', 'policy_loss'])
-MPOLoss = namedtuple('MPOLoss', ['loss', 'dual', 'policy_loss', 'critic_loss',
-                                 'td_error'])
-SACLoss = namedtuple('SACLoss', ['loss', 'policy_loss', 'critic_loss', 'eta_loss',
-                                 'td_error'])
-PPOLoss = namedtuple('PPOLoss', ['loss', 'surrogate_loss', 'critic_loss', 'entropy'])
+TDLoss = namedtuple("TDLoss", ["loss", "td_error"])
+ACLoss = namedtuple("ACLoss", ["loss", "policy_loss", "critic_loss", "td_error"])
+PGLoss = namedtuple("PGLoss", ["loss", "policy_loss", "baseline_loss"])
+LPLoss = namedtuple("LPLoss", ["loss", "dual", "policy_loss"])
+MPOLoss = namedtuple(
+    "MPOLoss", ["loss", "dual", "policy_loss", "critic_loss", "td_error"]
+)
+SACLoss = namedtuple(
+    "SACLoss", ["loss", "policy_loss", "critic_loss", "eta_loss", "td_error"]
+)
+PPOLoss = namedtuple("PPOLoss", ["loss", "surrogate_loss", "critic_loss", "entropy"])

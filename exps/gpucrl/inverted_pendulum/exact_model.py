@@ -1,9 +1,7 @@
-
 import numpy as np
 import torch.distributions
 
-from exps.gpucrl.inverted_pendulum.util import PendulumModel
-from exps.gpucrl.inverted_pendulum.util import solve_mppo
+from exps.gpucrl.inverted_pendulum.util import PendulumModel, solve_mppo
 
 torch.manual_seed(0)
 np.random.seed(0)
@@ -17,7 +15,7 @@ num_trajectories = 16
 num_episodes = 1
 # epsilon, epsilon_mean, epsilon_var = None, None, None
 # eta, eta_mean, eta_var = 1., 1.7, 1.1
-epsilon, epsilon_mean, epsilon_var = .1, 0.01, .0001
+epsilon, epsilon_mean, epsilon_var = 0.1, 0.01, 0.0001
 eta, eta_mean, eta_var = None, None, None
 lr = 5e-4
 
@@ -25,13 +23,23 @@ num_iter = 200
 num_sim_steps = 400
 num_gradient_steps = 50
 
-for action_cost in [0., 0.1, 0.2]:
+for action_cost in [0.0, 0.1, 0.2]:
     returns = solve_mppo(
-        dynamical_model, action_cost=action_cost,
-        num_iter=num_iter, num_sim_steps=num_sim_steps, batch_size=batch_size,
-        num_gradient_steps=num_gradient_steps, num_trajectories=num_trajectories,
-        num_action_samples=num_action_samples, num_episodes=num_episodes,
-        epsilon=epsilon, epsilon_mean=epsilon_mean, epsilon_var=epsilon_var,
-        eta=eta, eta_mean=eta_mean, eta_var=eta_var,
-        lr=lr)
+        dynamical_model,
+        action_cost=action_cost,
+        num_iter=num_iter,
+        num_sim_steps=num_sim_steps,
+        batch_size=batch_size,
+        num_gradient_steps=num_gradient_steps,
+        num_trajectories=num_trajectories,
+        num_action_samples=num_action_samples,
+        num_episodes=num_episodes,
+        epsilon=epsilon,
+        epsilon_mean=epsilon_mean,
+        epsilon_var=epsilon_var,
+        eta=eta,
+        eta_mean=eta_mean,
+        eta_var=eta_var,
+        lr=lr,
+    )
     print(np.max(returns))

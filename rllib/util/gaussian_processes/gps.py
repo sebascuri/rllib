@@ -3,8 +3,7 @@ import gpytorch
 import numpy as np
 import torch
 from gpytorch.lazy import MatmulLazyTensor, delazify, lazify
-from gpytorch.models.exact_prediction_strategies import \
-    DefaultPredictionStrategy
+from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy
 from scipy.stats.distributions import chi
 
 from .prediction_strategies import SparsePredictionStrategy
@@ -125,8 +124,16 @@ class SparseGP(ExactGP):
     A unifying view of sparse approximate Gaussian process regression. JMLR.
     """
 
-    def __init__(self, train_x, train_y, likelihood, inducing_points,
-                 approximation='DTC', mean=None, kernel=None):
+    def __init__(
+        self,
+        train_x,
+        train_y,
+        likelihood,
+        inducing_points,
+        approximation="DTC",
+        mean=None,
+        kernel=None,
+    ):
         super().__init__(train_x, train_y, likelihood, mean=mean, kernel=kernel)
 
         self.prediction_strategy = None
@@ -159,7 +166,7 @@ class SparseGP(ExactGP):
             mu_u, mu_f = mu_uf[:m], mu_uf[m:]
             k_uu, k_ff, k_uf = kernel[:m, :m], kernel[m:, m:], kernel[:m, m:]
 
-            if self.approximation == 'FITC':
+            if self.approximation == "FITC":
                 k_uu_root_inv = k_uu.root_inv_decomposition().root
                 z = k_uf.transpose(-2, -1) @ k_uu_root_inv
                 q_ff = z @ z.transpose(-2, -1)
@@ -167,16 +174,18 @@ class SparseGP(ExactGP):
                 diag = delazify(k_ff - q_ff).diag() + self.likelihood.noise
                 diag = lazify(torch.diag(1 / diag))
 
-            elif self.approximation == 'SOR' or self.approximation == 'DTC':
-                diag = lazify(torch.eye(len(self.train_targets))
-                              ).mul(1. / self.likelihood.noise)
+            elif self.approximation == "SOR" or self.approximation == "DTC":
+                diag = lazify(torch.eye(len(self.train_targets))).mul(
+                    1.0 / self.likelihood.noise
+                )
             else:
                 raise NotImplementedError(f"{self.approximation} Not implemented.")
 
             cov = k_uu + (k_uf @ diag) @ k_uf.transpose(-2, -1)
 
             prior_dist = gpytorch.distributions.MultivariateNormal(
-                mu_u, cov.add_jitter(1e-3))
+                mu_u, cov.add_jitter(1e-3)
+            )
 
             # Create the prediction strategy for
             self.prediction_strategy = SparsePredictionStrategy(
@@ -184,7 +193,7 @@ class SparseGP(ExactGP):
                 train_prior_dist=prior_dist,
                 train_labels=(k_uf @ diag) @ (self.train_targets - mu_f),
                 likelihood=self.likelihood,
-                k_uu=k_uu.add_jitter()
+                k_uu=k_uu.add_jitter(),
             )
 
         # Concatenate the input to the training input
@@ -212,9 +221,9 @@ class SparseGP(ExactGP):
         k_su_kuu_inv_root = k_su @ kuu_inv_root
         q_ss = MatmulLazyTensor(k_su_kuu_inv_root, k_su_kuu_inv_root.transpose(-2, -1))
 
-        if self.approximation == 'DTC' or self.approximation == 'FITC':
+        if self.approximation == "DTC" or self.approximation == "FITC":
             pred_cov = k_ss - q_ss + rhs
-        elif self.approximation == 'SOR':
+        elif self.approximation == "SOR":
             pred_cov = rhs
         else:
             raise NotImplementedError(f"{self.approximation} Not implemented.")
@@ -275,8 +284,16 @@ class RandomFeatureGP(ExactGP):
     fourier features. NeuRIPS.
     """
 
-    def __init__(self, train_x, train_y, likelihood, num_features, approximation='RFF',
-                 mean=None, kernel=None):
+    def __init__(
+        self,
+        train_x,
+        train_y,
+        likelihood,
+        num_features,
+        approximation="RFF",
+        mean=None,
+        kernel=None,
+    ):
         super().__init__(train_x, train_y, likelihood, mean=mean, kernel=kernel)
         self._num_features = num_features
         self.approximation = approximation
@@ -299,26 +316,29 @@ class RandomFeatureGP(ExactGP):
     def _sample_features(self):
         """Sample a new set of random features."""
         # Only squared-exponential kernels are implemented.
-        if self.approximation == 'RFF':
+        if self.approximation == "RFF":
             w = torch.randn(self.num_features, self.dim) / torch.sqrt(self.length_scale)
-            scale = torch.tensor(1. / self.num_features)
+            scale = torch.tensor(1.0 / self.num_features)
 
-        elif self.approximation == 'OFF':
+        elif self.approximation == "OFF":
             q, _ = torch.qr(torch.randn(self.num_features, self.dim))
-            diag = torch.diag(torch.tensor(
-                chi.rvs(df=self.num_features, size=self.num_features),
-                dtype=torch.get_default_dtype()))
+            diag = torch.diag(
+                torch.tensor(
+                    chi.rvs(df=self.num_features, size=self.num_features),
+                    dtype=torch.get_default_dtype(),
+                )
+            )
             w = (diag @ q) / torch.sqrt(self.length_scale)
-            scale = torch.tensor(1. / self.num_features)
+            scale = torch.tensor(1.0 / self.num_features)
 
-        elif self.approximation == 'QFF':
-            q = int(np.floor(np.power(self.num_features, 1. / self.dim)))
+        elif self.approximation == "QFF":
+            q = int(np.floor(np.power(self.num_features, 1.0 / self.dim)))
             self._num_features = q ** self.dim
             omegas, weights = np.polynomial.hermite.hermgauss(2 * q)
             omegas = torch.tensor(omegas[:q], dtype=torch.get_default_dtype())
             weights = torch.tensor(weights[:q], dtype=torch.get_default_dtype())
 
-            omegas = torch.sqrt(1. / self.length_scale) * omegas
+            omegas = torch.sqrt(1.0 / self.length_scale) * omegas
             w = torch.cartesian_prod(*[omegas.squeeze() for _ in range(self.dim)])
             if self.dim == 1:
                 w = w.unsqueeze(-1)
@@ -334,7 +354,7 @@ class RandomFeatureGP(ExactGP):
         self.prediction_strategy = None  # reset prediction strategy.
         return w, b, scale
 
-    @ExactGP.length_scale.setter
+    @ExactGP.length_scale.setter  # type: ignore
     def length_scale(self, value):
         """Set length scale."""
         self.covar_module.base_kernel.lengthscale = value
@@ -389,15 +409,18 @@ class RandomFeatureGP(ExactGP):
             precomputed_cache = self.prediction_strategy.covar_cache
             covar_inv_quad_form_root = z @ precomputed_cache
 
-            pred_cov = MatmulLazyTensor(
-                covar_inv_quad_form_root, covar_inv_quad_form_root.transpose(-1, -2)
-            ).mul(self.likelihood.noise).add_jitter()
+            pred_cov = (
+                MatmulLazyTensor(
+                    covar_inv_quad_form_root, covar_inv_quad_form_root.transpose(-1, -2)
+                )
+                .mul(self.likelihood.noise)
+                .add_jitter()
+            )
         else:
             dim = pred_mean.shape[-1]
             pred_cov = 1e-6 * torch.eye(dim)
 
-        return gpytorch.distributions.MultivariateNormal(pred_mean,
-                                                         pred_cov)
+        return gpytorch.distributions.MultivariateNormal(pred_mean, pred_cov)
 
     def forward(self, x):
         """Compute features at location x."""

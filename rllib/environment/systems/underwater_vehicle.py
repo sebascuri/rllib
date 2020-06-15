@@ -20,17 +20,15 @@ class UnderwaterVehicle(ODESystem):
     """
 
     def __init__(self, step_size=0.01):
-        super().__init__(
-            func=self._ode,
-            step_size=step_size,
-            dim_action=1,
-            dim_state=1)
+        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=1)
 
     def thrust(self, velocity, thrust):
         """Get the thrust coefficient."""
         bk = get_backend(velocity)
-        return -0.5 * bk.tanh(0.1 * (bk.abs(self.drag_force(velocity) - thrust) - 30.0)
-                              ) + 0.5
+        return (
+            -0.5 * bk.tanh(0.1 * (bk.abs(self.drag_force(velocity) - thrust) - 30.0))
+            + 0.5
+        )
 
     def drag_force(self, velocity):
         """Get drag force."""

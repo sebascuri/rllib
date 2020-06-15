@@ -2,10 +2,10 @@
 
 from exps.gpucrl.post_process import parse_results, print_df
 
-base_dir = 'runs/Invertedpendulum'
-for agent in ['MPC', 'MBMPPO']:
+base_dir = "runs/Invertedpendulum"
+for agent in ["MPC", "MBMPPO"]:
     df = parse_results(base_dir, agent)
     print(agent)
     print_df(df, idx=19)
 
-    df.to_pickle(f'./{agent}.pk')
+    df.to_pickle(f"./{agent}.pk")

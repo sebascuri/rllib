@@ -49,22 +49,30 @@ class TestMLPPolicy(object):
             self.num_actions = None
             self.dim_action = dim_action
 
-        self.policy = NNPolicy(self.dim_state, self.dim_action,
-                               self.num_states, self.num_actions,
-                               layers=[32, 32])
+        self.policy = NNPolicy(
+            self.dim_state,
+            self.dim_action,
+            self.num_states,
+            self.num_actions,
+            layers=[32, 32],
+        )
 
-    def test_num_states_actions(self, discrete_state, discrete_action, dim_state,
-                                dim_action):
+    def test_num_states_actions(
+        self, discrete_state, discrete_action, dim_state, dim_action
+    ):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
-        assert (self.num_states if self.num_states is not None else -1
-                ) == self.policy.num_states
-        assert (self.num_actions if self.num_actions is not None else -1
-                ) == self.policy.num_actions
+        assert (
+            self.num_states if self.num_states is not None else -1
+        ) == self.policy.num_states
+        assert (
+            self.num_actions if self.num_actions is not None else -1
+        ) == self.policy.num_actions
         assert discrete_state == self.policy.discrete_state
         assert discrete_action == self.policy.discrete_action
 
-    def test_random_action(self, discrete_state, discrete_action, dim_state,
-                           dim_action):
+    def test_random_action(
+        self, discrete_state, discrete_action, dim_state, dim_action
+    ):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
 
         distribution = tensor_to_distribution(self.policy.random())
@@ -77,8 +85,9 @@ class TestMLPPolicy(object):
             assert distribution.mean.shape == (self.dim_action,)
             assert sample.shape == (dim_action,)
 
-    def test_call(self, discrete_state, discrete_action, dim_state, dim_action,
-                  batch_size):
+    def test_call(
+        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+    ):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
         state = random_tensor(discrete_state, dim_state, batch_size)
 
@@ -88,7 +97,7 @@ class TestMLPPolicy(object):
         if distribution.has_enumerate_support:  # Discrete
             assert isinstance(distribution, Categorical)
             if batch_size:
-                assert distribution.logits.shape == (batch_size, self.num_actions,)
+                assert distribution.logits.shape == (batch_size, self.num_actions)
                 assert sample.shape == (batch_size,)
             else:
                 assert distribution.logits.shape == (self.num_actions,)
@@ -96,15 +105,19 @@ class TestMLPPolicy(object):
         else:  # Continuous
             assert isinstance(distribution, MultivariateNormal)
             if batch_size:
-                assert distribution.mean.shape == (batch_size, self.dim_action,)
-                assert distribution.covariance_matrix.shape == (batch_size,
-                                                                self.dim_action,
-                                                                self.dim_action)
-                assert sample.shape == (batch_size, dim_action,)
+                assert distribution.mean.shape == (batch_size, self.dim_action)
+                assert distribution.covariance_matrix.shape == (
+                    batch_size,
+                    self.dim_action,
+                    self.dim_action,
+                )
+                assert sample.shape == (batch_size, dim_action)
             else:
                 assert distribution.mean.shape == (self.dim_action,)
-                assert distribution.covariance_matrix.shape == (self.dim_action,
-                                                                self.dim_action)
+                assert distribution.covariance_matrix.shape == (
+                    self.dim_action,
+                    self.dim_action,
+                )
                 assert sample.shape == (dim_action,)
 
 
@@ -147,10 +160,13 @@ class TestFelixNet(object):
 
         assert isinstance(distribution, MultivariateNormal)
         if batch_size:
-            assert distribution.mean.shape == (batch_size, dim_action,)
-            assert distribution.covariance_matrix.shape == (batch_size,
-                                                            dim_action, dim_action)
-            assert sample.shape == (batch_size, dim_action,)
+            assert distribution.mean.shape == (batch_size, dim_action)
+            assert distribution.covariance_matrix.shape == (
+                batch_size,
+                dim_action,
+                dim_action,
+            )
+            assert sample.shape == (batch_size, dim_action)
         else:
             assert distribution.mean.shape == (dim_action,)
             assert distribution.covariance_matrix.shape == (dim_action, dim_action)
@@ -166,12 +182,12 @@ class TestTabularPolicy(object):
         policy = TabularPolicy(num_states=4, num_actions=2)
         policy.set_value(2, torch.tensor(1))
         l1 = torch.log(torch.tensor(1e-12))
-        l2 = torch.log(torch.tensor(1. + 1e-12))
-        torch.testing.assert_allclose(policy.table,
-                                      torch.tensor([[1., 1., l1, 1],
-                                                    [1., 1., l2, 1]]))
+        l2 = torch.log(torch.tensor(1.0 + 1e-12))
+        torch.testing.assert_allclose(
+            policy.table, torch.tensor([[1.0, 1.0, l1, 1], [1.0, 1.0, l2, 1]])
+        )
 
         policy.set_value(0, torch.tensor([0.3, 0.7]))
-        torch.testing.assert_allclose(policy.table,
-                                      torch.tensor([[.3, 1., l1, 1],
-                                                    [.7, 1., l2, 1]]))
+        torch.testing.assert_allclose(
+            policy.table, torch.tensor([[0.3, 1.0, l1, 1], [0.7, 1.0, l2, 1]])
+        )

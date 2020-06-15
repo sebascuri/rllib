@@ -34,8 +34,13 @@ class GPUCBPolicy(AbstractPolicy):
     """
 
     def __init__(self, gp, x, beta=2.0, noisy=False):
-        super().__init__(dim_state=1, dim_action=x.shape[0],
-                         num_states=1, num_actions=-1, deterministic=True)
+        super().__init__(
+            dim_state=1,
+            dim_action=x.shape[0],
+            num_states=1,
+            num_actions=-1,
+            deterministic=True,
+        )
         self.gp = gp
         self.gp.eval()
         self.gp.likelihood.eval()
@@ -90,19 +95,27 @@ class GPUCBAgent(AbstractAgent):
 
     def __init__(self, gp, x, beta=2.0, noisy=False, tensorboard=False):
         self.policy = GPUCBPolicy(gp, x, beta, noisy=noisy)
-        super().__init__(train_frequency=1, num_rollouts=0, gamma=1,
-                         exploration_episodes=0, exploration_steps=0,
-                         tensorboard=tensorboard, comment=gp.name)
+        super().__init__(
+            train_frequency=1,
+            num_rollouts=0,
+            gamma=1,
+            exploration_episodes=0,
+            exploration_steps=0,
+            tensorboard=tensorboard,
+            comment=gp.name,
+        )
 
     def observe(self, observation) -> None:
         """Observe and update GP."""
         super().observe(observation)  # Already calls self.policy.update()
-        add_data_to_gp(self.policy.gp, observation.action.unsqueeze(-1),
-                       observation.reward)
+        add_data_to_gp(
+            self.policy.gp, observation.action.unsqueeze(-1), observation.reward
+        )
         self.logger.update(num_gp_inputs=len(self.policy.gp.train_targets))
         if isinstance(self.policy.gp, SparseGP):
             inducing_points = torch.cat(
-                (self.policy.gp.xu, observation.action.unsqueeze(-1)), dim=-2)
+                (self.policy.gp.xu, observation.action.unsqueeze(-1)), dim=-2
+            )
 
             inducing_points = bkb(self.policy.gp, inducing_points)
             self.policy.gp.set_inducing_points(inducing_points)

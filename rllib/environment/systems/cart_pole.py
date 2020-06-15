@@ -19,8 +19,15 @@ class CartPole(ODESystem):
     step_size : float, optional
     """
 
-    def __init__(self, pendulum_mass, cart_mass, length, rot_friction=0., gravity=9.81,
-                 step_size=0.01):
+    def __init__(
+        self,
+        pendulum_mass,
+        cart_mass,
+        length,
+        rot_friction=0.0,
+        gravity=9.81,
+        step_size=0.01,
+    ):
         """Initialization; see `CartPole`."""
         self.pendulum_mass = pendulum_mass
         self.cart_mass = cart_mass
@@ -28,11 +35,7 @@ class CartPole(ODESystem):
         self.rot_friction = rot_friction
         self.gravity = gravity
 
-        super().__init__(
-            func=self._ode,
-            step_size=step_size,
-            dim_action=1,
-            dim_state=4)
+        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=4)
 
     def _ode(self, _, state, action):
         """Compute the state time-derivative.
@@ -66,13 +69,22 @@ class CartPole(ODESystem):
         theta_dot = omega
 
         det = length * (cart_mass + pendulum_mass * bk.sin(theta) ** 2)
-        v_dot = (action - pendulum_mass * length * (omega ** 2) * bk.sin(theta)
-                 - b * omega * bk.cos(theta)
-                 + 0.5 * pendulum_mass * g * length * bk.sin(2 * theta)) * length / det
-        omega_dot = (action * bk.cos(theta)
-                     - 0.5 * pendulum_mass * length * (omega ** 2) * bk.sin(2 * theta)
-                     - b * total_mass * omega / (pendulum_mass * length)
-                     + total_mass * g * bk.sin(theta)) / det
+        v_dot = (
+            (
+                action
+                - pendulum_mass * length * (omega ** 2) * bk.sin(theta)
+                - b * omega * bk.cos(theta)
+                + 0.5 * pendulum_mass * g * length * bk.sin(2 * theta)
+            )
+            * length
+            / det
+        )
+        omega_dot = (
+            action * bk.cos(theta)
+            - 0.5 * pendulum_mass * length * (omega ** 2) * bk.sin(2 * theta)
+            - b * total_mass * omega / (pendulum_mass * length)
+            + total_mass * g * bk.sin(theta)
+        ) / det
 
         return np.array((x_dot, theta_dot, v_dot, omega_dot))
 

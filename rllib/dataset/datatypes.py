@@ -20,12 +20,23 @@ Distribution = Union[MultivariateNormal, Delta, Categorical, Uniform]
 TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
 Termination = Union[nn.Module, Callable[[State, Action, State], Done]]
-NaN = float('nan')
+NaN = float("nan")
 
-Observation = namedtuple('Observation',
-                         ['state', 'action', 'reward', 'next_state', 'done',
-                          'next_action', 'log_prob_action', 'entropy',
-                          'state_scale_tril', 'next_state_scale_tril'])
+Observation = namedtuple(
+    "Observation",
+    [
+        "state",
+        "action",
+        "reward",
+        "next_state",
+        "done",
+        "next_action",
+        "log_prob_action",
+        "entropy",
+        "state_scale_tril",
+        "next_state_scale_tril",
+    ],
+)
 
 
 class RawObservation(NamedTuple):
@@ -71,10 +82,14 @@ class RawObservation(NamedTuple):
 
     def to_torch(self):
         """Transform to torch."""
-        return Observation(*map(
-            lambda x: x if isinstance(x, torch.Tensor) else
-            torch.tensor(x, dtype=torch.get_default_dtype()),
-            self))
+        return Observation(
+            *map(
+                lambda x: x
+                if isinstance(x, torch.Tensor)
+                else torch.tensor(x, dtype=torch.get_default_dtype()),
+                self,
+            )
+        )
 
 
 Trajectory = List[Observation]

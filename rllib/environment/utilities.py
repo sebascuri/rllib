@@ -30,13 +30,17 @@ def gym2mdp(environment):
             for prob, next_state, reward, done in transitions_:
                 if done:
                     next_state = num_states - 1
-                transitions[(state, action)].append({
-                    'next_state': next_state, 'probability': prob, 'reward': reward})
+                transitions[(state, action)].append(
+                    {"next_state": next_state, "probability": prob, "reward": reward}
+                )
 
-    return MDP(transitions,
-               num_states, num_actions,
-               initial_state=environment.env.reset,
-               terminal_states=terminal_states)
+    return MDP(
+        transitions,
+        num_states,
+        num_actions,
+        initial_state=environment.env.reset,
+        terminal_states=terminal_states,
+    )
 
 
 def mdp2mrp(environment, policy):
@@ -65,14 +69,17 @@ def mdp2mrp(environment, policy):
 
         for a, p_action in enumerate(policy_.probs):
             for transition in environment.transitions[(state.item(), a)]:
-                p_ns = transition['probability']
-                mrp_reward[state, 0] += p_action * p_ns * transition['reward']
-                mrp_kernel[state, 0, transition['next_state']] += p_action * p_ns
+                p_ns = transition["probability"]
+                mrp_reward[state, 0] += p_action * p_ns * transition["reward"]
+                mrp_kernel[state, 0, transition["next_state"]] += p_action * p_ns
 
-    return MDP(kernelreward2transitions(mrp_kernel, mrp_reward),
-               environment.num_states, 1,
-               initial_state=environment.initial_state,
-               terminal_states=environment.terminal_states)
+    return MDP(
+        kernelreward2transitions(mrp_kernel, mrp_reward),
+        environment.num_states,
+        1,
+        initial_state=environment.initial_state,
+        terminal_states=environment.terminal_states,
+    )
 
 
 def transitions2kernelreward(transitions, num_states, num_actions):
@@ -81,8 +88,8 @@ def transitions2kernelreward(transitions, num_states, num_actions):
     reward = np.zeros((num_states, num_actions))
     for (state, action), transition in transitions.items():
         for data in transition:
-            kernel[state, action, data['next_state']] = data['probability']
-            reward[state, action] += data['reward'] * data['probability']
+            kernel[state, action, data["next_state"]] = data["probability"]
+            reward[state, action] += data["reward"] * data["probability"]
 
     return kernel, reward
 
@@ -97,9 +104,11 @@ def kernelreward2transitions(kernel, reward):
         for action in range(num_actions):
             for next_state in np.where(kernel[state, action])[0]:
                 transitions[(state, action)].append(
-                    {'next_state': next_state,
-                     'probability': kernel[state, action, next_state],
-                     'reward': reward[state, action]}
+                    {
+                        "next_state": next_state,
+                        "probability": kernel[state, action, next_state],
+                        "reward": reward[state, action],
+                    }
                 )
 
     return transitions
@@ -112,21 +121,25 @@ def mujoco_observation_to_state(observation, environment):
 
     if no == nq + nv:
         return observation[:nq], observation[nq:]
-    if environment.name in ['HalfCheetahEnv', 'HopperEnv', 'Walker2dEnv']:
-        q_pos[1:], q_vel = observation[:nq - 1], observation[nq - 1:nq - 1 + nv]
-    elif environment.name == ['AntEnv', 'HumanoidEnv', 'HumanoidStandupEnv',
-                              'SwimmerEnv']:
-        q_pos[2:], q_vel = observation[:nq - 2], observation[nq - 2:nq - 2 + nv]
-    elif environment.name in ['InvertedDoublePendulumEnv']:
+    if environment.name in ["HalfCheetahEnv", "HopperEnv", "Walker2dEnv"]:
+        q_pos[1:], q_vel = observation[: nq - 1], observation[nq - 1 : nq - 1 + nv]
+    elif environment.name == [
+        "AntEnv",
+        "HumanoidEnv",
+        "HumanoidStandupEnv",
+        "SwimmerEnv",
+    ]:
+        q_pos[2:], q_vel = observation[: nq - 2], observation[nq - 2 : nq - 2 + nv]
+    elif environment.name in ["InvertedDoublePendulumEnv"]:
         q_pos[:1] = observation[:1]
         q_pos[1:3] = np.arctan2(observation[1:3], observation[3:5])
-        q_vel = observation[5:5 + nv]
-    elif environment.name in ['InvertedPendulumEnv']:
+        q_vel = observation[5 : 5 + nv]
+    elif environment.name in ["InvertedPendulumEnv"]:
         pass
-    elif environment.name in ['PusherEnv']:
+    elif environment.name in ["PusherEnv"]:
         q_pos[-2:] = observation[-2:]  # goal position.
 
-    elif environment.name in ['ReacherEnv', 'StrikerEnv', 'ThrowerEnv', 'PusherEnv']:
+    elif environment.name in ["ReacherEnv", "StrikerEnv", "ThrowerEnv", "PusherEnv"]:
         raise NotImplementedError(f"{environment.name} not implemented.")
 
     else:

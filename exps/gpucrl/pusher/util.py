@@ -5,15 +5,20 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from exps.gpucrl.util import get_mpc_agent, get_mb_mppo_agent
-from rllib.dataset.transforms import MeanFunction, ActionScaler, DeltaState, \
-    NextStateClamper
+from exps.gpucrl.util import get_mb_mppo_agent, get_mpc_agent
+from rllib.dataset.transforms import (
+    ActionScaler,
+    DeltaState,
+    MeanFunction,
+    NextStateClamper,
+)
 from rllib.environment import GymEnvironment
 from rllib.reward.mujoco_rewards import PusherReward
 
 
 class QuaternionTransform(nn.Module):
     """Transform pusher states to quaternion representation."""
+
     extra_dim = 7
 
     def forward(self, states):
@@ -37,8 +42,9 @@ def large_state_termination(state, action, next_state=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action)
 
-    return (state[..., -3:].abs() > 25).any(-1) | (
-            state[..., 7:14].abs() > 2000).any(-1)
+    return (state[..., -3:].abs() > 25).any(-1) | (state[..., 7:14].abs() > 2000).any(
+        -1
+    )
 
 
 def get_agent_and_environment(params, agent_name):
@@ -48,22 +54,59 @@ def get_agent_and_environment(params, agent_name):
     torch.set_num_threads(params.num_threads)
 
     # %% Define Environment.
-    environment = GymEnvironment('MBRLPusher-v0', action_cost=params.action_cost,
-                                 seed=params.seed)
+    environment = GymEnvironment(
+        "MBRLPusher-v0", action_cost=params.action_cost, seed=params.seed
+    )
     action_scale = environment.action_scale
     reward_model = PusherReward(action_cost=params.action_cost)
 
     # %% Define Helper modules
-    low = torch.tensor([
-        [-2.2854, -0.5236, -1.5, -2.3213, -1.5, -1.094, -1.5,  # qpos
-         -10., -10., -10., -10., -10., -10., -10.,  # qvel
-         0.3, -0.7, -0.275]
-    ])
-    high = torch.tensor([
-        [2.0, 1.3963, 1.7, 0, 1.5, 0, 1.5,  # qpos
-         10., 10., 10., 10., 10., 10., 10.,  # qvel
-         0.8, 0.1, -0.275]
-    ])
+    low = torch.tensor(
+        [
+            [
+                -2.2854,
+                -0.5236,
+                -1.5,
+                -2.3213,
+                -1.5,
+                -1.094,
+                -1.5,  # qpos
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0,
+                -10.0,  # qvel
+                0.3,
+                -0.7,
+                -0.275,
+            ]
+        ]
+    )
+    high = torch.tensor(
+        [
+            [
+                2.0,
+                1.3963,
+                1.7,
+                0,
+                1.5,
+                0,
+                1.5,  # qpos
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,
+                10.0,  # qvel
+                0.8,
+                0.1,
+                -0.275,
+            ]
+        ]
+    )
 
     transformations = [
         NextStateClamper(low, high),
@@ -76,35 +119,75 @@ def get_agent_and_environment(params, agent_name):
     # 0, 0.5, -1.5, -1.2, 0.7,
     exploratory_distribution = torch.distributions.Uniform(
         torch.tensor(
-            [-.3, 0.3, -1.5, -1.5, 0.5, -1.094, -1.5,  # qpos
-             -0.005, -0.005, -0.005, -0.005, -0.005, -0.005, -0.005,  # qvel
-             0.5, -0.4, -0.323]  # object
+            [
+                -0.3,
+                0.3,
+                -1.5,
+                -1.5,
+                0.5,
+                -1.094,
+                -1.5,  # qpos
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,
+                -0.005,  # qvel
+                0.5,
+                -0.4,
+                -0.323,
+            ]  # object
         ),
         torch.tensor(
-            [0.3, 0.6, -1., -1., 0.9, 0., 1.5,  # qpos
-             0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005,  # qvel
-             0.7, -0.2, -0.275]  # object
-        )
+            [
+                0.3,
+                0.6,
+                -1.0,
+                -1.0,
+                0.9,
+                0.0,
+                1.5,  # qpos
+                0.005,
+                0.005,
+                0.005,
+                0.005,
+                0.005,
+                0.005,
+                0.005,  # qvel
+                0.7,
+                -0.2,
+                -0.275,
+            ]  # object
+        ),
     )
 
-    if agent_name == 'mpc':
-        agent = get_mpc_agent(environment.name, environment.dim_state,
-                              environment.dim_action,
-                              params, reward_model,
-                              action_scale=action_scale,
-                              transformations=transformations,
-                              input_transform=input_transform,
-                              termination=large_state_termination,
-                              initial_distribution=exploratory_distribution)
-    elif agent_name == 'mbmppo':
+    if agent_name == "mpc":
+        agent = get_mpc_agent(
+            environment.name,
+            environment.dim_state,
+            environment.dim_action,
+            params,
+            reward_model,
+            action_scale=action_scale,
+            transformations=transformations,
+            input_transform=input_transform,
+            termination=large_state_termination,
+            initial_distribution=exploratory_distribution,
+        )
+    elif agent_name == "mbmppo":
         agent = get_mb_mppo_agent(
-            environment.name, environment.dim_state, environment.dim_action,
-            params, reward_model,
+            environment.name,
+            environment.dim_state,
+            environment.dim_action,
+            params,
+            reward_model,
             input_transform=input_transform,
             action_scale=action_scale,
             transformations=transformations,
             termination=large_state_termination,
-            initial_distribution=exploratory_distribution)
+            initial_distribution=exploratory_distribution,
+        )
     else:
         raise NotImplementedError
 

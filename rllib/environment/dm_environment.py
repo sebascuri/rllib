@@ -42,8 +42,9 @@ try:
                     dim_state += s.shape[0]
                 except IndexError:
                     pass
-            observation_space = Box(low=-np.inf * np.ones(dim_state),
-                                    high=np.inf * np.ones(dim_state))
+            observation_space = Box(
+                low=-np.inf * np.ones(dim_state), high=np.inf * np.ones(dim_state)
+            )
 
             super().__init__(
                 dim_action=dim_action,
@@ -52,7 +53,7 @@ try:
                 observation_space=observation_space,
                 num_actions=-1,
                 num_states=-1,
-                num_observations=-1
+                num_observations=-1,
             )
             self._time = 0
 
@@ -70,7 +71,7 @@ try:
             reward = dm_obs.reward
             return self._stack_observations(dm_obs.observation), reward, False, {}
 
-        def render(self, mode='human'):
+        def render(self, mode="human"):
             """See `AbstractEnvironment.render'."""
             plt.imshow(self.env.physics.render())
             plt.show(block=False)
@@ -88,7 +89,7 @@ try:
         @property
         def goal(self):
             """Return current goal of environment."""
-            if hasattr(self.env, 'goal'):
+            if hasattr(self.env, "goal"):
                 return self.env.goal
             return None
 
@@ -110,6 +111,7 @@ try:
         def name(self):
             """Return environment name."""
             return self._name
+
 
 except Exception:  # dm_control not installed.
     pass

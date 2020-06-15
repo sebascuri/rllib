@@ -20,8 +20,14 @@ class EmptyEnvironment(AbstractEnvironment):
         else:
             state_space = Box(np.array([-1] * dim_state), np.array([1] * dim_state))
 
-        super().__init__(dim_state, dim_action, state_space, action_space,
-                         num_states=num_states, num_actions=num_actions)
+        super().__init__(
+            dim_state,
+            dim_action,
+            state_space,
+            action_space,
+            num_states=num_states,
+            num_actions=num_actions,
+        )
 
     def step(self, action):
         """Run one time-step of the model dynamics.

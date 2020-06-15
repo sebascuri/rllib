@@ -45,8 +45,15 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, dim_state, dim_action, dim_observation=-1, num_states=-1,
-                 num_actions=-1, num_observations=-1):
+    def __init__(
+        self,
+        dim_state,
+        dim_action,
+        dim_observation=-1,
+        num_states=-1,
+        num_actions=-1,
+        num_observations=-1,
+    ):
         super().__init__()
         self.dim_state = dim_state
         self.dim_action = dim_action

@@ -36,15 +36,18 @@ class AbstractAgent(object, metaclass=ABCMeta):
         End an interaction with an environment.
     """
 
-    def __init__(self, train_frequency, num_rollouts,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 tensorboard=False, comment=''):
-        self.logger = Logger(
-            self.name,
-            tensorboard=tensorboard,
-            comment=comment
-        )
-        self.counters = {'total_episodes': 0, 'total_steps': 0, 'train_steps': 0}
+    def __init__(
+        self,
+        train_frequency,
+        num_rollouts,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
+        self.logger = Logger(self.name, tensorboard=tensorboard, comment=comment)
+        self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}
         self.episode_steps = []
 
         self.gamma = gamma
@@ -74,7 +77,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def act(self, state):
         """Ask the agent for an action to interact with the environment."""
         if self.total_steps < self.exploration_steps or (
-                self.total_episodes < self.exploration_episodes):
+            self.total_episodes < self.exploration_episodes
+        ):
             policy = self.policy.random()
         else:
             if not isinstance(state, torch.Tensor):
@@ -104,7 +108,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """
         self.policy.update()  # update policy parameters (eps-greedy.)
 
-        self.counters['total_steps'] += 1
+        self.counters["total_steps"] += 1
         self.episode_steps[-1] += 1
         self.logger.update(rewards=observation.reward.item())
         self.logger.update(entropy=observation.entropy.item())
@@ -119,8 +123,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def end_episode(self):
         """End an episode."""
-        self.counters['total_episodes'] += 1
-        rewards = self.logger.current['rewards']
+        self.counters["total_episodes"] += 1
+        rewards = self.logger.current["rewards"]
         self.logger.end_episode(environment_return=rewards[0] * rewards[1])
         self.logger.export_to_json()  # save at every episode?
 
@@ -143,17 +147,17 @@ class AbstractAgent(object, metaclass=ABCMeta):
     @property
     def total_episodes(self):
         """Return number of steps in current episode."""
-        return self.counters['total_episodes']
+        return self.counters["total_episodes"]
 
     @property
     def total_steps(self):
         """Return number of steps of interaction with environment."""
-        return self.counters['total_steps']
+        return self.counters["total_steps"]
 
     @property
     def train_steps(self):
         """Return number of steps of interaction with environment."""
-        return self.counters['train_steps']
+        return self.counters["train_steps"]
 
     @property
     def name(self):

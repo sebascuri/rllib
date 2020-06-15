@@ -1,6 +1,5 @@
 """Implementation of a Linear Dynamical System."""
 
-
 import numpy as np
 
 from .abstract_system import AbstractSystem
@@ -29,10 +28,9 @@ class LinearSystem(AbstractSystem):
         dim_state, dim_action = self.b.shape
         dim_observation = self.c.shape[0]
 
-        super().__init__(dim_state=dim_state,
-                         dim_action=dim_action,
-                         dim_observation=dim_observation,
-                         )
+        super().__init__(
+            dim_state=dim_state, dim_action=dim_action, dim_observation=dim_observation
+        )
         self._state = None
 
     def step(self, action):

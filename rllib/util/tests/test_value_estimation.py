@@ -5,8 +5,7 @@ import torch
 import torch.testing
 
 from rllib.dataset.datatypes import RawObservation
-from rllib.util.value_estimation import (discount_cumsum, discount_sum,
-                                         mc_return)
+from rllib.util.value_estimation import discount_cumsum, discount_sum, mc_return
 
 
 class TestDiscountedCumSum(object):
@@ -14,25 +13,29 @@ class TestDiscountedCumSum(object):
     def gamma(self, request):
         return request.param
 
-    @pytest.fixture(params=[[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                            [1, 2, 1, 0.2, 0.4]], scope="class")
+    @pytest.fixture(
+        params=[[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 2, 1, 0.2, 0.4]], scope="class"
+    )
     def rewards(self, request):
         return request.param
 
     def test_correctness(self, gamma):
         rewards = [1, 0.5, 2, -0.2]
-        cum_rewards = [1 + 0.5 * gamma + 2 * gamma ** 2 - 0.2 * gamma ** 3,
-                       0.5 + 2 * gamma - 0.2 * gamma ** 2,
-                       2 - 0.2 * gamma,
-                       -0.2
-                       ]
+        cum_rewards = [
+            1 + 0.5 * gamma + 2 * gamma ** 2 - 0.2 * gamma ** 3,
+            0.5 + 2 * gamma - 0.2 * gamma ** 2,
+            2 - 0.2 * gamma,
+            -0.2,
+        ]
         assert scipy.allclose(cum_rewards, discount_cumsum(np.array(rewards), gamma))
 
-        torch.testing.assert_allclose(cum_rewards,
-                                      discount_cumsum(torch.tensor(rewards), gamma))
+        torch.testing.assert_allclose(
+            cum_rewards, discount_cumsum(torch.tensor(rewards), gamma)
+        )
 
-        torch.testing.assert_allclose(cum_rewards[0],
-                                      discount_sum(torch.tensor(rewards), gamma))
+        torch.testing.assert_allclose(
+            cum_rewards[0], discount_sum(torch.tensor(rewards), gamma)
+        )
 
     def test_shape_and_type(self, rewards, gamma):
         np_returns = discount_cumsum(np.array(rewards), gamma)
@@ -40,7 +43,8 @@ class TestDiscountedCumSum(object):
         assert type(np_returns) is np.ndarray
 
         t_returns = discount_cumsum(
-            torch.tensor(rewards, dtype=torch.get_default_dtype()), gamma)
+            torch.tensor(rewards, dtype=torch.get_default_dtype()), gamma
+        )
         assert t_returns.shape == torch.Size((len(rewards),))
         assert type(t_returns) is torch.Tensor
 

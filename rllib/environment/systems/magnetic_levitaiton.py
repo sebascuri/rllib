@@ -33,8 +33,17 @@ class MagneticLevitaiton(ODESystem):
      Reinforcement learning in feedback control. Machine learning.
     """
 
-    def __init__(self, mass=0.8, resistance=11.68, x_inf=0.007, l_inf=0.80502,
-                 ksi=0.001599, max_action=60, gravity=9.81, step_size=0.01):
+    def __init__(
+        self,
+        mass=0.8,
+        resistance=11.68,
+        x_inf=0.007,
+        l_inf=0.80502,
+        ksi=0.001599,
+        max_action=60,
+        gravity=9.81,
+        step_size=0.01,
+    ):
         self.mass = mass
         self.resistance = resistance
         self.x_inf = x_inf
@@ -43,11 +52,7 @@ class MagneticLevitaiton(ODESystem):
         self.max_action = max_action
         self.gravity = gravity
 
-        super().__init__(
-            func=self._ode,
-            step_size=step_size,
-            dim_action=1,
-            dim_state=3)
+        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=3)
 
     def alpha(self, x1, x2, x3):
         """Compute alpha coefficient."""
@@ -57,8 +62,11 @@ class MagneticLevitaiton(ODESystem):
     def beta(self, x1, x2, x3):
         """Compute beta coefficient."""
         x = self.x_inf + x1
-        return x3 * (self.ksi * x2 - self.resistance * x ** 2) / (
-                self.ksi * x + self.l_inf * x ** 2)
+        return (
+            x3
+            * (self.ksi * x2 - self.resistance * x ** 2)
+            / (self.ksi * x + self.l_inf * x ** 2)
+        )
 
     def gamma(self, x1, x2, x3):
         """Compute gamma coefficient."""

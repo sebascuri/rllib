@@ -50,7 +50,7 @@ class RewardClipper(AbstractTransform):
 
     """
 
-    def __init__(self, min_reward=0., max_reward=1.):
+    def __init__(self, min_reward=0.0, max_reward=1.0):
         super().__init__()
         self._clipper = Clipper(min_reward, max_reward)
 
@@ -66,7 +66,7 @@ class RewardClipper(AbstractTransform):
             log_prob_action=observation.log_prob_action,
             entropy=observation.entropy,
             state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
+            next_state_scale_tril=observation.next_state_scale_tril,
         )
 
     @torch.jit.export
@@ -82,7 +82,7 @@ class RewardClipper(AbstractTransform):
             log_prob_action=observation.log_prob_action,
             entropy=observation.entropy,
             state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
+            next_state_scale_tril=observation.next_state_scale_tril,
         )
 
 
@@ -105,7 +105,7 @@ class ActionClipper(AbstractTransform):
 
     """
 
-    def __init__(self, min_action=-1., max_action=1.):
+    def __init__(self, min_action=-1.0, max_action=1.0):
         super().__init__()
         self._clipper = Clipper(min_action, max_action)
 
@@ -121,7 +121,7 @@ class ActionClipper(AbstractTransform):
             log_prob_action=observation.log_prob_action,
             entropy=observation.entropy,
             state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
+            next_state_scale_tril=observation.next_state_scale_tril,
         )
 
     @torch.jit.export
@@ -137,5 +137,5 @@ class ActionClipper(AbstractTransform):
             log_prob_action=observation.log_prob_action,
             entropy=observation.entropy,
             state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril
+            next_state_scale_tril=observation.next_state_scale_tril,
         )

@@ -41,8 +41,9 @@ def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None)
     policy = TabularPolicy(num_states=model.num_states, num_actions=model.num_actions)
 
     for _ in range(max_iter):
-        value_function = iterative_policy_evaluation(policy, model, gamma, eps,
-                                                     value_function=value_function)
+        value_function = iterative_policy_evaluation(
+            policy, model, gamma, eps, value_function=value_function
+        )
 
         policy_stable = True
         for state in range(model.num_states):
@@ -51,9 +52,9 @@ def policy_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None)
             for action in range(model.num_actions):
                 value_estimate = 0
                 for transition in model.transitions[(state, action)]:
-                    next_state = torch.tensor(transition['next_state']).long()
-                    value_estimate = transition['probability'] * (
-                        transition['reward'] + gamma * value_function(next_state)
+                    next_state = torch.tensor(transition["next_state"]).long()
+                    value_estimate = transition["probability"] * (
+                        transition["reward"] + gamma * value_function(next_state)
                     )
 
                 value_[action] = value_estimate

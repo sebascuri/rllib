@@ -26,8 +26,9 @@ try:
             mujoco_env.MujocoEnv.__init__(self, f"{dir_path}/assets/pusher.xml", 4)
             utils.EzPickle.__init__(self)
             self.goal_pos = np.asarray([0, 0])
-            self.cylinder_pos = np.array([-0.25, 0.15]
-                                         ) + np.random.normal(0, 0.025, [2])
+            self.cylinder_pos = np.array([-0.25, 0.15]) + np.random.normal(
+                0, 0.025, [2]
+            )
             # self._goal = self.get_body_com("goal")
             self.reset_model()
 
@@ -46,28 +47,43 @@ try:
             self.do_simulation(action, self.frame_skip)
             ob = self._get_obs()
             done = False
-            return ob, reward, done, dict(
-                reward_dist_to_goal=1.25 * reward_dist_to_goal,
-                reward_dist_to_obj=0.5 * reward_dist_to_obj,
-                reward_ctrl=self.action_cost * reward_ctrl
+            return (
+                ob,
+                reward,
+                done,
+                dict(
+                    reward_dist_to_goal=1.25 * reward_dist_to_goal,
+                    reward_dist_to_obj=0.5 * reward_dist_to_obj,
+                    reward_ctrl=self.action_cost * reward_ctrl,
+                ),
             )
 
         @staticmethod
         def get_end_effector_pos(observation):
             """Get end effector position."""
             theta1, theta2, theta3, theta4, theta5, theta6, *_ = np.split(
-                observation, observation.shape[-1], -1)
-            rot_axis = np.stack([np.cos(theta2) * np.cos(theta1),
-                                 np.cos(theta2) * np.sin(theta1),
-                                 -np.sin(theta2)], axis=1)
-            rot_perp_axis = np.stack([-np.sin(theta1), np.cos(theta1),
-                                      np.zeros(theta1.shape)], axis=1)
+                observation, observation.shape[-1], -1
+            )
+            rot_axis = np.stack(
+                [
+                    np.cos(theta2) * np.cos(theta1),
+                    np.cos(theta2) * np.sin(theta1),
+                    -np.sin(theta2),
+                ],
+                axis=1,
+            )
+            rot_perp_axis = np.stack(
+                [-np.sin(theta1), np.cos(theta1), np.zeros(theta1.shape)], axis=1
+            )
 
-            cur_end = np.stack([
-                0.1 * np.cos(theta1) + 0.4 * np.cos(theta1) * np.cos(theta2),
-                0.1 * np.sin(theta1) + 0.4 * np.sin(theta1) * np.cos(theta2) - 0.6,
-                -0.4 * np.sin(theta2)
-            ], axis=1)
+            cur_end = np.stack(
+                [
+                    0.1 * np.cos(theta1) + 0.4 * np.cos(theta1) * np.cos(theta2),
+                    0.1 * np.sin(theta1) + 0.4 * np.sin(theta1) * np.cos(theta2) - 0.6,
+                    -0.4 * np.sin(theta2),
+                ],
+                axis=1,
+            )
 
             for length, hinge, roll in [(0.321, theta4, theta3)]:
                 perp_all_axis = np.cross(rot_axis, rot_perp_axis)
@@ -76,10 +92,12 @@ try:
                 z = -np.sin(hinge) * np.cos(roll) * perp_all_axis
                 new_rot_axis = x + y + z
                 new_rot_perp_axis = np.cross(new_rot_axis, rot_axis)
-                new_rot_perp_axis[np.linalg.norm(new_rot_perp_axis, axis=1) < 1e-30] = \
-                    rot_perp_axis[np.linalg.norm(new_rot_perp_axis, axis=1) < 1e-30]
-                new_rot_perp_axis /= np.linalg.norm(new_rot_perp_axis, axis=1,
-                                                    keepdims=True)
+                new_rot_perp_axis[
+                    np.linalg.norm(new_rot_perp_axis, axis=1) < 1e-30
+                ] = rot_perp_axis[np.linalg.norm(new_rot_perp_axis, axis=1) < 1e-30]
+                new_rot_perp_axis /= np.linalg.norm(
+                    new_rot_perp_axis, axis=1, keepdims=True
+                )
                 rot_axis, rot_perp_axis = new_rot_axis, new_rot_perp_axis
                 cur_end = cur_end + length * new_rot_axis
 
@@ -95,13 +113,15 @@ try:
             qpos = self.init_qpos
 
             self.goal_pos = np.asarray([0, 0])
-            self.cylinder_pos = np.array([-0.25, 0.15]
-                                         ) + np.random.normal(0, 0.025, [2])
+            self.cylinder_pos = np.array([-0.25, 0.15]) + np.random.normal(
+                0, 0.025, [2]
+            )
 
             qpos[-4:-2] = self.cylinder_pos
             qpos[-2:] = self.goal_pos
             qvel = self.init_qvel + self.np_random.uniform(
-                low=-0.005, high=0.005, size=self.model.nv)
+                low=-0.005, high=0.005, size=self.model.nv
+            )
             qvel[-4:] = 0
             self.set_state(qpos, qvel)
             self._goal = self.get_body_com("goal")
@@ -109,12 +129,15 @@ try:
             return self._get_obs()
 
         def _get_obs(self):
-            return np.concatenate([
-                self.sim.data.qpos.flat[:7],
-                self.sim.data.qvel.flat[:7],
-                self.get_body_com("object"),
-                # self.get_body_com("tips_arm"),
-            ])
+            return np.concatenate(
+                [
+                    self.sim.data.qpos.flat[:7],
+                    self.sim.data.qvel.flat[:7],
+                    self.get_body_com("object"),
+                    # self.get_body_com("tips_arm"),
+                ]
+            )
+
 
 except Exception:  # Mujoco not installed.
     pass

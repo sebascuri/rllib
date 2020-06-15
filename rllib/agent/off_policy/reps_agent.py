@@ -17,17 +17,34 @@ class REPSAgent(OffPolicyAgent):
     A survey on policy search for robotics. Foundations and Trends® in Robotics.
     """
 
-    def __init__(self, reps_loss, optimizer, memory,
-                 batch_size, num_iter,
-                 train_frequency=0, num_rollouts=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 tensorboard=False, comment=''):
-        super().__init__(memory=memory, batch_size=batch_size,
-                         optimizer=optimizer, num_iter=num_iter,
-                         train_frequency=train_frequency, num_rollouts=num_rollouts,
-                         gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes,
-                         tensorboard=tensorboard, comment=comment)
+    def __init__(
+        self,
+        reps_loss,
+        optimizer,
+        memory,
+        batch_size,
+        num_iter,
+        train_frequency=0,
+        num_rollouts=1,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
+        super().__init__(
+            memory=memory,
+            batch_size=batch_size,
+            optimizer=optimizer,
+            num_iter=num_iter,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=comment,
+        )
 
         self.policy = reps_loss.policy
         self.algorithm = reps_loss
@@ -58,13 +75,13 @@ class REPSAgent(OffPolicyAgent):
 
     def _optimizer_dual(self):
         """Optimize the dual function."""
-        self._optimize_loss(self.num_iter, loss_name='dual')
+        self._optimize_loss(self.num_iter, loss_name="dual")
 
     def _fit_policy(self):
         """Fit the policy optimizing the weighted negative log-likelihood."""
-        self._optimize_loss(self.num_iter, loss_name='policy_loss')
+        self._optimize_loss(self.num_iter, loss_name="policy_loss")
 
-    def _optimize_loss(self, num_iter, loss_name='dual'):
+    def _optimize_loss(self, num_iter, loss_name="dual"):
         """Optimize the loss performing `num_iter' gradient steps."""
         for i in range(num_iter):
             obs, idx, weight = self.memory.get_batch(self.batch_size)
@@ -72,8 +89,9 @@ class REPSAgent(OffPolicyAgent):
             def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses = self.algorithm(obs.state, obs.action, obs.reward,
-                                        obs.next_state, obs.done)
+                losses = self.algorithm(
+                    obs.state, obs.action, obs.reward, obs.next_state, obs.done
+                )
                 self.optimizer.zero_grad()
                 loss_ = getattr(losses, loss_name)
                 loss_.backward()
@@ -82,4 +100,4 @@ class REPSAgent(OffPolicyAgent):
             loss = self.optimizer.step(closure=closure).item()
             self.logger.update(**{loss_name: loss})
 
-            self.counters['train_steps'] += 1
+            self.counters["train_steps"] += 1

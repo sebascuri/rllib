@@ -28,19 +28,23 @@ class PitchControl(ODESystem):
     http://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
     """
 
-    def __init__(self, omega=56.7, cld=0.313, cmld=0.0139, cw=0.232, cm=0.426,
-                 eta=.0875, step_size=0.01):
+    def __init__(
+        self,
+        omega=56.7,
+        cld=0.313,
+        cmld=0.0139,
+        cw=0.232,
+        cm=0.426,
+        eta=0.0875,
+        step_size=0.01,
+    ):
         self.omega = omega
         self.cld = cld
         self.cmld = cmld
         self.cw = cw
         self.cm = cm
         self.eta = eta
-        super().__init__(
-            func=self._ode,
-            step_size=step_size,
-            dim_action=1,
-            dim_state=3)
+        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=3)
 
     def _ode(self, _, state, action):
         """Compute the state time-derivative.
@@ -60,7 +64,7 @@ class PitchControl(ODESystem):
         """
         # Physical dynamics
         alpha, q, theta = state
-        u, = action
+        (u,) = action
 
         alpha_dot = -self.cld * alpha + self.omega * q + self.cw * u
         q_dot = -self.cmld * alpha - self.cm * q + self.eta * self.cw * u
@@ -74,5 +78,4 @@ if __name__ == "__main__":
     f = sys.func(None, np.ones(sys.dim_state), np.ones(sys.dim_action))
     print(f)
     sys.linearize()
-    sys.linearize_()
     sys.linearize(np.ones(sys.dim_state), np.ones(sys.dim_action))

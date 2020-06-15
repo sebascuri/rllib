@@ -21,11 +21,10 @@ class ODESystem(AbstractSystem):
     dim_action : int
     """
 
-    def __init__(self, func, step_size, dim_state, dim_action,
-                 integrator=integrate.RK45):
-        super().__init__(dim_state=dim_state,
-                         dim_action=dim_action,
-                         )
+    def __init__(
+        self, func, step_size, dim_state, dim_action, integrator=integrate.RK45
+    ):
+        super().__init__(dim_state=dim_state, dim_action=dim_action)
 
         self.step_size = step_size
         self.func = func
@@ -35,10 +34,11 @@ class ODESystem(AbstractSystem):
 
     def step(self, action):
         """See `AbstractSystem.step'."""
-        integrator = self.integrator(lambda t, y: self.func(t, y, action), 0,
-                                     self.state, t_bound=self.step_size)
+        integrator = self.integrator(
+            lambda t, y: self.func(t, y, action), 0, self.state, t_bound=self.step_size
+        )
 
-        while integrator.status == 'running':
+        while integrator.status == "running":
             integrator.step()
         self.state = integrator.y
         self._time += self.step_size
@@ -83,18 +83,21 @@ class ODESystem(AbstractSystem):
         a = np.zeros((self.dim_state, self.dim_state))
         b = np.zeros((self.dim_state, self.dim_action))
         for i in range(self.dim_state):
-            aux = torch.autograd.grad(f[i], state, allow_unused=True,
-                                      retain_graph=True)[0]
+            aux = torch.autograd.grad(
+                f[i], state, allow_unused=True, retain_graph=True
+            )[0]
             if aux is not None:
                 a[i] = aux.numpy()
 
-            aux = torch.autograd.grad(f[i], action, allow_unused=True,
-                                      retain_graph=True)[0]
+            aux = torch.autograd.grad(
+                f[i], action, allow_unused=True, retain_graph=True
+            )[0]
             if aux is not None:
                 b[i] = aux.numpy()
 
-        ad, bd, _, _, _ = signal.cont2discrete((a, b, 0, 0), self.step_size,
-                                               method='zoh')
+        ad, bd, _, _, _ = signal.cont2discrete(
+            (a, b, 0, 0), self.step_size, method="zoh"
+        )
         return LinearSystem(ad, bd)
 
     @property

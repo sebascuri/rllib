@@ -20,7 +20,7 @@ class ParameterDecay(nn.Module, metaclass=ABCMeta):
         self.end = nn.Parameter(torch.tensor(end), requires_grad=False)
 
         if decay is None:
-            decay = 1.
+            decay = 1.0
         self.decay = nn.Parameter(torch.tensor(decay), requires_grad=False)
 
         self.step = 0
@@ -65,7 +65,7 @@ class ExponentialDecay(ParameterDecay):
 
     def forward(self):
         """See `ParameterDecay.__call__'."""
-        decay = torch.exp(-torch.tensor(1. * self.step) / self.decay)
+        decay = torch.exp(-torch.tensor(1.0 * self.step) / self.decay)
         return self.end + (self.start - self.end) * decay
 
 
@@ -77,7 +77,7 @@ class PolynomialDecay(ParameterDecay):
 
     def forward(self):
         """See `ParameterDecay.__call__'."""
-        return min(self.start, self.end / torch.tensor(self.step + 1.) ** self.decay)
+        return min(self.start, self.end / torch.tensor(self.step + 1.0) ** self.decay)
 
 
 class LinearDecay(ParameterDecay):

@@ -6,7 +6,6 @@ from torch import Tensor
 
 from rllib.dataset.datatypes import Action, TupleDistribution
 
-
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     dim_state: int
     dim_action: int
@@ -17,16 +16,19 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     discrete_state: bool
     discrete_action: bool
     action_scale: Tensor
-
-    def __init__(self, dim_state: int, dim_action: int,
-                 num_states: int = -1, num_actions: int = -1, tau: float = 0.0,
-                 deterministic: bool = False, action_scale: Action = 1.) -> None: ...
-
+    def __init__(
+        self,
+        dim_state: int,
+        dim_action: int,
+        num_states: int = -1,
+        num_actions: int = -1,
+        tau: float = 0.0,
+        deterministic: bool = False,
+        action_scale: Action = 1.0,
+    ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
-
-    def random(self, batch_size: Tuple[int] = None, normalized: bool = False
-               ) -> TupleDistribution: ...
-
+    def random(
+        self, batch_size: Tuple[int] = None, normalized: bool = False
+    ) -> TupleDistribution: ...
     def reset(self, **kwargs) -> None: ...
-
     def update(self) -> None: ...

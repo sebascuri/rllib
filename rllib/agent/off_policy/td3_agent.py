@@ -33,26 +33,50 @@ class TD3Agent(DPGAgent):
 
     """
 
-    def __init__(self, q_function, policy, criterion,
-                 optimizer, memory, exploration_noise, num_iter=1, batch_size=64,
-                 target_update_frequency=4,
-                 policy_noise=0., noise_clip=1.,
-                 train_frequency=0, num_rollouts=1,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 tensorboard=False, comment=''):
-        q_function = NNEnsembleQFunction.from_q_function(q_function=q_function,
-                                                         num_heads=2)
+    def __init__(
+        self,
+        q_function,
+        policy,
+        criterion,
+        optimizer,
+        memory,
+        exploration_noise,
+        num_iter=1,
+        batch_size=64,
+        target_update_frequency=4,
+        policy_noise=0.0,
+        noise_clip=1.0,
+        train_frequency=0,
+        num_rollouts=1,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
+        q_function = NNEnsembleQFunction.from_q_function(
+            q_function=q_function, num_heads=2
+        )
         optimizer = type(optimizer)(
-            chain(policy.parameters(), q_function.parameters()), **optimizer.defaults)
-        super().__init__(q_function=q_function, policy=policy,
-                         exploration_noise=exploration_noise,
-                         criterion=criterion,
-                         optimizer=optimizer,
-                         memory=memory,
-                         num_iter=num_iter, batch_size=batch_size,
-                         target_update_frequency=target_update_frequency,
-                         policy_noise=policy_noise, noise_clip=noise_clip,
-                         train_frequency=train_frequency, num_rollouts=num_rollouts,
-                         gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes,
-                         tensorboard=tensorboard, comment=comment)
+            chain(policy.parameters(), q_function.parameters()), **optimizer.defaults
+        )
+        super().__init__(
+            q_function=q_function,
+            policy=policy,
+            exploration_noise=exploration_noise,
+            criterion=criterion,
+            optimizer=optimizer,
+            memory=memory,
+            num_iter=num_iter,
+            batch_size=batch_size,
+            target_update_frequency=target_update_frequency,
+            policy_noise=policy_noise,
+            noise_clip=noise_clip,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=comment,
+        )

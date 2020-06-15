@@ -76,9 +76,10 @@ def batch_trajectory_to_single_trajectory(trajectory):
     out = []
     for batch_obs in trajectory:
         expanded_obs = Observation(
-            *[k.repeat(batch_shape) if k.dim() < 1 else k for k in batch_obs])
+            *[k.repeat(batch_shape) if k.dim() < 1 else k for k in batch_obs]
+        )
         squeezed_obs = Observation(
-            *[k.reshape(-1, *k.shape[len(batch_shape):]) for k in expanded_obs]
+            *[k.reshape(-1, *k.shape[len(batch_shape) :]) for k in expanded_obs]
         )
         out += [Observation(*k) for k in zip(*squeezed_obs)]
 
@@ -87,8 +88,12 @@ def batch_trajectory_to_single_trajectory(trajectory):
 
 def concatenate_observations(observation, new_observation):
     """Concatenate observations and return a new observation."""
-    return Observation(*[torch.cat((a, b.unsqueeze(0)), dim=0)
-                         for a, b in zip(observation, new_observation)])
+    return Observation(
+        *[
+            torch.cat((a, b.unsqueeze(0)), dim=0)
+            for a, b in zip(observation, new_observation)
+        ]
+    )
 
 
 def gather_trajectories(trajectories, gather_dim=1):
@@ -101,6 +106,11 @@ def gather_trajectories(trajectories, gather_dim=1):
     """
     batch_trajectories = [stack_list_of_tuples(traj) for traj in trajectories]
     trajectory = Observation(
-        *map(lambda args: torch.cat(args, dim=gather_dim)
-             if args[0].dim() > 1 else torch.stack(args, -1), zip(*batch_trajectories)))
+        *map(
+            lambda args: torch.cat(args, dim=gather_dim)
+            if args[0].dim() > 1
+            else torch.stack(args, -1),
+            zip(*batch_trajectories),
+        )
+    )
     return trajectory

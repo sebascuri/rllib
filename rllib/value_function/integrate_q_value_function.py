@@ -21,8 +21,9 @@ class IntegrateQValueFunction(AbstractValueFunction):
     """
 
     def __init__(self, q_function, policy, num_samples=15, dist_params=None):
-        super().__init__(q_function.dim_state, num_states=q_function.num_states,
-                         tau=q_function.tau)
+        super().__init__(
+            q_function.dim_state, num_states=q_function.num_states, tau=q_function.tau
+        )
         if not isinstance(q_function, NNEnsembleQFunction):
             q_function = NNEnsembleQFunction.from_q_function(q_function, num_heads=1)
         self.q_function = q_function
@@ -35,9 +36,12 @@ class IntegrateQValueFunction(AbstractValueFunction):
         final_v = []
         pi = tensor_to_distribution(self.policy(state), **self.dist_params)
         for i in range(self.q_function.num_heads):
-            final_v.append(integrate(
-                lambda a: self.q_function(state, a / self.policy.action_scale)[i], pi,
-                num_samples=self.num_samples)
+            final_v.append(
+                integrate(
+                    lambda a: self.q_function(state, a / self.policy.action_scale)[i],
+                    pi,
+                    num_samples=self.num_samples,
+                )
             )
         final_v = torch.min(*final_v)
         return final_v

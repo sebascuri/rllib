@@ -13,10 +13,11 @@ class VectorizedAcrobotEnv(AcrobotEnv, VectorizedEnv):
     def __init__(self, discrete=False):
         super().__init__()
 
-        self.max_torque = 1.
+        self.max_torque = 1.0
         if not discrete:
             self.action_space = Box(
-                low=-self.max_torque, high=self.max_torque, shape=(1,))
+                low=-self.max_torque, high=self.max_torque, shape=(1,)
+            )
 
     def step(self, action):
         """See `AcrobotEnv.step()'."""
@@ -60,14 +61,20 @@ class VectorizedAcrobotEnv(AcrobotEnv, VectorizedEnv):
         s, a = s_augmented[..., :-1], s_augmented[..., -1]
         theta1, theta2, dtheta1, dtheta2 = s[..., 0], s[..., 1], s[..., 2], s[..., 3]
 
-        d1 = m1 * lc1 ** 2 + m2 * (l1 ** 2 + lc2 ** 2 + 2 * l1 * lc2 * bk.cos(theta2)
-                                   ) + I1 + I2
+        d1 = (
+            m1 * lc1 ** 2
+            + m2 * (l1 ** 2 + lc2 ** 2 + 2 * l1 * lc2 * bk.cos(theta2))
+            + I1
+            + I2
+        )
         d2 = m2 * (lc2 ** 2 + l1 * lc2 * bk.cos(theta2)) + I2
-        phi2 = m2 * lc2 * g * bk.cos(theta1 + theta2 - np.pi / 2.)
+        phi2 = m2 * lc2 * g * bk.cos(theta1 + theta2 - np.pi / 2.0)
 
-        phi1 = phi2 - (m2 * l1 * lc2 * dtheta2 ** 2 * bk.sin(theta2)
-                       + 2 * m2 * l1 * lc2 * dtheta2 * dtheta1 * bk.sin(theta2)
-                       - (m1 * lc1 + m2 * l1) * g * bk.cos(theta1 - np.pi / 2))
+        phi1 = phi2 - (
+            m2 * l1 * lc2 * dtheta2 ** 2 * bk.sin(theta2)
+            + 2 * m2 * l1 * lc2 * dtheta2 * dtheta1 * bk.sin(theta2)
+            - (m1 * lc1 + m2 * l1) * g * bk.cos(theta1 - np.pi / 2)
+        )
 
         if self.book_or_nips == "nips":
             # the following line is consistent with the description in the
@@ -76,24 +83,38 @@ class VectorizedAcrobotEnv(AcrobotEnv, VectorizedEnv):
         else:
             # the following line is consistent with the java implementation and the
             # book
-            ddtheta2 = (a + d2 / d1 * phi1 - m2 * l1 * lc2 * dtheta1 ** 2 * bk.sin(
-                theta2) - phi2) / (m2 * lc2 ** 2 + I2 - d2 ** 2 / d1)
+            ddtheta2 = (
+                a
+                + d2 / d1 * phi1
+                - m2 * l1 * lc2 * dtheta1 ** 2 * bk.sin(theta2)
+                - phi2
+            ) / (m2 * lc2 ** 2 + I2 - d2 ** 2 / d1)
         ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
-        return bk.stack((dtheta1, dtheta2, ddtheta1, ddtheta2, bk.zeros_like(dtheta1)),
-                        -1)
+        return bk.stack(
+            (dtheta1, dtheta2, ddtheta1, ddtheta2, bk.zeros_like(dtheta1)), -1
+        )
 
     def _get_ob(self):
         bk = self.bk
 
         theta1, theta2 = self.state[..., 0], self.state[..., 1]
         dtheta1, dtheta2 = self.state[..., 2], self.state[..., 3]
-        return bk.stack((bk.cos(theta1), bk.sin(theta1), bk.cos(theta2), bk.sin(theta2),
-                         dtheta1, dtheta2), -1)
+        return bk.stack(
+            (
+                bk.cos(theta1),
+                bk.sin(theta1),
+                bk.cos(theta2),
+                bk.sin(theta2),
+                dtheta1,
+                dtheta2,
+            ),
+            -1,
+        )
 
     def _terminal(self):
         bk = self.bk
         s = self.state
-        return -bk.cos(s[..., 0]) - bk.cos(s[..., 1] + s[..., 0]) > 1.
+        return -bk.cos(s[..., 0]) - bk.cos(s[..., 1] + s[..., 0]) > 1.0
 
 
 class DiscreteVectorizedAcrobotEnv(VectorizedAcrobotEnv):

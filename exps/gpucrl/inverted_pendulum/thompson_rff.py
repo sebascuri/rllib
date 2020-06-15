@@ -1,40 +1,51 @@
-import pandas as pd
+from collections import OrderedDict
+
 import matplotlib.pyplot as plt
 import numpy as np
-from collections import OrderedDict
+import pandas as pd
 
 from exps.gpucrl.plotters import set_figure_params
 
-COLORS = OrderedDict({
-    'QFF': 'C1',
-    'RFF': 'C4'
-})
-LABELS = ['QFF', 'RFF']
+COLORS = OrderedDict({"QFF": "C1", "RFF": "C4"})
+LABELS = ["QFF", "RFF"]
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle('inverted_mbmppo_rff.pkl')
-dfqff = df[(df.action_cost == 0)
-           & df.seed.isin([2, 3])
-           & (df.model_feature_approximation == 'QFF')]
-dfrff = df[(df.action_cost == 0)
-           & ~df.seed.isin([2, 3])
-           & (df.model_feature_approximation == 'RFF')]
+df = pd.read_pickle("inverted_mbmppo_rff.pkl")
+dfqff = df[
+    (df.action_cost == 0)
+    & df.seed.isin([2, 3])
+    & (df.model_feature_approximation == "QFF")
+]
+dfrff = df[
+    (df.action_cost == 0)
+    & ~df.seed.isin([2, 3])
+    & (df.model_feature_approximation == "RFF")
+]
 df1 = df[(df.action_cost > 0)]
 df = pd.concat((dfqff, dfrff, df1))
 
 action_costs = [0, 0.1, 0.2]
-fig, axes = plt.subplots(1, len(action_costs), sharey='row')
+fig, axes = plt.subplots(1, len(action_costs), sharey="row")
 fig.set_size_inches(5.5, 2.0)
 
 # action_costs = df.action_cost.unique()
-model_kinds = ['RFF', 'QFF']  # , 'DeterministicEnsemble']
+model_kinds = ["RFF", "QFF"]  # , 'DeterministicEnsemble']
 
-mean = df.groupby(
-    ['action_cost', 'model_feature_approximation', 'model_num_features', 'seed']
-).best_return.max().mean(level=[0, 1, 2])
-std = df.groupby(
-    ['action_cost', 'model_feature_approximation', 'model_num_features', 'seed']
-).best_return.max().std(level=[0, 1, 2]).fillna(0)
+mean = (
+    df.groupby(
+        ["action_cost", "model_feature_approximation", "model_num_features", "seed"]
+    )
+    .best_return.max()
+    .mean(level=[0, 1, 2])
+)
+std = (
+    df.groupby(
+        ["action_cost", "model_feature_approximation", "model_num_features", "seed"]
+    )
+    .best_return.max()
+    .std(level=[0, 1, 2])
+    .fillna(0)
+)
 
 action_costs = mean.index.unique(level=0)
 features_ = mean.index.unique(level=1)
@@ -45,12 +56,13 @@ for i, action_cost in enumerate(action_costs):
     for j, num_features in enumerate(num_features_):
         for k, features in enumerate(features_):
             try:
-                axes[i].bar((1.5 + len(features_)) * j + k,
-                            mean.loc[(action_cost, features, num_features)],
-                            width=width,
-                            yerr=max(10, std.loc[(action_cost, features, num_features)]),
-                            color=COLORS[features]
-                            )
+                axes[i].bar(
+                    (1.5 + len(features_)) * j + k,
+                    mean.loc[(action_cost, features, num_features)],
+                    width=width,
+                    yerr=max(10, std.loc[(action_cost, features, num_features)]),
+                    color=COLORS[features],
+                )
             except KeyError:
                 ...
     axes[i].set_title(f"Action Penalty {action_cost}")
@@ -64,13 +76,18 @@ for label in LABELS:
 
 handles, labels = axes[1].get_legend_handles_labels()
 
-axes[0].set_ylabel('Episode Return')
-axes[1].set_xlabel('Number of Features')
+axes[0].set_ylabel("Episode Return")
+axes[1].set_xlabel("Number of Features")
 
 axes[1].legend(
-    handles, labels,
-    loc='upper right', frameon=False, ncol=2,
-    handletextpad=0.3, labelspacing=0.1,  columnspacing=1.,
+    handles,
+    labels,
+    loc="upper right",
+    frameon=False,
+    ncol=2,
+    handletextpad=0.3,
+    labelspacing=0.1,
+    columnspacing=1.0,
     # bbox_to_anchor=(1.0, 1.05)
 )
 
@@ -115,4 +132,4 @@ axes[1].legend(
 # # axes[2].legend(loc='upper left', frameon=False, ncol=1)
 # # plt.show()
 fig.tight_layout(rect=[0.02, 0.1, 1, 1], pad=0.2)
-plt.savefig('thompson_rff.pdf')
+plt.savefig("thompson_rff.pdf")

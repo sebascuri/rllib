@@ -27,23 +27,32 @@ def step(environment, state, action, pi, render, goal=None):
         # Approximate it by MC sampling.
         entropy = -pi.log_prob(action)
 
-    observation = RawObservation(state=state,
-                                 action=action,
-                                 reward=reward,
-                                 next_state=next_state,
-                                 done=done,
-                                 entropy=entropy,
-                                 log_prob_action=pi.log_prob(action).squeeze()
-                                 ).to_torch()
+    observation = RawObservation(
+        state=state,
+        action=action,
+        reward=reward,
+        next_state=next_state,
+        done=done,
+        entropy=entropy,
+        log_prob_action=pi.log_prob(action).squeeze(),
+    ).to_torch()
     state = next_state
     if render:
         environment.render()
     return observation, state, done, info
 
 
-def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=False,
-                  print_frequency=0, plot_frequency=0, save_milestones=None,
-                  plot_callbacks=None):
+def rollout_agent(
+    environment,
+    agent,
+    num_episodes=1,
+    max_steps=1000,
+    render=False,
+    print_frequency=0,
+    plot_frequency=0,
+    save_milestones=None,
+    plot_callbacks=None,
+):
     """Conduct a rollout of an agent in an environment.
 
     Parameters
@@ -78,8 +87,9 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
         done = False
         while not done:
             action = agent.act(state)
-            obs, state, done, info = step(environment, state, action, agent.pi, render,
-                                          goal=environment.goal)
+            obs, state, done, info = step(
+                environment, state, action, agent.pi, render, goal=environment.goal
+            )
             agent.observe(obs)
             # Log info.
             agent.logger.update(**info)
@@ -99,8 +109,9 @@ def rollout_agent(environment, agent, num_episodes=1, max_steps=1000, render=Fal
     agent.end_interaction()
 
 
-def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False,
-                   **kwargs):
+def rollout_policy(
+    environment, policy, num_episodes=1, max_steps=1000, render=False, **kwargs
+):
     """Conduct a rollout of a policy in an environment.
 
     Parameters
@@ -129,8 +140,10 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         trajectory = []
         with torch.no_grad():
             while not done:
-                pi = tensor_to_distribution(policy(
-                    torch.tensor(state, dtype=torch.get_default_dtype())), **kwargs)
+                pi = tensor_to_distribution(
+                    policy(torch.tensor(state, dtype=torch.get_default_dtype())),
+                    **kwargs,
+                )
                 action = pi.sample().numpy()
                 obs, state, done, info = step(environment, state, action, pi, render)
                 trajectory.append(obs)
@@ -140,8 +153,15 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
     return trajectories
 
 
-def rollout_model(dynamical_model, reward_model, policy, initial_state,
-                  termination=None, max_steps=1000, **kwargs):
+def rollout_model(
+    dynamical_model,
+    reward_model,
+    policy,
+    initial_state,
+    termination=None,
+    max_steps=1000,
+    **kwargs,
+):
     """Conduct a rollout of a policy interacting with a model.
 
     Parameters
@@ -201,7 +221,8 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
 
         # Sample a reward
         reward_distribution = tensor_to_distribution(
-            reward_model(state, action, next_state))
+            reward_model(state, action, next_state)
+        )
         if reward_distribution.has_rsample:
             reward = reward_distribution.rsample()
         else:
@@ -218,10 +239,16 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
             entropy = -pi.log_prob(action)
 
         trajectory.append(
-            RawObservation(state, action, reward, next_state, done.float(),
-                           log_prob_action=pi.log_prob(action),
-                           entropy=entropy,
-                           next_state_scale_tril=next_state_tril).to_torch()
+            RawObservation(
+                state,
+                action,
+                reward,
+                next_state,
+                done.float(),
+                log_prob_action=pi.log_prob(action),
+                entropy=entropy,
+                next_state_scale_tril=next_state_tril,
+            ).to_torch()
         )
 
         # Update state.
@@ -238,8 +265,9 @@ def rollout_model(dynamical_model, reward_model, policy, initial_state,
     return trajectory
 
 
-def rollout_actions(dynamical_model, reward_model, action_sequence, initial_state,
-                    termination=None):
+def rollout_actions(
+    dynamical_model, reward_model, action_sequence, initial_state, termination=None
+):
     """Conduct a rollout of an action sequence interacting with a model.
 
     Parameters
@@ -287,7 +315,8 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
 
         # % Sample a reward
         reward_distribution = tensor_to_distribution(
-            reward_model(state, action, next_state))
+            reward_model(state, action, next_state)
+        )
         if reward_distribution.has_rsample:
             reward = reward_distribution.rsample()
         else:
@@ -299,8 +328,14 @@ def rollout_actions(dynamical_model, reward_model, action_sequence, initial_stat
             done += termination(state, action, next_state)
 
         trajectory.append(
-            RawObservation(state, action, reward, next_state, done.float(),
-                           next_state_scale_tril=next_state_tril).to_torch()
+            RawObservation(
+                state,
+                action,
+                reward,
+                next_state,
+                done.float(),
+                next_state_scale_tril=next_state_tril,
+            ).to_torch()
         )
 
         # Update state.

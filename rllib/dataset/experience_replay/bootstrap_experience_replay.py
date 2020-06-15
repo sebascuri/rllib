@@ -1,6 +1,5 @@
 """Implementation of an Experience Replay Buffer with a Bootstrap mask."""
 
-
 import numpy as np
 import torch
 from torch.distributions import Poisson
@@ -61,7 +60,8 @@ class BootstrapExperienceReplay(ExperienceReplay):
         """
         if not type(observation) == Observation:
             raise TypeError(
-                f"input has to be of type Observation, and it was {type(observation)}")
+                f"input has to be of type Observation, and it was {type(observation)}"
+            )
 
         if self.bootstrap:
             self.weights[self._ptr] = self.mask_distribution.sample()

@@ -63,8 +63,9 @@ class TrajectoryDataset(data.Dataset):
 
             trajectory = self._trajectories[trajectory_idx]
 
-            observation = Observation(**{key: val[start:end] for key, val in
-                                         trajectory._asdict().items()})
+            observation = Observation(
+                **{key: val[start:end] for key, val in trajectory._asdict().items()}
+            )
 
         for transform in self.transformations:
             observation = transform(observation)
@@ -111,9 +112,11 @@ class TrajectoryDataset(data.Dataset):
             num_observations = len(trajectory)
             trajectory = stack_list_of_tuples(trajectory)
 
-        if (self._sequence_length is not None
-                and num_observations < self._sequence_length):
-            raise ValueError('The sequence is shorter than the sequence length')
+        if (
+            self._sequence_length is not None
+            and num_observations < self._sequence_length
+        ):
+            raise ValueError("The sequence is shorter than the sequence length")
 
         # Add trajectory to dataset
         self._trajectories.append(trajectory)
@@ -163,8 +166,9 @@ class TrajectoryDataset(data.Dataset):
             for trajectory_index, trajectory in enumerate(self._trajectories):
                 num_observations = len(trajectory.state)
                 sub_indexes = self._get_subindexes(num_observations, value)
-                sub_indexes = [(trajectory_index, sub_index)
-                               for sub_index in sub_indexes]
+                sub_indexes = [
+                    (trajectory_index, sub_index) for sub_index in sub_indexes
+                ]
                 self._sub_trajectory_indexes += sub_indexes
 
     @staticmethod

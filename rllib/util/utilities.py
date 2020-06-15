@@ -4,8 +4,7 @@ import warnings
 import numpy as np
 import torch
 import torch.distributions
-from torch.distributions import (Categorical, MultivariateNormal,
-                                 TransformedDistribution)
+from torch.distributions import Categorical, MultivariateNormal, TransformedDistribution
 from torch.distributions.transforms import AffineTransform, TanhTransform
 
 from rllib.util.distributions import Delta
@@ -61,7 +60,7 @@ def integrate(function, distribution, num_samples=1):
     return ans
 
 
-def mellow_max(values, omega=1.):
+def mellow_max(values, omega=1.0):
     r"""Find mellow-max of an array of values.
 
     The mellow max is:
@@ -101,30 +100,33 @@ def tensor_to_distribution(args, **kwargs):
     if not isinstance(args, tuple):
         return Categorical(logits=args)
     elif torch.all(args[1] == 0):
-        if kwargs.get('add_noise', False):
-            noise_clip = kwargs.get('noise_clip', np.inf)
-            policy_noise = kwargs.get('policy_noise', 1)
-            action_scale = kwargs.get('action_scale', 1)
+        if kwargs.get("add_noise", False):
+            noise_clip = kwargs.get("noise_clip", np.inf)
+            policy_noise = kwargs.get("policy_noise", 1)
+            action_scale = kwargs.get("action_scale", 1)
             try:
                 policy_noise = policy_noise()
             except TypeError:
                 pass
             noise_scale = policy_noise * action_scale
             mean = args[0] + (torch.randn_like(args[0]) * noise_scale).clamp(
-                -noise_clip, noise_clip)
+                -noise_clip, noise_clip
+            )
         else:
             mean = args[0]
         return Delta(mean, event_dim=min(1, mean.dim()))
     else:
-        if kwargs.get('tanh', False):
+        if kwargs.get("tanh", False):
             d = TransformedDistribution(
                 MultivariateNormal(args[0], scale_tril=args[1]),
-                [AffineTransform(loc=0, scale=1 / kwargs.get('action_scale', 1)),
-                 TanhTransform(),
-                 AffineTransform(loc=0, scale=kwargs.get('action_scale', 1))
-                 ])
-        elif kwargs.get('normalized', False):
-            scale = kwargs.get('action_scale', 1)
+                [
+                    AffineTransform(loc=0, scale=1 / kwargs.get("action_scale", 1)),
+                    TanhTransform(),
+                    AffineTransform(loc=0, scale=kwargs.get("action_scale", 1)),
+                ],
+            )
+        elif kwargs.get("normalized", False):
+            scale = kwargs.get("action_scale", 1)
             d = MultivariateNormal(args[0] / scale, scale_tril=args[1] / scale)
         else:
             d = MultivariateNormal(args[0], scale_tril=args[1])
@@ -216,8 +218,9 @@ def safe_cholesky(covariance_matrix, jitter=1e-6):
             # stack overflow.
             warnings.warn("Jitter too big. Maybe some numerical issue somewhere.")
             return torch.eye(dim)
-        return safe_cholesky(covariance_matrix + jitter * torch.eye(dim),
-                             jitter=10 * jitter)
+        return safe_cholesky(
+            covariance_matrix + jitter * torch.eye(dim), jitter=10 * jitter
+        )
 
 
 def moving_average_filter(x, y, horizon):
@@ -244,8 +247,8 @@ def moving_average_filter(x, y, horizon):
     horizon = min(horizon, len(y))
 
     smoothing_weights = np.ones(horizon) / horizon
-    x_smooth = x[horizon // 2: -horizon // 2 + 1]
-    y_smooth = np.convolve(y, smoothing_weights, 'valid')
+    x_smooth = x[horizon // 2 : -horizon // 2 + 1]
+    y_smooth = np.convolve(y, smoothing_weights, "valid")
     return x_smooth, y_smooth
 
 
@@ -256,7 +259,7 @@ class RewardTransformer(object):
     ..math:: out = (scale * (reward - offset)).clamp(min, max)
     """
 
-    def __init__(self, offset=0, low=-np.inf, high=np.inf, scale=1.):
+    def __init__(self, offset=0, low=-np.inf, high=np.inf, scale=1.0):
         self.offset = offset
         self.low = low
         self.high = high

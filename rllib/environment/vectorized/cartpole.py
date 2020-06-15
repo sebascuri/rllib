@@ -12,11 +12,12 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
     def __init__(self, discrete=False):
         super().__init__()
 
-        self.max_torque = 1.
+        self.max_torque = 1.0
         self.discrete = discrete
         if not discrete:
-            self.action_space = Box(low=-self.max_torque, high=self.max_torque,
-                                    shape=(1,))
+            self.action_space = Box(
+                low=-self.max_torque, high=self.max_torque, shape=(1,)
+            )
 
     def step(self, action):
         """See `AcrobotEnv.step()'."""
@@ -44,11 +45,12 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         temp = (force + pole_length * theta_dot * theta_dot * sin) / mass
 
         thetaacc = (grav * sin - cos * temp) / (
-                length * (4. / 3. - pole_mass * cos * cos / mass))
+            length * (4.0 / 3.0 - pole_mass * cos * cos / mass)
+        )
 
         xacc = temp - pole_length * thetaacc * cos / mass
 
-        if self.kinematics_integrator == 'euler':
+        if self.kinematics_integrator == "euler":
             x = x + self.tau * x_dot
             x_dot = x_dot + self.tau * xacc
             theta = theta + self.tau * theta_dot
@@ -62,7 +64,8 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         self.state = bk.stack((x, x_dot, theta, theta_dot), -1)
         done = (x < -self.x_threshold) + (x > self.x_threshold)
         done += (theta < -self.theta_threshold_radians) + (
-                theta > self.theta_threshold_radians)
+            theta > self.theta_threshold_radians
+        )
 
         reward = bk.ones(done.shape)
         return self.state, reward, done, {}

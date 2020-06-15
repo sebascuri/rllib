@@ -66,8 +66,9 @@ class SARSA(AbstractAlgorithm):
         return self._build_return(pred_q, target_q)
 
     def _build_return(self, pred_q, target_q):
-        return TDLoss(loss=self.criterion(pred_q, target_q),
-                      td_error=(pred_q - target_q).detach())
+        return TDLoss(
+            loss=self.criterion(pred_q, target_q), td_error=(pred_q - target_q).detach()
+        )
 
     def update(self):
         """Update the target network."""

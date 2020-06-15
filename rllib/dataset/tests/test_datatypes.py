@@ -17,7 +17,8 @@ class TestObservation(object):
     def test_equality(self):
         state, action, reward, next_state, done = self.init()
         o = RawObservation(state, action, reward, next_state, done).to_torch()
-        for x, y in zip(o, RawObservation(state, action, reward, next_state, done
-                                          ).to_torch()):
+        for x, y in zip(
+            o, RawObservation(state, action, reward, next_state, done).to_torch()
+        ):
             torch.testing.assert_allclose(x, y)
         assert o is not RawObservation(state, action, reward, next_state, done)

@@ -35,44 +35,74 @@ class DPGAgent(OffPolicyAgent):
 
     """
 
-    def __init__(self, q_function, policy, criterion,
-                 optimizer, memory, exploration_noise, num_iter=1,
-                 batch_size=64, target_update_frequency=4,
-                 policy_noise=0., noise_clip=1.,
-                 train_frequency=1, num_rollouts=0,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 tensorboard=False, comment=''):
+    def __init__(
+        self,
+        q_function,
+        policy,
+        criterion,
+        optimizer,
+        memory,
+        exploration_noise,
+        num_iter=1,
+        batch_size=64,
+        target_update_frequency=4,
+        policy_noise=0.0,
+        noise_clip=1.0,
+        train_frequency=1,
+        num_rollouts=0,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
         super().__init__(
             optimizer=optimizer,
-            memory=memory, batch_size=batch_size,
+            memory=memory,
+            batch_size=batch_size,
             num_iter=num_iter,
             target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency, num_rollouts=num_rollouts,
-            gamma=gamma, exploration_steps=exploration_steps,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard, comment=comment)
+            tensorboard=tensorboard,
+            comment=comment,
+        )
 
         assert policy.deterministic, "Policy must be deterministic."
-        self.algorithm = DPG(q_function, policy, criterion(reduction='none'), gamma,
-                             policy_noise, noise_clip
-                             )
+        self.algorithm = DPG(
+            q_function,
+            policy,
+            criterion(reduction="none"),
+            gamma,
+            policy_noise,
+            noise_clip,
+        )
         self.policy = self.algorithm.policy
 
         if not isinstance(exploration_noise, ParameterDecay):
             exploration_noise = Constant(exploration_noise)
 
-        self.params['exploration_noise'] = exploration_noise
-        self.dist_params = {'add_noise': True,
-                            'policy_noise': self.params['exploration_noise']}
+        self.params["exploration_noise"] = exploration_noise
+        self.dist_params = {
+            "add_noise": True,
+            "policy_noise": self.params["exploration_noise"],
+        }
 
     def train(self, val=True):
         """Set the agent in training mode."""
         super().train(val)
-        self.dist_params = {'add_noise': True,
-                            'policy_noise': self.params['exploration_noise']}
+        self.dist_params = {
+            "add_noise": True,
+            "policy_noise": self.params["exploration_noise"],
+        }
 
     def eval(self, val=True):
         """Set the agent in evaluation mode."""
         super().eval(val)
-        self.dist_params = {'add_noise': False,
-                            'policy_noise': self.params['exploration_noise']}
+        self.dist_params = {
+            "add_noise": False,
+            "policy_noise": self.params["exploration_noise"],
+        }

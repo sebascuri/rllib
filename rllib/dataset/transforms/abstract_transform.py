@@ -1,6 +1,5 @@
 """Interface for Transformers of a dataset."""
 
-
 from abc import ABCMeta
 
 import torch.jit

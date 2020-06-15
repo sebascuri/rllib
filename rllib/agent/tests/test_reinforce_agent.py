@@ -20,7 +20,7 @@ LAYERS = [200, 200]
 SEED = 0
 
 
-@pytest.fixture(params=['CartPole-v0', 'NChain-v0'])
+@pytest.fixture(params=["CartPole-v0", "NChain-v0"])
 def environment(request):
     return request.param
 
@@ -40,19 +40,24 @@ def test_REINFORCE(environment, num_rollouts, baseline):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    policy = NNPolicy(environment.dim_state, environment.dim_action,
-                      num_states=environment.num_states,
-                      num_actions=environment.num_actions,
-                      layers=LAYERS)
+    policy = NNPolicy(
+        environment.dim_state,
+        environment.dim_action,
+        num_states=environment.num_states,
+        num_actions=environment.num_actions,
+        layers=LAYERS,
+    )
 
     if baseline:
-        value_function = NNValueFunction(environment.dim_state,
-                                         num_states=environment.num_states,
-                                         layers=LAYERS)
-        optimizer = torch.optim.Adam([
-            {'params': policy.parameters(), 'lr': ACTOR_LEARNING_RATE},
-            {'params': value_function.parameters(), 'lr': CRITIC_LEARNING_RATE}
-        ])
+        value_function = NNValueFunction(
+            environment.dim_state, num_states=environment.num_states, layers=LAYERS
+        )
+        optimizer = torch.optim.Adam(
+            [
+                {"params": policy.parameters(), "lr": ACTOR_LEARNING_RATE},
+                {"params": value_function.parameters(), "lr": CRITIC_LEARNING_RATE},
+            ]
+        )
 
     else:
         value_function = None
@@ -60,9 +65,14 @@ def test_REINFORCE(environment, num_rollouts, baseline):
 
     criterion = torch.nn.MSELoss
 
-    agent = REINFORCEAgent(policy=policy, baseline=value_function,
-                           optimizer=optimizer, criterion=criterion,
-                           num_rollouts=num_rollouts, gamma=GAMMA)
+    agent = REINFORCEAgent(
+        policy=policy,
+        baseline=value_function,
+        optimizer=optimizer,
+        criterion=criterion,
+        num_rollouts=num_rollouts,
+        gamma=GAMMA,
+    )
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)

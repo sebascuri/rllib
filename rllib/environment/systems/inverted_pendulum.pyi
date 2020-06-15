@@ -5,7 +5,6 @@ from rllib.dataset.datatypes import Action, State
 
 from .ode_system import ODESystem
 
-
 class InvertedPendulum(ODESystem):
     mass: float
     length: float
@@ -14,13 +13,15 @@ class InvertedPendulum(ODESystem):
     step_size: float
     viewer: Viewer
     last_action: Action
-
-    def __init__(self, mass: float, length: float, friction: float,
-                 gravity: float = 9.81, step_size: float = 0.01) -> None: ...
-
+    def __init__(
+        self,
+        mass: float,
+        length: float,
+        friction: float,
+        gravity: float = 9.81,
+        step_size: float = 0.01,
+    ) -> None: ...
     @property
     def inertia(self) -> float: ...
-
-    def render(self, mode: str = 'human') -> np.ndarray: ...
-
+    def render(self, mode: str = "human") -> np.ndarray: ...
     def _ode(self, _, state: State, action: Action) -> State: ...

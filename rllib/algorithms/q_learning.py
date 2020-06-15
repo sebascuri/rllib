@@ -65,8 +65,10 @@ class QLearning(AbstractAlgorithm):
         return self._build_return(pred_q, target_q)
 
     def _build_return(self, pred_q, target_q):
-        return TDLoss(loss=self.criterion(pred_q, target_q).squeeze(-1),
-                      td_error=(pred_q - target_q).detach().squeeze(-1))
+        return TDLoss(
+            loss=self.criterion(pred_q, target_q).squeeze(-1),
+            td_error=(pred_q - target_q).detach().squeeze(-1),
+        )
 
     def update(self):
         """Update the target network."""

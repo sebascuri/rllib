@@ -20,10 +20,12 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
     def __init__(self, q_function, param):
         if not q_function.discrete_action:
             raise NotImplementedError
-        super().__init__(q_function.dim_state,
-                         q_function.dim_action,
-                         num_states=q_function.num_states,
-                         num_actions=q_function.num_actions)
+        super().__init__(
+            q_function.dim_state,
+            q_function.dim_action,
+            num_states=q_function.num_states,
+            num_actions=q_function.num_actions,
+        )
         self.q_function = q_function
         if type(param) is float:
             param = Constant(param)

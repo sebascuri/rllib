@@ -20,10 +20,12 @@ class SoftMax(AbstractQFunctionPolicy):
     def __init__(self, q_function, param, prior=None):
         super().__init__(q_function, param)
         if prior is None:
-            prior = RandomPolicy(q_function.dim_state,
-                                 q_function.dim_action,
-                                 num_states=q_function.num_states,
-                                 num_actions=q_function.num_actions)
+            prior = RandomPolicy(
+                q_function.dim_state,
+                q_function.dim_action,
+                num_states=q_function.num_states,
+                num_actions=q_function.num_actions,
+            )
         self.prior = prior
 
     @property

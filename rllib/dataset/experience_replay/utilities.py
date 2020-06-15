@@ -64,11 +64,13 @@ def init_er_from_rollout(target_er, agent, environment, max_steps=1000):
         while not done:
             action = agent.act(state)
             next_state, reward, done, _ = environment.step(action)
-            observation = RawObservation(state=state,
-                                         action=action,
-                                         reward=reward,
-                                         next_state=next_state,
-                                         done=done)
+            observation = RawObservation(
+                state=state,
+                action=action,
+                reward=reward,
+                next_state=next_state,
+                done=done,
+            )
             state = next_state
 
             target_er.append(observation)

@@ -27,7 +27,7 @@ class EnvironmentTermination(nn.Module):
 
 SEED = 0
 MAX_ITER = 5
-ENVIRONMENT = 'VContinuous-CartPole-v0'
+ENVIRONMENT = "VContinuous-CartPole-v0"
 
 env = GymEnvironment(ENVIRONMENT, SEED)
 env_model = copy.deepcopy(env)
@@ -40,7 +40,7 @@ HORIZON = 5
 NUM_ITER = 5
 NUM_SAMPLES = 50
 NUM_ELITES = 5
-KAPPA = 1.
+KAPPA = 1.0
 BETAS = [0.2, 0.8, 0]
 
 memory = ExperienceReplay(max_len=2000, num_steps=1)
@@ -48,7 +48,7 @@ memory = ExperienceReplay(max_len=2000, num_steps=1)
 value_function = None
 
 
-@pytest.fixture(params=['random_shooting', 'cem_shooting', 'mppi_shooting'])
+@pytest.fixture(params=["random_shooting", "cem_shooting", "mppi_shooting"])
 def solver(request):
     return request.param
 
@@ -58,7 +58,7 @@ def warm_start(request):
     return request.param
 
 
-@pytest.fixture(params=['mean', 'zero', 'constant'])
+@pytest.fixture(params=["mean", "zero", "constant"])
 def default_action(request):
     return request.param
 
@@ -69,47 +69,76 @@ def num_cpu(request):
 
 
 def get_solver(solver_, warm_start_, num_cpu_, default_action_):
-    if solver_ == 'random_shooting':
+    if solver_ == "random_shooting":
         mpc_solver = RandomShooting(
-            dynamical_model, reward_model, HORIZON, gamma=1.0,
-            num_samples=NUM_SAMPLES, num_elites=NUM_ELITES,
-            termination=termination, terminal_reward=value_function,
-            warm_start=warm_start_, default_action=default_action_, num_cpu=num_cpu_)
-    elif solver_ == 'cem_shooting':
+            dynamical_model,
+            reward_model,
+            HORIZON,
+            gamma=1.0,
+            num_samples=NUM_SAMPLES,
+            num_elites=NUM_ELITES,
+            termination=termination,
+            terminal_reward=value_function,
+            warm_start=warm_start_,
+            default_action=default_action_,
+            num_cpu=num_cpu_,
+        )
+    elif solver_ == "cem_shooting":
         mpc_solver = CEMShooting(
-            dynamical_model, reward_model, HORIZON, gamma=1.0,
-            num_iter=NUM_ITER, num_samples=NUM_SAMPLES, num_elites=NUM_ELITES,
-            termination=termination, terminal_reward=value_function,
-            warm_start=warm_start_, default_action=default_action_, num_cpu=num_cpu_)
-    elif solver_ == 'mppi_shooting':
+            dynamical_model,
+            reward_model,
+            HORIZON,
+            gamma=1.0,
+            num_iter=NUM_ITER,
+            num_samples=NUM_SAMPLES,
+            num_elites=NUM_ELITES,
+            termination=termination,
+            terminal_reward=value_function,
+            warm_start=warm_start_,
+            default_action=default_action_,
+            num_cpu=num_cpu_,
+        )
+    elif solver_ == "mppi_shooting":
         mpc_solver = MPPIShooting(
-            dynamical_model, reward_model, HORIZON, gamma=1.0, num_iter=NUM_ITER,
-            kappa=KAPPA, filter_coefficients=BETAS, num_samples=NUM_SAMPLES,
-            termination=termination, terminal_reward=value_function,
-            warm_start=warm_start_, default_action=default_action_, num_cpu=num_cpu_)
+            dynamical_model,
+            reward_model,
+            HORIZON,
+            gamma=1.0,
+            num_iter=NUM_ITER,
+            kappa=KAPPA,
+            filter_coefficients=BETAS,
+            num_samples=NUM_SAMPLES,
+            termination=termination,
+            terminal_reward=value_function,
+            warm_start=warm_start_,
+            default_action=default_action_,
+            num_cpu=num_cpu_,
+        )
     else:
         raise NotImplementedError
     return mpc_solver
 
 
 def test_mpc_solvers(solver, num_cpu):
-    if num_cpu > 1 and 'CI' in os.environ:
+    if num_cpu > 1 and "CI" in os.environ:
         return
-    mpc_solver = get_solver(solver, True, num_cpu, 'mean')
+    mpc_solver = get_solver(solver, True, num_cpu, "mean")
     policy = MPCPolicy(mpc_solver)
 
     agent = MPCAgent(mpc_policy=policy)
-    evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_ITER,
-                   render=False)
+    evaluate_agent(
+        agent, environment=env, num_episodes=1, max_steps=MAX_ITER, render=False
+    )
 
 
 def test_mpc_warm_start(solver, warm_start):
-    mpc_solver = get_solver(solver, warm_start, 1, 'mean')
+    mpc_solver = get_solver(solver, warm_start, 1, "mean")
     policy = MPCPolicy(mpc_solver)
 
     agent = MPCAgent(mpc_policy=policy)
-    evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_ITER,
-                   render=False)
+    evaluate_agent(
+        agent, environment=env, num_episodes=1, max_steps=MAX_ITER, render=False
+    )
 
 
 def test_mpc_default_action(solver, default_action):
@@ -117,5 +146,6 @@ def test_mpc_default_action(solver, default_action):
     policy = MPCPolicy(mpc_solver)
 
     agent = MPCAgent(mpc_policy=policy)
-    evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_ITER,
-                   render=False)
+    evaluate_agent(
+        agent, environment=env, num_episodes=1, max_steps=MAX_ITER, render=False
+    )

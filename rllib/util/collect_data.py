@@ -38,14 +38,14 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
         action = action.numpy()
         environment.state = state
         next_state, reward, done, _ = environment.step(action)
-        transitions.append(
-            RawObservation(state, action, reward, next_state).to_torch())
+        transitions.append(RawObservation(state, action, reward, next_state).to_torch())
 
     return transitions
 
 
-def collect_model_transitions(state_dist, policy, dynamical_model, reward_model,
-                              num_samples):
+def collect_model_transitions(
+    state_dist, policy, dynamical_model, reward_model, num_samples
+):
     """Collect transitions by interacting with an environment.
 
     Parameters
@@ -81,5 +81,6 @@ def collect_model_transitions(state_dist, policy, dynamical_model, reward_model,
     transitions = []
     for state_, action_, reward_, next_state_ in zip(state, action, reward, next_state):
         transitions.append(
-            RawObservation(state_, action_, reward_, next_state_).to_torch())
+            RawObservation(state_, action_, reward_, next_state_).to_torch()
+        )
     return transitions

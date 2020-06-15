@@ -37,15 +37,21 @@ class BanditEnvironment(AbstractEnvironment):
         self.reward = reward
         self.t = 0
 
-        super().__init__(dim_state=1, num_states=1,
-                         dim_action=dim_action, num_actions=num_actions,
-                         observation_space=observation_space, action_space=action_space)
+        super().__init__(
+            dim_state=1,
+            num_states=1,
+            dim_action=dim_action,
+            num_actions=num_actions,
+            observation_space=observation_space,
+            action_space=action_space,
+        )
 
     def step(self, action):
         """Get reward of a given action."""
         self.t += 1
         reward_distribution = tensor_to_distribution(
-            self.reward(self.state, action, None))
+            self.reward(self.state, action, None)
+        )
         return self.state, reward_distribution.sample().numpy(), False, {}
 
     def reset(self):

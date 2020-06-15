@@ -43,18 +43,41 @@ class SoftQLearningAgent(QLearningAgent):
     Combining policy gradient and Q-learning. ICLR.
     """
 
-    def __init__(self, q_function, criterion, optimizer,
-                 memory, temperature, num_iter=1, batch_size=64,
-                 target_update_frequency=4, train_frequency=1, num_rollouts=0,
-                 gamma=1.0, exploration_steps=0, exploration_episodes=0,
-                 tensorboard=False, comment=''):
-        self.algorithm = SoftQLearning(q_function, criterion(reduction='none'),
-                                       temperature, gamma)
-        super().__init__(q_function=q_function, policy=self.algorithm.policy,
-                         criterion=criterion, optimizer=optimizer, memory=memory,
-                         num_iter=num_iter, batch_size=batch_size,
-                         target_update_frequency=target_update_frequency,
-                         train_frequency=train_frequency, num_rollouts=num_rollouts,
-                         gamma=gamma, exploration_steps=exploration_steps,
-                         exploration_episodes=exploration_episodes,
-                         tensorboard=tensorboard, comment=comment)
+    def __init__(
+        self,
+        q_function,
+        criterion,
+        optimizer,
+        memory,
+        temperature,
+        num_iter=1,
+        batch_size=64,
+        target_update_frequency=4,
+        train_frequency=1,
+        num_rollouts=0,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
+        self.algorithm = SoftQLearning(
+            q_function, criterion(reduction="none"), temperature, gamma
+        )
+        super().__init__(
+            q_function=q_function,
+            policy=self.algorithm.policy,
+            criterion=criterion,
+            optimizer=optimizer,
+            memory=memory,
+            num_iter=num_iter,
+            batch_size=batch_size,
+            target_update_frequency=target_update_frequency,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=comment,
+        )
