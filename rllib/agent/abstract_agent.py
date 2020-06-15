@@ -67,11 +67,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """Generate string to parse the agent."""
         comment = self.comment if len(self.comment) else self.policy.__class__.__name__
         opening = "=" * 88
-        str_ = f"\n{opening}\n{self.name} with {comment}\n"
-        str_ += f"Total episodes {self.total_episodes}\n"
-        str_ += f"Total steps {self.total_steps}\n"
-        str_ += f"Train steps {self.train_steps}\n"
-        str_ += f"{self.logger}{opening}\n"
+        str_ = (
+            f"\n{opening}\n{self.name} with {comment}\n"
+            f"Total episodes {self.total_episodes}\n"
+            f"Total steps {self.total_steps}\n"
+            f"Train steps {self.train_steps}\n"
+            f"{self.logger}{opening}\n"
+        )
         return str_
 
     def act(self, state):
@@ -125,8 +127,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """End an episode."""
         self.counters["total_episodes"] += 1
         rewards = self.logger.current["rewards"]
-        self.logger.end_episode(environment_return=rewards[0] * rewards[1])
+        environment_return = rewards[0] * rewards[1]
+        self.logger.end_episode(environment_return=environment_return)
         self.logger.export_to_json()  # save at every episode?
+
+        if environment_return >= max(self.logger.get("environment_return")):
+            self.save(f"{self.name}_best.pkl")
 
     def end_interaction(self):
         """End the interaction with the environment."""
