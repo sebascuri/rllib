@@ -1,3 +1,4 @@
+"""Setup script of rllib."""
 from setuptools import find_packages, setup
 
 setup(
