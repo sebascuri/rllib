@@ -1,3 +1,5 @@
+"""Run the inverted-pendulum using MB-SAC."""
+
 from dotmap import DotMap
 
 from exps.gpucrl.inverted_pendulum import (

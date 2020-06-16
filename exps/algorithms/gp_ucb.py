@@ -37,6 +37,7 @@ def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> Non
 
 
 def plot(agent, step, objective, axes):
+    """Plot GP-UCB agent at current time-step."""
     axis = axes[step % 5][step // 5]
 
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
@@ -110,7 +111,7 @@ if __name__ == "__main__":
         "SOR": SparseGP(x0, y0, likelihood, inducing_points=x0, approximation="SOR"),
         "FITC": SparseGP(x0, y0, likelihood, inducing_points=x0, approximation="FITC"),
     }.items():
-        model.length_scale = 1
+        model.length_scale = torch.tensor(1.0)
         environment = BanditEnvironment(
             objective, x_min=x[[0]].numpy(), x_max=x[[-1]].numpy()
         )

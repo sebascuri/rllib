@@ -1,10 +1,9 @@
 """Working example of SARSA."""
 
 import numpy as np
-import torch.nn.functional as func
 import torch.optim
 
-from rllib.agent import ExpectedSARSAAgent, SARSAAgent
+from rllib.agent import ExpectedSARSAAgent, SARSAAgent  # noqa: F401
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
@@ -44,7 +43,6 @@ optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
 agent = SARSAAgent(
-    environment.name,
     q_function,
     policy,
     criterion,

@@ -1,3 +1,5 @@
+"""Run Reacher with MPC agent."""
+
 from dotmap import DotMap
 
 from exps.gpucrl.mpc_arguments import parser

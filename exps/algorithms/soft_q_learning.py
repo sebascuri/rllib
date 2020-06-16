@@ -1,7 +1,6 @@
 """Working example of Soft Q-Learning."""
 
 import numpy as np
-import torch.nn.functional as func
 import torch.optim
 
 from rllib.agent import SoftQLearningAgent
@@ -47,7 +46,6 @@ criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 agent = SoftQLearningAgent(
-    environment.name,
     q_function,
     criterion,
     optimizer,

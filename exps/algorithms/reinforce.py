@@ -49,7 +49,6 @@ value_optimizer = torch.optim.Adam(value_function.parameters(), lr=CRITIC_LEARNI
 criterion = torch.nn.MSELoss
 
 agent = REINFORCEAgent(
-    environment.name,
     policy=policy,
     baseline=value_function,
     optimizer=optimizer,

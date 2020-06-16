@@ -1,5 +1,5 @@
 """Implementation of DQNAgent Algorithms."""
-from typing import Union
+from typing import Union, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -17,7 +17,7 @@ class SoftQLearningAgent(QLearningAgent):
     def __init__(
         self,
         q_function: AbstractQFunction,
-        criterion: _Loss,
+        criterion: Type[_Loss],
         optimizer: Optimizer,
         memory: ExperienceReplay,
         temperature: Union[float, ParameterDecay],

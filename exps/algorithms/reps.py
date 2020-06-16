@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 from rllib.agent import REPSAgent
-from rllib.algorithms.reps import QREPS, REPS
+from rllib.algorithms.reps import QREPS, REPS  # noqa: F401
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import NNPolicy
@@ -53,7 +53,6 @@ optimizer = torch.optim.Adam(reps_loss.parameters(), lr=LR, weight_decay=0)
 
 memory = ExperienceReplay(max_len=int(NUM_ROLLOUTS * MAX_STEPS))
 agent = REPSAgent(
-    ENVIRONMENT,
     reps_loss,
     optimizer,
     memory,

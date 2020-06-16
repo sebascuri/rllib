@@ -31,7 +31,7 @@ class Cart1dReward(AbstractReward):
         self.penal_v_dist = Bernoulli(probs=prob_reward_high_v)
 
     def forward(self, state, action):
-        """Compute Reward"""
+        """Compute Reward."""
         x, v = state[..., 0], state[..., 1]
         if x >= self.goal_x:
             return self.reward_goal, torch.zeros(1)
@@ -43,16 +43,20 @@ class Cart1dReward(AbstractReward):
 
 
 class Cart1dTermination(nn.Module):
+    """Termination condition."""
+
     def __init__(self, goal_x=1.0):
         super().__init__()
         self.goal_x = goal_x
 
     def forward(self, state, action, next_state=None):
-        x, v = state[..., 0], state[..., 1]
+        """Compute termination condition."""
+        x, _ = state[..., 0], state[..., 1]
         return x > self.goal_x
 
 
 def plot_cart_trajectories(agent, episode: int):
+    """Plot cart trajectories at a given episode."""
     trajectory = stack_list_of_tuples(agent.last_trajectory)
 
     fig, axes = plt.subplots(4, 1, sharex="row")

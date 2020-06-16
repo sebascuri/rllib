@@ -1,11 +1,11 @@
 """Solution of Cart 1-d with DDPG."""
+from itertools import chain
 
 import numpy as np
-import torch.nn.functional as func
 import torch.optim
 from torch.distributions import Uniform
 
-from experiments.risk_averse.util import (
+from exps.risk_averse.util import (
     Cart1dReward,
     Cart1dTermination,
     plot_cart_trajectories,
@@ -14,8 +14,8 @@ from rllib.agent import TD3Agent
 from rllib.dataset import ExperienceReplay
 from rllib.environment import SystemEnvironment
 from rllib.environment.systems.cart1d import Cart1d
-from rllib.exploration_strategies import GaussianNoise
 from rllib.policy import FelixPolicy
+from rllib.util.parameter_decay import ExponentialDecay
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
@@ -49,8 +49,7 @@ TARGET_UPDATE_FREQUENCY = 2
 TARGET_UPDATE_TAU = 0.01
 MEMORY_MAX_SIZE = 25000
 BATCH_SIZE = 64
-ACTOR_LEARNING_RATE = 1e-3
-CRITIC_LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 0
 GAMMA = 0.99
 EPS_START = 1.0
@@ -66,7 +65,7 @@ policy = FelixPolicy(
     deterministic=True,
     tau=TARGET_UPDATE_TAU,
 )
-noise = GaussianNoise(EPS_END)
+noise = ExponentialDecay(EPS_START, EPS_END, EPS_DECAY)
 
 q_function = NNQFunction(
     environment.dim_state,
@@ -81,23 +80,20 @@ memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 # policy = torch.jit.script(policy)
 # q_function = torch.jit.script(q_function)
 
-actor_optimizer = torch.optim.Adam(
-    policy.parameters(), lr=ACTOR_LEARNING_RATE, weight_decay=WEIGHT_DECAY
-)
-critic_optimizer = torch.optim.Adam(
-    q_function.parameters(), lr=CRITIC_LEARNING_RATE, weight_decay=WEIGHT_DECAY
+optimizer = torch.optim.Adam(
+    chain(policy.parameters(), q_function.parameters()),
+    lr=LEARNING_RATE,
+    weight_decay=WEIGHT_DECAY,
 )
 criterion = torch.nn.MSELoss
 
 agent = TD3Agent(
-    environment.name,
     q_function,
     policy,
-    noise,
     criterion,
-    critic_optimizer,
-    actor_optimizer,
+    optimizer,
     memory,
+    exploration_noise=noise,
     batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     exploration_episodes=1,

@@ -1,12 +1,10 @@
 """Python Script Template."""
 import copy
 
-import torch
 import torch.nn as nn
-import torch.optim as optim
 
 from rllib.agent import MPCAgent
-from rllib.algorithms.mpc import CEMShooting, MPPIShooting, RandomShooting
+from rllib.algorithms.mpc import CEMShooting, MPCSolver, MPPIShooting, RandomShooting
 from rllib.algorithms.td import ModelBasedTDLearning
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
@@ -17,11 +15,14 @@ from rllib.util.training import evaluate_agent
 
 
 class EnvironmentTermination(nn.Module):
+    """Termination condition of an environment."""
+
     def __init__(self, environment):
         super().__init__()
         self.environment = environment
 
     def forward(self, state, action, next_state=None):
+        """Compute termination condition."""
         self.environment.state = state
         next_state, reward, done, _ = self.environment.step(action)
         return done
@@ -68,7 +69,7 @@ if solver == "random_shooting":
         warm_start=warm_start,
         default_action="mean",
         num_cpu=num_cpu,
-    )
+    )  # type: MPCSolver
 elif solver == "cem_shooting":
     mpc_solver = CEMShooting(
         dynamical_model,
@@ -115,5 +116,5 @@ value_learning = ModelBasedTDLearning(
     gamma=GAMMA,
 )
 
-agent = MPCAgent(env.name, mpc_policy=policy)
+agent = MPCAgent(mpc_policy=policy)
 evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_STEPS, render=True)

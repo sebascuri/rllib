@@ -1,4 +1,4 @@
-import math
+"""GP Regression experiments."""
 
 import gpytorch
 import matplotlib.pyplot as plt
@@ -12,6 +12,7 @@ np.random.seed(0)
 
 
 def f(x):
+    """Get function value."""
     return torch.sin(2 * x) / x
 
 
@@ -77,7 +78,9 @@ for name, model in {
     model.length_scale = torch.tensor([0.5])
     model.eval()
     test_x = torch.arange(-10.0, 10.0, 0.01)
-    with torch.no_grad(), gpytorch.settings.fast_pred_var(), gpytorch.settings.fast_pred_var(), gpytorch.settings.fast_pred_samples():
+    with torch.no_grad(), gpytorch.settings.fast_pred_var(), (
+        gpytorch.settings.fast_pred_samples()
+    ):
         k = model(torch.arange(-10.0, 10.0, 1.0).unsqueeze(-1).unsqueeze(0))
         print(name)
         print(k.mean)

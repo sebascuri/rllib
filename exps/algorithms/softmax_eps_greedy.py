@@ -2,7 +2,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch.nn.functional as func
 import torch.optim
 
 from rllib.agent import DDQNAgent
@@ -55,7 +54,6 @@ for name, Policy in {"eps_greedy": EpsGreedy, "softmax": SoftMax}.items():
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = DDQNAgent(
-        environment.name,
         q_function,
         policy,
         criterion,

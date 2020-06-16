@@ -1,4 +1,4 @@
-from collections import OrderedDict
+"""Parse experiments without bootstrapping."""
 
 import matplotlib.pyplot as plt
 import numpy as np

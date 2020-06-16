@@ -1,3 +1,5 @@
+"""Learning a value function with a model."""
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,8 +24,8 @@ num_steps = 1
 discount = 1.0
 batch_size = 40
 
-system = InvertedPendulum(mass=0.1, length=0.5, friction=0.0)
-system = system.linearize()
+non_linear_system = InvertedPendulum(mass=0.1, length=0.5, friction=0.0)
+system = non_linear_system.linearize()
 q = np.eye(2)
 r = 0.01 * np.eye(1)
 gamma = 0.99
@@ -37,10 +39,7 @@ reward_model = QuadraticReward(
     torch.from_numpy(r).type(torch.get_default_dtype()),
 )
 environment = SystemEnvironment(
-    system,
-    initial_state=None,
-    termination=None,
-    reward=lambda x, u: reward_model(x, u)[0],
+    system, initial_state=None, termination=None, reward=reward_model
 )
 
 model = LinearModel(system.a, system.b)
@@ -52,13 +51,13 @@ policy = NNPolicy(
     biased_head=False,
     deterministic=True,
 )  # Linear policy.
-print(f"initial: {policy.nn.head.weight}")
+print(f"initial: {policy.nn.head.weight}")  # type: ignore
 
 value_function = NNValueFunction(
     dim_state=system.dim_state, layers=[64, 64], biased_head=False
 )
 
-policy = torch.jit.script(policy)
+# policy = torch.jit.script(policy)
 model = torch.jit.script(model)
 value_function = torch.jit.script(value_function)
 
@@ -104,7 +103,7 @@ horizon = 20
 plot_learning_losses(policy_losses, value_losses, horizon)
 
 print(f"optimal: {K}")
-print(f"learned: {policy.nn.head.weight}")
+print(f"learned: {policy.nn.head.weight}")  # type: ignore
 
 bounds = [(-0.5, 0.5), (-0.5, 0.5)]
 num_entries = [100, 100]

@@ -59,7 +59,7 @@ model_parser.add_argument("--model-opt-weight-decay", type=float, default=0)
 model_parser.add_argument("--model-max-num-points", type=int, default=int(1e10))
 model_parser.add_argument("--model-sparse-q-bar", type=int, default=2)
 model_parser.add_argument("--model-num-features", type=int, default=625)
-model_parser.add_argument("--model-layers", type=list, default=[64, 64])
+model_parser.add_argument("--model-layers", type=int, nargs="*", default=[64, 64])
 model_parser.add_argument("--model-non-linearity", type=str, default="ReLU")
 model_parser.add_argument("--model-unbiased-head", action="store_false")
 model_parser.add_argument("--model-num-heads", type=int, default=5)
@@ -67,7 +67,7 @@ model_parser.add_argument("--model-num-heads", type=int, default=5)
 
 value_function_parser = parser.add_argument_group("value function")
 value_function_parser.add_argument(
-    "--value-function-layers", type=list, default=[64, 64]
+    "--value-function-layers", type=int, nargs="*", default=[64, 64]
 )
 value_function_parser.add_argument(
     "--value-function-non-linearity", type=str, default="ReLU"

@@ -24,7 +24,7 @@ setup(
             "pytest>=5.0,<5.1",
             "flake8>=3.7.8,<3.8",
             "pydocstyle==4.0.0",
-            "black>=19.0",
+            "black>=19.10b0",
             "isort>=4.3.0" "pytest_cov>=2.7,<3",
             "mypy==0.750",
         ],

@@ -1,4 +1,5 @@
 """Run optimistic exploration experiments."""
+from typing import Dict, List
 
 from lsf_runner import init_runner, make_commands
 
@@ -10,7 +11,7 @@ nn_ensemble_hyper_params = {
     "model-kind": ["ProbabilisticEnsemble"],
     "model-learn-num-iter": [50],
     "model-num-heads": [50, 100],
-}
+}  # type: Dict[str, List]
 
 for algorithm_hyper_args in [nn_ensemble_hyper_params]:
     runner = init_runner(

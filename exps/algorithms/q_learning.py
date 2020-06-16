@@ -1,20 +1,18 @@
 """Working example of Q-LEARNING."""
 import numpy as np
 import torch.jit
-import torch.nn.functional as func
 import torch.optim
 
 from rllib.agent import DDQNAgent
-from rllib.dataset import (
-    EXP3ExperienceReplay,
-    ExperienceReplay,
-    PrioritizedExperienceReplay,
-)
+from rllib.dataset import PrioritizedExperienceReplay  # noqa: F401
+from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
-from rllib.util.parameter_decay import ExponentialDecay, LinearGrowth
+from rllib.util.parameter_decay import ExponentialDecay, LinearGrowth  # noqa: F401
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
+
+from rllib.dataset import EXP3ExperienceReplay  # noqa: F401; noqa: F401; noqa: F401
 
 # ENVIRONMENT = 'NChain-v0'
 ENVIRONMENT = "CartPole-v0"
@@ -67,7 +65,6 @@ criterion = torch.nn.MSELoss
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
 agent = DDQNAgent(
-    environment.name,
     q_function,
     policy,
     criterion=criterion,

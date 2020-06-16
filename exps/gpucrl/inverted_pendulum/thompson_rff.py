@@ -1,3 +1,5 @@
+"""Parse Thompson RFF experiments."""
+
 from collections import OrderedDict
 
 import matplotlib.pyplot as plt

@@ -1,3 +1,4 @@
+"""Tabular planning experiments."""
 from rllib.algorithms.tabular_planning import (
     iterative_policy_evaluation,
     linear_system_policy_evaluation,
@@ -5,7 +6,7 @@ from rllib.algorithms.tabular_planning import (
     value_iteration,
 )
 from rllib.environment import EasyGridWorld
-from rllib.policy import RandomPolicy
+from rllib.policy import AbstractPolicy, RandomPolicy
 
 environment = EasyGridWorld()
 GAMMA = 0.9
@@ -16,7 +17,7 @@ policy = RandomPolicy(
     dim_action=1,
     num_states=environment.num_states,
     num_actions=environment.num_actions,
-)
+)  # type: AbstractPolicy
 
 print("Policy Evaluation:")
 value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)

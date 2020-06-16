@@ -1,10 +1,9 @@
-from typing import List
+from typing import Optional, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.reinforce import REINFORCE
-from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction, AbstractValueFunction
 
@@ -22,7 +21,7 @@ class REINFORCEAgent(OnPolicyAgent):
         optimizer: Optimizer,
         baseline: AbstractValueFunction = None,
         critic: AbstractQFunction = None,
-        criterion: _Loss = None,
+        criterion: Optional[Type[_Loss]] = None,
         num_iter: int = 1,
         target_update_frequency: int = 1,
         train_frequency: int = 0,

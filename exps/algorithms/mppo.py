@@ -8,8 +8,8 @@ import torch.nn as nn
 from rllib.agent import MPPOAgent
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
-from rllib.policy import FelixPolicy, NNPolicy
-from rllib.util.neural_networks import zero_bias
+from rllib.policy import FelixPolicy, NNPolicy  # noqa: F401
+from rllib.util.neural_networks import zero_bias  # noqa: F401
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
@@ -38,18 +38,18 @@ SEED = 0
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 env = GymEnvironment(ENVIRONMENT, SEED)
-policy = NNPolicy(
-    env.dim_state,
-    env.dim_action,
-    env.num_states,
-    env.num_actions,
-    squashed_output=True,
-    layers=[64, 64],
-    tau=0.02,
-    action_scale=env.action_scale,
-    biased_head=False,
-)
-zero_bias(policy)
+# policy = NNPolicy(
+#     env.dim_state,
+#     env.dim_action,
+#     env.num_states,
+#     env.num_actions,
+#     squashed_output=True,
+#     layers=[64, 64],
+#     tau=0.02,
+#     action_scale=env.action_scale,
+#     biased_head=False,
+# )
+# zero_bias(policy)
 
 policy = FelixPolicy(
     env.dim_state, env.dim_action, deterministic=False, action_scale=env.action_scale
@@ -63,7 +63,6 @@ q_function = NNQFunction(
 optimizer = torch.optim.Adam(chain(policy.parameters(), q_function.parameters()), lr=LR)
 memory = ExperienceReplay(max_len=int(MAX_STEPS * NUM_ROLLOUTS))
 agent = MPPOAgent(
-    ENVIRONMENT,
     policy=policy,
     q_function=q_function,
     criterion=nn.MSELoss,

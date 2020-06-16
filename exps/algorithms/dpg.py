@@ -2,11 +2,10 @@
 from itertools import chain
 
 import numpy as np
-import torch.nn.functional as func
 import torch.optim
 
-from rllib.agent import DPGAgent, TD3Agent
-from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
+from rllib.agent import DPGAgent, TD3Agent  # noqa: F401
+from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay  # noqa: F401
 from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy
 from rllib.util.parameter_decay import ExponentialDecay
@@ -56,11 +55,9 @@ optimizer = torch.optim.Adam(
     lr=LEARNING_RATE,
     weight_decay=WEIGHT_DECAY,
 )
-critic_optimizer = None
 criterion = torch.nn.MSELoss
 
 agent = DPGAgent(
-    environment.name,
     q_function,
     policy,
     criterion,

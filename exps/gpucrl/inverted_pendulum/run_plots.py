@@ -16,8 +16,8 @@ cmd_list = make_commands(
     },
     fixed_hyper_args={},
     common_hyper_args={
-        "exploration": ["expected", "thompson"],  # 'expected', 'thompson', 'optimistic'
-        "action-cost": [0],  # 0, ACTION_COST, 2 * ACTION_COST],  # ,
+        "exploration": ["expected", "thompson", "optimistic"],
+        "action-cost": [0, ACTION_COST, 2 * ACTION_COST],
     },
     algorithm_hyper_args={},
 )

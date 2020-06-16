@@ -50,7 +50,6 @@ optimizer = torch.optim.Adam(
 criterion = loss.MSELoss
 
 agent = A2CAgent(
-    environment.name,
     policy=policy,
     optimizer=optimizer,
     critic=critic,

@@ -1,3 +1,4 @@
+from typing import Type
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
@@ -28,7 +29,7 @@ class ActorCriticAgent(OnPolicyACAgent):
         policy: AbstractPolicy,
         critic: AbstractQFunction,
         optimizer: Optimizer,
-        criterion: _Loss,
+        criterion: Type[_Loss],
         num_iter: int = 1,
         target_update_frequency: int = 1,
         train_frequency: int = 0,

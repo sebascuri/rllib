@@ -1,3 +1,5 @@
+from typing import Type
+
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
@@ -18,7 +20,7 @@ class QLearningAgent(OffPolicyAgent):
         self,
         q_function: AbstractQFunction,
         policy: AbstractQFunctionPolicy,
-        criterion: _Loss,
+        criterion: Type[_Loss],
         optimizer: Optimizer,
         memory: ExperienceReplay,
         num_iter: int = 1,

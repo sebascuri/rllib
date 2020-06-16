@@ -1,3 +1,5 @@
+"""Run reacher with MBSAC."""
+
 from dotmap import DotMap
 
 from exps.gpucrl.mb_sac_arguments import parser
@@ -11,7 +13,6 @@ from exps.gpucrl.reacher import (
 from exps.gpucrl.util import train_and_evaluate
 from rllib.util import RewardTransformer
 
-TRAIN_EPISODES = 30
 PLAN_HORIZON = 0
 PLAN_SAMPLES = 500
 PLAN_ELITES = 10
@@ -64,7 +65,8 @@ args = parser.parse_args()
 params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, "mbsac")
-"The optimal reward scale varies between environments, and should be tuned for each task separately."
+# The optimal reward scale varies between environments,
+# and should be tuned for each task separately.
 agent.algorithm.reward_transformer = RewardTransformer(
     offset=-2, scale=10 / 2, low=0, high=10
 )

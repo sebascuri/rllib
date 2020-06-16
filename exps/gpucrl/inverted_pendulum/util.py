@@ -1,4 +1,5 @@
 """Utilities for inverted pendulum experiments."""
+from typing import List
 
 import gpytorch
 import numpy as np
@@ -20,7 +21,7 @@ from rllib.algorithms.mppo import MBMPPO
 from rllib.dataset.transforms import ActionScaler, DeltaState, MeanFunction
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment.system_environment import SystemEnvironment
-from rllib.environment.systems import InvertedPendulum, ModelSystem
+from rllib.environment.systems import InvertedPendulum
 from rllib.model.abstract_model import AbstractModel
 from rllib.policy import NNPolicy
 from rllib.reward.abstract_reward import AbstractReward
@@ -142,6 +143,7 @@ class PendulumModel(AbstractModel):
 def test_policy_on_model(
     dynamical_model, reward_model, policy, test_state, policy_str="Sampled Policy"
 ):
+    """Test a policy on a model."""
     with torch.no_grad():
         trajectory = rollout_model(
             dynamical_model,
@@ -154,10 +156,10 @@ def test_policy_on_model(
 
     states = trajectory.state[:, 0]
     rewards = trajectory.reward
-    # plot_trajectory_states_and_rewards(states, rewards)
+    plot_trajectory_states_and_rewards(states, rewards)
 
     model_rewards = torch.sum(rewards).item()
-    # print(f"Model with {policy_str} Cumulative reward: {model_rewards:.2f}")
+    print(f"Model with {policy_str} Cumulative reward: {model_rewards:.2f}")
 
     return model_rewards, trajectory
 
@@ -165,13 +167,14 @@ def test_policy_on_model(
 def test_policy_on_environment(
     environment, policy, test_state, policy_str="Sampled Policy"
 ):
+    """Test a policy on an environment."""
     environment.state = test_state.numpy()
     environment.initial_state = lambda: test_state.numpy()
     trajectory = rollout_policy(environment, policy, max_steps=400, render=False)[0]
 
     trajectory = stack_list_of_tuples(trajectory)
     env_rewards = torch.sum(trajectory.reward).item()
-    # print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
+    print(f"Environment with {policy_str} Cumulative reward: {env_rewards:.2f}")
 
     return env_rewards, trajectory
 
@@ -188,11 +191,11 @@ def train_mppo(
     num_subsample,
 ):
     """Train MPPO policy."""
-    value_losses = []
-    policy_losses = []
-    returns = []
-    kl_div = []
-    entropy = []
+    value_losses = []  # type: List[float]
+    policy_losses = []  # type: List[float]
+    returns = []  # type: List[float]
+    kl_div = []  # type: List[float]
+    entropy = []  # type: List[float]
     for i in tqdm(range(num_iter)):
         # Compute the state distribution
         state_batches = _simulate_model(
@@ -293,6 +296,7 @@ def solve_mppo(
     eta_var,
     lr,
 ):
+    """Solve MPPO optimization problem."""
     reward_model = PendulumReward(action_cost)
     freeze_parameters(dynamical_model)
     value_function = NNValueFunction(
@@ -362,45 +366,59 @@ def solve_mppo(
         kl_div += kl_div_
 
         # # %% Test controller on Model.
-        # test_policy_on_model(mppo.dynamical_model, mppo.reward_model, mppo.policy,
-        #                      test_state)
-        # _, trajectory = test_policy_on_model(
-        #     mppo.dynamical_model, mppo.reward_model,
-        #     lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
-        #                torch.zeros(1)),
-        #     test_state, policy_str='Expected Policy')
+        test_policy_on_model(
+            mppo.dynamical_model, mppo.reward_model, mppo.policy, test_state
+        )
+        _, trajectory = test_policy_on_model(
+            mppo.dynamical_model,
+            mppo.reward_model,
+            lambda x: (
+                mppo.policy(x)[0][: mppo.dynamical_model.dim_action],
+                torch.zeros(1),
+            ),
+            test_state,
+            policy_str="Expected Policy",
+        )
 
         model_rewards, _ = test_policy_on_model(
             mppo.dynamical_model, mppo.reward_model, mppo.policy, test_state
         )
 
         # %% Test controller on Environment.
-        # environment = SystemEnvironment(
-        #     # ModelSystem(PendulumModel(mass=0.3, length=0.5, friction=0.005)),
-        #     InvertedPendulum(mass=0.3, length=0.5, friction=0.005,
-        #                      step_size=1 / 80),
-        #     reward=reward_model)
-        # environment_rewards, trajectory = test_policy_on_environment(
-        #     environment, mppo.policy, test_state
-        # )
+        environment = SystemEnvironment(
+            # ModelSystem(PendulumModel(mass=0.3, length=0.5, friction=0.005)),
+            InvertedPendulum(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80),
+            reward=reward_model,
+        )
+        environment_rewards, trajectory = test_policy_on_environment(
+            environment, mppo.policy, test_state
+        )
 
-        # environment_rewards, _ = test_policy_on_environment(
-        #     environment,
-        #     lambda x: (mppo.policy(x)[0][:mppo.dynamical_model.dim_action],
-        #                torch.zeros(1)),
-        #     test_state, policy_str='Expected Policy')
+        environment_rewards, _ = test_policy_on_environment(
+            environment,
+            lambda x: (
+                mppo.policy(x)[0][: mppo.dynamical_model.dim_action],
+                torch.zeros(1),
+            ),
+            test_state,
+            policy_str="Expected Policy",
+        )
 
-    # # %% Plots
-    # # Plot value funciton and policy.
-    # plot_values_and_policy(value_function, policy, trajectory=trajectory,
-    #                        num_entries=[200, 200],
-    #                        bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)])
-    #
-    # # Plot returns and losses.
-    # plot_returns_entropy_kl(returns, entropy, kl_div)
-    #
-    # # Plot losses.
-    # plot_learning_losses(policy_losses, value_losses, horizon=20)
+    # %% Plots
+    # Plot value funciton and policy.
+    plot_values_and_policy(
+        value_function,
+        policy,
+        trajectory=trajectory,
+        num_entries=[200, 200],
+        bounds=[(-2 * np.pi, 2 * np.pi), (-12, 12)],
+    )
+
+    # Plot returns and losses.
+    plot_returns_entropy_kl(returns, entropy, kl_div)
+
+    # Plot losses.
+    plot_learning_losses(policy_losses, value_losses, horizon=20)
 
     return model_rewards
 

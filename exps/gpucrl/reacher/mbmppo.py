@@ -1,3 +1,5 @@
+"""Run reacher with MBMPPO."""
+
 from dotmap import DotMap
 
 from exps.gpucrl.mb_mppo_arguments import parser
@@ -67,7 +69,7 @@ args = parser.parse_args()
 params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, "mbmppo")
-"All tasks have rewards that are scaled to be between 0 and 1000."
+# All tasks have rewards that are scaled to be between 0 and 1000.
 agent.algorithm.reward_transformer = RewardTransformer(
     offset=-2, scale=100 / 2, low=0, high=100
 )

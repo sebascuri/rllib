@@ -1,3 +1,5 @@
+"""Run Half-Cheetah with MPC agent."""
+
 from dotmap import DotMap
 
 from exps.gpucrl.half_cheetah import (

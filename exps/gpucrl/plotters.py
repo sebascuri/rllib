@@ -112,7 +112,6 @@ def plot_last_sim_and_real_trajectory(agent, episode: int):
     model = agent.dynamical_model.base_model
     real_trajectory = stack_list_of_tuples(agent.last_trajectory)
     sim_trajectory = agent.sim_trajectory
-    num_sim_trajectories = agent.sim_initial_states_num_trajectories
 
     for transformation in agent.dataset.transformations:
         real_trajectory = transformation(real_trajectory)
@@ -164,9 +163,6 @@ def plot_last_sim_and_real_trajectory(agent, episode: int):
 def plot_last_rewards(agent, episode: int):
     """Plot agent last rewards."""
     real_trajectory = stack_list_of_tuples(agent.last_trajectory)
-    model = agent.dynamical_model.base_model
-    # for transformation in agent.dataset.transformations:
-    #     real_trajectory = transformation(real_trajectory)
 
     fig, axes = plt.subplots(1, 1, sharex="col")
 

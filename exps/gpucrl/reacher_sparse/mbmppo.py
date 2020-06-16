@@ -1,3 +1,4 @@
+"""Run reacher sparse with MBMPPO."""
 from dotmap import DotMap
 
 from exps.gpucrl.mb_mppo_arguments import parser
@@ -67,7 +68,8 @@ args = parser.parse_args()
 params = DotMap(vars(args))
 
 environment, agent = get_agent_and_environment(params, "mbmppo")
-"All tasks have rewards that are scaled to be between 0 and 1000."
+
+# All tasks have rewards that are scaled to be between 0 and 1000.
 agent.algorithm.reward_transformer = RewardTransformer(offset=0, scale=500)
 # agent.exploration_episodes = 3
 train_and_evaluate(

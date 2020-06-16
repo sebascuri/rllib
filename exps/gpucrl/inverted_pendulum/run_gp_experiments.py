@@ -1,8 +1,12 @@
-"""Run optimistic exploration experiments."""
+"""Run optimistic exploration experiments with GP models."""
+from typing import Dict, List
 
 from lsf_runner import init_runner, make_commands
 
-gp_hyper_params = {"model-kind": ["ExactGP"], "model-max-num-points": [int(1e10), 200]}
+gp_hyper_params = {
+    "model-kind": ["ExactGP"],
+    "model-max-num-points": [int(1e10), 200],
+}  # type: Dict[str, List]
 
 # sparse_gp_hyper_params = {
 #     'model-kind': ['SparseGP'],

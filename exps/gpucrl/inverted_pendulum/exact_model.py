@@ -1,3 +1,5 @@
+"""Solve MPPO with true model."""
+
 import numpy as np
 import torch.distributions
 

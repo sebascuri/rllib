@@ -6,9 +6,7 @@ from lsf_runner import init_runner, make_commands
 
 from exps.gpucrl.pusher import ACTION_COST
 
-runner = init_runner(
-    f"GPUCRL_Pusher_mpc", num_threads=2, wall_time=1439, num_workers=4,
-)
+runner = init_runner(f"GPUCRL_Pusher_mpc", num_threads=2, wall_time=1439, num_workers=4)
 
 cmd_list = make_commands(
     "mpc.py",

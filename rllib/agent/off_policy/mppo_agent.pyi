@@ -1,5 +1,4 @@
-"""MPPO Agent Implementation."""
-from typing import Union
+from typing import Union, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -7,7 +6,7 @@ from torch.optim.optimizer import Optimizer
 from rllib.agent.off_policy.off_policy_agent import OffPolicyAgent
 from rllib.algorithms.mppo import MPPO
 from rllib.dataset import ExperienceReplay
-from rllib.policy import AbstractQFunctionPolicy
+from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractQFunction
 
@@ -20,11 +19,11 @@ class MPPOAgent(OffPolicyAgent):
     num_iter: int
     def __init__(
         self,
-        policy: AbstractQFunction,
-        q_function: AbstractQFunctionPolicy,
+        policy: AbstractPolicy,
+        q_function: AbstractQFunction,
         optimizer: Optimizer,
         memory: ExperienceReplay,
-        criterion: _Loss,
+        criterion: Type[_Loss],
         num_action_samples: int = 15,
         entropy_reg: float = 0.0,
         epsilon: Union[ParameterDecay, float] = None,

@@ -3,9 +3,7 @@
 from dotmap import DotMap
 
 from exps.gpucrl.inverted_pendulum import (
-    ACTION_COST,
     ENVIRONMENT_MAX_STEPS,
-    TRAIN_EPISODES,
     get_agent_and_environment,
 )
 from exps.gpucrl.inverted_pendulum.plotters import plot_pendulum_trajectories

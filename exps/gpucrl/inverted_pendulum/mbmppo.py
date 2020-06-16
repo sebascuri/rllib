@@ -1,3 +1,4 @@
+"""Run the inverted-pendulum using MB-MPPO."""
 from dotmap import DotMap
 
 from exps.gpucrl.inverted_pendulum import (

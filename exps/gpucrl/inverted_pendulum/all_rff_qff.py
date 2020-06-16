@@ -1,16 +1,8 @@
-from collections import OrderedDict
-
+"""Parse RFF/QFF experiments."""
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from exps.gpucrl.plotters import COLORS, LABELS, set_figure_params
-
-# COLORS = OrderedDict({
-#     'QFF': 'C1',
-#     'RFF': 'C4'
-# })
-# LABELS = ['QFF', 'RFF']
 
 set_figure_params(serif=True, fontsize=9)
 df = pd.read_pickle("inverted_mbmppo_rff.pkl")

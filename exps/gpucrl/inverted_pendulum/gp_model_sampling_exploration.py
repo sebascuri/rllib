@@ -1,3 +1,7 @@
+"""Solve MPPO with a GP model and collecting data querying randomly a simulator."""
+
+from typing import List
+
 import numpy as np
 import torch
 from torch.distributions import Uniform
@@ -7,10 +11,16 @@ from exps.gpucrl.inverted_pendulum.util import (
     PendulumModel,
     PendulumReward,
     StateTransform,
-    solve_mpc,
+    solve_mppo,
 )
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
-from rllib.dataset.transforms import ActionClipper, DeltaState, MeanFunction
+from rllib.dataset.transforms import (
+    AbstractTransform,
+    ActionClipper,
+    DeltaState,
+    MeanFunction,
+)
+from rllib.model.abstract_model import AbstractModel
 from rllib.model.derived_model import TransformedModel
 from rllib.model.gp_model import ExactGPModel
 from rllib.util.collect_data import collect_model_transitions
@@ -22,7 +32,9 @@ np.random.seed(0)
 # %% Collect Data.
 num_data = 200
 reward_model = PendulumReward()
-dynamical_model = PendulumModel(mass=0.3, length=0.5, friction=0.005, step_size=1 / 80)
+dynamical_model = PendulumModel(
+    mass=0.3, length=0.5, friction=0.005, step_size=1 / 80
+)  # type: AbstractModel
 
 transitions = collect_model_transitions(
     Uniform(torch.tensor([-2 * np.pi, -12]), torch.tensor([2 * np.pi, 12])),
@@ -37,7 +49,7 @@ transformations = [
     ActionClipper(-1, 1),
     MeanFunction(DeltaState()),
     # StateActionNormalizer()
-]
+]  # type: List[AbstractTransform]
 dataset = BootstrapExperienceReplay(
     max_len=int(1e4), transformations=transformations, num_bootstraps=1
 )
@@ -112,7 +124,7 @@ num_iter = 100
 num_sim_steps = 400
 num_gradient_steps = 50
 
-solve_mpc(
+solve_mppo(
     dynamical_model,
     action_cost=action_cost,
     num_iter=num_iter,

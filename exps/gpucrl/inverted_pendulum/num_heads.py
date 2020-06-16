@@ -1,3 +1,5 @@
+"""Parse num-head experiments."""
+
 from collections import OrderedDict
 
 import matplotlib.pyplot as plt

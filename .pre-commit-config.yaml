@@ -1,5 +1,5 @@
 exclude: |
-  ^(exps/|_scratch/)|
+  ^(_scratch/)|
   # You don't usually want a bot to modify your legal texts
   (LICENSE\.*|COPYING\.*)|
   # Maybe reactivate this when all README files include prettier ignore tags?

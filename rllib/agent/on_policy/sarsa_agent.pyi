@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -23,7 +23,7 @@ class SARSAAgent(AbstractAgent):
         self,
         q_function: AbstractQFunction,
         policy: AbstractQFunctionPolicy,
-        criterion: _Loss,
+        criterion: Type[_Loss],
         optimizer: Optimizer,
         num_iter: int = 1,
         batch_size: int = 1,

@@ -1,4 +1,4 @@
-import torch
+"""Run MBMPPO on Pusher."""
 from dotmap import DotMap
 
 from exps.gpucrl.mb_mppo_arguments import parser
@@ -11,7 +11,6 @@ from exps.gpucrl.pusher import (
 )
 from exps.gpucrl.util import train_and_evaluate
 
-TRAIN_EPISODES = 30
 PLAN_HORIZON = 4
 PLAN_SAMPLES = 500
 MPPO_ETA, MPPO_ETA_MEAN, MPPO_ETA_VAR = 0.5, 0.1, 0.5
@@ -24,7 +23,7 @@ SIM_NUM_STEPS = ENVIRONMENT_MAX_STEPS
 parser.description = "Run Pusher using Model-Based MPPO."
 parser.set_defaults(
     # exploration='thompson',
-    action_cost=0,
+    action_cost=ACTION_COST,
     train_episodes=TRAIN_EPISODES,
     environment_max_steps=ENVIRONMENT_MAX_STEPS,
     plan_horizon=PLAN_HORIZON,

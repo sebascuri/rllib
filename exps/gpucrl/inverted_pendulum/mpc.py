@@ -1,3 +1,5 @@
+"""Run the inverted-pendulum using MPC."""
+
 from dotmap import DotMap
 
 from exps.gpucrl.cart_pole import (

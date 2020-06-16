@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -17,7 +17,7 @@ class DPGAgent(OffPolicyAgent):
         self,
         q_function: AbstractQFunction,
         policy: AbstractPolicy,
-        criterion: _Loss,
+        criterion: Type[_Loss],
         optimizer: Optimizer,
         memory: ExperienceReplay,
         exploration_noise: Union[float, ParameterDecay],

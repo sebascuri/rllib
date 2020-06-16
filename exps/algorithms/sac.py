@@ -2,11 +2,10 @@
 from itertools import chain
 
 import numpy as np
-import torch.nn.functional as func
 import torch.optim
 
 from rllib.agent import SACAgent
-from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay
+from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay  # noqa: F401
 from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy
 from rllib.util.training import evaluate_agent, train_agent
@@ -59,7 +58,6 @@ optimizer = torch.optim.Adam(
 criterion = torch.nn.MSELoss
 
 agent = SACAgent(
-    environment.name,
     q_function=q_function,
     policy=policy,
     criterion=criterion,

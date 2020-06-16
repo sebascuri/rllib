@@ -1,7 +1,8 @@
+"""Parse best-head experiments."""
+
 from collections import OrderedDict
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from exps.gpucrl.plotters import set_figure_params

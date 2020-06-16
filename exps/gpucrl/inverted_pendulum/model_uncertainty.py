@@ -1,4 +1,4 @@
-from collections import OrderedDict
+"""Parse uncertainty starvation experiments."""
 
 import matplotlib.pyplot as plt
 import numpy as np
