@@ -61,52 +61,19 @@ def get_agent_and_environment(params, agent_name):
     reward_model = PusherReward(action_cost=params.action_cost)
 
     # %% Define Helper modules
-    low = torch.tensor(
-        [
-            [
-                -2.2854,
-                -0.5236,
-                -1.5,
-                -2.3213,
-                -1.5,
-                -1.094,
-                -1.5,  # qpos
-                -10.0,
-                -10.0,
-                -10.0,
-                -10.0,
-                -10.0,
-                -10.0,
-                -10.0,  # qvel
-                0.3,
-                -0.7,
-                -0.275,
-            ]
-        ]
+    x_limits = (
+        [-2.2854, -0.5236, -1.5, -2.3213, -1.5, -1.094, -1.5],
+        [1.0, 1.3963, 1.7, 0, 1.5, 0, 1.5],
     )
-    high = torch.tensor(
-        [
-            [
-                2.0,
-                1.3963,
-                1.7,
-                0,
-                1.5,
-                0,
-                1.5,  # qpos
-                10.0,
-                10.0,
-                10.0,
-                10.0,
-                10.0,
-                10.0,
-                10.0,  # qvel
-                0.8,
-                0.1,
-                -0.275,
-            ]
-        ]
+    v_limits = (
+        [-1e1, -1e1, -1e1, -1e1, -1e1, -1e1, -1e1],
+        [+1e1, +1e1, +1e1, +1e1, +1e1, +1e1, +1e1],
     )
+
+    obj_limits = ([0.3, -0.7, -0.275], [0.8, 0.1, -0.275])
+
+    low = torch.tensor(x_limits[0] + v_limits[0] + obj_limits[0])
+    high = torch.tensor(x_limits[1] + v_limits[1] + obj_limits[1])
 
     transformations = [
         NextStateClamper(low, high),
@@ -116,55 +83,23 @@ def get_agent_and_environment(params, agent_name):
 
     input_transform = QuaternionTransform()
     # input_transform = None
-    # 0, 0.5, -1.5, -1.2, 0.7,
+    x0 = (
+        [-0.3, +0.3, -1.5, -1.5, +0.5, -1.094, -1.5],
+        [+0.3, +0.6, -1.0, -1.0, +0.9, +0.000, +1.5],
+    )
+    v0 = (
+        [-0.005, -0.005, -0.005, -0.005, -0.005, -0.005, -0.005],
+        [+0.005, +0.005, +0.005, +0.005, +0.005, +0.005, +0.005],
+    )
+
+    obj0 = ([0.5, -0.4, -0.275], [0.7, -0.2, -0.275])
+
     exploratory_distribution = torch.distributions.Uniform(
-        torch.tensor(
-            [
-                -0.3,
-                0.3,
-                -1.5,
-                -1.5,
-                0.5,
-                -1.094,
-                -1.5,  # qpos
-                -0.005,
-                -0.005,
-                -0.005,
-                -0.005,
-                -0.005,
-                -0.005,
-                -0.005,  # qvel
-                0.5,
-                -0.4,
-                -0.323,
-            ]  # object
-        ),
-        torch.tensor(
-            [
-                0.3,
-                0.6,
-                -1.0,
-                -1.0,
-                0.9,
-                0.0,
-                1.5,  # qpos
-                0.005,
-                0.005,
-                0.005,
-                0.005,
-                0.005,
-                0.005,
-                0.005,  # qvel
-                0.7,
-                -0.2,
-                -0.275,
-            ]  # object
-        ),
+        torch.tensor(x0[0] + v0[0] + obj0[0]), torch.tensor(x0[1] + v0[1] + obj0[1])
     )
 
     if agent_name == "mpc":
         agent = get_mpc_agent(
-            environment.name,
             environment.dim_state,
             environment.dim_action,
             params,
@@ -177,7 +112,6 @@ def get_agent_and_environment(params, agent_name):
         )
     elif agent_name == "mbmppo":
         agent = get_mb_mppo_agent(
-            environment.name,
             environment.dim_state,
             environment.dim_action,
             params,

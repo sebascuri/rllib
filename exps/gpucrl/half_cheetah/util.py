@@ -71,7 +71,6 @@ def get_agent_and_environment(params, agent_name):
 
     if agent_name == "mpc":
         agent = get_mpc_agent(
-            environment.name,
             environment.dim_state,
             environment.dim_action,
             params,
@@ -84,7 +83,6 @@ def get_agent_and_environment(params, agent_name):
         )
     elif agent_name == "mbmppo":
         agent = get_mb_mppo_agent(
-            environment.name,
             environment.dim_state,
             environment.dim_action,
             params,
