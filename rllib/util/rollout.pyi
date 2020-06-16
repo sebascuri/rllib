@@ -1,6 +1,7 @@
 from typing import Callable, List, Tuple, Union
 
 from numpy import ndarray
+from torch import Tensor
 
 from rllib.agent import AbstractAgent
 from rllib.dataset.datatypes import (
@@ -16,14 +17,23 @@ from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 
-def step(
+def step_env(
     environment: AbstractEnvironment,
     state: Union[int, ndarray],
     action: Union[int, ndarray],
-    pi: Distribution,
-    render: bool,
+    pi: Distribution = None,
+    render: bool = False,
     goal: Union[int, ndarray] = None,
 ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
+def step_model(
+    dynamical_model: AbstractModel,
+    reward_model: AbstractReward,
+    termination: Termination,
+    state: Tensor,
+    action: Tensor,
+    done: Tensor,
+    pi: Distribution = None,
+) -> Tuple[Observation, Tensor, Tensor]: ...
 def rollout_agent(
     environment: AbstractEnvironment,
     agent: AbstractAgent,

@@ -2,13 +2,14 @@
 
 import numpy as np
 import torch
+from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import RawObservation
 from rllib.util.utilities import tensor_to_distribution
 
 
-def step(environment, state, action, pi, render, goal=None):
+def step_env(environment, state, action, pi=None, render=False, goal=None):
     """Perform a single step in an environment."""
     try:
         next_state, reward, done, info = environment.step(action)
@@ -21,14 +22,16 @@ def step(environment, state, action, pi, render, goal=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action, dtype=torch.get_default_dtype())
 
-    with torch.no_grad():
-        try:
-            entropy = pi.entropy().squeeze()
-        except NotImplementedError:
-            # Approximate it by MC sampling.
-            entropy = -pi.log_prob(action)
-
-        log_prob_action = pi.log_prob(action).squeeze()
+    if pi is not None:
+        with torch.no_grad():
+            try:
+                entropy = pi.entropy().squeeze()
+            except NotImplementedError:
+                entropy = -pi.log_prob(action)  # Approximate it by MC sampling.
+            log_prob_action = pi.log_prob(action).squeeze()
+    else:
+        entropy = 0.0
+        log_prob_action = 1.0
 
     observation = RawObservation(
         state=state,
@@ -43,6 +46,87 @@ def step(environment, state, action, pi, render, goal=None):
     if render:
         environment.render()
     return observation, state, done, info
+
+
+def step_model(
+    dynamical_model, reward_model, termination, state, action, done, pi=None
+):
+    """Perform a single step in an dynamical model."""
+    # Sample a next state
+    next_state_out = dynamical_model(state, action)
+    next_state_distribution = tensor_to_distribution(next_state_out)
+
+    # Compute the epistemic scale of the model
+    try:
+        next_state_tril = dynamical_model.scale(state, action)
+    except NotImplementedError:
+        next_state_tril = next_state_out[-1]
+
+    if next_state_distribution.has_rsample:
+        next_state = next_state_distribution.rsample()
+    else:
+        next_state = next_state_distribution.sample()
+
+    # Sample a reward
+    reward_distribution = tensor_to_distribution(
+        reward_model(state, action, next_state)
+    )
+    if reward_distribution.has_rsample:
+        reward = reward_distribution.rsample()
+    else:
+        reward = reward_distribution.sample()
+    reward *= (~done).float()
+
+    # Check for termination.
+    if termination is not None:
+        done += termination(state, action, next_state)
+
+    if pi is not None:
+        try:
+            entropy = pi.entropy().squeeze()
+        except NotImplementedError:
+            entropy = -pi.log_prob(action)  # Approximate it by MC sampling.
+        log_prob_action = pi.log_prob(action).squeeze()
+    else:
+        entropy = 0.0
+        log_prob_action = 1.0
+
+    observation = RawObservation(
+        state=state,
+        action=action,
+        reward=reward,
+        next_state=next_state,
+        done=done.float(),
+        entropy=entropy,
+        log_prob_action=log_prob_action,
+        next_state_scale_tril=next_state_tril,
+    ).to_torch()
+
+    # Update state.
+    next_state = torch.zeros_like(state)
+    next_state[~done] = observation.next_state[~done]  # update next state.
+    next_state[done] = state[done]  # don't update next state.
+
+    return observation, next_state, done
+
+
+def record_episode(environment, agent, max_steps=1000):
+    """Record an episode."""
+    state = environment.reset()
+    recorder = VideoRecorder(
+        environment, path=f"{agent.logger.writer.logdir}/video.mp4"
+    )
+    done = False
+    while not done:
+        action = agent.act(state)
+        observation, state, done, info = step_env(environment, state, action)
+        recorder.capture_frame()
+        agent.observe()
+
+        if max_steps <= environment.time:
+            break
+    recorder.close()
+    agent.end_episode()
 
 
 def rollout_agent(
@@ -90,7 +174,7 @@ def rollout_agent(
         done = False
         while not done:
             action = agent.act(state)
-            obs, state, done, info = step(
+            obs, state, done, info = step_env(
                 environment, state, action, agent.pi, render, goal=environment.goal
             )
             agent.observe(obs)
@@ -148,7 +232,9 @@ def rollout_policy(
                     **kwargs,
                 )
                 action = pi.sample().numpy()
-                obs, state, done, info = step(environment, state, action, pi, render)
+                obs, state, done, info = step_env(
+                    environment, state, action, pi, render
+                )
                 trajectory.append(obs)
                 if max_steps <= environment.time:
                     break
@@ -207,61 +293,12 @@ def rollout_model(
             action = pi.sample()
         action = torch.max(torch.min(action, policy.action_scale), -policy.action_scale)
 
-        # Sample a next state
-        next_state_out = dynamical_model(state, action)
-        next_state_distribution = tensor_to_distribution(next_state_out)
-
-        # Compute the epistemic scale of the model
-        try:
-            next_state_tril = dynamical_model.scale(state, action)
-        except NotImplementedError:
-            next_state_tril = next_state_out[-1]
-
-        if next_state_distribution.has_rsample:
-            next_state = next_state_distribution.rsample()
-        else:
-            next_state = next_state_distribution.sample()
-
-        # Sample a reward
-        reward_distribution = tensor_to_distribution(
-            reward_model(state, action, next_state)
+        observation, next_state, done = step_model(
+            dynamical_model, reward_model, termination, state, action, done, pi=pi
         )
-        if reward_distribution.has_rsample:
-            reward = reward_distribution.rsample()
-        else:
-            reward = reward_distribution.sample()
+        trajectory.append(observation)
 
-        # Check for termination.
-        if termination is not None:
-            done = termination(state, action, next_state)
-
-        try:
-            entropy = pi.entropy().squeeze()
-        except NotImplementedError:
-            # Approximate it by MC sampling.
-            entropy = -pi.log_prob(action)
-
-        trajectory.append(
-            RawObservation(
-                state,
-                action,
-                reward,
-                next_state,
-                done.float(),
-                log_prob_action=pi.log_prob(action),
-                entropy=entropy,
-                next_state_scale_tril=next_state_tril,
-            ).to_torch()
-        )
-
-        # Update state.
-        # state[~done] modifies the old state reference in the trajectory hence create a
-        # new tensor for state.
-        old_state = state
-        state = torch.zeros_like(state)
-        state[~done] = next_state[~done]
-        state[done] = old_state[done]
-
+        state = next_state
         if torch.all(done):
             break
 
@@ -303,52 +340,12 @@ def rollout_actions(
 
     for action in action_sequence:  # Normalized actions
 
-        # Sample next states
-        next_state_out = dynamical_model(state, action)
-        next_state_distribution = tensor_to_distribution(next_state_out)
-        if len(next_state_out) == 3:
-            next_state_tril = next_state_out[2]
-        else:
-            next_state_tril = next_state_out[1]
-
-        if next_state_distribution.has_rsample:
-            next_state = next_state_distribution.rsample()
-        else:
-            next_state = next_state_distribution.sample()
-
-        # % Sample a reward
-        reward_distribution = tensor_to_distribution(
-            reward_model(state, action, next_state)
+        observation, next_state, done = step_model(
+            dynamical_model, reward_model, termination, state, action, done
         )
-        if reward_distribution.has_rsample:
-            reward = reward_distribution.rsample()
-        else:
-            reward = reward_distribution.sample()
-        reward *= (~done).float()
+        trajectory.append(observation)
 
-        # Check for termination.
-        if termination is not None:
-            done += termination(state, action, next_state)
-
-        trajectory.append(
-            RawObservation(
-                state,
-                action,
-                reward,
-                next_state,
-                done.float(),
-                next_state_scale_tril=next_state_tril,
-            ).to_torch()
-        )
-
-        # Update state.
-        # state[~done] modifies the old state reference in the trajectory hence create a
-        # new tensor for state.
-        old_state = state
-        state = torch.zeros_like(state)
-        state[~done] = next_state[~done]
-        state[done] = old_state[done]
-
+        state = next_state
         if torch.all(done):
             break
 

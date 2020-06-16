@@ -12,8 +12,8 @@ commands:
 
       - restore_cache:
           keys:
-            - pip3.6--{{ checksum ".circleci/config.yml" }}--{{ checksum "setup.py" }}
-            - pip3.6
+            - pip3.7--{{ checksum ".circleci/config.yml" }}--{{ checksum "setup.py" }}
+            - pip3.7
 
       - run:
           name: Install library
@@ -23,22 +23,22 @@ commands:
 
 
       - save_cache:
-          key: pip3.6--{{ checksum ".circleci/config.yml" }}--{{ checksum "setup.py" }}
+          key: pip3.7--{{ checksum ".circleci/config.yml" }}--{{ checksum "setup.py" }}
           paths:
             - ~/.cache/pip
 
 executors:
-  python36:
+  python37:
     docker:
-      - image: python:3.6
+      - image: python:3.7
 
 jobs:
   build:
-    executor: python36
+    executor: python37
     steps:
       - build
   test:
-    executor: python36
+    executor: python37
     environment:
       MODULE: rllib
       OPENBLAS_NUM_THREADS: 2
