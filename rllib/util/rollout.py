@@ -21,11 +21,14 @@ def step(environment, state, action, pi, render, goal=None):
     if not isinstance(action, torch.Tensor):
         action = torch.tensor(action, dtype=torch.get_default_dtype())
 
-    try:
-        entropy = pi.entropy().squeeze()
-    except NotImplementedError:
-        # Approximate it by MC sampling.
-        entropy = -pi.log_prob(action)
+    with torch.no_grad():
+        try:
+            entropy = pi.entropy().squeeze()
+        except NotImplementedError:
+            # Approximate it by MC sampling.
+            entropy = -pi.log_prob(action)
+
+        log_prob_action = pi.log_prob(action).squeeze()
 
     observation = RawObservation(
         state=state,
@@ -34,7 +37,7 @@ def step(environment, state, action, pi, render, goal=None):
         next_state=next_state,
         done=done,
         entropy=entropy,
-        log_prob_action=pi.log_prob(action).squeeze(),
+        log_prob_action=log_prob_action,
     ).to_torch()
     state = next_state
     if render:

@@ -1,6 +1,5 @@
 """Implementation of an Experience Replay Buffer with a Bootstrap mask."""
 
-import numpy as np
 import torch
 from torch.distributions import Poisson
 
@@ -40,7 +39,7 @@ class BootstrapExperienceReplay(ExperienceReplay):
 
     def __init__(self, max_len, transformations=None, num_bootstraps=1, bootstrap=True):
         super().__init__(max_len, transformations)
-        self.weights = np.empty((self.max_len, num_bootstraps), dtype=np.int)
+        self.weights = torch.empty(self.max_len, num_bootstraps, dtype=torch.int)
         self.mask_distribution = Poisson(torch.ones(num_bootstraps))
         self.bootstrap = bootstrap
 
