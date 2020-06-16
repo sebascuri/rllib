@@ -30,9 +30,11 @@ parser.set_defaults(
 
 args = parser.parse_args()
 params = DotMap(vars(args))
-
+print(params.num_threads)
 environment, agent = get_agent_and_environment(params, "mbmppo")
 set_figure_params(serif=True, fontsize=9)
-train_and_evaluate(agent, environment, params)
+train_and_evaluate(
+    agent, environment, params, plot_callbacks=[plot_pendulum_trajectories]
+)
 # save_milestones=list(range(params.train_episodes)),
-# plot_callbacks=[plot_pendulum_trajectories])
+# )

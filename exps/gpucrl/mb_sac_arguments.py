@@ -14,7 +14,7 @@ parser.add_argument(
 )
 parser.add_argument("--train-episodes", type=int, default=10)
 parser.add_argument("--test-episodes", type=int, default=1)
-parser.add_argument("--num-threads", type=int, default=2)
+parser.add_argument("--num-threads", type=int, default=1)
 parser.add_argument("--beta", type=float, default=1.0)
 parser.add_argument("--max-memory", type=int, default=10000)
 
