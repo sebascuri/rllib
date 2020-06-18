@@ -34,6 +34,13 @@ def step_model(
     done: Tensor,
     pi: Distribution = None,
 ) -> Tuple[Observation, Tensor, Tensor]: ...
+def record(
+    environment: AbstractEnvironment,
+    agent: AbstractAgent,
+    save_dir: str,
+    num_episodes: int = 1,
+    max_steps: int = 1000,
+) -> None: ...
 def rollout_agent(
     environment: AbstractEnvironment,
     agent: AbstractAgent,

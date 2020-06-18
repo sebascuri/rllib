@@ -110,23 +110,28 @@ def step_model(
     return observation, next_state, done
 
 
-def record_episode(environment, agent, max_steps=1000):
+def record(environment, agent, path, num_episodes=1, max_steps=1000):
     """Record an episode."""
-    state = environment.reset()
-    recorder = VideoRecorder(
-        environment, path=f"{agent.logger.writer.logdir}/video.mp4"
-    )
-    done = False
-    while not done:
-        action = agent.act(state)
-        observation, state, done, info = step_env(environment, state, action)
-        recorder.capture_frame()
-        agent.observe()
+    recorder = VideoRecorder(environment, path=path)
+    for _ in range(num_episodes):
+        state = environment.reset()
+        if environment.goal is not None:
+            state = np.concatenate((state, environment.goal))
 
-        if max_steps <= environment.time:
-            break
+        done = False
+        i = 0
+        while not done:
+            action = agent.act(state)
+            observation, state, done, info = step_env(
+                environment, state, action, goal=environment.goal
+            )
+            recorder.capture_frame()
+
+            if max_steps <= environment.time:
+                break
+            print(i)
+            i += 1
     recorder.close()
-    agent.end_episode()
 
 
 def rollout_agent(

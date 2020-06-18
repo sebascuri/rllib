@@ -75,6 +75,20 @@ class HalfCheetahReward(MujocoReward):
         return self.get_reward(reward_state, self.action_reward(action))
 
 
+class HalfCheetahV2Reward(MujocoReward):
+    """Reward of MBRL HalfCheetah V2 Environment."""
+
+    dim_action = 6
+
+    def __init__(self, action_cost=0.1):
+        super().__init__(action_cost)
+
+    def forward(self, state, action, next_state):
+        """See `AbstractReward.forward()'."""
+        reward_state = next_state[..., 0]
+        return self.get_reward(reward_state, self.action_reward(action))
+
+
 class PusherReward(MujocoReward):
     """Reward of MBRL Pusher Environment."""
 
@@ -90,7 +104,7 @@ class PusherReward(MujocoReward):
             goal = np.array([0.45, -0.05, -0.323])
         else:
             goal = torch.tensor([0.45, -0.05, -0.323])
-        # goal[-1] = -0.275
+        goal[-1] = -0.275
         if isinstance(state, torch.Tensor):
             state = state.detach()
         tip_pos = self.get_ee_position(state)

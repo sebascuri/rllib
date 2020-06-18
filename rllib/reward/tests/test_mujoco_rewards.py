@@ -4,7 +4,12 @@ import torch
 from gym import envs
 
 from rllib.environment import GymEnvironment
-from rllib.reward.mujoco_rewards import CartPoleReward, HalfCheetahReward, ReacherReward
+from rllib.reward.mujoco_rewards import (
+    CartPoleReward,
+    HalfCheetahReward,
+    HalfCheetahV2Reward,
+    ReacherReward,
+)
 
 
 @pytest.fixture(params=[0, 0.1, None])
@@ -21,6 +26,7 @@ def action_type(request):
     params=[
         ("MBRLCartPole-v0", CartPoleReward),
         ("MBRLHalfCheetah-v0", HalfCheetahReward),
+        ("MBRLHalfCheetah-v2", HalfCheetahV2Reward),
         # ('MBRLPusher-v0', PusherReward),
         ("MBRLReacher3D-v0", ReacherReward),
     ]

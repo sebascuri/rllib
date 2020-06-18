@@ -23,5 +23,10 @@ try:
         entry_point="rllib.environment.mujoco.half_cheetah:HalfCheetahEnv",
     )
 
+    register(
+        id="MBRLHalfCheetah-v2",
+        entry_point="rllib.environment.mujoco.half_cheetah:HalfCheetahEnvV2",
+    )
+
 except ImportError:
     pass
