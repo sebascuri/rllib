@@ -60,6 +60,8 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         self.discrete_action = self.num_actions >= 0
         self.discrete_observation = self.num_observations >= 0
 
+        self.metadata = {"render.modes": []}
+
     def __str__(self):
         """Return string that explains environment."""
         if self.discrete_state:

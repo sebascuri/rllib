@@ -45,6 +45,7 @@ class GymEnvironment(AbstractEnvironment):
             num_observations=num_states,
         )
         self._time = 0
+        self.metadata = self.env.metadata
 
     def step(self, action):
         """See `AbstractEnvironment.step'."""
@@ -56,7 +57,7 @@ class GymEnvironment(AbstractEnvironment):
 
     def render(self, mode="human"):
         """See `AbstractEnvironment.render'."""
-        self.env.render(mode)
+        return self.env.render(mode)
 
     def close(self):
         """See `AbstractEnvironment.close'."""

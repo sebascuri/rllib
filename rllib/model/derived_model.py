@@ -120,3 +120,10 @@ class OptimisticModel(TransformedModel):
             mean + self.beta * (tril @ optimism_vars.unsqueeze(-1)).squeeze(-1),
             torch.zeros_like(tril),
         )  # , tril)
+
+    def scale(self, state, action):
+        """Get scale at current state-action pair."""
+        control_action = action[..., : -self.dim_state]
+        scale = super().scale(state, control_action)
+
+        return scale
