@@ -9,8 +9,8 @@ class RandomPolicy(AbstractPolicy):
         self,
         dim_state: int,
         dim_action: int,
-        num_states: int = -1,
-        num_actions: int = -1,
-        action_scale: Action = 1.0,
+        num_states: int = ...,
+        num_actions: int = ...,
+        action_scale: Action = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...

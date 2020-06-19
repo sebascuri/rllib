@@ -1,4 +1,6 @@
-from typing import Union
+from typing import Optional, Union
+
+from torch import Tensor
 
 from rllib.util import ParameterDecay
 from rllib.value_function import AbstractQFunction
@@ -12,7 +14,7 @@ class SoftMax(AbstractQFunctionPolicy):
         self,
         q_function: AbstractQFunction,
         param: Union[ParameterDecay, float],
-        prior: AbstractPolicy = None,
+        prior: Optional[AbstractPolicy] = None,
     ): ...
     @property
-    def temperature(self) -> float: ...
+    def temperature(self) -> Tensor: ...

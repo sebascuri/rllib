@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -20,15 +20,15 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self,
         dim_state: int,
         dim_action: int,
-        num_states: int = -1,
-        num_actions: int = -1,
-        tau: float = 0.0,
-        deterministic: bool = False,
-        action_scale: Action = 1.0,
+        num_states: int = ...,
+        num_actions: int = ...,
+        tau: float = ...,
+        deterministic: bool = ...,
+        action_scale: Action = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
     def random(
-        self, batch_size: Tuple[int] = None, normalized: bool = False
+        self, batch_size: Optional[Tuple[int]] = ..., normalized: bool = ...
     ) -> TupleDistribution: ...
     def reset(self, **kwargs) -> None: ...
     def update(self) -> None: ...
