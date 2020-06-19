@@ -22,7 +22,7 @@ try:
 
         def __init__(self, action_cost=0.1):
             self.action_cost = action_cost
-            self.prev_qpos = None
+            self.prev_qpos = np.array([0])
             dir_path = os.path.dirname(os.path.realpath(__file__))
             mujoco_env.MujocoEnv.__init__(
                 self, f"{dir_path}/assets/half_cheetah.xml", 5
@@ -32,14 +32,12 @@ try:
 
         def step(self, action: np.ndarray):
             """See `AbstractEnvironment.step()'."""
-            ob = self._get_obs()
-            xposbefore = ob[0]
+            self.prev_qpos = np.copy(self.sim.data.qpos.flat)
             self.do_simulation(action, self.frame_skip)
             ob = self._get_obs()
-            xposafter = ob[0]
 
             reward_ctrl = -np.square(action).sum()
-            reward_run = (xposafter - xposbefore) / self.dt
+            reward_run = (ob[0] - self.prev_qpos[0]) / self.dt
             reward = reward_run + self.action_cost * reward_ctrl
 
             done = False
@@ -70,7 +68,7 @@ try:
             self.viewer.cam.distance = self.model.stat.extent * 0.25
             self.viewer.cam.elevation = -55
 
-    class HalfCheetahEnvV2(mujoco_env.MujocoEnv, utils.EzPickle):
+    class HalfCheetahEnvV2(HalfCheetahEnv):
         """Half Cheetah V2 environment for MBRL control.
 
         References
@@ -83,14 +81,7 @@ try:
         """
 
         def __init__(self, action_cost=0.1):
-            self.action_cost = action_cost
-            self.prev_qpos = None
-            dir_path = os.path.dirname(os.path.realpath(__file__))
-            mujoco_env.MujocoEnv.__init__(
-                self, f"{dir_path}/assets/half_cheetah.xml", 5
-            )
-            utils.EzPickle.__init__(self)
-            self.reset_model()
+            super().__init__(action_cost)
 
         def step(self, action: np.ndarray):
             """See `AbstractEnvironment.step()'."""
@@ -130,11 +121,6 @@ try:
             self.set_state(qpos, qvel)
             self.prev_qpos = np.copy(self.sim.data.qpos.flat)
             return self._get_obs()
-
-        def viewer_setup(self):
-            """Set-up the viewer."""
-            self.viewer.cam.distance = self.model.stat.extent * 0.25
-            self.viewer.cam.elevation = -55
 
 
 except Exception:  # Mujoco not installed.

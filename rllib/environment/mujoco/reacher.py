@@ -22,14 +22,13 @@ try:
 
         def __init__(self, action_cost=0.01, sparse=False):
             self.action_cost = action_cost
-            self.viewer = None
             self.length_scale = 0.45  # .5 is solved by all.
             self.action_scale = 2.0  # 5.
+            self.goal = np.zeros(3)
+            self.sparse = sparse
 
             utils.EzPickle.__init__(self)
             dir_path = os.path.dirname(os.path.realpath(__file__))
-            self.goal = np.zeros(3)
-            self.sparse = sparse
             mujoco_env.MujocoEnv.__init__(self, "%s/assets/reacher3d.xml" % dir_path, 2)
 
         def step(self, action: np.ndarray):
