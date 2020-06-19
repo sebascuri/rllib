@@ -1,10 +1,9 @@
-from typing import List, Type, TypeVar
+from typing import List, Optional, Type, TypeVar
 
 import torch.nn
 from torch import Tensor
 
-from .abstract_value_function import AbstractQFunction
-from .nn_value_function import NNQFunction, NNValueFunction
+from rllib.value_function import AbstractQFunction, NNQFunction, NNValueFunction
 
 T = TypeVar("T", bound="AbstractQFunction")
 
@@ -14,12 +13,12 @@ class NNEnsembleValueFunction(NNValueFunction):
         self,
         dim_state: int,
         num_heads: int,
-        num_states: int = -1,
-        layers: List[int] = None,
-        biased_head: bool = True,
-        non_linearity: str = "ReLU",
-        tau: float = 0.0,
-        input_transform: torch.nn.Module = None,
+        num_states: int = ...,
+        layers: Optional[List[int]] = ...,
+        biased_head: bool = ...,
+        non_linearity: str = ...,
+        tau: float = ...,
+        input_transform: Optional[torch.nn.Module] = ...,
     ) -> None: ...
     @classmethod
     def from_value_function(
@@ -35,13 +34,13 @@ class NNEnsembleQFunction(NNQFunction):
         dim_state: int,
         dim_action: int,
         num_heads: int,
-        num_states: int = -1,
-        num_actions: int = -1,
-        layers: List[int] = None,
-        biased_head: bool = True,
-        non_linearity: str = "ReLU",
-        tau: float = 0.0,
-        input_transform: torch.nn.Module = None,
+        num_states: int = ...,
+        num_actions: int = ...,
+        layers: Optional[List[int]] = ...,
+        biased_head: bool = ...,
+        non_linearity: str = ...,
+        tau: float = ...,
+        input_transform: Optional[torch.nn.Module] = ...,
     ) -> None: ...
     @classmethod
     def from_q_function(cls: Type[T], q_function: NNQFunction, num_heads: int) -> T: ...

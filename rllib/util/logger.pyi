@@ -1,6 +1,6 @@
 """Implementation of a Logger class."""
 
-from typing import Dict, Iterator, List, Tuple, Optional
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 import tensorboardX

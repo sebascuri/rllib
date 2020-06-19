@@ -1,4 +1,4 @@
-from typing import Callable, List, Tuple, Union, Optional
+from typing import Callable, List, Optional, Tuple, Union
 
 from numpy import ndarray
 from torch import Tensor

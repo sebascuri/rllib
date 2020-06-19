@@ -1,4 +1,5 @@
 from typing import Type
+
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 

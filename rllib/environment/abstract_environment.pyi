@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Tuple, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from gym.spaces import Space
 

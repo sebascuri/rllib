@@ -1,4 +1,4 @@
-from typing import NamedTuple, Any, Optional
+from typing import Any, NamedTuple, Optional
 
 from torch import Tensor
 

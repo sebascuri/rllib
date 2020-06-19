@@ -6,7 +6,7 @@ from .nn_value_function import NNQFunction, NNValueFunction
 
 class TabularValueFunction(NNValueFunction):
     def __init__(
-        self, num_states: int, tau: float = 0.0, biased_head: bool = False
+        self, num_states: int, tau: float = ..., biased_head: bool = ...
     ) -> None: ...
     @property
     def table(self) -> Tensor: ...
@@ -19,8 +19,8 @@ class TabularQFunction(NNQFunction):
         self,
         num_states: int,
         num_actions: int,
-        tau: float = 0.0,
-        biased_head: bool = False,
+        tau: float = ...,
+        biased_head: bool = ...,
     ) -> None: ...
     @property
     def table(self) -> Tensor: ...

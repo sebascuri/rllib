@@ -1,9 +1,10 @@
 from typing import Optional
-from torch import Tensor
-from gpytorch.likelihoods import Likelihood
+
 from gpytorch.distributions import Distribution
+from gpytorch.likelihoods import Likelihood
 from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy
 from gpytorch.utils.memoize import cached
+from torch import Tensor
 
 class SparsePredictionStrategy(DefaultPredictionStrategy):
     """Prediction strategy for Sparse GPs."""

@@ -15,13 +15,13 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
         self,
         dim_state: int,
         dim_action: int,
-        num_states: int = None,
-        num_actions: int = None,
-        tau: float = 0.0,
+        num_states: int = ...,
+        num_actions: int = ...,
+        tau: float = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
 
 class AbstractValueFunction(AbstractQFunction):
     def __init__(
-        self, dim_state: int, num_states: int = None, tau: float = 0.0
+        self, dim_state: int, num_states: int = ..., tau: float = ...
     ) -> None: ...

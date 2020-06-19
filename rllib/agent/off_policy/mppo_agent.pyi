@@ -1,4 +1,4 @@
-from typing import Union, Type
+from typing import Type, Union
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer

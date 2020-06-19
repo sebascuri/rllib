@@ -1,5 +1,5 @@
 """Exact GP Model."""
-from typing import Union, Optional
+from typing import Optional, Union
 
 import gpytorch
 from gpytorch.distributions import MultivariateNormal

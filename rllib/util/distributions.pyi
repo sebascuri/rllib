@@ -1,7 +1,7 @@
 """Useful distributions for the library."""
 
-from torch import Tensor
 import gpytorch
+from torch import Tensor
 
 class Delta(gpytorch.distributions.Delta):  # type: ignore
     """Delta Distribution."""

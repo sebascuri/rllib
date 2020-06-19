@@ -1,6 +1,7 @@
 """Multi-Processing Utilities."""
+from typing import Any, Callable, List, Optional, Tuple
+
 import torch.multiprocessing as mp
-from typing import List, Tuple, Callable, Any, Optional
 
 def run_parallel_returns(
     function: Callable[..., Any],

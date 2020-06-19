@@ -1,5 +1,5 @@
 """Utility functions for training models."""
-from typing import List, Callable, Optional
+from typing import Callable, List, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -7,8 +7,8 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 
 from rllib.agent import AbstractAgent
-from rllib.environment import AbstractEnvironment
 from rllib.dataset.datatypes import Observation
+from rllib.environment import AbstractEnvironment
 from rllib.model.abstract_model import AbstractModel
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.model.gp_model import ExactGPModel

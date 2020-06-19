@@ -1,7 +1,9 @@
 """Utilities for GP models."""
-from typing import Optional, Callable
-from .gps import ExactGP
+from typing import Callable, Optional
+
 from torch import Tensor
+
+from .gps import ExactGP
 
 def add_data_to_gp(
     gp_model: ExactGP, new_inputs: Tensor, new_targets: Tensor

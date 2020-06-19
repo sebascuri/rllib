@@ -1,9 +1,10 @@
 """Implementation of MLL loss for multi-output GPs."""
 from typing import Union
 
+import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
-import torch.nn as nn
+
 from .gps import ExactGP
 
 def exact_mll(
