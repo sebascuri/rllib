@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Optional
 
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import Array, Observation
+from rllib.dataset.datatypes import Observation
 
 from .abstract_transform import AbstractTransform
 
@@ -11,7 +11,7 @@ class NextStateClamper(AbstractTransform):
     lower: Tensor
     higher: Tensor
     def __init__(
-        self, lower: Tensor, higher: Tensor, constant_idx: List[int] = None
+        self, lower: Tensor, higher: Tensor, constant_idx: Optional[List[int]] = ...
     ) -> None: ...
     def forward(self, *array, **kwargs) -> Observation: ...
     def inverse(self, array: Observation) -> Observation: ...

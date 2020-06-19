@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 
 from numpy import ndarray
 from torch.utils import data
@@ -13,8 +13,8 @@ class TrajectoryDataset(data.Dataset):
     transformations: List[AbstractTransform]
     def __init__(
         self,
-        sequence_length: int = None,
-        transformations: List[AbstractTransform] = None,
+        sequence_length: Optional[int] = ...,
+        transformations: Optional[List[AbstractTransform]] = ...,
     ) -> None: ...
     def __getitem__(self, idx: int) -> Observation: ...
     def __len__(self) -> int: ...
@@ -30,5 +30,5 @@ class TrajectoryDataset(data.Dataset):
     def sequence_length(self, value: int) -> None: ...
     @staticmethod
     def _get_subindexes(
-        num_observations: int, sequence_length: int, drop_last: bool = False
+        num_observations: int, sequence_length: int, drop_last: bool = ...
     ) -> List[int]: ...

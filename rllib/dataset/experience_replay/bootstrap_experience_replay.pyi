@@ -1,6 +1,4 @@
-"""Implementation of an Experience Replay Buffer with a Bootstrap mask."""
-
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from torch.distributions import Poisson
@@ -15,7 +13,7 @@ class BootstrapExperienceReplay(ExperienceReplay):
     def __init__(
         self,
         max_len: int,
-        transformations: List[AbstractTransform] = None,
-        num_bootstraps: int = 1,
-        bootstrap: bool = True,
+        transformations: Optional[List[AbstractTransform]] = ...,
+        num_bootstraps: int = ...,
+        bootstrap: bool = ...,
     ) -> None: ...

@@ -13,5 +13,5 @@ def init_er_from_rollout(
     target_er: ExperienceReplay,
     agent: AbstractAgent,
     environment: AbstractEnvironment,
-    max_steps: int = 1000,
+    max_steps: int = ...,
 ) -> None: ...

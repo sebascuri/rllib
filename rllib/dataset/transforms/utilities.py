@@ -1,6 +1,5 @@
 """Utilities for the transformers."""
 import torch
-from gpytorch.distributions import MultitaskMultivariateNormal, MultivariateNormal
 
 
 def rescale(tensor, scale):
@@ -65,41 +64,3 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count):
 
     m2 = old_m + new_m + delta ** 2 * (old_count * new_count) / total
     return m2 / (total - 1.0)
-
-
-def shift_mvn(mvn, mean, variance=None):
-    """Shift a Multivariate Normal with a mean and a variance.
-
-    MVNs from gpytorch do not admit
-    """
-    mu = mvn.mean
-    sigma = mvn.covariance_matrix
-    if not isinstance(mvn, MultitaskMultivariateNormal):
-        if variance is None:
-            variance = 1.0
-        scale = torch.sqrt(variance)
-        return MultivariateNormal(
-            mu * scale + mean, covariance_matrix=sigma * scale ** 2
-        )
-    if mvn.mean.dim() == 2:
-        batch_size = None
-        num_points, num_tasks = mvn.mean.shape
-    else:
-        batch_size, num_points, num_tasks = mvn.mean.shape
-
-    if variance is None:
-        variance = torch.ones(num_tasks)
-
-    mvns = []
-    for i in range(num_tasks):
-        mean_ = mu[..., i]
-        cov_ = sigma[
-            ...,
-            i * num_points : (i + 1) * num_points,
-            i * num_points : (i + 1) * num_points,
-        ]
-
-        mvns.append(
-            shift_mvn(MultivariateNormal(mean_, cov_), mean[..., i], variance[..., i])
-        )
-    return MultitaskMultivariateNormal.from_independent_mvns(mvns)

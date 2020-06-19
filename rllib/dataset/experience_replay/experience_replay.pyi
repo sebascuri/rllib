@@ -1,4 +1,4 @@
-from typing import List, Tuple, Type, TypeVar
+from typing import List, Optional, Tuple, Type, TypeVar
 
 from numpy import ndarray
 from torch import Tensor
@@ -20,8 +20,8 @@ class ExperienceReplay(data.Dataset):
     def __init__(
         self,
         max_len: int,
-        transformations: List[AbstractTransform] = None,
-        num_steps: int = 1,
+        transformations: Optional[List[AbstractTransform]] = ...,
+        num_steps: int = ...,
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T) -> T: ...

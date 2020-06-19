@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional, Union
 
 from torch import Tensor
 
@@ -17,11 +17,11 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     def __init__(
         self,
         max_len: int,
-        alpha: Union[float, ParameterDecay] = 0.6,
-        beta: Union[float, ParameterDecay] = 0.4,
-        epsilon: float = 0.01,
-        max_priority: float = 10.0,
-        transformations: List[AbstractTransform] = None,
+        alpha: Union[float, ParameterDecay] = ...,
+        beta: Union[float, ParameterDecay] = ...,
+        epsilon: float = ...,
+        max_priority: float = ...,
+        transformations: Optional[List[AbstractTransform]] = ...,
     ) -> None: ...
     def _update_weights(self) -> None: ...
     @property
