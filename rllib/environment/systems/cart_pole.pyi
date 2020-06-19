@@ -13,8 +13,8 @@ class CartPole(ODESystem):
         pendulum_mass: float,
         cart_mass: float,
         length: float,
-        rot_friction: float = 0.0,
-        gravity: float = 9.81,
-        step_size: float = 0.01,
+        rot_friction: float = ...,
+        gravity: float = ...,
+        step_size: float = ...,
     ) -> None: ...
     def _ode(self, _, state: State, action: Action) -> State: ...

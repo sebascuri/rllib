@@ -9,7 +9,7 @@ from .abstract_environment import AbstractEnvironment
 class EmptyEnvironment(AbstractEnvironment):
     """Dummy Environment for testing."""
 
-    def __init__(self, dim_state, dim_action, num_states, num_actions):
+    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1):
         if num_actions >= 0:
             action_space = Discrete(num_actions)
         else:

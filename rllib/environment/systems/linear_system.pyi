@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from rllib.dataset.datatypes import Action, State
@@ -9,7 +11,9 @@ class LinearSystem(AbstractSystem):
     b: np.ndarray
     c: np.ndarray
     _state: State
-    def __init__(self, a: np.ndarray, b: np.ndarray, c: np.ndarray = None) -> None: ...
+    def __init__(
+        self, a: np.ndarray, b: np.ndarray, c: Optional[np.ndarray] = ...
+    ) -> None: ...
     def step(self, action: Action) -> State: ...
     def reset(self, state: State) -> State: ...
     @property

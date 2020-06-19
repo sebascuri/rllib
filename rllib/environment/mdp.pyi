@@ -1,6 +1,6 @@
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from rllib.dataset.datatypes import Action, Array
+from rllib.dataset.datatypes import Action
 
 from .abstract_environment import AbstractEnvironment
 
@@ -15,8 +15,8 @@ class MDP(AbstractEnvironment):
         transitions: Dict[Tuple[int, int], List],
         num_states: int,
         num_actions: int,
-        initial_state: Union[int, Callable[..., int]] = None,
-        terminal_states: List[int] = None,
+        initial_state: Optional[Union[int, Callable[..., int]]] = ...,
+        terminal_states: Optional[List[int]] = ...,
     ): ...
     @property
     def state(self) -> int: ...

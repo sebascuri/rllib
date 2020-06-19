@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -11,13 +11,13 @@ class EasyGridWorld(MDP):
     height: int
     def __init__(
         self,
-        width: int = 5,
-        height: int = 5,
-        num_actions: int = 4,
-        terminal_states: List[State] = None,
+        width: int = ...,
+        height: int = ...,
+        num_actions: int = ...,
+        terminal_states: Optional[List[State]] = ...,
     ) -> None: ...
     def _build_mdp(
-        self, terminal_states: List[State] = None
+        self, terminal_states: Optional[List[State]] = ...
     ) -> Dict[Tuple[int, int], List]: ...
     def _state_to_grid(self, state: State) -> np.ndarray: ...
     def _grid_to_state(self, grid_state: np.ndarray) -> State: ...

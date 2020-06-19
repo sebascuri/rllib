@@ -1,5 +1,7 @@
 from typing import Callable, Optional, Tuple, Union
 
+import numpy as np
+
 from rllib.dataset.datatypes import Action, Done, Reward, State, Termination
 from rllib.reward import AbstractReward
 
@@ -15,13 +17,13 @@ class SystemEnvironment(AbstractEnvironment):
     def __init__(
         self,
         system: AbstractSystem,
-        initial_state: Union[State, Callable[..., State]] = None,
-        reward: AbstractReward = None,
-        termination: Termination = None,
+        initial_state: Optional[Union[State, Callable[..., State]]] = ...,
+        reward: Optional[AbstractReward] = ...,
+        termination: Optional[Termination] = ...,
     ) -> None: ...
     def step(self, action: Action) -> Tuple[State, Reward, Done, dict]: ...
     def reset(self) -> State: ...
-    def render(self, mode: str = "human") -> None: ...
+    def render(self, mode: str = ...) -> Union[None, np.ndarray, str]: ...
     @property
     def state(self) -> State: ...
     @state.setter

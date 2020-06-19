@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
+from typing import Optional, Union
 
+import numpy as np
 from gym import spaces
 
 from rllib.dataset.datatypes import Action, State
@@ -10,7 +12,7 @@ class AbstractSystem(object, metaclass=ABCMeta):
     dim_observation: int
     _time: float
     def __init__(
-        self, dim_state: int, dim_action: int, dim_observation: int = None
+        self, dim_state: int, dim_action: int, dim_observation: Optional[int] = ...
     ) -> None: ...
     @property  # type: ignore
     @abstractmethod
@@ -24,7 +26,7 @@ class AbstractSystem(object, metaclass=ABCMeta):
     def step(self, action: Action) -> State: ...
     @abstractmethod
     def reset(self, state: State) -> State: ...
-    def render(self, mode: str = "human") -> None: ...
+    def render(self, mode: str = ...) -> Union[None, np.ndarray, str]: ...
     @property
     def action_space(self) -> spaces.Space: ...
     @property

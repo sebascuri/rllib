@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from gym.envs.classic_control.rendering import Viewer
 
@@ -18,10 +20,10 @@ class InvertedPendulum(ODESystem):
         mass: float,
         length: float,
         friction: float,
-        gravity: float = 9.81,
-        step_size: float = 0.01,
+        gravity: float = ...,
+        step_size: float = ...,
     ) -> None: ...
     @property
     def inertia(self) -> float: ...
-    def render(self, mode: str = "human") -> np.ndarray: ...
+    def render(self, mode: str = ...) -> Union[None, np.ndarray]: ...
     def _ode(self, _, state: State, action: Action) -> State: ...
