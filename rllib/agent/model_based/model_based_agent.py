@@ -33,8 +33,6 @@ class ModelBasedAgent(AbstractAgent):
 
     Parameters
     ----------
-    env_name: str.
-        Environment name.
     dynamical_model: AbstractModel.
         Fixed or learnable dynamical model.
     reward_model: AbstractReward.

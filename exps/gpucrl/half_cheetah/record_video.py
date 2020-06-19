@@ -46,5 +46,5 @@ for penalty in [0.0, 0.1, 0.5, 1.0]:
         environment,
         agent,
         f"{path}/half_cheetah_{penalty}.mp4",
-        max_steps=200,  # ENVIRONMENT_MAX_STEPS,
+        max_steps=500,  # ENVIRONMENT_MAX_STEPS,
     )
