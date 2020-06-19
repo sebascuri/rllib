@@ -12,7 +12,7 @@ class GPUCBPolicy(AbstractPolicy):
     beta: ParameterDecay
     noisy: bool
     def __init__(
-        self, gp: ExactGP, x: Tensor, beta: float = 2.0, noisy: bool = False
+        self, gp: ExactGP, x: Tensor, beta: float = ..., noisy: bool = ...
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
 
@@ -22,7 +22,7 @@ class GPUCBAgent(AbstractAgent):
         self,
         gp: ExactGP,
         x: Tensor,
-        beta: float = 2.0,
-        noisy: bool = False,
-        tensorboard: bool = False,
+        beta: float = ...,
+        noisy: bool = ...,
+        tensorboard: bool = ...,
     ) -> None: ...

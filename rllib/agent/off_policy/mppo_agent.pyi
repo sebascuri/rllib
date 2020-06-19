@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Optional, Type, Union
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -24,22 +24,19 @@ class MPPOAgent(OffPolicyAgent):
         optimizer: Optimizer,
         memory: ExperienceReplay,
         criterion: Type[_Loss],
-        num_action_samples: int = 15,
-        entropy_reg: float = 0.0,
-        epsilon: Union[ParameterDecay, float] = None,
-        epsilon_mean: Union[ParameterDecay, float] = None,
-        epsilon_var: Union[ParameterDecay, float] = None,
-        eta: Union[ParameterDecay, float] = None,
-        eta_mean: Union[ParameterDecay, float] = None,
-        eta_var: Union[ParameterDecay, float] = None,
-        num_iter: int = 100,
-        batch_size: int = 64,
-        target_update_frequency: int = 4,
-        train_frequency: int = 0,
-        num_rollouts: int = 1,
-        gamma: float = 1.0,
-        exploration_steps: int = 0,
-        exploration_episodes: int = 0,
-        tensorboard: bool = False,
-        comment: str = "",
+        num_action_samples: int = ...,
+        epsilon: Union[ParameterDecay, float] = ...,
+        epsilon_mean: Union[ParameterDecay, float] = ...,
+        epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
+        regularization=...,
+        num_iter: int = ...,
+        batch_size: int = ...,
+        target_update_frequency: int = ...,
+        train_frequency: int = ...,
+        num_rollouts: int = ...,
+        gamma: float = ...,
+        exploration_steps: int = ...,
+        exploration_episodes: int = ...,
+        tensorboard: bool = ...,
+        comment: str = ...,
     ) -> None: ...

@@ -18,6 +18,7 @@ class MBSACAgent(ModelBasedAgent):
         dynamical_model,
         reward_model,
         optimizer,
+        termination=None,
         initial_distribution=None,
         plan_horizon=1,
         plan_samples=8,
@@ -26,15 +27,15 @@ class MBSACAgent(ModelBasedAgent):
         model_learn_batch_size=64,
         model_learn_num_iter=30,
         bootstrap=True,
+        sac_value_learning_criterion=nn.MSELoss,
         sac_eta=0.2,
-        sac_epsilon=None,
+        sac_regularization=False,
         sac_num_iter=100,
         sac_gradient_steps=50,
         sac_batch_size=None,
         sac_action_samples=15,
         sac_target_num_steps=1,
         sac_target_update_frequency=4,
-        sac_value_learning_criterion=nn.MSELoss,
         sim_num_steps=200,
         sim_initial_states_num_trajectories=8,
         sim_initial_dist_num_trajectories=0,
@@ -46,11 +47,9 @@ class MBSACAgent(ModelBasedAgent):
         gamma=1.0,
         exploration_steps=0,
         exploration_episodes=0,
-        termination=None,
         tensorboard=False,
         comment="",
     ):
-
         q_function = NNEnsembleQFunction.from_q_function(
             q_function=q_function, num_heads=2
         )
@@ -61,7 +60,7 @@ class MBSACAgent(ModelBasedAgent):
             reward_model,
             criterion=sac_value_learning_criterion(reduction="mean"),
             eta=sac_eta,
-            epsilon=sac_epsilon,
+            regularization=sac_regularization,
             gamma=gamma,
             termination=termination,
             num_steps=sac_target_num_steps,

@@ -18,6 +18,7 @@ class MBDPGAgent(ModelBasedAgent):
         dynamical_model,
         reward_model,
         optimizer,
+        termination=None,
         initial_distribution=None,
         plan_horizon=1,
         plan_samples=8,
@@ -25,15 +26,17 @@ class MBDPGAgent(ModelBasedAgent):
         max_memory=10000,
         model_learn_batch_size=64,
         model_learn_num_iter=30,
-        sac_eta=0.2,
-        sac_epsilon=None,
-        sac_num_iter=100,
-        sac_gradient_steps=50,
-        sac_batch_size=None,
-        sac_action_samples=15,
-        sac_target_num_steps=1,
-        sac_target_update_frequency=4,
-        sac_value_learning_criterion=nn.MSELoss,
+        bootstrap=True,
+        dpg_value_learning_criterion=nn.MSELoss,
+        dpg_num_iter=100,
+        dpg_gradient_steps=50,
+        dpg_batch_size=None,
+        dpg_action_samples=15,
+        dpg_target_num_steps=1,
+        dpg_target_update_frequency=4,
+        dpg_noise_clip=1.0,
+        dpg_policy_noise=1.0,
+        dpg_as_td3=False,
         sim_num_steps=200,
         sim_initial_states_num_trajectories=8,
         sim_initial_dist_num_trajectories=0,
@@ -45,24 +48,25 @@ class MBDPGAgent(ModelBasedAgent):
         gamma=1.0,
         exploration_steps=0,
         exploration_episodes=0,
-        termination=None,
         tensorboard=False,
         comment="",
     ):
-
-        q_function = NNEnsembleQFunction.from_q_function(
-            q_function=q_function, num_heads=2
-        )
+        if dpg_as_td3:
+            q_function = NNEnsembleQFunction.from_q_function(
+                q_function=q_function, num_heads=2
+            )
         self.algorithm = MBDPG(
             policy,
             q_function,
             dynamical_model,
             reward_model,
-            criterion=sac_value_learning_criterion(reduction="mean"),
+            noise_clip=dpg_noise_clip,
+            policy_noise=dpg_policy_noise,
+            criterion=dpg_value_learning_criterion(reduction="mean"),
             gamma=gamma,
             termination=termination,
-            num_steps=sac_target_num_steps,
-            num_samples=sac_action_samples,
+            num_steps=dpg_target_num_steps,
+            num_samples=dpg_action_samples,
         )
         optimizer = type(optimizer)(
             [
@@ -86,11 +90,12 @@ class MBDPGAgent(ModelBasedAgent):
             plan_elites=plan_elites,
             model_learn_num_iter=model_learn_num_iter,
             model_learn_batch_size=model_learn_batch_size,
+            bootstrap=bootstrap,
             max_memory=max_memory,
-            policy_opt_num_iter=sac_num_iter,
-            policy_opt_batch_size=sac_batch_size,
-            policy_opt_gradient_steps=sac_gradient_steps,
-            policy_opt_target_update_frequency=sac_target_update_frequency,
+            policy_opt_num_iter=dpg_num_iter,
+            policy_opt_batch_size=dpg_batch_size,
+            policy_opt_gradient_steps=dpg_gradient_steps,
+            policy_opt_target_update_frequency=dpg_target_update_frequency,
             optimizer=optimizer,
             sim_num_steps=sim_num_steps,
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,

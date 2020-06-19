@@ -40,14 +40,11 @@ class SACAgent(OffPolicyAgent):
         criterion,
         optimizer,
         memory,
-        eta=None,
-        epsilon=None,
+        eta,
+        regularization=False,
         num_iter=1,
         batch_size=64,
         target_update_frequency=4,
-        policy_update_frequency=1,
-        policy_noise=0.0,
-        noise_clip=1.0,
         train_frequency=1,
         num_rollouts=0,
         gamma=1.0,
@@ -65,7 +62,7 @@ class SACAgent(OffPolicyAgent):
             criterion=criterion(reduction="none"),
             gamma=gamma,
             eta=eta,
-            epsilon=epsilon,
+            regularization=regularization,
         )
 
         optimizer = type(optimizer)(

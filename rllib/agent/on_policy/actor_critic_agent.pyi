@@ -7,9 +7,9 @@ from rllib.algorithms.ac import ActorCritic
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction
 
-from .on_policy_ac_agent import OnPolicyACAgent
+from .on_policy_agent import OnPolicyAgent
 
-class ActorCriticAgent(OnPolicyACAgent):
+class ActorCriticAgent(OnPolicyAgent):
     """Abstract Implementation of the Policy-Gradient Algorithm.
 
     The AbstractPolicyGradient algorithm implements the Policy-Gradient algorithm except
@@ -23,7 +23,7 @@ class ActorCriticAgent(OnPolicyACAgent):
     connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
     """
 
-    eps: float = 1e-12
+    eps: float = ...
     algorithm: ActorCritic
     def __init__(
         self,
@@ -31,13 +31,13 @@ class ActorCriticAgent(OnPolicyACAgent):
         critic: AbstractQFunction,
         optimizer: Optimizer,
         criterion: Type[_Loss],
-        num_iter: int = 1,
-        target_update_frequency: int = 1,
-        train_frequency: int = 0,
-        num_rollouts: int = 1,
-        gamma: float = 1.0,
-        exploration_steps: int = 0,
-        exploration_episodes: int = 0,
-        tensorboard: bool = False,
-        comment: str = "",
+        num_iter: int = ...,
+        target_update_frequency: int = ...,
+        train_frequency: int = ...,
+        num_rollouts: int = ...,
+        gamma: float = ...,
+        exploration_steps: int = ...,
+        exploration_episodes: int = ...,
+        tensorboard: bool = ...,
+        comment: str = ...,
     ) -> None: ...

@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from rllib.dataset.datatypes import Action, Distribution, Observation, State
 from rllib.policy import AbstractPolicy
@@ -26,11 +26,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self,
         train_frequency: int,
         num_rollouts: int,
-        gamma: float = 1.0,
-        exploration_steps: int = 0,
-        exploration_episodes: int = 0,
-        tensorboard: bool = False,
-        comment: str = "",
+        gamma: float = ...,
+        exploration_steps: int = ...,
+        exploration_episodes: int = ...,
+        tensorboard: bool = ...,
+        comment: str = ...,
     ) -> None: ...
     def act(self, state: State) -> Action: ...
     def observe(self, observation: Observation) -> None: ...
@@ -48,5 +48,5 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def train_steps(self) -> int: ...
     @property
     def name(self) -> str: ...
-    def save(self, filename: str, directory: str = None) -> str: ...
+    def save(self, filename: str, directory: Optional[str] = ...) -> str: ...
     def load(self, path: str) -> None: ...
