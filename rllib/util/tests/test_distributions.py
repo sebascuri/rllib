@@ -1,64 +1,7 @@
-import pytest
 import torch
 import torch.testing
-from torch.distributions import (
-    ComposeTransform,
-    MultivariateNormal,
-    TransformedDistribution,
-)
-from torch.distributions.transforms import AffineTransform, SigmoidTransform
 
-from rllib.util.distributions import Delta, TanhTransform
-
-
-class TestTanhTransform(object):
-    @staticmethod
-    def get_distribution(dist_type):
-        base_dist = MultivariateNormal(torch.zeros(3), 3 * torch.eye(3))
-
-        if dist_type == "base":
-            return base_dist
-        elif dist_type == "tanh":
-            tanh = TanhTransform()
-            return TransformedDistribution(base_dist, tanh)
-        elif dist_type == "equiv":
-            equiv_tanh = ComposeTransform(
-                [
-                    AffineTransform(0.0, 2.0),
-                    SigmoidTransform(),
-                    AffineTransform(-1.0, 2.0),
-                ]
-            )
-            return TransformedDistribution(base_dist, equiv_tanh)
-
-    @pytest.fixture(scope="class", params=["base", "tanh", "equiv"])
-    def distribution(self, request):
-        return self.get_distribution(request.param)
-
-    @pytest.mark.parametrize("distribution_type", ["base", "tanh", "equiv"])
-    def test_range(self, distribution_type):
-        distribution = self.get_distribution(distribution_type)
-        x = distribution.rsample((10,))
-        if isinstance(distribution, MultivariateNormal):
-            x = x.tanh()
-
-        assert torch.all(x.abs() <= 1)
-
-    def test_shape(self, distribution):
-        x = distribution.rsample((10,))
-        if isinstance(distribution, MultivariateNormal):
-            x = x.tanh()
-
-        assert x.shape == torch.Size([10, 3])
-
-    def test_log_prob(self, distribution):
-        x = distribution.rsample((10,))
-        if isinstance(distribution, MultivariateNormal):
-            x = x.tanh()
-
-        tanh_dist = self.get_distribution("tanh")
-        etanh_dist = self.get_distribution("equiv")
-        torch.testing.assert_allclose(tanh_dist.log_prob(x), etanh_dist.log_prob(x))
+from rllib.util.distributions import Delta
 
 
 class TestDelta(object):

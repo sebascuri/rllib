@@ -1,6 +1,6 @@
 """Implementation of different Neural Networks with pytorch."""
 
-from typing import Any, Dict, List, Tuple, Type, TypeVar
+from typing import Any, Dict, List, Tuple, Type, TypeVar, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -17,13 +17,13 @@ class FeedForwardNN(nn.Module):
         self,
         in_dim: int,
         out_dim: int,
-        layers: List[int] = None,
-        non_linearity: str = "ReLU",
-        biased_head: bool = True,
-        squashed_output: bool = False,
+        layers: Optional[List[int]] = ...,
+        non_linearity: str = ...,
+        biased_head: bool = ...,
+        squashed_output: bool = ...,
     ) -> None: ...
     @classmethod
-    def from_other(cls: Type[T], other: T, copy: bool = False) -> T: ...
+    def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...
     def forward(self, *args: Tensor, **kwargs) -> Any: ...
     def last_layer_embeddings(self, x: Tensor) -> Tensor: ...
 
@@ -35,9 +35,9 @@ class CategoricalNN(FeedForwardNN):
         self,
         in_dim: int,
         out_dim: int,
-        layers: List[int] = None,
-        non_linearity: str = "ReLU",
-        biased_head: bool = True,
+        layers: Optional[List[int]] = ...,
+        non_linearity: str = ...,
+        biased_head: bool = ...,
     ) -> None: ...
 
 class HeteroGaussianNN(FeedForwardNN):
@@ -58,19 +58,19 @@ class Ensemble(HeteroGaussianNN):
         in_dim: int,
         out_dim: int,
         num_heads: int,
-        prediction_strategy: str = "moment_matching",
-        layers: List[int] = None,
-        non_linearity: str = "ReLU",
-        biased_head: bool = True,
-        squashed_output: bool = False,
-        deterministic: bool = True,
+        prediction_strategy: str = ...,
+        layers: Optional[List[int]] = ...,
+        non_linearity: str = ...,
+        biased_head: bool = ...,
+        squashed_output: bool = ...,
+        deterministic: bool = ...,
     ) -> None: ...
     @classmethod
     def from_feedforward(
         cls: Type[T],
         other: FeedForwardNN,
         num_heads: int,
-        prediction_strategy: str = "moment_matching",
+        prediction_strategy: str = ...,
     ) -> T: ...
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
     def set_head(self, new_head: int) -> None: ...

@@ -1,7 +1,5 @@
 """Utility functions for training models."""
 
-import pickle
-
 import gpytorch.settings
 import matplotlib.pyplot as plt
 import numpy as np
@@ -200,33 +198,3 @@ def evaluate_agent(agent, environment, num_episodes, max_steps, render=True):
     )
     returns = np.mean(agent.logger.get("environment_return")[-num_episodes:])
     print(f"Test Cumulative Rewards: {returns}")
-
-
-def save_agent(agent, file_name):
-    """Save the agent as a pickled file.
-
-    Parameters
-    ----------
-    agent: AbstractAgent.
-    file_name: str.
-
-    """
-    with open(file_name, "wb") as file:
-        pickle.dump(agent, file)
-
-
-def load_agent(file_name):
-    """Load and return the agent at a given file location.
-
-    Parameters
-    ----------
-    file_name: str.
-
-    Returns
-    -------
-    agent: AbstractAgent.
-    """
-    with open(file_name, "rb") as f:
-        agent = pickle.load(f)
-
-    return agent

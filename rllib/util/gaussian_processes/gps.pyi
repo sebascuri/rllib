@@ -1,5 +1,5 @@
 """Exact GP Model."""
-from typing import Union
+from typing import Union, Optional
 
 import gpytorch
 from gpytorch.distributions import MultivariateNormal
@@ -11,14 +11,15 @@ from torch import Tensor
 class ExactGP(gpytorch.models.ExactGP):
     """Exact GP Model."""
 
+    mean_module: Mean
+    covar_module: Kernel
     def __init__(
         self,
         train_x: Tensor,
         train_y: Tensor,
         likelihood: Likelihood,
-        mean: Mean = None,
-        kernel: Kernel = None,
-        jitter: float = 1e-6,
+        mean: Optional[Mean] = ...,
+        kernel: Optional[Kernel] = ...,
     ) -> None: ...
     @property
     def name(self) -> str: ...
@@ -39,9 +40,9 @@ class SparseGP(ExactGP):
         train_y: Tensor,
         likelihood: Likelihood,
         inducing_points: Tensor,
-        approximation: str = "DTC",
-        mean: Mean = None,
-        kernel: Kernel = None,
+        approximation: str = ...,
+        mean: Optional[Mean] = None,
+        kernel: Optional[Kernel] = None,
     ) -> None: ...
     def set_inducing_points(self, inducing_points: Tensor) -> None: ...
     def forward(self, x: Tensor) -> MultivariateNormal: ...
@@ -55,9 +56,9 @@ class RandomFeatureGP(ExactGP):
         train_y: Tensor,
         likelihood: Likelihood,
         num_features: int,
-        approximation="RFF",
-        mean: Mean = None,
-        kernel: Kernel = None,
+        approximation: str = ...,
+        mean: Optional[Mean] = ...,
+        kernel: Optional[Kernel] = ...,
     ) -> None: ...
     @ExactGP.length_scale.setter  # type: ignore
     def length_scale(self, new_length_scale: Union[float, Tensor]) -> None: ...

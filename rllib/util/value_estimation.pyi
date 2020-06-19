@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Any, Optional
 
 from torch import Tensor
 
@@ -15,33 +15,29 @@ class MBValueReturn(NamedTuple):
     trajectory: Trajectory
 
 def discount_cumsum(
-    rewards: Array,
-    gamma: float = 1.0,
-    reward_transformer: RewardTransformer = RewardTransformer(),
+    rewards: Array, gamma: float = ..., reward_transformer: RewardTransformer = ...
 ) -> Array: ...
 def discount_sum(
-    rewards: Tensor,
-    gamma: float = 1.0,
-    reward_transformer: RewardTransformer = RewardTransformer(),
+    rewards: Tensor, gamma: float = ..., reward_transformer: RewardTransformer = ...,
 ) -> Array: ...
 def mc_return(
     trajectory: Trajectory,
-    gamma: float = 1.0,
-    value_function: AbstractValueFunction = None,
-    entropy_reg: float = 0.0,
-    reward_transformer: RewardTransformer = RewardTransformer(),
+    gamma: float = ...,
+    value_function: Optional[AbstractValueFunction] = ...,
+    entropy_reg: float = ...,
+    reward_transformer: RewardTransformer = ...,
 ) -> Tensor: ...
 def mb_return(
     state: State,
     dynamical_model: AbstractModel,
     reward_model: AbstractReward,
     policy: AbstractPolicy,
-    num_steps: int = 1,
-    gamma: float = 1.0,
-    num_samples: int = 1,
-    value_function: AbstractValueFunction = None,
-    entropy_reg: float = 0.0,
-    termination: Termination = None,
-    reward_transformer: RewardTransformer = RewardTransformer(),
-    **kwargs,
+    num_steps: int = ...,
+    gamma: float = ...,
+    num_samples: int = ...,
+    value_function: Optional[AbstractValueFunction] = ...,
+    entropy_reg: float = ...,
+    termination: Optional[Termination] = ...,
+    reward_transformer: RewardTransformer = ...,
+    **kwargs: Any,
 ) -> MBValueReturn: ...
