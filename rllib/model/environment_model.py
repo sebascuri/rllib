@@ -1,8 +1,6 @@
 """Model implemented by querying an environment."""
 import torch
 
-from rllib.environment import AbstractEnvironment
-
 from .abstract_model import AbstractModel
 
 
@@ -15,7 +13,7 @@ class EnvironmentModel(AbstractModel):
 
     """
 
-    def __init__(self, environment: AbstractEnvironment):
+    def __init__(self, environment):
         super().__init__(
             environment.dim_state,
             environment.dim_action,

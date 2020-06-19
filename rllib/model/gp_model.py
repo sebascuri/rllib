@@ -275,7 +275,7 @@ class SparseGPModel(ExactGPModel):
         """Get Model name."""
         return f"{self.approximation} {super().name}"
 
-    def add_data(self, state, action, next_state, weight_function=None):
+    def add_data(self, state, action, next_state):
         """Add Data to GP and Re-Sparsify."""
         new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
         for i, new_y_i in enumerate(new_y):
