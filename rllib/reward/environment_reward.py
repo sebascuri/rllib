@@ -2,15 +2,13 @@
 
 import torch
 
-from rllib.environment.abstract_environment import AbstractEnvironment
-
 from .abstract_reward import AbstractReward
 
 
 class EnvironmentReward(AbstractReward):
     """Quadratic Reward Function."""
 
-    def __init__(self, environment: AbstractEnvironment):
+    def __init__(self, environment):
         super().__init__()
 
         self.environment = environment
