@@ -31,12 +31,10 @@ class MPPOWorker(nn.Module):
     epsilon_var: Tensor
     def __init__(
         self,
-        epsilon: Union[ParameterDecay, float] = None,
-        epsilon_mean: Union[ParameterDecay, float] = None,
-        epsilon_var: Union[ParameterDecay, float] = None,
-        eta: Union[ParameterDecay, float] = None,
-        eta_mean: Union[ParameterDecay, float] = None,
-        eta_var: Union[ParameterDecay, float] = None,
+        epsilon: Union[ParameterDecay, float] = ...,
+        epsilon_mean: Union[ParameterDecay, float] = ...,
+        epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
+        regularization: bool = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Tensor) -> MPOLosses: ...
 
@@ -59,15 +57,12 @@ class MPPO(AbstractAlgorithm):
         q_function: AbstractQFunction,
         num_action_samples: int,
         criterion: _Loss,
-        entropy_reg: float = 0.0,
-        epsilon: Union[ParameterDecay, float] = None,
-        epsilon_mean: Union[ParameterDecay, float] = None,
-        epsilon_var: Union[ParameterDecay, float] = None,
-        eta: Union[ParameterDecay, float] = None,
-        eta_mean: Union[ParameterDecay, float] = None,
-        eta_var: Union[ParameterDecay, float] = None,
+        epsilon: Union[ParameterDecay, float] = ...,
+        epsilon_mean: Union[ParameterDecay, float] = ...,
+        epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
+        regularization: bool = ...,
         reward_transformer: RewardTransformer = RewardTransformer(),
-        gamma: float = 0.99,
+        gamma: float = ...,
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
     def reset(self) -> None: ...
@@ -96,17 +91,14 @@ class MBMPPO(AbstractAlgorithm):
         policy: AbstractPolicy,
         value_function: AbstractValueFunction,
         criterion: _Loss,
-        epsilon: Union[ParameterDecay, float] = None,
-        epsilon_mean: Union[ParameterDecay, float] = None,
-        epsilon_var: Union[ParameterDecay, float] = None,
-        eta: Union[ParameterDecay, float] = None,
-        eta_mean: Union[ParameterDecay, float] = None,
-        eta_var: Union[ParameterDecay, float] = None,
-        gamma: float = 0.99,
-        num_action_samples: int = 15,
-        entropy_reg: float = 0.0,
-        reward_transformer: RewardTransformer = RewardTransformer(),
-        termination: Termination = None,
+        epsilon: Union[ParameterDecay, float] = ...,
+        epsilon_mean: Union[ParameterDecay, float] = ...,
+        epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
+        regularization: bool = ...,
+        gamma: float = ...,
+        num_action_samples: int = ...,
+        reward_transformer: RewardTransformer = ...,
+        termination: Optional[Termination] = ...,
     ) -> None: ...
     def reset(self) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> MPOLoss: ...

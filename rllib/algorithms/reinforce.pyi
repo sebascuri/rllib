@@ -9,7 +9,7 @@ from rllib.value_function import AbstractValueFunction
 from .abstract_algorithm import AbstractAlgorithm, PGLoss
 
 class REINFORCE(AbstractAlgorithm):
-    eps: float = 1e-12
+    eps: float = ...
     policy: AbstractPolicy
     baseline: AbstractValueFunction
     criterion: _Loss

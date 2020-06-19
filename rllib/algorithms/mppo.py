@@ -46,48 +46,39 @@ class MPPOWorker(nn.Module):
     """
 
     def __init__(
-        self,
-        epsilon=None,
-        epsilon_mean=None,
-        epsilon_var=None,
-        eta=None,
-        eta_mean=None,
-        eta_var=None,
+        self, epsilon=0.1, epsilon_mean=0.1, epsilon_var=0.0001, regularization=False
     ):
         super().__init__()
+        if epsilon_var is None:
+            epsilon_var = 0.0
 
-        assert (epsilon is not None) ^ (eta is not None), "XOR(eps, eta)."
-        assert (epsilon_mean is not None) ^ (eta_mean is not None), "XOR(eps_m, eta_m)."
-
-        if eta is not None:  # Regularization: \eta KL(q || \pi)
+        if regularization:
+            eta = epsilon
+            eta_mean = epsilon_mean
+            eta_var = epsilon_var
             if not isinstance(eta, ParameterDecay):
                 eta = Constant(eta)
-            self.eta = eta
-            self.epsilon = torch.tensor(0.0)
-        else:  # Trust-Region: || KL(q || \pi_old) || < \epsilon
-            self.eta = Learnable(1.0, positive=True)
-            self.epsilon = torch.tensor(epsilon)
-
-        if eta_mean is not None:  # Regularization: \eta_m KL_m(\pi_old || \pi)
             if not isinstance(eta_mean, ParameterDecay):
                 eta_mean = Constant(eta_mean)
-            self.eta_mean = eta_mean
-            self.epsilon_mean = torch.tensor(0.0)
-        else:  # Trust-Region: || KL_m(\pi_old || \pi) || < \epsilon_m
-            self.eta_mean = Learnable(1.0, positive=True)
-            self.epsilon_mean = torch.tensor(epsilon_mean)
-
-        if eta_var is not None:  # Regularization: \eta_var KL_var(\pi_old || \pi)
             if not isinstance(eta_var, ParameterDecay):
                 eta_var = Constant(eta_var)
+
+            self.eta = eta
+            self.eta_mean = eta_mean
             self.eta_var = eta_var
+
+            self.epsilon = torch.tensor(0.0)
+            self.epsilon_mean = torch.tensor(0.0)
             self.epsilon_var = torch.tensor(0.0)
-        elif epsilon_var is not None:  # Trust-Region:
+
+        else:  # Trust-Region: || KL(q || \pi_old) || < \epsilon
+            self.eta = Learnable(1.0, positive=True)
+            self.eta_mean = Learnable(1.0, positive=True)
             self.eta_var = Learnable(1.0, positive=True)
-            self.epsilon_var = torch.tensor(epsilon_var)
-        else:  # KL-DIV not separated into mean and var components.
-            self.eta_var = Learnable(1.0, positive=True)
-            self.epsilon_var = torch.tensor(0.0)
+
+            self.epsilon = torch.tensor(epsilon)
+            self.epsilon_mean = torch.tensor(epsilon_mean)
+            self.epislon_var = torch.tensor(epsilon_var)
 
     def forward(self, q_values, action_log_probs, kl_mean, kl_var):
         """Return primal and dual loss terms from MMPO.
@@ -184,13 +175,10 @@ class MPPO(AbstractAlgorithm):
         q_function,
         num_action_samples,
         criterion,
-        entropy_reg=0.0,
-        epsilon=None,
-        epsilon_mean=None,
-        epsilon_var=None,
-        eta=None,
-        eta_mean=None,
-        eta_var=None,
+        epsilon=0.1,
+        epsilon_mean=0.0,
+        epsilon_var=0.0001,
+        regularization=False,
         gamma=0.99,
         reward_transformer=RewardTransformer,
     ):
@@ -204,12 +192,9 @@ class MPPO(AbstractAlgorithm):
         self.q_target = deep_copy_module(q_function)
         self.num_action_samples = num_action_samples
         self.gamma = gamma
-        self.entropy_reg = entropy_reg
         self.reward_transformer = reward_transformer
 
-        self.mppo_loss = MPPOWorker(
-            epsilon, epsilon_mean, epsilon_var, eta, eta_mean, eta_var
-        )
+        self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")
 
     def get_kl_and_pi(self, state):
@@ -373,15 +358,12 @@ class MBMPPO(AbstractAlgorithm):
         policy,
         value_function,
         criterion,
-        epsilon=None,
-        epsilon_mean=None,
-        epsilon_var=None,
-        eta=None,
-        eta_mean=None,
-        eta_var=None,
+        epsilon=0.1,
+        epsilon_mean=0.0,
+        epsilon_var=0.0001,
+        regularization=False,
         gamma=0.99,
         num_action_samples=15,
-        entropy_reg=0.0,
         reward_transformer=RewardTransformer(),
         termination=None,
     ):
@@ -397,13 +379,10 @@ class MBMPPO(AbstractAlgorithm):
         self.value_target = deep_copy_module(value_function)
         self.gamma = gamma
 
-        self.mppo_loss = MPPOWorker(
-            epsilon, epsilon_mean, epsilon_var, eta, eta_mean, eta_var
-        )
+        self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")
 
         self.num_action_samples = num_action_samples
-        self.entropy_reg = entropy_reg
         self.reward_transformer = reward_transformer
         self.termination = termination
         self.dist_params = {}
@@ -454,7 +433,6 @@ class MBMPPO(AbstractAlgorithm):
                 value_function=self.value_target,
                 num_samples=self.num_action_samples,
                 reward_transformer=self.reward_transformer,
-                entropy_reg=self.entropy_reg,
                 termination=self.termination,
                 **self.dist_params,
             )

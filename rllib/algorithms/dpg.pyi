@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
@@ -29,7 +31,7 @@ class DPG(AbstractAlgorithm):
         policy_noise: float,
         noise_clip: float,
         gamma: float,
-        reward_transformer: RewardTransformer = RewardTransformer(),
+        reward_transformer: RewardTransformer = ...,
     ) -> None: ...
     def get_q_target(self, reward, next_state, done) -> Tensor: ...
     def actor_loss(self, state: Tensor) -> Tensor: ...
@@ -55,8 +57,8 @@ class MBDPG(DPG):
         policy_noise: float,
         noise_clip: float,
         gamma: float,
-        reward_transformer: RewardTransformer = RewardTransformer(),
-        termination: Termination = None,
-        num_steps: int = 1,
-        num_samples: int = 15,
+        reward_transformer: RewardTransformer = ...,
+        termination: Optional[Termination] = ...,
+        num_steps: int = ...,
+        num_samples: int = ...,
     ) -> None: ...

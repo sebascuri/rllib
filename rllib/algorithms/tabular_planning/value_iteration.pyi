@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 from rllib.environment import MDP
 from rllib.policy import TabularPolicy
@@ -7,7 +7,7 @@ from rllib.value_function import TabularValueFunction
 def value_iteration(
     model: MDP,
     gamma: float,
-    eps: float = 1e-6,
-    max_iter: int = 1000,
-    value_function: TabularValueFunction = None,
+    eps: float = ...,
+    max_iter: int = ...,
+    value_function: Optional[TabularValueFunction] = ...,
 ) -> Tuple[TabularPolicy, TabularValueFunction]: ...

@@ -1,5 +1,5 @@
 """Soft Actor-Critic Algorithm."""
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -31,8 +31,8 @@ class SoftActorCritic(AbstractAlgorithm):
         q_function: AbstractQFunction,
         criterion: _Loss,
         gamma: float,
-        epsilon: Union[ParameterDecay, float] = None,
-        eta: float = None,
+        eta: Union[ParameterDecay, float] = ...,
+        regularization: bool = ...,
         reward_transformer: RewardTransformer = RewardTransformer(),
     ) -> None: ...
     def get_q_target(
@@ -61,10 +61,10 @@ class MBSoftActorCritic(SoftActorCritic):
         reward_model: AbstractReward,
         criterion: _Loss,
         gamma: float,
-        epsilon: Union[ParameterDecay, float] = None,
-        eta: float = None,
-        reward_transformer: RewardTransformer = RewardTransformer(),
-        termination: Termination = None,
-        num_steps: int = 1,
-        num_samples: int = 15,
+        eta: Union[ParameterDecay, float] = ...,
+        regularization: bool = ...,
+        reward_transformer: RewardTransformer = ...,
+        termination: Optional[Termination] = ...,
+        num_steps: int = ...,
+        num_samples: int = ...,
     ) -> None: ...

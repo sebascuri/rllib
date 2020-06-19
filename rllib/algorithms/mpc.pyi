@@ -33,16 +33,16 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         dynamical_model: AbstractModel,
         reward_model: AbstractReward,
         horizon: int,
-        gamma: float = 1.0,
-        scale: float = 0.3,
-        num_iter: int = 1,
-        num_samples: int = None,
-        termination: Termination = None,
-        terminal_reward: AbstractValueFunction = None,
-        warm_start: bool = False,
-        default_action: str = "zero",
-        action_scale: float = 1.0,
-        num_cpu: int = 1,
+        gamma: float = ...,
+        scale: float = ...,
+        num_iter: int = ...,
+        num_samples: Optional[int] = ...,
+        termination: Optional[Termination] = ...,
+        terminal_reward: Optional[AbstractValueFunction] = ...,
+        warm_start: bool = ...,
+        default_action: str = ...,
+        action_scale: float = ...,
+        num_cpu: int = ...,
     ) -> None: ...
     def evaluate_action_sequence(
         self, action_sequence: Tensor, state: Tensor
@@ -56,7 +56,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     def update_sequence_generation(self, elite_actions: Tensor) -> None: ...
     def initialize_actions(self, batch_shape: torch.Size) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
-    def reset(self, warm_action: Tensor = None) -> None: ...
+    def reset(self, warm_action: Optional[Tensor] = ...) -> None: ...
 
 class CEMShooting(MPCSolver):
     num_elites: int
@@ -66,18 +66,18 @@ class CEMShooting(MPCSolver):
         dynamical_model: AbstractModel,
         reward_model: AbstractReward,
         horizon: int,
-        gamma: float = 1.0,
-        scale: float = 0.3,
-        num_iter: int = 1,
-        num_samples: int = None,
-        num_elites: int = None,
-        alpha: float = 0.0,
-        termination: Termination = None,
-        terminal_reward: AbstractValueFunction = None,
-        warm_start: bool = False,
-        action_scale: float = 1.0,
-        default_action: str = "zero",
-        num_cpu: int = 1,
+        gamma: float = ...,
+        scale: float = ...,
+        num_iter: int = ...,
+        num_samples: Optional[int] = ...,
+        num_elites: Optional[int] = ...,
+        alpha: float = ...,
+        termination: Optional[Termination] = ...,
+        terminal_reward: Optional[AbstractValueFunction] = ...,
+        warm_start: bool = ...,
+        action_scale: float = ...,
+        default_action: str = ...,
+        num_cpu: int = ...,
     ) -> None: ...
     def get_candidate_action_sequence(self) -> Tensor: ...
     def get_best_action(self, action_sequence: Tensor, returns: Tensor) -> Tensor: ...
@@ -89,16 +89,16 @@ class RandomShooting(CEMShooting):
         dynamical_model: AbstractModel,
         reward_model: AbstractReward,
         horizon: int,
-        gamma: float = 1.0,
-        scale: float = 0.3,
-        num_samples: int = None,
-        num_elites: int = None,
-        termination: Termination = None,
-        terminal_reward: AbstractValueFunction = None,
-        warm_start: bool = False,
-        action_scale: float = 1.0,
-        default_action: str = "zero",
-        num_cpu: int = 1,
+        gamma: float = ...,
+        scale: float = ...,
+        num_samples: Optional[int] = ...,
+        num_elites: Optional[int] = ...,
+        termination: Optional[Termination] = ...,
+        terminal_reward: Optional[AbstractValueFunction] = ...,
+        warm_start: bool = ...,
+        action_scale: float = ...,
+        default_action: str = ...,
+        num_cpu: int = ...,
     ) -> None: ...
 
 class MPPIShooting(MPCSolver):
@@ -109,18 +109,18 @@ class MPPIShooting(MPCSolver):
         dynamical_model: AbstractModel,
         reward_model: AbstractReward,
         horizon: int,
-        gamma: float = 1.0,
-        scale: float = 0.3,
-        num_iter: int = 1,
-        num_samples: int = None,
-        kappa: Union[float, ParameterDecay] = 1.0,
-        filter_coefficients: List[float] = [1.0],
-        termination: Termination = None,
-        terminal_reward: AbstractValueFunction = None,
-        warm_start: bool = False,
-        action_scale: float = 1.0,
-        default_action: str = "zero",
-        num_cpu: int = 1,
+        gamma: float = ...,
+        scale: float = ...,
+        num_iter: int = ...,
+        num_samples: Optional[int] = ...,
+        kappa: Union[float, ParameterDecay] = ...,
+        filter_coefficients: Optional[List[float]] = ...,
+        termination: Termination = ...,
+        terminal_reward: AbstractValueFunction = ...,
+        warm_start: bool = ...,
+        action_scale: float = ...,
+        default_action: str = ...,
+        num_cpu: int = ...,
     ) -> None: ...
     def get_candidate_action_sequence(self) -> Tensor: ...
     def get_best_action(self, action_sequence: Tensor, returns: Tensor) -> Tensor: ...

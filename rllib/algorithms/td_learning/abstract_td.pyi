@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from torch import Tensor
 
@@ -10,7 +10,7 @@ from rllib.policy import AbstractPolicy
 from rllib.value_function import NNValueFunction
 
 class AbstractTDLearning(object, metaclass=ABCMeta):
-    double_sample: bool = False
+    double_sample: bool = ...
     dimension: int
     omega: Tensor
     theta: Tensor
@@ -29,9 +29,9 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
         sampler: ExperienceReplay,
         value_function: NNValueFunction,
         gamma: float,
-        lr_theta: float = 0.1,
-        lr_omega: float = 0.1,
-        exact_value_function: NNValueFunction = None,
+        lr_theta: float = ...,
+        lr_omega: float = ...,
+        exact_value_function: Optional[NNValueFunction] = None,
     ) -> None: ...
     def _step(self, state: Tensor) -> Tuple[Tensor, Tensor, bool]: ...
     def simulate(

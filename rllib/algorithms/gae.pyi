@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -9,6 +9,9 @@ class GAE(nn.Module):
     value_function: Union[AbstractValueFunction, None]
     lambda_gamma: float
     def __init__(
-        self, lambda_: float, gamma: float, value_function: AbstractValueFunction = None
+        self,
+        lambda_: float,
+        gamma: float,
+        value_function: Optional[AbstractValueFunction] = None,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> Tensor: ...

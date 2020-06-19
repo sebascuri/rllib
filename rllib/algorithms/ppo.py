@@ -1,7 +1,5 @@
 """Proximal Policy Optimization algorithm."""
 
-from collections import namedtuple
-
 import torch
 import torch.distributions
 import torch.nn as nn
@@ -15,19 +13,7 @@ from rllib.util.neural_networks import (
 from rllib.util.parameter_decay import Constant, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 
-from .abstract_algorithm import AbstractAlgorithm
-
-PPOReturn = namedtuple(
-    "PPOReturn",
-    [
-        "loss",
-        "value_loss",
-        "surrogate_loss",
-        "entropy_bonus",
-        "kl_div",
-        "approx_kl_div",
-    ],
-)
+from .abstract_algorithm import AbstractAlgorithm, PPOLoss
 
 
 class PPO(AbstractAlgorithm):
@@ -89,7 +75,7 @@ class PPO(AbstractAlgorithm):
         self.weight_value_function = weight_value_function
         self.weight_entropy = weight_entropy
 
-        self.gae = GAE(1, self.gamma, self.value_function_target)
+        self.gae = GAE(lambda_, self.gamma, self.value_function_target)
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
@@ -153,13 +139,13 @@ class PPO(AbstractAlgorithm):
             + self.weight_entropy * entropy_bonus
         )
 
-        return PPOReturn(
+        self._info = {"kl_div": kl_div, "approx_kl_div": approx_kl_div}
+
+        return PPOLoss(
             loss=combined_loss,
-            value_loss=value_loss,
+            critic_loss=value_loss,
             surrogate_loss=surrogate_loss,
-            entropy_bonus=entropy_bonus,
-            kl_div=kl_div,
-            approx_kl_div=approx_kl_div,
+            entropy=entropy_bonus,
         )
 
     def update(self):

@@ -30,8 +30,8 @@ class SoftActorCritic(AbstractAlgorithm):
         q_function,
         criterion,
         gamma,
-        epsilon=None,
-        eta=None,
+        eta,
+        regularization=False,
         reward_transformer=RewardTransformer(),
     ):
         super().__init__()
@@ -43,13 +43,12 @@ class SoftActorCritic(AbstractAlgorithm):
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
 
-        assert (epsilon is not None) ^ (eta is not None), "XOR(eps, eta)."
-        if eta is not None:  # Regularization: \eta KL(\pi || Uniform)
+        if regularization:  # Regularization: \eta KL(\pi || Uniform)
             if not isinstance(eta, ParameterDecay):
                 eta = Constant(eta)
             self.eta = eta
         else:  # Trust-Region: || KL(\pi || Uniform)|| < \epsilon
-            self.eta = Learnable(epsilon, positive=True)
+            self.eta = Learnable(eta, positive=True)
 
         self.reward_transformer = reward_transformer
 
@@ -144,8 +143,8 @@ class MBSoftActorCritic(SoftActorCritic):
         reward_model,
         criterion,
         gamma,
-        epsilon=None,
-        eta=None,
+        eta,
+        regularization=False,
         reward_transformer=RewardTransformer(),
         termination=None,
         num_steps=1,
@@ -155,8 +154,8 @@ class MBSoftActorCritic(SoftActorCritic):
             policy=policy,
             q_function=q_function,
             criterion=criterion,
-            epsilon=epsilon,
             eta=eta,
+            regularization=regularization,
             gamma=gamma,
             reward_transformer=reward_transformer,
         )
