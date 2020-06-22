@@ -1,3 +1,5 @@
+from typing import Optional
+
 from torch import Tensor
 
 from rllib.dataset.datatypes import Action, TupleDistribution
@@ -12,5 +14,6 @@ class RandomPolicy(AbstractPolicy):
         num_states: int = ...,
         num_actions: int = ...,
         action_scale: Action = ...,
+        goal: Optional[Tensor] = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...

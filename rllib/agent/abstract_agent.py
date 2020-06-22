@@ -117,11 +117,15 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         self.last_trajectory.append(observation)
 
-    def start_episode(self, **kwargs):
+    def start_episode(self):
         """Start a new episode."""
-        self.policy.reset(**kwargs)
+        self.policy.reset()
         self.episode_steps.append(0)
         self.last_trajectory = []
+
+    def set_goal(self, goal):
+        """Set goal."""
+        self.policy.set_goal(goal)
 
     def end_episode(self):
         """End an episode."""

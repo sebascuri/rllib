@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 from torch.optim.optimizer import Optimizer
 
@@ -6,7 +6,7 @@ from rllib.algorithms.reps import QREPS
 from rllib.dataset import ExperienceReplay
 from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
-from rllib.value_function import AbstractValueFunction, AbstractQFunction
+from rllib.value_function import AbstractQFunction, AbstractValueFunction
 
 from .reps_agent import REPSAgent
 

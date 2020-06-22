@@ -18,6 +18,7 @@ class DerivedPolicy(AbstractPolicy):
             action_scale=base_policy.action_scale[:dim_action],
             tau=base_policy.tau,
             deterministic=base_policy.deterministic,
+            goal=base_policy.goal,
         )
         self.base_policy = base_policy
 
@@ -28,16 +29,14 @@ class DerivedPolicy(AbstractPolicy):
         scale = scale[..., : self.dim_action, : self.dim_action]
         return mean, scale
 
-    def reset(self, **kwargs):
-        """Reset policy parameters (for example internal states).
-
-        Parameters
-        ----------
-        kwargs: dict.
-            Dictionary with exogenous parameters such as goals.
-        """
-        self.base_policy.reset(**kwargs)
+    def reset(self):
+        """Reset policy parameters."""
+        self.base_policy.reset()
 
     def update(self):
         """Update policy parameters."""
         self.base_policy.update()
+
+    def set_goal(self, goal):
+        """Update policy parameters."""
+        self.base_policy.set_goal(goal)

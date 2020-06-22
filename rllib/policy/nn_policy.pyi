@@ -25,10 +25,11 @@ class NNPolicy(AbstractPolicy):
         tau: float = ...,
         deterministic: bool = ...,
         action_scale: Action = ...,
+        goal: Optional[Tensor] = ...,
         input_transform: Optional[torch.nn.Module] = ...,
     ) -> None: ...
     @classmethod
-    def from_other(cls: Type[T], other: T) -> T: ...
+    def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...
     @classmethod
     def from_nn(
         cls: Type[T],
@@ -40,8 +41,10 @@ class NNPolicy(AbstractPolicy):
         tau: float = ...,
         deterministic: bool = ...,
         action_scale: Action = ...,
+        goal: Optional[Tensor] = ...,
         input_transform: Optional[torch.nn.Module] = ...,
     ): ...
+    def _preprocess_state(self, state: Tensor) -> Tensor: ...
     def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
     def embeddings(self, state: Tensor, action: Optional[Tensor] = ...) -> Tensor: ...
 
@@ -55,5 +58,6 @@ class FelixPolicy(AbstractPolicy):
         tau: float = ...,
         deterministic: bool = ...,
         action_scale: Action = ...,
+        goal: Optional[Tensor] = ...,
         input_transform: Optional[torch.nn.Module] = ...,
     ) -> None: ...

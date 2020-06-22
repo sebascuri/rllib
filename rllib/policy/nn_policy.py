@@ -47,6 +47,7 @@ class NNPolicy(AbstractPolicy):
         action_scale=1.0,
         tau=0.0,
         deterministic=False,
+        goal=None,
         input_transform=None,
     ):
         super().__init__(
@@ -57,6 +58,7 @@ class NNPolicy(AbstractPolicy):
             tau,
             deterministic,
             action_scale=action_scale,
+            goal=goal,
         )
         if self.discrete_state:
             in_dim = self.num_states
@@ -96,6 +98,7 @@ class NNPolicy(AbstractPolicy):
             tau=other.tau,
             deterministic=other.deterministic,
             action_scale=other.action_scale,
+            goal=other.goal,
             input_transform=other.input_transform,
         )
         new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
@@ -112,6 +115,7 @@ class NNPolicy(AbstractPolicy):
         tau=0.0,
         deterministic=False,
         action_scale=1.0,
+        goal=None,
         input_transform=None,
     ):
         """Create new NN Policy from a Neural Network Implementation."""
@@ -123,19 +127,30 @@ class NNPolicy(AbstractPolicy):
             tau=tau,
             deterministic=deterministic,
             action_scale=action_scale,
+            goal=goal,
             input_transform=input_transform,
         )
         new.nn = module
         return new
 
-    def forward(self, state, **kwargs):
-        """Get distribution over actions."""
-        if self.input_transform is not None:
+    @torch.jit.export
+    def _preprocess_state(self, state):
+        """Pre-process state before input to neural network."""
+        if self.input_transform is not None:  # Apply input transform.
             state = self.input_transform(state)
 
-        if self.discrete_state:
+        if self.discrete_state:  # One hot encode discrete states.
             state = one_hot_encode(state.long(), num_classes=self.num_states)
 
+        if self.goal is not None:  # concatenate goal to state.
+            goal = self.goal.repeat(*state.shape[:-1], 1)
+            state = torch.cat((state, goal), dim=-1)
+
+        return state
+
+    def forward(self, state, **kwargs):
+        """Get distribution over actions."""
+        state = self._preprocess_state(state)
         out = self.nn(state)
         if (not self.discrete_action) and not kwargs.get("normalized", False):
             out = (self.action_scale * out[0], self.action_scale * out[1])
@@ -148,8 +163,7 @@ class NNPolicy(AbstractPolicy):
     @torch.jit.export
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), num_classes=self.num_states)
+        state = self._preprocess_state(state)
 
         features = self.nn.last_layer_embeddings(state)
         return features.squeeze()

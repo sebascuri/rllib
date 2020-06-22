@@ -13,6 +13,7 @@ class MPCPolicy(AbstractPolicy):
             mpc_solver.dynamical_model.dim_state,
             mpc_solver.dynamical_model.dim_action,
             action_scale=mpc_solver.action_scale,
+            goal=mpc_solver.reward_model.goal,
         )
 
         self.solver = mpc_solver
@@ -23,6 +24,10 @@ class MPCPolicy(AbstractPolicy):
         # Return first Step.
         return action_sequence[0, ..., :], torch.zeros(self.dim_action, self.dim_action)
 
-    def reset(self, **kwargs):
+    def reset(self):
         """Re-set last_action to None."""
         self.solver.reset()
+
+    def set_goal(self, goal=None):
+        """Set goal."""
+        self.solver.reward_model.set_goal(goal)

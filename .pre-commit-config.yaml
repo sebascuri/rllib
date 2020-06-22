@@ -48,7 +48,7 @@ repos:
     rev: v0.720
     hooks:
     -   id: mypy
-        args: [--no-strict-optional, --ignore-missing-imports]
+        args: [--no-implicit-optional, --ignore-missing-imports]
 -   repo: https://github.com/PyCQA/pydocstyle
     rev: 4.0.0
     hooks:

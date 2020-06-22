@@ -51,9 +51,9 @@ class OnPolicyAgent(AbstractAgent):
             self._train()
             self.trajectories[-1] = []
 
-    def start_episode(self, **kwargs):
+    def start_episode(self):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode(**kwargs)
+        super().start_episode()
         self.trajectories.append([])
 
     def end_episode(self):

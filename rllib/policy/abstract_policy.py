@@ -49,6 +49,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         tau=0.0,
         deterministic=False,
         action_scale=1.0,
+        goal=None,
     ):
         super().__init__()
         self.dim_state = dim_state
@@ -69,6 +70,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             action_scale = torch.cat((action_scale, torch.ones(extra_dim)))
 
         self.action_scale = action_scale
+        self.goal = goal
 
     def random(self, batch_size=None, normalized=False):
         """Return a uniform random distribution of the output space.
@@ -103,17 +105,16 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
                 )
 
     @torch.jit.export
-    def reset(self, **kwargs):
-        """Reset policy parameters (for example internal states).
-
-        Parameters
-        ----------
-        kwargs: dict.
-            Dictionary with exogenous parameters such as goals.
-        """
+    def reset(self):
+        """Reset policy parameters (for example internal states)."""
         pass
 
     @torch.jit.export
     def update(self):
         """Update policy parameters."""
         pass
+
+    @torch.jit.export
+    def set_goal(self, goal=None):
+        """Set policy goal."""
+        self.goal = goal

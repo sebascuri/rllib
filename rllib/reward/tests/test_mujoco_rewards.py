@@ -51,7 +51,7 @@ def test_reward(environment, action_cost, action_type):
         reward_model = reward_model_(action_cost=action_cost)
     else:
         reward_model = reward_model_()
-
+    reward_model.set_goal(env.goal)
     for _ in range(50):
         if action_type == "random":
             action = env.action_space.sample()
@@ -112,6 +112,7 @@ def test_tolerance(action_cost):
         reward_model = reward_model_(action_cost=action_cost, sparse=True)
     else:
         reward_model = reward_model_(sparse=True)
+    reward_model.set_goal(env.goal)
 
     for _ in range(50):
         action = env.action_space.sample()

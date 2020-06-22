@@ -9,8 +9,7 @@ class EnvironmentReward(AbstractReward):
     """Quadratic Reward Function."""
 
     def __init__(self, environment):
-        super().__init__()
-
+        super().__init__(goal=environment.goal)
         self.environment = environment
 
     def forward(self, state, action, next_state):

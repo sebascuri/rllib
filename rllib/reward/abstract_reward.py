@@ -2,6 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 
+import torch.jit
 import torch.nn as nn
 
 
@@ -17,10 +18,16 @@ class AbstractReward(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self):
+    def __init__(self, goal=None):
         super().__init__()
+        self.goal = goal
 
     @abstractmethod
     def forward(self, state, action, next_state):
         """Get reward distribution at current state and action."""
         raise NotImplementedError
+
+    @torch.jit.export
+    def set_goal(self, goal):
+        """Set reward model goal."""
+        self.goal = goal

@@ -255,9 +255,9 @@ class ModelBasedAgent(AbstractAgent):
             self.initial_states.append(observation.state.unsqueeze(0))
             self.new_episode = False
 
-    def start_episode(self, **kwargs):
+    def start_episode(self):
         """See `AbstractAgent.start_episode'."""
-        super().start_episode(**kwargs)
+        super().start_episode()
         self.new_episode = True
 
         if self.thompson_sampling:
@@ -379,7 +379,7 @@ class ModelBasedAgent(AbstractAgent):
                     self._simulate_model()
 
                 # Log last simulations.
-                average_return = (self.sim_trajectory.reward).sum(0).mean().item()
+                average_return = self.sim_trajectory.reward.sum(0).mean().item()
                 average_scale = (
                     torch.diagonal(
                         self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2

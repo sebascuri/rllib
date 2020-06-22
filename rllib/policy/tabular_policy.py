@@ -22,7 +22,7 @@ class TabularPolicy(NNPolicy):
         nn.init.ones_(self.nn.head.weight)
 
     @classmethod
-    def from_other(cls, other):
+    def from_other(cls, other, copy=False):
         """Create new Tabular Policy from another Tabular Policy."""
         return cls(other.num_states, other.num_actions)
 

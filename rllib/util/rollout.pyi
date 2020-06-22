@@ -23,7 +23,6 @@ def step_env(
     action: Union[int, ndarray],
     pi: Optional[Distribution] = ...,
     render: bool = ...,
-    goal: Optional[Union[int, ndarray]] = ...,
 ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
 def step_model(
     dynamical_model: AbstractModel,

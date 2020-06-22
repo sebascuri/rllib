@@ -12,13 +12,13 @@ from rllib.util.utilities import get_backend
 class MujocoReward(AbstractReward, metaclass=ABCMeta):
     """Base class for mujoco rewards."""
 
-    def __init__(self, action_cost=0.01, sparse=False):
-        super().__init__()
+    def __init__(self, action_cost=0.01, sparse=False, goal=None):
+        super().__init__(goal=goal)
         self.action_scale = 1
         self.action_cost = action_cost
         self.sparse = sparse
-        self.reward_ctrl = None
-        self.reward_state = None
+        self.reward_ctrl = torch.tensor(0.0)
+        self.reward_state = torch.tensor(0.0)
 
     def action_reward(self, action):
         """Get action reward."""
@@ -94,17 +94,18 @@ class PusherReward(MujocoReward):
 
     dim_action = 7
 
-    def __init__(self, action_cost=0.1):
-        super().__init__(action_cost)
+    def __init__(self, action_cost=0.1, goal=torch.tensor([0.45, -0.05, -0.323])):
+        # goal[-1] = -0.275
+        super().__init__(action_cost, goal=goal)
 
     def forward(self, state, action, next_state):
         """See `AbstractReward.forward()'."""
         bk = get_backend(state)
         if bk == np:
-            goal = np.array([0.45, -0.05, -0.323])
+            goal = np.array(self.goal)
         else:
-            goal = torch.tensor([0.45, -0.05, -0.323])
-        goal[-1] = -0.275
+            goal = self.goal
+
         if isinstance(state, torch.Tensor):
             state = state.detach()
         tip_pos = self.get_ee_position(state)
@@ -186,8 +187,8 @@ class ReacherReward(MujocoReward):
 
     dim_action = 7
 
-    def __init__(self, action_cost=0.01, sparse=False):
-        super().__init__(action_cost, sparse)
+    def __init__(self, action_cost=0.01, sparse=False, goal=None):
+        super().__init__(action_cost, sparse, goal=goal)
         self.action_scale = 2.0
         self.length_scale = 0.45
 
@@ -195,8 +196,8 @@ class ReacherReward(MujocoReward):
         """See `AbstractReward.forward()'."""
         bk = get_backend(state)
         with torch.no_grad():
-            goal = state[..., -3:]
-            dist_to_target = self.get_ee_position(next_state) - goal
+            # goal = state[..., -3:]
+            dist_to_target = self.get_ee_position(next_state) - self.goal
 
         if self.sparse:
             reward_state = bk.exp(
