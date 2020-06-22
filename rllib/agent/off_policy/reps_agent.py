@@ -1,5 +1,6 @@
 """Implementation of REPS Agent."""
 
+from rllib.algorithms.reps import REPS
 from rllib.util.neural_networks.utilities import deep_copy_module
 
 from .off_policy_agent import OffPolicyAgent
@@ -19,11 +20,14 @@ class REPSAgent(OffPolicyAgent):
 
     def __init__(
         self,
-        reps_loss,
+        policy,
+        value_function,
         optimizer,
         memory,
+        epsilon,
         batch_size,
         num_iter,
+        regularization=False,
         train_frequency=0,
         num_rollouts=1,
         gamma=1.0,
@@ -32,6 +36,22 @@ class REPSAgent(OffPolicyAgent):
         tensorboard=False,
         comment="",
     ):
+        self.algorithm = REPS(
+            policy=policy,
+            value_function=value_function,
+            epsilon=epsilon,
+            regularization=regularization,
+            gamma=gamma,
+        )
+        optimizer = type(optimizer)(
+            [
+                p
+                for name, p in self.algorithm.named_parameters()
+                if "target" not in name
+            ],
+            **optimizer.defaults,
+        )
+
         super().__init__(
             memory=memory,
             batch_size=batch_size,
@@ -46,8 +66,7 @@ class REPSAgent(OffPolicyAgent):
             comment=comment,
         )
 
-        self.policy = reps_loss.policy
-        self.algorithm = reps_loss
+        self.policy = self.algorithm.policy
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""

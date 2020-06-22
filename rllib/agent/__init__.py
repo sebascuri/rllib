@@ -7,6 +7,7 @@ from .off_policy import (
     DQNAgent,
     MPPOAgent,
     QLearningAgent,
+    QREPSAgent,
     REPSAgent,
     SACAgent,
     SoftQLearningAgent,
