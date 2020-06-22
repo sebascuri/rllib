@@ -137,8 +137,6 @@ solve_mppo(
     epsilon=epsilon,
     epsilon_mean=epsilon_mean,
     epsilon_var=epsilon_var,
-    eta=eta,
-    eta_mean=eta_mean,
-    eta_var=eta_var,
+    regularization=True,
     lr=lr,
 )

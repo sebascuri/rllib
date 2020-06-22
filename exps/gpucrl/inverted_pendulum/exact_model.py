@@ -39,9 +39,7 @@ for action_cost in [0.0, 0.1, 0.2]:
         epsilon=epsilon,
         epsilon_mean=epsilon_mean,
         epsilon_var=epsilon_var,
-        eta=eta,
-        eta_mean=eta_mean,
-        eta_var=eta_var,
+        regularization=False,
         lr=lr,
     )
     print(np.max(returns))

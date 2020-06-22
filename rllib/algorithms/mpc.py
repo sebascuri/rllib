@@ -199,7 +199,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             elite_actions = self.get_best_action(action_sequence, returns)
             self.update_sequence_generation(elite_actions)
 
-        return self.action_scale * self.mean
+        return self.mean
 
     def reset(self, warm_action=None):
         """Reset warm action."""

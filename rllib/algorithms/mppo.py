@@ -225,8 +225,8 @@ class MPPO(AbstractAlgorithm):
         pi_dist: torch.distribution.Distribution
             Current policy distribution.
         """
-        pi_dist = tensor_to_distribution(self.policy(state, normalized=True))
-        pi_dist_old = tensor_to_distribution(self.old_policy(state, normalized=True))
+        pi_dist = tensor_to_distribution(self.policy(state))
+        pi_dist_old = tensor_to_distribution(self.old_policy(state))
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
             kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
@@ -284,9 +284,7 @@ class MPPO(AbstractAlgorithm):
         )
 
         with torch.no_grad():
-            next_pi = tensor_to_distribution(
-                self.old_policy(next_state, normalized=True)
-            )
+            next_pi = tensor_to_distribution(self.old_policy(next_state))
             next_action = next_pi.sample()
 
             next_values = self.q_target(next_state, next_action) * (1.0 - done)
@@ -418,8 +416,8 @@ class MBMPPO(AbstractAlgorithm):
         """
         value_prediction = self.value_function(states)
 
-        pi_dist = tensor_to_distribution(self.policy(states, normalized=True))
-        pi_dist_old = tensor_to_distribution(self.old_policy(states, normalized=True))
+        pi_dist = tensor_to_distribution(self.policy(states))
+        pi_dist_old = tensor_to_distribution(self.old_policy(states))
         kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
 
         with torch.no_grad():

@@ -1,7 +1,5 @@
 Add mypy --strict.
 Add pre-commit pytest only to push.
 
-- Policy goals
-- Action scales
 - Reward magnitude
 - Experience Replay

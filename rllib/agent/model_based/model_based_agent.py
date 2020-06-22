@@ -464,6 +464,7 @@ class ModelBasedAgent(AbstractAgent):
             dynamical_model=self.dynamical_model,
             reward_model=self.reward_model,
             policy=self.plan_policy,
+            action_scale=self.plan_policy.action_scale,
             initial_state=initial_states,
             max_steps=self.sim_num_steps,
             termination=self.termination,

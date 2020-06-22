@@ -21,3 +21,12 @@ To run locally circleci run:
 $ circleci config process .circleci/config.yml > process.yml
 $ circleci local execute -c process.yml --job test
 ```
+
+## Goals
+Environment goals are passed to the agent through agent.set_goal(goal).
+If a goal moves during an episode, then include it in the observation space of the environment.
+If a goal is to follow a trajectory, it might be a good idea to encode it in the reward model.
+
+## Policies
+Continuous Policies are "bounded" between [-1, 1] via a tanh transform unless otherwise defined.
+For environments with action spaces with different bounds, up(down)-scale the action after sampling it.

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.distributions
 from torch.distributions import Categorical, MultivariateNormal, TransformedDistribution
-from torch.distributions.transforms import AffineTransform, TanhTransform
+from torch.distributions.transforms import TanhTransform
 
 from rllib.util.distributions import Delta
 
@@ -118,16 +118,8 @@ def tensor_to_distribution(args, **kwargs):
     else:
         if kwargs.get("tanh", False):
             d = TransformedDistribution(
-                MultivariateNormal(args[0], scale_tril=args[1]),
-                [
-                    AffineTransform(loc=0, scale=1 / kwargs.get("action_scale", 1)),
-                    TanhTransform(),
-                    AffineTransform(loc=0, scale=kwargs.get("action_scale", 1)),
-                ],
+                MultivariateNormal(args[0], scale_tril=args[1]), [TanhTransform()]
             )
-        elif kwargs.get("normalized", False):
-            scale = kwargs.get("action_scale", 1)
-            d = MultivariateNormal(args[0] / scale, scale_tril=args[1] / scale)
         else:
             d = MultivariateNormal(args[0], scale_tril=args[1])
         return d

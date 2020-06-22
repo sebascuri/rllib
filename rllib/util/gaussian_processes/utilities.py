@@ -16,7 +16,7 @@ def add_data_to_gp(gp_model, new_inputs, new_targets):
     # return gp_model.get_fantasy_model(inputs, targets)
 
 
-def summarize_gp(gp_model, max_num_points: int = None, weight_function=None):
+def summarize_gp(gp_model, max_num_points=None, weight_function=None):
     """Summarize the GP model with a fixed number of data points inplace.
 
     Parameters

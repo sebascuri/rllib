@@ -291,9 +291,7 @@ def solve_mppo(
     epsilon,
     epsilon_mean,
     epsilon_var,
-    eta,
-    eta_mean,
-    eta_var,
+    regularization,
     lr,
 ):
     """Solve MPPO optimization problem."""
@@ -330,9 +328,7 @@ def solve_mppo(
         epsilon=epsilon,
         epsilon_mean=epsilon_mean,
         epsilon_var=epsilon_var,
-        eta=eta,
-        eta_mean=eta_mean,
-        eta_var=eta_var,
+        regularization=regularization,
         num_action_samples=num_action_samples,
         criterion=nn.MSELoss,
     )

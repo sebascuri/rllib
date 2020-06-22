@@ -8,7 +8,7 @@ from rllib.dataset.datatypes import RawObservation
 from rllib.util.utilities import tensor_to_distribution
 
 
-def step_env(environment, state, action, pi=None, render=False):
+def step_env(environment, state, action, action_scale=1, pi=None, render=False):
     """Perform a single step in an environment."""
     try:
         next_state, reward, done, info = environment.step(action)
@@ -22,9 +22,9 @@ def step_env(environment, state, action, pi=None, render=False):
         with torch.no_grad():
             try:
                 entropy = pi.entropy().squeeze()
-            except NotImplementedError:
-                entropy = -pi.log_prob(action)  # Approximate it by MC sampling.
-            log_prob_action = pi.log_prob(action).squeeze()
+            except NotImplementedError:  # Approximate it by MC sampling.
+                entropy = -pi.log_prob(action / action_scale)
+            log_prob_action = pi.log_prob(action / action_scale).squeeze()
     else:
         entropy = 0.0
         log_prob_action = 1.0
@@ -45,7 +45,14 @@ def step_env(environment, state, action, pi=None, render=False):
 
 
 def step_model(
-    dynamical_model, reward_model, termination, state, action, done, pi=None
+    dynamical_model,
+    reward_model,
+    termination,
+    state,
+    action,
+    done,
+    action_scale=1,
+    pi=None,
 ):
     """Perform a single step in an dynamical model."""
     # Sample a next state
@@ -117,7 +124,9 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
         i = 0
         while not done:
             action = agent.act(state)
-            observation, state, done, info = step_env(environment, state, action)
+            observation, state, done, info = step_env(
+                environment, state, action, agent.policy.action_scale
+            )
             recorder.capture_frame()
 
             if max_steps <= environment.time:
@@ -172,7 +181,12 @@ def rollout_agent(
         while not done:
             action = agent.act(state)
             obs, state, done, info = step_env(
-                environment, state, action, agent.pi, render
+                environment=environment,
+                state=state,
+                action=action,
+                action_scale=agent.policy.action_scale,
+                pi=agent.pi,
+                render=render,
             )
             agent.observe(obs)
             # Log info.
@@ -228,9 +242,14 @@ def rollout_policy(
                     policy(torch.tensor(state, dtype=torch.get_default_dtype())),
                     **kwargs,
                 )
-                action = pi.sample().numpy()
+                action = (policy.action_scale * pi.sample()).numpy()
                 obs, state, done, info = step_env(
-                    environment, state, action, pi, render
+                    environment=environment,
+                    state=state,
+                    action=action,
+                    action_scale=policy.action_scale,
+                    pi=pi,
+                    render=render,
                 )
                 trajectory.append(obs)
                 if max_steps <= environment.time:
@@ -288,10 +307,17 @@ def rollout_model(
             action = pi.rsample()
         else:
             action = pi.sample()
-        action = torch.max(torch.min(action, policy.action_scale), -policy.action_scale)
+        action = policy.action_scale * action.clamp_(-1, 1)
 
         observation, next_state, done = step_model(
-            dynamical_model, reward_model, termination, state, action, done, pi=pi
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            termination=termination,
+            state=state,
+            action=action,
+            done=done,
+            action_scale=policy.action_scale,
+            pi=pi,
         )
         trajectory.append(observation)
 
@@ -338,7 +364,12 @@ def rollout_actions(
     for action in action_sequence:  # Normalized actions
 
         observation, next_state, done = step_model(
-            dynamical_model, reward_model, termination, state, action, done
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            termination=termination,
+            state=state,
+            action=action,
+            done=done,
         )
         trajectory.append(observation)
 

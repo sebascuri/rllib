@@ -48,7 +48,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         num_actions=-1,
         tau=0.0,
         deterministic=False,
-        action_scale=1.0,
+        action_scale=1,
         goal=None,
     ):
         super().__init__()
@@ -61,10 +61,15 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self.discrete_action = self.num_actions >= 0
         self.tau = tau
 
-        if isinstance(action_scale, np.ndarray):
+        if self.discrete_action:
+            action_scale = torch.tensor(1)
+        elif isinstance(action_scale, np.ndarray):
             action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
         elif not isinstance(action_scale, torch.Tensor):
-            action_scale = torch.full((self.dim_action,), action_scale)
+            action_scale = torch.full(
+                (self.dim_action,), action_scale, dtype=torch.get_default_dtype()
+            )
+
         if not self.discrete_action and len(action_scale) < self.dim_action:
             extra_dim = self.dim_action - len(action_scale)
             action_scale = torch.cat((action_scale, torch.ones(extra_dim)))

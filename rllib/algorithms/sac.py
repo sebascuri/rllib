@@ -58,7 +58,7 @@ class SoftActorCritic(AbstractAlgorithm):
 
     def actor_loss(self, state):
         """Get Actor Loss."""
-        pi = tensor_to_distribution(self.policy(state, normalized=True), tanh=True)
+        pi = tensor_to_distribution(self.policy(state), tanh=True)
         action = pi.rsample()  # re-parametrization trick.
 
         with disable_gradient(self.q_target):
@@ -94,7 +94,7 @@ class SoftActorCritic(AbstractAlgorithm):
     def get_q_target(self, reward, next_state, done):
         """Get the target of the q function."""
         # Target Q-values
-        pi = tensor_to_distribution(self.policy(next_state, normalized=True), tanh=True)
+        pi = tensor_to_distribution(self.policy(next_state), tanh=True)
         next_action = pi.sample()
         next_q = self.q_target(next_state, next_action)
         if type(next_q) is list:

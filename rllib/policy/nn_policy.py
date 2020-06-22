@@ -44,7 +44,7 @@ class NNPolicy(AbstractPolicy):
         biased_head=True,
         non_linearity="ReLU",
         squashed_output=True,
-        action_scale=1.0,
+        action_scale=1,
         tau=0.0,
         deterministic=False,
         goal=None,
@@ -60,14 +60,8 @@ class NNPolicy(AbstractPolicy):
             action_scale=action_scale,
             goal=goal,
         )
-        if self.discrete_state:
-            in_dim = self.num_states
-        else:
-            in_dim = self.dim_state
-
         self.input_transform = input_transform
-        if hasattr(input_transform, "extra_dim"):
-            in_dim += getattr(input_transform, "extra_dim")
+        in_dim = self._preprocess_input_dim()
 
         if self.discrete_action:
             self.nn = CategoricalNN(
@@ -133,6 +127,21 @@ class NNPolicy(AbstractPolicy):
         new.nn = module
         return new
 
+    def _preprocess_input_dim(self):
+        """Get input dimension of Neural Network."""
+        if self.discrete_state:
+            in_dim = self.num_states
+        else:
+            in_dim = self.dim_state
+
+        if hasattr(self.input_transform, "extra_dim"):
+            in_dim += getattr(self.input_transform, "extra_dim")
+
+        if self.goal is not None:
+            in_dim += self.goal.shape[-1]
+
+        return in_dim
+
     @torch.jit.export
     def _preprocess_state(self, state):
         """Pre-process state before input to neural network."""
@@ -148,12 +157,10 @@ class NNPolicy(AbstractPolicy):
 
         return state
 
-    def forward(self, state, **kwargs):
+    def forward(self, state):
         """Get distribution over actions."""
         state = self._preprocess_state(state)
         out = self.nn(state)
-        if (not self.discrete_action) and not kwargs.get("normalized", False):
-            out = (self.action_scale * out[0], self.action_scale * out[1])
 
         if self.deterministic:
             return out[0], torch.zeros(1)
@@ -197,7 +204,7 @@ class FelixPolicy(NNPolicy):
         num_actions=-1,
         tau=0.0,
         deterministic=False,
-        action_scale=1.0,
+        action_scale=1,
         input_transform=None,
     ):
         super().__init__(
