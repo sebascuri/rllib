@@ -1,9 +1,11 @@
 import pytest
 import torch
+import torch.nn as nn
 from torch.distributions import Categorical, MultivariateNormal
 
-from rllib.policy import FelixPolicy, NNPolicy, TabularPolicy
-from rllib.util.neural_networks import random_tensor
+from rllib.policy import FelixPolicy, NNPolicy
+from rllib.util.distributions import Delta
+from rllib.util.neural_networks import HomoGaussianNN, count_vars, random_tensor
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -32,22 +34,65 @@ def batch_size(request):
     return request.param
 
 
+@pytest.fixture(params=[True, False])
+def deterministic(request):
+    return request.param
+
+
+class StateTransform(nn.Module):
+    extra_dim = 1
+
+    def forward(self, states_):
+        """Transform state before applying function approximation."""
+        angle, angular_velocity = torch.split(states_, 1, dim=-1)
+        states_ = torch.cat(
+            (torch.cos(angle), torch.sin(angle), angular_velocity), dim=-1
+        )
+        return states_
+
+
+def _test_from_other(object_, class_):
+    other = class_.from_other(object_, copy=False)
+
+    assert isinstance(other, class_)
+    assert other is not object_
+
+    other_state_dict = other.state_dict()
+    for name, param in object_.named_parameters():
+        if not torch.allclose(param, torch.zeros_like(param)):
+            assert not torch.allclose(param, other_state_dict[name])
+    assert count_vars(other) == count_vars(object_)
+
+
+def _test_from_other_with_copy(object_, class_):
+    other = class_.from_other(object_, copy=True)
+
+    assert isinstance(other, class_)
+    assert other is not object_
+    other_state_dict = other.state_dict()
+
+    for name, param in object_.named_parameters():
+        assert torch.allclose(param, other_state_dict[name])
+    assert count_vars(other) == count_vars(object_)
+
+
 class TestMLPPolicy(object):
-    def init(self, discrete_state, discrete_action, dim_state, dim_action):
+    def init(
+        self,
+        discrete_state,
+        discrete_action,
+        dim_state,
+        dim_action,
+        deterministic=False,
+    ):
 
-        if discrete_state:
-            self.num_states = dim_state
-            self.dim_state = 1
-        else:
-            self.num_states = None
-            self.dim_state = dim_state
+        self.num_states, self.dim_state = (
+            (dim_state, 1) if discrete_state else (-1, dim_state)
+        )
 
-        if discrete_action:
-            self.num_actions = dim_action
-            self.dim_action = 1
-        else:
-            self.num_actions = None
-            self.dim_action = dim_action
+        self.num_actions, self.dim_action = (
+            (dim_action, 1) if discrete_action else (-1, dim_action)
+        )
 
         self.policy = NNPolicy(
             self.dim_state,
@@ -55,9 +100,10 @@ class TestMLPPolicy(object):
             self.num_states,
             self.num_actions,
             layers=[32, 32],
+            deterministic=deterministic,
         )
 
-    def test_num_states_actions(
+    def test_property_values(
         self, discrete_state, discrete_action, dim_state, dim_action
     ):
         self.init(discrete_state, discrete_action, dim_state, dim_action)
@@ -85,12 +131,17 @@ class TestMLPPolicy(object):
             assert distribution.mean.shape == (self.dim_action,)
             assert sample.shape == (dim_action,)
 
-    def test_call(
-        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+    def test_forward(
+        self,
+        discrete_state,
+        discrete_action,
+        dim_state,
+        dim_action,
+        batch_size,
+        deterministic,
     ):
-        self.init(discrete_state, discrete_action, dim_state, dim_action)
+        self.init(discrete_state, discrete_action, dim_state, dim_action, deterministic)
         state = random_tensor(discrete_state, dim_state, batch_size)
-
         distribution = tensor_to_distribution(self.policy(state))
         sample = distribution.sample()
 
@@ -103,22 +154,91 @@ class TestMLPPolicy(object):
                 assert distribution.logits.shape == (self.num_actions,)
                 assert sample.shape == ()
         else:  # Continuous
-            assert isinstance(distribution, MultivariateNormal)
+            if deterministic:
+                assert isinstance(distribution, Delta)
+            else:
+                assert isinstance(distribution, MultivariateNormal)
+
             if batch_size:
                 assert distribution.mean.shape == (batch_size, self.dim_action)
-                assert distribution.covariance_matrix.shape == (
-                    batch_size,
-                    self.dim_action,
-                    self.dim_action,
-                )
+                if not deterministic:
+                    assert distribution.covariance_matrix.shape == (
+                        batch_size,
+                        self.dim_action,
+                        self.dim_action,
+                    )
                 assert sample.shape == (batch_size, dim_action)
             else:
                 assert distribution.mean.shape == (self.dim_action,)
-                assert distribution.covariance_matrix.shape == (
-                    self.dim_action,
-                    self.dim_action,
-                )
+                if not deterministic:
+                    assert distribution.covariance_matrix.shape == (
+                        self.dim_action,
+                        self.dim_action,
+                    )
                 assert sample.shape == (dim_action,)
+
+    def test_embeddings(
+        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+    ):
+        self.init(discrete_state, discrete_action, dim_state, dim_action)
+        state = random_tensor(discrete_state, dim_state, batch_size)
+        embeddings = self.policy.embeddings(state)
+
+        assert embeddings.shape == torch.Size([batch_size, 33] if batch_size else [33])
+        assert embeddings.dtype is torch.get_default_dtype()
+
+    def test_input_transform(self, batch_size):
+        policy = NNPolicy(2, 4, layers=[64, 64], input_transform=StateTransform())
+        out = tensor_to_distribution(policy(random_tensor(False, 2, batch_size)))
+        action = out.sample()
+        assert action.shape == torch.Size([batch_size, 4] if batch_size else [4])
+        assert action.dtype is torch.get_default_dtype()
+
+    def test_goal(self, batch_size):
+        goal = random_tensor(False, 3, None)
+        policy = NNPolicy(4, 2, layers=[32, 32], goal=goal)
+        state = random_tensor(False, 4, batch_size)
+        pi = tensor_to_distribution(policy(state))
+        action = pi.sample()
+        assert action.shape == torch.Size([batch_size, 2] if batch_size else [2])
+        assert action.dtype is torch.get_default_dtype()
+
+        other_goal = random_tensor(False, 3, None)
+        policy.set_goal(other_goal)
+        other_pi = tensor_to_distribution(policy(state))
+
+        assert not torch.any(other_pi.mean == pi.mean)
+
+    def test_from_other(self, discrete_state, discrete_action, dim_state, dim_action):
+        self.init(discrete_state, discrete_action, dim_state, dim_action)
+        _test_from_other(self.policy, NNPolicy)
+        _test_from_other_with_copy(self.policy, NNPolicy)
+
+    def test_from_nn(self, discrete_state, dim_state, dim_action, batch_size):
+        self.init(discrete_state, False, dim_state, dim_action)
+        policy = NNPolicy.from_nn(
+            HomoGaussianNN(
+                self.policy.nn.kwargs["in_dim"],
+                self.policy.nn.kwargs["out_dim"],
+                layers=[20, 20],
+                biased_head=False,
+            ),
+            dim_state,
+            dim_action,
+            num_states=self.num_states,
+            num_actions=self.num_actions,
+        )
+
+        state = random_tensor(discrete_state, dim_state, batch_size)
+        action = tensor_to_distribution(policy(state)).sample()
+        embeddings = policy.embeddings(state)
+
+        assert action.shape == torch.Size(
+            [batch_size, dim_action] if batch_size else [dim_action]
+        )
+        assert embeddings.shape == torch.Size([batch_size, 20] if batch_size else [20])
+        assert action.dtype is torch.get_default_dtype()
+        assert embeddings.dtype is torch.get_default_dtype()
 
 
 class TestFelixNet(object):
@@ -171,23 +291,3 @@ class TestFelixNet(object):
             assert distribution.mean.shape == (dim_action,)
             assert distribution.covariance_matrix.shape == (dim_action, dim_action)
             assert sample.shape == (dim_action,)
-
-
-class TestTabularPolicy(object):
-    def test_init(self):
-        policy = TabularPolicy(num_states=4, num_actions=2)
-        torch.testing.assert_allclose(policy.table, 1)
-
-    def test_set_value(self):
-        policy = TabularPolicy(num_states=4, num_actions=2)
-        policy.set_value(2, torch.tensor(1))
-        l1 = torch.log(torch.tensor(1e-12))
-        l2 = torch.log(torch.tensor(1.0 + 1e-12))
-        torch.testing.assert_allclose(
-            policy.table, torch.tensor([[1.0, 1.0, l1, 1], [1.0, 1.0, l2, 1]])
-        )
-
-        policy.set_value(0, torch.tensor([0.3, 0.7]))
-        torch.testing.assert_allclose(
-            policy.table, torch.tensor([[0.3, 1.0, l1, 1], [0.7, 1.0, l2, 1]])
-        )

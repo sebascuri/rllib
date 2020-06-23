@@ -85,26 +85,28 @@ class TestNNValueFunction(object):
         self.init(discrete_state, dim_state)
         torch.jit.script(self.value_function)
 
-    def test_num_states(self, discrete_state, dim_state):
+    def test_property_values(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
         assert (
             self.num_states if self.num_states is not None else -1
         ) == self.value_function.num_states
         assert discrete_state == self.value_function.discrete_state
-
-    def test_dim_states(self, discrete_state, dim_state):
-        self.init(discrete_state, dim_state)
         assert self.dim_state == self.value_function.dim_state
 
     def test_forward(self, discrete_state, dim_state, batch_size):
         self.init(discrete_state, dim_state)
         state = random_tensor(discrete_state, dim_state, batch_size)
         value = self.value_function(state)
-        embeddings = self.value_function.embeddings(state)
 
         assert value.shape == torch.Size([batch_size] if batch_size else [])
-        assert embeddings.shape == torch.Size([batch_size, 33] if batch_size else [33])
         assert value.dtype is torch.get_default_dtype()
+
+    def test_embeddings(self, discrete_state, dim_state, batch_size):
+        self.init(discrete_state, dim_state)
+        state = random_tensor(discrete_state, dim_state, batch_size)
+        embeddings = self.value_function.embeddings(state)
+
+        assert embeddings.shape == torch.Size([batch_size, 33] if batch_size else [33])
         assert embeddings.dtype is torch.get_default_dtype()
 
     def test_input_transform(self, batch_size):
@@ -195,7 +197,7 @@ class TestNNQFunction(object):
         assert value.shape == torch.Size([batch_size] if batch_size else [])
         assert value.dtype is torch.get_default_dtype()
 
-    def test_num_states_actions(
+    def test_property_values(
         self, discrete_state, discrete_action, dim_state, dim_action
     ):
         if not (discrete_state and not discrete_action):
@@ -209,12 +211,6 @@ class TestNNQFunction(object):
 
             assert discrete_state == self.q_function.discrete_state
             assert discrete_action == self.q_function.discrete_action
-
-    def test_dim_state_actions(
-        self, discrete_state, discrete_action, dim_state, dim_action
-    ):
-        if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action)
             assert self.dim_state == self.q_function.dim_state
             assert self.dim_action == self.q_function.dim_action
 

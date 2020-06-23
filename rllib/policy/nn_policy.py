@@ -162,8 +162,10 @@ class NNPolicy(AbstractPolicy):
         state = self._preprocess_state(state)
         out = self.nn(state)
 
-        if self.deterministic:
-            return out[0], torch.zeros(1)
+        if self.deterministic and not self.discrete_action:
+            mean = out[0]
+            dim = mean.shape[-1]
+            return mean, torch.zeros(dim, dim)
         else:
             return out
 
@@ -173,7 +175,7 @@ class NNPolicy(AbstractPolicy):
         state = self._preprocess_state(state)
 
         features = self.nn.last_layer_embeddings(state)
-        return features.squeeze()
+        return features.squeeze(-1)
 
 
 class FelixPolicy(NNPolicy):

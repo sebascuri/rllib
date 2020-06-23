@@ -10,6 +10,9 @@ class DerivedPolicy(AbstractPolicy):
     """
 
     def __init__(self, base_policy: AbstractPolicy, dim_action: int):
+        if base_policy.discrete_action or base_policy.discrete_state:
+            raise NotImplementedError
+
         super().__init__(
             dim_state=base_policy.dim_state,
             dim_action=dim_action,

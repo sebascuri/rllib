@@ -7,6 +7,7 @@ distribution.
 
 """
 from .abstract_policy import AbstractPolicy
+from .derived_policy import DerivedPolicy
 from .mpc_policy import MPCPolicy
 from .nn_policy import FelixPolicy, NNPolicy
 from .q_function_policy import AbstractQFunctionPolicy, EpsGreedy, MellowMax, SoftMax
