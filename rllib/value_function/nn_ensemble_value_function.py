@@ -56,8 +56,8 @@ class NNEnsembleValueFunction(NNValueFunction):
         self.tau = tau
 
     @classmethod
-    def from_q_function(cls, value_function, num_heads: int):
-        """Create ensemble form q-funciton."""
+    def from_value_function(cls, value_function, num_heads: int):
+        """Create ensemble form value_function."""
         out = cls(
             dim_state=value_function.dim_state,
             num_heads=num_heads,
@@ -76,7 +76,16 @@ class NNEnsembleValueFunction(NNValueFunction):
 
     def forward(self, state, action=torch.tensor(float("nan"))):
         """Get value of the value-function at a given state."""
-        return [value_function(state, action) for value_function in self.nn]
+        return torch.stack(
+            [value_function(state, action) for value_function in self.nn], dim=-1
+        )
+
+    @torch.jit.export
+    def embeddings(self, state):
+        """Get embeddings of the value-function at a given state."""
+        return torch.stack(
+            [value_function.embeddings(state) for value_function in self.nn], dim=-1
+        )
 
 
 class NNEnsembleQFunction(NNQFunction):
@@ -160,4 +169,6 @@ class NNEnsembleQFunction(NNQFunction):
 
     def forward(self, state, action=torch.tensor(float("nan"))):
         """Get value of the q-function at a given state-action pair."""
-        return [q_function(state, action) for q_function in self.nn]
+        return torch.stack(
+            [q_function(state, action) for q_function in self.nn], dim=-1
+        )

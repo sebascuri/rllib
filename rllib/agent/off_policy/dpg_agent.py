@@ -20,8 +20,6 @@ class DPGAgent(OffPolicyAgent):
         q_function that is learned.
     policy: AbstractPolicy
         policy that is learned.
-    exploration: AbstractExplorationStrategy.
-        exploration strategy that returns the actions.
     criterion: nn.Module
     optimizer: nn.Optimizer
         q_function optimizer.
@@ -86,23 +84,20 @@ class DPGAgent(OffPolicyAgent):
             exploration_noise = Constant(exploration_noise)
 
         self.params["exploration_noise"] = exploration_noise
-        self.dist_params = {
-            "add_noise": True,
-            "policy_noise": self.params["exploration_noise"],
-        }
+        self.dist_params.update(
+            add_noise=True, policy_noise=self.params["exploration_noise"]
+        )
 
     def train(self, val=True):
         """Set the agent in training mode."""
         super().train(val)
-        self.dist_params = {
-            "add_noise": True,
-            "policy_noise": self.params["exploration_noise"],
-        }
+        self.dist_params.update(
+            add_noise=True, policy_noise=self.params["exploration_noise"]
+        )
 
     def eval(self, val=True):
         """Set the agent in evaluation mode."""
         super().eval(val)
-        self.dist_params = {
-            "add_noise": False,
-            "policy_noise": self.params["exploration_noise"],
-        }
+        self.dist_params.update(
+            add_noise=True, policy_noise=self.params["exploration_noise"]
+        )

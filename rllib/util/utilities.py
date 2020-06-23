@@ -20,7 +20,7 @@ def get_backend(array):
         raise TypeError
 
 
-def integrate(function, distribution, num_samples=1):
+def integrate(function, distribution, out_dim=None, num_samples=1):
     r"""Integrate a function over a distribution.
 
     Compute:
@@ -34,7 +34,8 @@ def integrate(function, distribution, num_samples=1):
     function: Callable.
         Function to integrate.
     distribution: Distribution.
-        Distribution to integrate the function w.r.t..
+        Distribution to integrate the function w.r.t.
+    out_dim: int, optional.
     num_samples: int.
         Number of samples in MC integration.
 
@@ -43,11 +44,17 @@ def integrate(function, distribution, num_samples=1):
     integral value.
     """
     batch_size = distribution.batch_shape
-    ans = torch.zeros(batch_size)
+    if out_dim is None:
+        ans = torch.zeros(batch_size)
+    else:
+        ans = torch.zeros(batch_size + (out_dim,))
+
     if distribution.has_enumerate_support:
         for action in distribution.enumerate_support():
-            prob = distribution.probs.gather(-1, action.unsqueeze(-1)).squeeze()
+            prob = distribution.probs.gather(-1, action.unsqueeze(-1))
             f_val = function(action)
+            if out_dim is None:
+                prob = prob.squeeze(-1)
             ans += prob.detach() * f_val
 
     else:
@@ -56,7 +63,10 @@ def integrate(function, distribution, num_samples=1):
                 action = distribution.rsample()
             else:
                 action = distribution.sample()
-            ans += function(action).squeeze() / num_samples
+            f_val = function(action)
+            if out_dim is None:
+                f_val = f_val.squeeze()
+            ans += f_val / num_samples
     return ans
 
 
@@ -103,13 +113,11 @@ def tensor_to_distribution(args, **kwargs):
         if kwargs.get("add_noise", False):
             noise_clip = kwargs.get("noise_clip", np.inf)
             policy_noise = kwargs.get("policy_noise", 1)
-            action_scale = kwargs.get("action_scale", 1)
             try:
                 policy_noise = policy_noise()
             except TypeError:
                 pass
-            noise_scale = policy_noise * action_scale
-            mean = args[0] + (torch.randn_like(args[0]) * noise_scale).clamp(
+            mean = args[0] + (torch.randn_like(args[0]) * policy_noise).clamp(
                 -noise_clip, noise_clip
             )
         else:

@@ -66,7 +66,7 @@ agent = DPGAgent(
     exploration_noise=noise,
     batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
-    exploration_episodes=1,
+    exploration_episodes=0,
     gamma=GAMMA,
 )
 

@@ -57,7 +57,7 @@ class Learnable(ParameterDecay):
         if self.positive:
             return torch.nn.functional.softplus(self.start) + 1e-6
         else:
-            return True
+            return self.start
 
 
 class ExponentialDecay(ParameterDecay):

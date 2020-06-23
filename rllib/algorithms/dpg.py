@@ -9,6 +9,7 @@ from rllib.util.neural_networks.utilities import (
 )
 from rllib.util.utilities import RewardTransformer, tensor_to_distribution
 from rllib.util.value_estimation import mb_return
+from rllib.value_function import NNEnsembleQFunction
 from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
@@ -71,39 +72,38 @@ class DPG(AbstractAlgorithm):
         action = tensor_to_distribution(self.policy(state)).mean.clamp(-1, 1)
         with disable_gradient(self.q_function):
             q = self.q_function(state, action)
-            if type(q) is list:
-                q = q[0]
+            if isinstance(self.q_function, NNEnsembleQFunction):
+                q = q[..., 0]
         return -q
 
     def get_q_target(self, reward, next_state, done):
         """Get q function target."""
         next_action = tensor_to_distribution(
             self.policy_target(next_state),
-            **{
-                "add_noise": True,
-                "action_scale": self.policy.action_scale,
-                "policy_noise": self.policy_noise,
-                "noise_clip": self.noise_clip,
-            },
+            add_noise=True,
+            policy_noise=self.policy_noise,
+            noise_clip=self.noise_clip,
         ).sample()
         next_v = self.q_target(next_state, next_action)
-        if type(next_v) is list:
-            next_v = torch.min(*next_v)
+        if isinstance(self.q_target, NNEnsembleQFunction):
+            next_v = torch.min(next_v, dim=-1)[0]
         q_target = self.reward_transformer(reward) + self.gamma * next_v * (1 - done)
         return q_target
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
         pred_q = self.q_function(state, action)
-        if type(pred_q) is not list:
-            pred_q = [pred_q]
-
+        if isinstance(self.q_function, NNEnsembleQFunction):
+            q_target = q_target.unsqueeze(-1).repeat_interleave(
+                self.q_function.num_heads, -1
+            )
         # Target Q-values
-        critic_loss = self.criterion(pred_q[0], q_target)
-        td_error = pred_q[0].detach() - q_target.detach()
-        for q in pred_q[1:]:
-            critic_loss += self.criterion(q, q_target)
-            td_error += q.detach() - q_target.detach()
+        critic_loss = self.criterion(pred_q, q_target)
+        td_error = pred_q.detach() - q_target.detach()
+
+        if isinstance(self.q_function, NNEnsembleQFunction):
+            critic_loss = critic_loss.sum(-1)
+            td_error = td_error.sum(-1)
 
         return TDLoss(critic_loss, td_error)
 

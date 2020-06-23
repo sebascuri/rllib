@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 import torch.__spec__ as torch_mod
@@ -15,7 +15,10 @@ from rllib.dataset.datatypes import (
 def get_backend(array: Array) -> Union[np, torch_mod]: ...
 def mellow_max(values: Array, omega: float = 1.0) -> Array: ...
 def integrate(
-    function: Callable, distribution: Distribution, num_samples: int = 1
+    function: Callable,
+    distribution: Distribution,
+    out_dim: Optional[int] = ...,
+    num_samples: int = 1,
 ) -> Tensor: ...
 def tensor_to_distribution(args: TupleDistribution, **kwargs) -> Distribution: ...
 def separated_kl(p: Gaussian, q: Gaussian) -> Tuple[Tensor, Tensor]: ...
