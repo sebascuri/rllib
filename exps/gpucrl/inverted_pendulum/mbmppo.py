@@ -31,7 +31,6 @@ parser.set_defaults(
 
 args = parser.parse_args()
 params = DotMap(vars(args))
-print(params.num_threads)
 environment, agent = get_agent_and_environment(params, "mbmppo")
 set_figure_params(serif=True, fontsize=9)
 train_and_evaluate(

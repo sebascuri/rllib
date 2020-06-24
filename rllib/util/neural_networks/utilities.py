@@ -110,22 +110,45 @@ def zero_bias(module):
             nn.init.zeros_(param)
 
 
-def init_head_weight(module):
-    """Initialize the head of a NN.
+def init_head_bias(module, offset=0.0, delta=0.1):
+    """Initialize the bias sampling u.a.r. from [offset - delta, offset + delta].
 
-    The mean output is initialized with a uniform distribution between -0.1 and 0.1.
-    The scale output is initialized with a uniform distribution between -0.01 and 0.01.
+    This is useful for optimistic initialization of value functions.
 
     Parameters
     ----------
-    module: module to zero the biases to.
+    module: nn.Module.
+        Module to initialize head weights.
+    offset: float.
+        Mean of the bias.
+    delta: float.
+        Amplitude of bias.
+    """
+    for name, param in module.named_parameters():
+        if name.endswith("head.bias"):
+            torch.nn.init.uniform_(param, offset - delta, offset + delta)
 
+
+def init_head_weight(module, mean_weight=0.1, scale_weight=0.01):
+    """Initialize the head of a NN.
+
+    The mean weights are sampled u.a.r from [-mean_weight, mean_weight].
+    The scale weights are sampled u.a.r from [-scale_weight, scale_weight].
+
+    Parameters
+    ----------
+    module: nn.Module.
+        Module to initialize head weights.
+    mean_weight: float.
+        Amplitude of mean weights.
+    scale_weight: float.
+        Amplitude of scale weights.
     """
     for name, param in module.named_parameters():
         if name.endswith("head.weight"):
-            torch.nn.init.uniform_(param, -0.1, 0.1)
+            torch.nn.init.uniform_(param, -mean_weight, mean_weight)
         elif name.endswith("scale.weight"):
-            torch.nn.init.uniform_(param, -0.01, 0.01)
+            torch.nn.init.uniform_(param, -scale_weight, scale_weight)
 
 
 def repeat_along_dimension(array, number, dim=0):

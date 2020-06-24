@@ -15,6 +15,8 @@ from rllib.util.neural_networks import (
 from rllib.util.neural_networks.utilities import (
     TileCode,
     get_batch_size,
+    init_head_bias,
+    init_head_weight,
     inverse_softplus,
     one_hot_encode,
     random_tensor,
@@ -38,6 +40,19 @@ def test_zero_bias():
     for name, param in n.named_parameters():
         if name.endswith("bias"):
             torch.testing.assert_allclose(param, torch.zeros_like(param.data))
+
+
+def test_init_head():
+    in_dim = 4
+    out_dim = 2
+    layers = [2, 4, 6, 8, 4, 2]
+    net = DeterministicNN(in_dim, out_dim, layers)
+    init_head_bias(net, offset=1, delta=0)
+    init_head_weight(net)
+
+    for name, param in net.named_parameters():
+        if name.endswith("head.bias"):
+            torch.testing.assert_allclose(param, torch.ones_like(param.data))
 
 
 class TestUpdateParams(object):
@@ -103,7 +118,10 @@ class TestUpdateParams(object):
                 assert torch.allclose(param1.data, param2c.data)
             elif tau == 1:
                 assert torch.allclose(param1.data, param1c.data)
-            elif not torch.allclose(param1.data, torch.zeros_like(param1.data)):
+            elif not (
+                torch.allclose(param1.data, torch.zeros_like(param1.data))
+                or name == "_scale"
+            ):
                 assert not (torch.allclose(param1.data, param1c.data))
                 assert not (torch.allclose(param2.data, param1c.data))
 

@@ -16,7 +16,7 @@ class NNEnsembleValueFunction(NNValueFunction):
     num_states: int, optional
         number of discrete states (None if state is continuous).
     layers: list, optional
-        width of layers, each layer is connected with ReLUs non-linearities.
+        width of layers, each layer is connected with a non-linearity.
     tau: float, optional
         when a new parameter is set, tau low-passes the new parameter with the old one.
     biased_head: bool, optional
@@ -31,7 +31,7 @@ class NNEnsembleValueFunction(NNValueFunction):
         num_states=-1,
         layers=None,
         biased_head=True,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         tau=0.0,
         input_transform=None,
     ):
@@ -102,7 +102,7 @@ class NNEnsembleQFunction(NNQFunction):
     num_actions: int, optional
         number of discrete actions (None if action is continuous).
     layers: list, optional
-        width of layers, each layer is connected with ReLUs non-linearities.
+        width of layers, each layer is connected with a Tanh non-linearities.
     tau: float, optional
         when a new parameter is set, tau low-passes the new parameter with the old one.
     biased_head: bool, optional
@@ -118,7 +118,7 @@ class NNEnsembleQFunction(NNQFunction):
         num_actions=-1,
         layers=None,
         biased_head=True,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         tau=0.0,
         input_transform=None,
     ):

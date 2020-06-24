@@ -23,7 +23,7 @@ def step_env(environment, state, action, action_scale=1, pi=None, render=False):
             try:
                 entropy = pi.entropy().squeeze()
             except NotImplementedError:  # Approximate it by MC sampling.
-                entropy = -pi.log_prob(action / action_scale)
+                entropy = -pi.log_prob(pi.sample((10,))).mean()
             log_prob_action = pi.log_prob(action / action_scale).squeeze()
     else:
         entropy = 0.0

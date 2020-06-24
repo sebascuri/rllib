@@ -59,7 +59,7 @@ def _test_from_other(object_, class_):
         pass
     other_state_dict = other.state_dict()
     for name, param in object_.named_parameters():
-        if not torch.allclose(param, torch.zeros_like(param)):
+        if not (torch.allclose(param, torch.zeros_like(param)) or name == "_scale"):
             assert not torch.allclose(param, other_state_dict[name])
     assert count_vars(other) == count_vars(object_)
 

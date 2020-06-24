@@ -20,10 +20,11 @@ class EnsembleModel(NNModel):
         num_heads,
         num_states=-1,
         num_actions=-1,
+        initial_scale=0.5,
         prediction_strategy="moment_matching",
         layers=None,
         biased_head=True,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         input_transform=None,
         deterministic=False,
     ):
@@ -46,6 +47,7 @@ class EnsembleModel(NNModel):
             squashed_output=False,
             num_heads=num_heads,
             deterministic=deterministic,
+            initial_scale=initial_scale,
         )
         self.deterministic = deterministic
 

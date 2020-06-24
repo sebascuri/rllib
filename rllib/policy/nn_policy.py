@@ -27,7 +27,7 @@ class NNPolicy(AbstractPolicy):
     num_actions: int, optional
         number of discrete actions (None if action is continuous).
     layers: list, optional
-        width of layers, each layer is connected with ReLUs non-linearities.
+        width of layers, each layer is connected with a non-linearity.
     biased_head: bool, optional
         flag that indicates if head of NN has a bias term or not.
     action_scale: float, optional.
@@ -42,10 +42,11 @@ class NNPolicy(AbstractPolicy):
         num_actions=-1,
         layers=None,
         biased_head=True,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         squashed_output=True,
         action_scale=1,
         tau=0.0,
+        initial_scale=0.5,
         deterministic=False,
         goal=None,
         input_transform=None,
@@ -79,6 +80,7 @@ class NNPolicy(AbstractPolicy):
                 non_linearity=non_linearity,
                 biased_head=biased_head,
                 squashed_output=squashed_output,
+                initial_scale=initial_scale,
             )
 
     @classmethod
@@ -205,6 +207,7 @@ class FelixPolicy(NNPolicy):
         num_states=-1,
         num_actions=-1,
         tau=0.0,
+        initial_scale=0.5,
         deterministic=False,
         action_scale=1,
         input_transform=None,
@@ -219,6 +222,10 @@ class FelixPolicy(NNPolicy):
             input_transform=input_transform,
             action_scale=action_scale,
         )
-        self.nn = FelixNet(self.nn.kwargs["in_dim"], self.nn.kwargs["out_dim"])
+        self.nn = FelixNet(
+            self.nn.kwargs["in_dim"],
+            self.nn.kwargs["out_dim"],
+            initial_scale=initial_scale,
+        )
         if self.discrete_state or self.discrete_action:
             raise ValueError("num_states and num_actions have to be set to -1.")

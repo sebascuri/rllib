@@ -18,6 +18,7 @@ class NNModel(AbstractModel):
         dim_action: int,
         num_states: Optional[int] = ...,
         num_actions: Optional[int] = ...,
+        initial_scale: float = ...,
         layers: Optional[List[int]] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,

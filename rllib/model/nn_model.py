@@ -20,7 +20,7 @@ class NNModel(AbstractModel):
     num_actions: int, optional
         number of discrete actions (None if action is continuous).
     layers: list, optional
-        width of layers, each layer is connected with ReLUs non-linearities.
+        width of layers, each layer is connected with a non-linearity.
     biased_head: bool, optional
         flag that indicates if head of NN has a bias term or not.
 
@@ -34,7 +34,8 @@ class NNModel(AbstractModel):
         num_actions=-1,
         layers=None,
         biased_head=True,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
+        initial_scale=0.5,
         input_transform=None,
         deterministic=False,
     ):
@@ -72,6 +73,7 @@ class NNModel(AbstractModel):
                 biased_head=biased_head,
                 non_linearity=non_linearity,
                 squashed_output=False,
+                initial_scale=initial_scale,
             )
 
         self.deterministic = deterministic

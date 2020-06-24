@@ -13,6 +13,9 @@ class FeedForwardNN(nn.Module):
     hidden_layers: nn.Sequential
     head: nn.Module
     squashed_output: bool
+    _init_scale_transformed: Tensor
+    _min_scale: float
+    _max_scale: float
     def __init__(
         self,
         in_dim: int,
@@ -21,6 +24,7 @@ class FeedForwardNN(nn.Module):
         non_linearity: str = ...,
         biased_head: bool = ...,
         squashed_output: bool = ...,
+        initial_scale: float = ...,
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...
@@ -64,6 +68,7 @@ class Ensemble(HeteroGaussianNN):
         biased_head: bool = ...,
         squashed_output: bool = ...,
         deterministic: bool = ...,
+        initial_scale: float = ...,
     ) -> None: ...
     @classmethod
     def from_feedforward(
@@ -78,5 +83,7 @@ class Ensemble(HeteroGaussianNN):
 
 class FelixNet(FeedForwardNN):
     _scale: nn.Linear
-    def __init__(self, in_dim: int, out_dim: int) -> None: ...
+    def __init__(
+        self, in_dim: int, out_dim: int, initial_scale: float = ...
+    ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...

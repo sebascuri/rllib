@@ -95,13 +95,10 @@ mppo_parser.add_argument("--mppo-target-update-frequency", type=int, default=4)
 mppo_parser.add_argument("--mppo-batch_size", type=int, default=32)
 mppo_parser.add_argument("--mppo-opt-lr", type=float, default=5e-4)
 mppo_parser.add_argument("--mppo-opt-weight-decay", type=float, default=0)
-mppo_parser.add_argument("--mppo-eta", type=float, default=1.0)
-mppo_parser.add_argument("--mppo-eta-mean", type=float, default=1.7)
-mppo_parser.add_argument("--mppo-eta-var", type=float, default=1.1)
-
-mppo_parser.add_argument("--mppo-epsilon", type=float, default=None)
-mppo_parser.add_argument("--mppo-epsilon-mean", type=float, default=None)
-mppo_parser.add_argument("--mppo-epsilon-var", type=float, default=None)
+mppo_parser.add_argument("--mppo-epsilon", type=float, default=1.0)
+mppo_parser.add_argument("--mppo-epsilon-mean", type=float, default=1.7)
+mppo_parser.add_argument("--mppo-epsilon-var", type=float, default=1.1)
+mppo_parser.add_argument("--mppo-regularization", action="store_true", default=True)
 
 mppo_parser.add_argument("--mppo-num-action-samples", type=int, default=16)
 

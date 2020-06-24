@@ -20,6 +20,7 @@ class EnsembleModel(NNModel):
         num_heads: int,
         num_states: int = ...,
         num_actions: int = ...,
+        initial_scale: float = ...,
         prediction_strategy: str = ...,
         layers: Optional[List[int]] = ...,
         biased_head: bool = ...,

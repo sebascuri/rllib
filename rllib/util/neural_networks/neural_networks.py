@@ -3,7 +3,6 @@
 import torch
 import torch.jit
 import torch.nn as nn
-import torch.nn.functional as functional
 
 from rllib.util.utilities import safe_cholesky
 
@@ -20,8 +19,7 @@ class FeedForwardNN(nn.Module):
     out_dim: int
         output dimension of neural network.
     layers: list of int, optional
-        list of width of neural network layers, each separated with a ReLU
-        non-linearity.
+        list of width of neural network layers, each separated with a non-linearity.
     biased_head: bool, optional
         flag that indicates if head of NN has a bias term or not.
 
@@ -32,9 +30,10 @@ class FeedForwardNN(nn.Module):
         in_dim,
         out_dim,
         layers=None,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
+        initial_scale=0.5,
     ):
         super().__init__()
         self.kwargs = {
@@ -44,12 +43,16 @@ class FeedForwardNN(nn.Module):
             "non_linearity": non_linearity,
             "biased_head": biased_head,
             "squashed_output": squashed_output,
+            "initial_scale": initial_scale,
         }
 
         self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
         self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
         self.squashed_output = squashed_output
+        self._init_scale_transformed = inverse_softplus(torch.tensor(initial_scale))
+        self._min_scale = 1e-6
+        self._max_scale = 1
 
     @classmethod
     def from_other(cls, other, copy=True):
@@ -112,9 +115,10 @@ class HeteroGaussianNN(FeedForwardNN):
         in_dim,
         out_dim,
         layers=None,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
+        initial_scale=0.5,
     ):
         super().__init__(
             in_dim,
@@ -123,6 +127,7 @@ class HeteroGaussianNN(FeedForwardNN):
             non_linearity=non_linearity,
             biased_head=biased_head,
             squashed_output=squashed_output,
+            initial_scale=initial_scale,
         )
         in_dim = self.head.in_features
         self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
@@ -148,12 +153,10 @@ class HeteroGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        # TODO: Verify if this is useful or is just the action sample that gets big.
-        # If the latter is the case, consider a tanh/sigmoid constrained multivariate
-        # normal distribution.
-        scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.0) + 1e-6
-        scale = torch.diag_embed(scale)
-        return mean, scale
+        scale = nn.functional.softplus(
+            self._scale(x) + self._init_scale_transformed
+        ).clamp(self._min_scale, self._max_scale)
+        return mean, torch.diag_embed(scale)
 
 
 class HomoGaussianNN(FeedForwardNN):
@@ -164,9 +167,10 @@ class HomoGaussianNN(FeedForwardNN):
         in_dim,
         out_dim,
         layers=None,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
+        initial_scale=0.5,
     ):
         super().__init__(
             in_dim,
@@ -175,8 +179,9 @@ class HomoGaussianNN(FeedForwardNN):
             non_linearity=non_linearity,
             biased_head=biased_head,
             squashed_output=squashed_output,
+            initial_scale=initial_scale,
         )
-        initial_scale = inverse_softplus(torch.rand(out_dim))
+        initial_scale = inverse_softplus(self._min_scale * torch.ones(out_dim))
         self._scale = nn.Parameter(initial_scale, requires_grad=True)
 
     def forward(self, x):
@@ -198,16 +203,17 @@ class HomoGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        scale = torch.diag_embed(functional.softplus(self._scale)) + 1e-6
-
-        return mean, scale
+        scale = nn.functional.softplus(
+            self._scale + self._init_scale_transformed
+        ).clamp(self._min_scale, self._max_scale)
+        return mean, torch.diag_embed(scale)
 
 
 class CategoricalNN(FeedForwardNN):
     """A Module that parametrizes a Categorical distribution."""
 
     def __init__(
-        self, in_dim, out_dim, layers=None, non_linearity="ReLU", biased_head=True
+        self, in_dim, out_dim, layers=None, non_linearity="Tanh", biased_head=True
     ):
         super().__init__(
             in_dim,
@@ -218,10 +224,13 @@ class CategoricalNN(FeedForwardNN):
             squashed_output=False,
         )
         self.kwargs.pop("squashed_output")
+        self.kwargs.pop("initial_scale")
 
 
 class Ensemble(HeteroGaussianNN):
     """Ensemble of Deterministic Neural Networks.
+
+    TODO: Ensemble of Discrete Outputs.
 
     The Ensemble shares the inner layers and then has `num_heads' different heads.
     Using these heads, it returns a Multivariate Normal distribution. How these are
@@ -258,9 +267,10 @@ class Ensemble(HeteroGaussianNN):
         num_heads,
         prediction_strategy="moment_matching",
         layers=None,
-        non_linearity="ReLU",
+        non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
+        initial_scale=0.5,
         deterministic=True,
     ):
         super().__init__(
@@ -270,6 +280,7 @@ class Ensemble(HeteroGaussianNN):
             non_linearity=non_linearity,
             biased_head=biased_head,
             squashed_output=squashed_output,
+            initial_scale=initial_scale,
         )
 
         self.kwargs.update(
@@ -317,7 +328,9 @@ class Ensemble(HeteroGaussianNN):
         if self.deterministic:
             scale = torch.zeros_like(out)
         else:
-            scale = nn.functional.softplus(self._scale(x)).clamp(0, 1.0) + 1e-6
+            scale = nn.functional.softplus(
+                self._scale(x) + self._init_scale_transformed
+            ).clamp(self._min_scale, self._max_scale)
             scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
         if self.prediction_strategy == "moment_matching":
@@ -390,14 +403,15 @@ class Ensemble(HeteroGaussianNN):
 class FelixNet(FeedForwardNN):
     """A Module that implements FelixNet."""
 
-    def __init__(self, in_dim, out_dim):
+    def __init__(self, in_dim, out_dim, initial_scale=0.5):
         super().__init__(
             in_dim,
             out_dim,
             layers=[64, 64],
-            non_linearity="ReLU",
+            non_linearity="Tanh",
             squashed_output=True,
             biased_head=False,
+            initial_scale=initial_scale,
         )
         self.kwargs = {"in_dim": in_dim, "out_dim": out_dim}
 
@@ -428,6 +442,7 @@ class FelixNet(FeedForwardNN):
         x = self.hidden_layers(x)
 
         mean = torch.tanh(self.head(x))
-        scale = torch.diag_embed(functional.softplus(self._scale(x)) + 1e-6)
-
-        return mean, scale
+        scale = nn.functional.softplus(
+            self._scale(x) + self._init_scale_transformed
+        ).clamp(self._min_scale, self._max_scale)
+        return mean, torch.diag_embed(scale)
