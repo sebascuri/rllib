@@ -54,7 +54,6 @@ class SoftActorCritic(AbstractAlgorithm):
 
         self.criterion = criterion
         self.gamma = gamma
-        self.dist_params = {"tanh": True, "action_scale": self.policy.action_scale}
 
     def actor_loss(self, state):
         """Get Actor Loss."""
@@ -168,9 +167,7 @@ class MBSoftActorCritic(SoftActorCritic):
         self.termination = termination
         self.num_steps = num_steps
         self.num_samples = num_samples
-        self.value_function = IntegrateQValueFunction(
-            self.q_target, self.policy, 1, dist_params=self.dist_params
-        )
+        self.value_function = IntegrateQValueFunction(self.q_target, self.policy, 1)
 
     def forward(self, state):
         """Compute the losses."""
@@ -186,11 +183,10 @@ class MBSoftActorCritic(SoftActorCritic):
                 value_function=self.value_function,
                 num_samples=self.num_samples,
                 termination=self.termination,
-                **self.dist_params,
             )
             next_state = trajectory[-1].next_state
             not_done = 1 - trajectory[-1].done
-            pi = tensor_to_distribution(self.policy(next_state), **self.dist_params)
+            pi = tensor_to_distribution(self.policy(next_state), tanh=True)
             next_action = pi.sample()
             log_prob = pi.log_prob(next_action)
             entropy = self.eta().detach() * log_prob * not_done

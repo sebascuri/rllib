@@ -88,4 +88,4 @@ class SACAgent(OffPolicyAgent):
             comment=comment,
         )
         self.policy = self.algorithm.policy
-        self.dist_params = self.algorithm.dist_params
+        self.dist_params.update(tanh=True)

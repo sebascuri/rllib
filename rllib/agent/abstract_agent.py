@@ -196,7 +196,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         params = {}
         for key, value in self.__dict__.items():
-            if isinstance(value, Logger):
+            if isinstance(value, Logger) or key == "pi":
                 pass
             elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
                 params[key] = value.state_dict()
@@ -217,7 +217,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         agent_dict = torch.load(path)
 
         for key, value in self.__dict__.items():
-            if isinstance(value, Logger):
+            if isinstance(value, Logger) or key == "pi":
                 pass
             elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
                 value.load_state_dict(agent_dict[key])

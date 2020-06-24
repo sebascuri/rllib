@@ -14,14 +14,14 @@ from rllib.value_function import NNQFunction
 ENVIRONMENT = ["MountainCarContinuous-v0", "Pendulum-v0"][1]
 NUM_EPISODES = 40
 MAX_STEPS = 1000
-TARGET_UPDATE_FREQUENCY = 2
-TARGET_UPDATE_TAU = 0.005
+TARGET_UPDATE_FREQUENCY = 4
+TARGET_UPDATE_TAU = 0.01
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 3e-4
 WEIGHT_DECAY = 1e-5
 GAMMA = 0.99
-LAYERS = [100, 100]
+LAYERS = [64, 64]
 SEED = 1
 RENDER = True
 
@@ -64,14 +64,13 @@ agent = SACAgent(
     optimizer=optimizer,
     memory=memory,
     batch_size=BATCH_SIZE,
-    eta=0.1,
-    regularization=False,
+    eta=1.0,
+    regularization=True,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     num_iter=1,
     train_frequency=1,
     exploration_episodes=0,
     gamma=GAMMA,
 )
-
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, print_frequency=1, render=True)
 evaluate_agent(agent, environment, 1, MAX_STEPS)
