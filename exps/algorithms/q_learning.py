@@ -4,20 +4,21 @@ import torch.jit
 import torch.optim
 
 from rllib.agent import DDQNAgent
+from rllib.dataset import EXP3ExperienceReplay  # noqa: F401
 from rllib.dataset import PrioritizedExperienceReplay  # noqa: F401
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy
+from rllib.util.neural_networks.utilities import init_head_bias  # noqa: F401
+from rllib.util.neural_networks.utilities import init_head_weight, zero_bias
 from rllib.util.parameter_decay import ExponentialDecay, LinearGrowth  # noqa: F401
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
-from rllib.dataset import EXP3ExperienceReplay  # noqa: F401; noqa: F401; noqa: F401
-
 # ENVIRONMENT = 'NChain-v0'
 ENVIRONMENT = "CartPole-v0"
 
-NUM_EPISODES = 50
+NUM_EPISODES = 80
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.01
@@ -43,18 +44,21 @@ q_function = NNQFunction(
     num_states=environment.num_states,
     num_actions=environment.num_actions,
     layers=LAYERS,
+    non_linearity="ReLU",
     tau=TARGET_UPDATE_TAU,
 )
+
+zero_bias(q_function)
+init_head_weight(q_function)
+# init_head_bias(q_function, offset=(1 - GAMMA ** 200) / (1 - GAMMA))
 policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
 q_function = torch.jit.script(q_function)
 # policy = torch.jit.script(policy)
 
-optimizer = torch.optim.SGD(
-    q_function.parameters(),
-    lr=LEARNING_RATE,
-    momentum=MOMENTUM,
-    weight_decay=WEIGHT_DECAY,
+
+optimizer = torch.optim.Adam(
+    q_function.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
 criterion = torch.nn.MSELoss
 # memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE,

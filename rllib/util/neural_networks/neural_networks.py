@@ -50,7 +50,7 @@ class FeedForwardNN(nn.Module):
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
         self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
         self.squashed_output = squashed_output
-        self._init_scale_transformed = inverse_softplus(torch.tensor(initial_scale))
+        self._init_scale_transformed = inverse_softplus(torch.tensor([initial_scale]))
         self._min_scale = 1e-6
         self._max_scale = 1
 

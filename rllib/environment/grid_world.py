@@ -25,6 +25,7 @@ class EasyGridWorld(MDP):
         )
 
     def _build_mdp(self, terminal_states=None):
+        """Build transition dictionary."""
         transitions = defaultdict(list)
         for state in range(self.num_states):
             for action in range(self.num_actions):
@@ -57,12 +58,15 @@ class EasyGridWorld(MDP):
         return transitions
 
     def _state_to_grid(self, state):
+        """Transform a state in [0, N-1] to a grid position."""
         return np.array([state // self.width, state % self.width])
 
     def _grid_to_state(self, grid_state):
+        """Transform a grid position to a state in [0, N-1]."""
         return grid_state[0] * self.width + grid_state[1]
 
     def _action_to_grid(self, action):
+        """Transform an action to a grid action."""
         if action >= self.num_actions:
             raise ValueError(f"action has to be < {self.num_actions}.")
 
@@ -84,4 +88,5 @@ class EasyGridWorld(MDP):
             return np.array([-1, -1])
 
     def _is_valid(self, grid_state):
+        """Check if the grid state is valid."""
         return 0 <= grid_state[0] < self.height and 0 <= grid_state[1] < self.width
