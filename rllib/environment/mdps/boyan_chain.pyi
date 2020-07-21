@@ -1,0 +1,6 @@
+from rllib.environment.mdp import MDP, Transition
+
+class BoyanChain(MDP):
+    def __init__(self, num_states: int = ...) -> None: ...
+    @staticmethod
+    def _build_mdp(num_states: int) -> Transition: ...

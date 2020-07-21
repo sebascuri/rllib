@@ -7,8 +7,8 @@ from gym.spaces import Box
 from .abstract_environment import AbstractEnvironment
 
 try:
-    from dm_control import suite
     import glfw
+    from dm_control import suite
 
     glfw.init()
 

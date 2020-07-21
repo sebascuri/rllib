@@ -4,31 +4,40 @@ from collections import defaultdict
 
 import numpy as np
 
-from .mdp import MDP
+from rllib.environment.mdp import MDP
 
 
 class EasyGridWorld(MDP):
-    """Easy implementation of a GridWorld from Sutton & Barto Example 3.5."""
+    """Easy implementation of a GridWorld.
 
-    def __init__(self, width=5, height=5, num_actions=4, terminal_states=None):
+    There is a transition from A->A' [0, 1] -> [height-1, 1] with reward 10.
+    There is a transition from B->B' [0, width-2] -> [height//2, width-2] with reward 5.
+
+    When noise > 0, then transitions happen with probability = 1-noise.
+    With probability noise the agent stays at the current state.
+
+    References
+    ----------
+    Sutton, R. S., & Barto, A. G. (2018).
+    Reinforcement learning: An introduction. MIT press.
+    Example 3.2 p. 60.
+    """
+
+    def __init__(self, width=5, height=5, num_actions=4, noise=0, terminal_states=None):
         self.width = width
         self.height = height
-        self.num_states = self.width * self.height
-        self.num_actions = num_actions
-        transitions = self._build_mdp(terminal_states)
+        transitions = self._build_mdp(num_actions, noise, terminal_states)
         print(transitions)
         super().__init__(
-            transitions,
-            self.num_states,
-            self.num_actions,
-            terminal_states=terminal_states,
+            transitions, width * height, num_actions, terminal_states=terminal_states
         )
 
-    def _build_mdp(self, terminal_states=None):
+    def _build_mdp(self, num_actions, noise, terminal_states=None):
         """Build transition dictionary."""
         transitions = defaultdict(list)
-        for state in range(self.num_states):
-            for action in range(self.num_actions):
+        num_states = self.width * self.height
+        for state in range(num_states):
+            for action in range(num_actions):
                 g_state = self._state_to_grid(state)
                 if (g_state == np.array([0, 1])).all():
                     g_next_state = np.array([self.height - 1, 1])
@@ -50,9 +59,20 @@ class EasyGridWorld(MDP):
                     transitions[(state, action)].append(
                         {"next_state": state, "reward": 0, "probability": 1.0}
                     )
-                else:
+                elif r > 0:
                     transitions[(state, action)].append(
                         {"next_state": next_state, "reward": r, "probability": 1.0}
+                    )
+                else:
+                    transitions[(state, action)].append(
+                        {
+                            "next_state": next_state,
+                            "reward": r,
+                            "probability": 1.0 - noise,
+                        }
+                    )
+                    transitions[(state, action)].append(
+                        {"next_state": state, "reward": 0, "probability": noise}
                     )
 
         return transitions
@@ -65,11 +85,9 @@ class EasyGridWorld(MDP):
         """Transform a grid position to a state in [0, N-1]."""
         return grid_state[0] * self.width + grid_state[1]
 
-    def _action_to_grid(self, action):
+    @staticmethod
+    def _action_to_grid(action):
         """Transform an action to a grid action."""
-        if action >= self.num_actions:
-            raise ValueError(f"action has to be < {self.num_actions}.")
-
         if action == 0:  # Down
             return np.array([1, 0])
         elif action == 1:  # Up

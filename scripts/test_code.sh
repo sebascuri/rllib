@@ -27,7 +27,7 @@ black -t py37 $module || { exit 1; }
 
 # Format imports
 echo -e "${GREEN}Formatting imports.${NC}"
-isort -rc $module || { exit 1; }
+isort $module || { exit 1; }
 
 # Run style tests
 echo -e "${GREEN}Running style tests.${NC}"

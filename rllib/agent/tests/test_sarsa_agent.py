@@ -2,7 +2,8 @@ import pytest
 import torch.optim
 
 from rllib.agent import ExpectedSARSAAgent, SARSAAgent
-from rllib.environment import EasyGridWorld, GymEnvironment
+from rllib.environment import GymEnvironment
+from rllib.environment.mdps import EasyGridWorld
 from rllib.policy import EpsGreedy, MellowMax, SoftMax
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.util.training import evaluate_agent, train_agent

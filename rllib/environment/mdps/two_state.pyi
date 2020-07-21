@@ -1,0 +1,6 @@
+from rllib.environment.mdp import MDP, Transition
+
+class TwoStateProblem(MDP):
+    def __init__(self) -> None: ...
+    @staticmethod
+    def _build_mdp() -> Transition: ...

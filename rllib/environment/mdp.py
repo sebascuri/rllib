@@ -1,6 +1,5 @@
 """Interface for Markov Decision Processes."""
 
-from collections import defaultdict
 from itertools import product
 
 import numpy as np
@@ -35,6 +34,7 @@ class MDP(AbstractEnvironment):
     step(action): int
         execute a one step simulation and return the next state.
 
+    TODO: Add non-sparse MDPs (such as random MDPs).
     """
 
     def __init__(
@@ -116,22 +116,20 @@ class MDP(AbstractEnvironment):
         if isinstance(action, torch.Tensor):
             action = action.item()
         transitions = self.transitions[(self.state, action)]
-        next_state = []
         probs = []
-        reward = 0
         for transition in transitions:
-            next_state.append(transition["next_state"])
             probs.append(transition["probability"])
-            reward += transition["reward"] * transition["probability"]
 
-        next_state = np.random.choice(next_state, p=probs)
-        self.state = next_state
+        next_transition_idx = np.random.choice(len(probs), p=probs)
+        self.state = transitions[next_transition_idx]["next_state"]
+        reward = transitions[next_transition_idx]["reward"]
 
         if self.state in self.terminal_states:
             done = True
             next_state = self.num_states - 1
         else:
             done = False
+            next_state = self.state
 
         return next_state, reward, done, {}
 
@@ -147,143 +145,8 @@ class MDP(AbstractEnvironment):
 
             np.testing.assert_allclose(p, 1.0)
 
-
-class TwoStateProblem(MDP):
-    """Implementation of Two State Problem.
-
-    References
-    ----------
-    Bagnell, J. A., & Schneider, J. (2003).
-    Covariant policy search. IJCAI.
-    """
-
-    def __init__(self):
-
-        transitions = defaultdict(list)
-        for state in range(2):
-            for action in range(2):
-                transitions[state, action].append(
-                    {
-                        "next_state": action,
-                        "probability": 1.0,
-                        "reward": action + 1 if state == action else 0,
-                    }
-                )
-        super().__init__(transitions, 2, 2)
-
-
-class SingleChainProblem(MDP):
-    """Implementation of Single Chain Problem.
-
-    Parameters
-    ----------
-    chain_length: int
-        number of states in chain.
-
-    References
-    ----------
-    Furmston, T., & Barber, D. (2010).
-    Variational methods for reinforcement learning. AISTATS
-    """
-
-    def __init__(self, chain_length=5):
-        num_states = chain_length
-        num_actions = 2
-        transitions = defaultdict(list)
-
-        for state in range(num_states - 1):
-            transitions[(state, 0)].append(
-                {"next_state": state + 1, "probability": 1.0, "reward": 0}
-            )
-
-            transitions[(state, 1)].append(
-                {"next_state": 0, "probability": 1.0, "reward": 2}
-            )
-
-        # Final transition.
-        transitions[(num_states - 1, 1)].append(
-            {"next_state": 0, "probability": 1.0, "reward": 2}
-        )
-
-        transitions[(num_states - 1, 0)].append(
-            {
-                "next_state": num_states - 1,
-                "probability": 1.0,
-                "reward": 2 * chain_length,
-            }
-        )
-
-        initial_state = 0
-        super().__init__(transitions, num_states, num_actions, initial_state)
-
-
-class DoubleChainProblem(MDP):
-    """Implementation of Single Chain Problem.
-
-    Parameters
-    ----------
-    chain_length: int
-        number of states in chain.
-
-    References
-    ----------
-    Furmston, T., & Barber, D. (2010).
-    Variational methods for reinforcement learning. AISTATS
-    """
-
-    def __init__(self, chain_length=5):
-        num_states = 2 * chain_length - 1
-        num_actions = 2
-
-        transitions = defaultdict(list)
-
-        # Initial transition
-        transitions[(0, 0)].append({"next_state": 1, "probability": 1.0, "reward": 0})
-        transitions[(0, 1)].append(
-            {"next_state": chain_length, "probability": 1.0, "reward": 2}
-        )
-
-        for i in range(chain_length - 2):
-            top_state = 1 + i
-            bottom_state = chain_length + i
-
-            transitions[(top_state, 0)].append(
-                {"next_state": 0, "probability": 1.0, "reward": 2}
-            )
-            transitions[(top_state, 1)].append(
-                {"next_state": top_state + 1, "probability": 1.0, "reward": 0}
-            )
-
-            transitions[(bottom_state, 0)].append(
-                {"next_state": 0, "probability": 1.0, "reward": 2}
-            )
-            transitions[(bottom_state, 1)].append(
-                {
-                    "next_state": min(bottom_state + 1, num_states - 1),
-                    "probability": 1.0,
-                    "reward": 0,
-                }
-            )
-
-        transitions[(chain_length - 1, 0)].append(
-            {"next_state": 0, "probability": 1.0, "reward": 2}
-        )
-
-        transitions[(chain_length - 1, 1)].append(
-            {
-                "next_state": chain_length - 1,
-                "probability": 1.0,
-                "reward": 2 * chain_length,
-            }
-        )
-
-        transitions[(num_states - 1, 0)].append(
-            {"next_state": 0, "probability": 1.0, "reward": 2}
-        )
-
-        transitions[(num_states - 1, 1)].append(
-            {"next_state": num_states - 1, "probability": 1.0, "reward": chain_length}
-        )
-
-        initial_state = 0
-        super().__init__(transitions, num_states, num_actions, initial_state)
+        states, actions = set(), set()
+        for (state, action) in transitions:
+            states.add(state), actions.add(action)
+        assert len(states) == num_states
+        assert len(actions) == num_actions

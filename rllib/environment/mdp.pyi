@@ -4,15 +4,17 @@ from rllib.dataset.datatypes import Action
 
 from .abstract_environment import AbstractEnvironment
 
+Transition = Dict[Tuple[int, int], List[Dict[str, Union[float, int]]]]
+
 class MDP(AbstractEnvironment):
     _state: int
     _time: float
-    transitions: Dict[Tuple[int, int], List]
+    transitions: Transition
     terminal_states: List[int]
     initial_state: Callable[..., int]
     def __init__(
         self,
-        transitions: Dict[Tuple[int, int], List],
+        transitions: Transition,
         num_states: int,
         num_actions: int,
         initial_state: Optional[Union[int, Callable[..., int]]] = ...,
@@ -28,5 +30,5 @@ class MDP(AbstractEnvironment):
     def step(self, action: Action) -> Tuple[int, float, bool, dict]: ...
     @staticmethod
     def check_transitions(
-        transitions: Dict[Tuple[int, int], List], num_states: int, num_actions: int
+        transitions: Transition, num_states: int, num_actions: int
     ) -> None: ...

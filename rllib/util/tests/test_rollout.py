@@ -1,7 +1,8 @@
 import pytest
 
 from rllib.agent import RandomAgent
-from rllib.environment import EasyGridWorld, GymEnvironment
+from rllib.environment import GymEnvironment
+from rllib.environment.mdps import EasyGridWorld
 from rllib.policy import RandomPolicy
 from rllib.util import rollout_agent, rollout_policy
 

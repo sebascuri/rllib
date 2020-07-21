@@ -1,0 +1,6 @@
+from rllib.environment.mdp import MDP, Transition
+
+class SingleChainProblem(MDP):
+    def __init__(self, chain_length: int = ...) -> None: ...
+    @staticmethod
+    def _build_mdp(chain_length: int) -> Transition: ...

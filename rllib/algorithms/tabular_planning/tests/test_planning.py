@@ -7,8 +7,8 @@ from rllib.algorithms.tabular_planning import (
     policy_iteration,
     value_iteration,
 )
-from rllib.environment import EasyGridWorld
 from rllib.environment.gym_environment import GymEnvironment
+from rllib.environment.mdps import EasyGridWorld
 from rllib.policy import RandomPolicy
 
 
