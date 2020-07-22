@@ -63,6 +63,126 @@ class RawObservation(NamedTuple):
         else:
             return True
 
+    @staticmethod
+    def get_example(
+        dim_state: int = 1,
+        dim_action: int = 1,
+        num_states: int = -1,
+        num_actions: int = -1,
+        kind: str = "zero",
+    ):
+        """Get example observation.
+
+        Parameters
+        ----------
+        dim_state: int, optional (default=1).
+            State dimension.
+        dim_action: int, optional (default=1).
+            Action dimension.
+        num_states: int, optional (default=-1).
+            Number of states, if discrete.
+        num_actions: int, optional (default=-1).
+            Number of actions, if discrete.
+        kind: str, optional (default='zero').
+            Kind of example. Options are ['zero', 'random', 'nan']
+        """
+        if kind not in ["zero", "random", "nan"]:
+            raise ValueError(f"{kind} not in ['zero', 'random', 'nan'].")
+
+        discrete_state = num_states >= 0
+        if discrete_state:
+            state = torch.randint(num_states, (1,))
+            next_state = torch.randint(num_states, (1,))
+        else:
+            state = torch.randn(dim_state)
+            next_state = torch.randn(dim_state)
+
+        discrete_action = num_actions >= 0
+        if discrete_action:
+            action = torch.randint(num_actions, (1,))
+            next_action = torch.randint(num_actions, (1,))
+            log_prob_action = torch.tensor(1.0)
+
+        else:
+            action = torch.randn(dim_action)
+            next_action = torch.randn(dim_action)
+            log_prob_action = torch.ones(dim_action)
+
+        if kind == "random":
+            pass
+        elif kind == "zero":
+            state = 0 * state
+            next_state = 0 * next_state
+            action = 0 * action
+            next_action = 0 * next_action
+
+        elif kind == "nan":
+            state = NaN * state
+            next_state = NaN * next_state
+        else:
+            raise NotImplementedError
+
+        return Observation(
+            state=state,
+            action=action,
+            reward=torch.rand(1)[0],
+            next_state=next_state,
+            done=torch.tensor(False),
+            next_action=next_action,
+            log_prob_action=log_prob_action,
+            entropy=torch.tensor(1.0),
+            state_scale_tril=torch.tensor(NaN),
+            next_state_scale_tril=torch.tensor(NaN),
+        )
+
+    @staticmethod
+    def nan_example(
+        dim_state: int = 1,
+        dim_action: int = 1,
+        num_states: int = -1,
+        num_actions: int = -1,
+    ):
+        """Return a NaN Example."""
+        return RawObservation.get_example(
+            dim_state=dim_state,
+            dim_action=dim_action,
+            num_states=num_states,
+            num_actions=num_actions,
+            kind="nan",
+        )
+
+    @staticmethod
+    def zero_example(
+        dim_state: int = 1,
+        dim_action: int = 1,
+        num_states: int = -1,
+        num_actions: int = -1,
+    ):
+        """Return a Zero Example."""
+        return RawObservation.get_example(
+            dim_state=dim_state,
+            dim_action=dim_action,
+            num_states=num_states,
+            num_actions=num_actions,
+            kind="zero",
+        )
+
+    @staticmethod
+    def random_example(
+        dim_state: int = 1,
+        dim_action: int = 1,
+        num_states: int = -1,
+        num_actions: int = -1,
+    ):
+        """Return a Random Example."""
+        return RawObservation.get_example(
+            dim_state=dim_state,
+            dim_action=dim_action,
+            num_states=num_states,
+            num_actions=num_actions,
+            kind="random",
+        )
+
     def __eq__(self, other):
         """Check if two observations are equal."""
         if not isinstance(other, Observation):

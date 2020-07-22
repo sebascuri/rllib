@@ -7,14 +7,41 @@
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://pypi.org/project/hug/)
 
 
-To install on clusters do:
-conda create -n rllib python=3.6
-conda activate rllib
+To install create a conda environment:
+```bash
+$ conda create -n rllib python=3.7
+$ conda activate rllib
+```
 
-pip install -e .[test,logging]
-sudo apt-get install -y --no-install-recommends --quiet build-essential libopenblas-dev python-opengl xvfb xauth
+```bash
+$ pip install -e .[test,logging,experiments]
+```
+
+For Mujoco (license required) Run:
+```bash
+$ pip install -e .[mujoco]
+```
+
+On clusters run:
+```bash
+$ sudo apt-get install -y --no-install-recommends --quiet build-essential libopenblas-dev python-opengl xvfb xauth
+```
 
 
+## Pre Commit
+install pre-commit with
+```bash
+$ pip install pre-commit
+$ pre-commit install
+```
+
+Run pre-commit with
+```bash
+$ pre-commit run --all-files
+```
+
+
+## CIRCLE-CI
 
 To run locally circleci run:
 ```bash
