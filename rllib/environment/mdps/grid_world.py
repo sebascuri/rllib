@@ -27,7 +27,6 @@ class EasyGridWorld(MDP):
         self.width = width
         self.height = height
         transitions = self._build_mdp(num_actions, noise, terminal_states)
-        print(transitions)
         super().__init__(
             transitions, width * height, num_actions, terminal_states=terminal_states
         )
