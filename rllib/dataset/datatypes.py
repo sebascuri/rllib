@@ -91,16 +91,16 @@ class RawObservation(NamedTuple):
 
         discrete_state = num_states >= 0
         if discrete_state:
-            state = torch.randint(num_states, (1,))
-            next_state = torch.randint(num_states, (1,))
+            state = 1.0 * torch.randint(num_states, (1,))[0]
+            next_state = 1.0 * torch.randint(num_states, (1,))[0]
         else:
             state = torch.randn(dim_state)
             next_state = torch.randn(dim_state)
 
         discrete_action = num_actions >= 0
         if discrete_action:
-            action = torch.randint(num_actions, (1,))
-            next_action = torch.randint(num_actions, (1,))
+            action = 1.0 * torch.randint(num_actions, ())
+            next_action = 1.0 * torch.randint(num_actions, ())
             log_prob_action = torch.tensor(1.0)
 
         else:
@@ -108,6 +108,8 @@ class RawObservation(NamedTuple):
             next_action = torch.randn(dim_action)
             log_prob_action = torch.ones(dim_action)
 
+        reward = torch.rand(1)[0]
+        done = np.random.choice([0.0, 1.0])
         if kind == "random":
             pass
         elif kind == "zero":
@@ -115,22 +117,27 @@ class RawObservation(NamedTuple):
             next_state = 0 * next_state
             action = 0 * action
             next_action = 0 * next_action
-
+            reward = 0 * reward
+            done = 1.0
         elif kind == "nan":
             state = NaN * state
             next_state = NaN * next_state
+            action = NaN * action
+            next_action = NaN * next_action
+            reward = NaN * reward
+            done = 1.0
         else:
             raise NotImplementedError
 
-        return Observation(
+        return RawObservation(
             state=state,
             action=action,
-            reward=torch.rand(1)[0],
+            reward=reward,
             next_state=next_state,
-            done=torch.tensor(False),
+            done=torch.tensor(done),
             next_action=next_action,
             log_prob_action=log_prob_action,
-            entropy=torch.tensor(1.0),
+            entropy=torch.tensor(0.0),
             state_scale_tril=torch.tensor(NaN),
             next_state_scale_tril=torch.tensor(NaN),
         )

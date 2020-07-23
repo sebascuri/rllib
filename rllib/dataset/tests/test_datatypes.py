@@ -80,10 +80,10 @@ class TestObservation(object):
             return
 
         if discrete:
-            torch.testing.assert_allclose(o.state.shape, torch.Size((1,)))
-            torch.testing.assert_allclose(o.action.shape, torch.Size((1,)))
-            torch.testing.assert_allclose(o.next_state.shape, torch.Size((1,)))
-            torch.testing.assert_allclose(o.next_action.shape, torch.Size((1,)))
+            torch.testing.assert_allclose(o.state.shape, torch.Size([]))
+            torch.testing.assert_allclose(o.action.shape, torch.Size([]))
+            torch.testing.assert_allclose(o.next_state.shape, torch.Size([]))
+            torch.testing.assert_allclose(o.next_action.shape, torch.Size([]))
             torch.testing.assert_allclose(o.log_prob_action, torch.tensor(1.0))
 
         else:
