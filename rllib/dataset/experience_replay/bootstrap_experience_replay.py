@@ -63,7 +63,7 @@ class BootstrapExperienceReplay(ExperienceReplay):
             )
 
         if self.bootstrap:
-            self.weights[self._ptr] = self.mask_distribution.sample()
+            self.weights[self.ptr] = self.mask_distribution.sample()
         else:
-            self.weights[self._ptr] = torch.ones(self.mask_distribution.batch_shape)
+            self.weights[self.ptr] = torch.ones(self.mask_distribution.batch_shape)
         super().append(observation)

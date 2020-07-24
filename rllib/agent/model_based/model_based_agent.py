@@ -452,7 +452,7 @@ class ModelBasedAgent(AbstractAgent):
 
         # Samples from experience replay empirical distribution.
         if self.sim_memory_num_trajectories > 0:
-            obs, *_ = self.dataset.get_batch(self.sim_memory_num_trajectories)
+            obs, *_ = self.dataset.sample_batch(self.sim_memory_num_trajectories)
             for transform in self.dataset.transformations:
                 obs = transform.inverse(obs)
             initial_states_ = obs.state[:, 0, :]  # obs is an n-step return.

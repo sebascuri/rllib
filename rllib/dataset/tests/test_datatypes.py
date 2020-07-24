@@ -93,4 +93,4 @@ class TestObservation(object):
             torch.testing.assert_allclose(
                 o.next_action.shape, torch.Size((dim_action,))
             )
-            torch.testing.assert_allclose(o.log_prob_action, torch.ones(dim_action))
+            torch.testing.assert_allclose(o.log_prob_action, torch.tensor(1.0))

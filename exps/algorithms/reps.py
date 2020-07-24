@@ -21,7 +21,7 @@ SEED = 0
 ENVIRONMENT = "CartPole-v0"
 MAX_STEPS = 200
 
-ALGORITHM = "Q-REPS"
+ALGORITHM = "REPS"
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)

@@ -41,47 +41,46 @@ class OffPolicyAgent(AbstractAgent):
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
-        super().observe(observation)
+        super().observe(observation)  # this update total steps.
         self.memory.append(observation)
         if (
-            self._training
-            and len(self.memory) >= self.batch_size  # training mode.
-            and self.train_frequency > 0  # enough data.
-            and self.total_steps  # train after train_frequency transitions.
-            % self.train_frequency
-            == 0
+            self._training  # training mode.
+            and len(self.memory) >= self.batch_size  # enough data.
+            and self.train_frequency > 0  # train after a transition.
+            and self.total_steps % self.train_frequency == 0  # correct steps.
         ):  # correct steps.
             self._train()
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if (
-            self._training
-            and len(self.memory) > self.batch_size  # training mode.
-            and self.num_rollouts > 0  # enough data
-            and self.total_episodes  # train after num_rollouts transitions.
-            % self.num_rollouts
-            == 0
-        ):  # correct steps.
+            self._training  # training mode.
+            and len(self.memory) > self.batch_size  # enough data.
+            and self.num_rollouts > 0  # train once the episode ends.
+            and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
+        ):  # use total_episodes + 1 because the super() is called after training.
             self._train()
 
-        super().end_episode()
+        if len(self.memory) > 0:  # Maybe _train() resets the memory.
+            self.memory.end_episode()
+
+        super().end_episode()  # this update total episodes.
 
     def _train(self):
         """Train the off-policy agent."""
         self.algorithm.reset()
         for _ in range(self.num_iter):
-            obs, idx, weight = self.memory.get_batch(self.batch_size)
+            obs, idx, weight = self.memory.sample_batch(self.batch_size)
 
             def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses = self.algorithm(
+                losses_ = self.algorithm(
                     obs.state, obs.action, obs.reward, obs.next_state, obs.done
                 )
-                loss = (losses.loss * weight.detach()).mean()
+                loss = (losses_.loss * weight.detach()).mean()
                 loss.backward()
-                return losses
+                return losses_
 
             losses = self.optimizer.step(closure=closure)
 

@@ -3,7 +3,7 @@ import numpy as np
 import torch.jit
 import torch.optim
 
-from rllib.agent import DDQNAgent
+from rllib.agent import DDQNAgent, DQNAgent  # noqa: F401
 from rllib.dataset import EXP3ExperienceReplay  # noqa: F401
 from rllib.dataset import PrioritizedExperienceReplay  # noqa: F401
 from rllib.dataset import ExperienceReplay
@@ -18,7 +18,7 @@ from rllib.value_function import NNQFunction
 # ENVIRONMENT = 'NChain-v0'
 ENVIRONMENT = "CartPole-v0"
 
-NUM_EPISODES = 80
+NUM_EPISODES = 50
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
 TARGET_UPDATE_TAU = 0.01
@@ -32,7 +32,7 @@ EPS_START = 1.0
 EPS_END = 0.01
 EPS_DECAY = 500
 LAYERS = [64, 64]
-SEED = 0
+SEED = 1
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -66,9 +66,9 @@ criterion = torch.nn.MSELoss
 
 # memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
 # memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, alpha=0.001, beta=0.1)
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
+memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, num_steps=1)
 
-agent = DDQNAgent(
+agent = DQNAgent(
     q_function,
     policy,
     criterion=criterion,

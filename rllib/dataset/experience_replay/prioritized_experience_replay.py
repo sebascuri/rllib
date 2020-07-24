@@ -58,8 +58,9 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         epsilon=0.01,
         max_priority=10.0,
         transformations=None,
+        num_steps=0,
     ):
-        super().__init__(max_len, transformations)
+        super().__init__(max_len, transformations, num_steps)
         if not isinstance(alpha, ParameterDecay):
             alpha = Constant(alpha)
         self.alpha = alpha
@@ -128,7 +129,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         TypeError
             If the new observation is not of type Observation.
         """
-        self._priorities[self._ptr] = self.max_priority
+        self._priorities[self.ptr] = self.max_priority
         super().append(observation)
         self._update_weights()
 

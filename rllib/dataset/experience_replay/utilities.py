@@ -2,7 +2,7 @@
 
 import torch
 
-from ..datatypes import RawObservation
+from rllib.dataset.datatypes import RawObservation
 
 
 def init_er_from_er(target_er, source_er):
@@ -18,7 +18,7 @@ def init_er_from_er(target_er, source_er):
         Experience replay to be used.
     """
     for i in range(len(source_er)):
-        observation = source_er[i]
+        observation, idx, weight = source_er[i]
         target_er.append(observation)
 
 
@@ -38,7 +38,7 @@ def init_er_from_environment(target_er, environment):
     assert environment.num_states is not None
 
     for state in range(environment.num_states):
-        observation = RawObservation(state, torch.empty(0))
+        observation = RawObservation(state, torch.empty(0)).to_torch()
         target_er.append(observation)
 
 
@@ -70,7 +70,7 @@ def init_er_from_rollout(target_er, agent, environment, max_steps=1000):
                 reward=reward,
                 next_state=next_state,
                 done=done,
-            )
+            ).to_torch()
             state = next_state
 
             target_er.append(observation)

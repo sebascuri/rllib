@@ -1,139 +1,334 @@
 import numpy as np
 import pytest
-import torch
 
 from rllib.dataset import ExperienceReplay
-from rllib.dataset.datatypes import Observation, RawObservation
+from rllib.dataset.datatypes import RawObservation
 from rllib.dataset.transforms import (
     ActionNormalizer,
     MeanFunction,
     RewardClipper,
     StateNormalizer,
 )
+from rllib.environment import GymEnvironment
+from rllib.util.rollout import step_env
 
 
-@pytest.fixture(params=[(10000, 1000), (10000, 100), (100, 101)])
-def memory(request):
-    max_len = request.param[0]
-    number_of_samples = request.param[1]
-    state_dim = 3
-    action_dim = 2
+def create_er_from_episodes(discrete, max_len, num_steps, num_episodes, episode_length):
+    """Rollout an environment and return an Experience Replay Buffer."""
 
-    transformations = []  # MeanFunction(lambda state, action: state),
-    # StateNormalizer(), ActionNormalizer(), RewardClipper(),
-    # ]
-    memory_ = ExperienceReplay(max_len, transformations=transformations)
-    for _ in range(number_of_samples):
-        memory_.append(
-            RawObservation(
-                state=np.random.randn(state_dim),
-                action=np.random.randn(action_dim),
-                reward=np.random.randn(),
-                next_state=np.random.randn(state_dim),
-                done=False,
-            ).to_torch()
-        )
-    return memory_, max_len, number_of_samples
+    if discrete:
+        env = GymEnvironment("NChain-v0")
+        transformations = []
+    else:
+        env = GymEnvironment("Pendulum-v0")
+        transformations = [
+            MeanFunction(lambda state_, action_: state_),
+            StateNormalizer(),
+            ActionNormalizer(),
+            RewardClipper(),
+        ]
 
-
-@pytest.fixture(params=[1, 3])
-def n_steps(request):
-    return request.param
-
-
-def experience_replay(n_steps):
-    max_len = 10000
-    number_of_samples = 100
-    state_dim = 3
-    action_dim = 2
-
-    transformations = [
-        MeanFunction(lambda state, action: state),
-        StateNormalizer(),
-        ActionNormalizer(),
-        RewardClipper(),
-    ]
-    memory_ = ExperienceReplay(
-        max_len, transformations=transformations, num_steps=n_steps
+    memory = ExperienceReplay(
+        max_len, transformations=transformations, num_steps=num_steps
     )
-    for _ in range(number_of_samples):
-        memory_.append(
-            RawObservation(
-                state=np.random.randn(state_dim),
-                action=np.random.randn(action_dim),
-                reward=np.random.randn(),
-                next_state=np.random.randn(state_dim),
-                done=False,
-            ).to_torch()
+
+    for episode in range(num_episodes):
+        state = env.reset()
+        for step in range(episode_length):
+            action = env.action_space.sample()  # sample a random action.
+            observation, state, done, info = step_env(env, state, action)
+            memory.append(observation)
+        memory.end_episode()
+
+    return memory
+
+
+def create_er_from_transitions(
+    discrete, dim_state, dim_action, max_len, num_steps, num_transitions
+):
+    """Create a memory with `num_transitions' transitions."""
+    if discrete:
+        num_states, num_actions = dim_state, dim_action
+        dim_state, dim_action = 1, 1
+    else:
+        num_states, num_actions = -1, -1
+
+    memory = ExperienceReplay(max_len, num_steps=num_steps)
+    for step in range(num_transitions):
+        observation = RawObservation.random_example(
+            dim_state=dim_state,
+            dim_action=dim_action,
+            num_states=num_states,
+            num_actions=num_actions,
         )
-    return memory_
+        memory.append(observation)
+    return memory
 
 
-def test_len(memory):
-    memory, max_len, number_of_samples = memory
-    assert len(memory) == np.min((number_of_samples, max_len))
+class TestExperienceReplay(object):
+    """Test experience replay class."""
 
+    @pytest.fixture(scope="class", params=[True, False])
+    def discrete(self, request):
+        return request.param
 
-def test_is_full(memory):
-    memory, max_len, number_of_samples = memory
-    assert memory.is_full == (max_len <= number_of_samples)
+    @pytest.fixture(scope="class", params=[1, 4])
+    def dim_state(self, request):
+        return request.param
 
+    @pytest.fixture(scope="class", params=[1, 4])
+    def dim_action(self, request):
+        return request.param
 
-def test_get_item(memory):
-    memory, max_len, number_of_samples = memory
-    for idx in range(len(memory)):
-        observation, idx, weight = memory.__getitem__(idx)
-        assert idx == idx
-        assert weight == 1.0
-        assert observation is memory.memory[idx]
-        assert observation == memory.memory[idx]
-        assert type(observation) is Observation
-        assert observation.state.shape == torch.Size([1, 3])
-        assert observation.action.shape == torch.Size([1, 2])
-        assert observation.next_state.shape == torch.Size([1, 3])
+    @pytest.fixture(scope="class", params=[100, 20000])
+    def max_len(self, request):
+        return request.param
 
+    @pytest.fixture(scope="class", params=[0, 1, 5])
+    def num_steps(self, request):
+        return request.param
 
-def test_n_steps(n_steps):
-    er = experience_replay(n_steps)
+    @pytest.fixture(scope="class", params=[1, 64])
+    def batch_size(self, request):
+        return request.param
 
-    for idx in range(len(er)):
-        observation, idx, weight = er.__getitem__(idx)
-        assert idx == idx
-        assert weight == 1.0
-        assert type(observation) is Observation
-        assert observation is not er.memory[idx]
-        assert type(observation) is Observation
+    def test_sample_batch(self, discrete, max_len, num_steps, batch_size):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
 
-        if idx < len(er) - 1:
-            assert observation.state.shape == torch.Size([n_steps, 3])
-            assert observation.action.shape == torch.Size([n_steps, 2])
-            assert observation.next_state.shape == torch.Size([n_steps, 3])
+        observation, idx, weight = memory.sample_batch(batch_size=batch_size)
+        for attribute in observation:
+            if num_steps == 0:
+                assert attribute.shape[:2] == (batch_size, 1)
+            else:
+                assert attribute.shape[:2] == (batch_size, num_steps)
+
+        assert idx.shape == (batch_size,)
+        assert weight.shape == (batch_size,)
+
+    def test_reset(self, discrete, max_len, num_steps):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+        assert memory.data_count == num_episodes * (episode_length + num_steps)
+        if num_steps == 0:
+            assert len(memory.valid_indexes) == min(max_len, memory.data_count)
         else:
-            assert observation.state.shape == torch.Size(
-                [len(er) % n_steps + n_steps, 3]
-            )
-            assert observation.action.shape == torch.Size(
-                [len(er) % n_steps + n_steps, 2]
-            )
-            assert observation.next_state.shape == torch.Size(
-                [len(er) % n_steps + n_steps, 3]
-            )
+            assert len(memory.valid_indexes) > 0
+            assert len(memory.valid_indexes) < len(memory)
 
+            assert memory.ptr != 0
+        assert not np.all(memory.memory == np.full((max_len,), None))
 
-def test_iter(memory):
-    memory, max_len, number_of_samples = memory
-    for idx, (observation, idx_, weight) in enumerate(memory):
-        if idx >= len(memory):
-            continue
-        assert idx == idx_
-        assert weight == 1.0
-        assert observation is memory.memory[idx]
-        assert observation == memory.memory[idx]
-        assert observation.state.shape == torch.Size([1, 3])
-        assert observation.action.shape == torch.Size([1, 2])
-        assert observation.next_state.shape == torch.Size([1, 3])
+        memory.reset()
+        assert memory.data_count == 0
+        assert len(memory.valid_indexes) == 0
+        assert memory.ptr == 0
+        assert np.all(memory.memory == np.full((max_len,), None))
 
+    def test_end_episode(self, discrete, dim_state, dim_action, max_len, num_steps):
+        num_transitions = 200
+        memory = create_er_from_transitions(
+            discrete, dim_state, dim_action, max_len, num_steps, num_transitions
+        )
+        assert len(memory.valid_indexes) == min(max_len, num_transitions)
+        assert (~(memory.memory == np.full((max_len,), None))).sum() == min(
+            max_len, num_transitions
+        )
+        memory.end_episode()
 
-def test_append_error():
-    with pytest.raises(TypeError):
-        experience_replay(1).append((1, 2, 3, 4, 5))
+        assert len(memory.valid_indexes) == min(max_len - num_steps, num_transitions)
+        assert (~(memory.memory == np.full((max_len,), None))).sum() == min(
+            max_len, num_transitions + num_steps
+        )
+        for i in range(num_steps):
+            assert memory.valid[memory.ptr - i - 1] == 0
+
+    def test_append_invalid(self, discrete, dim_state, dim_action, max_len, num_steps):
+        num_transitions = 200
+        memory = create_er_from_transitions(
+            discrete, dim_state, dim_action, max_len, num_steps, num_transitions
+        )
+        assert len(memory.valid_indexes) == min(max_len, num_transitions)
+        memory.append_invalid()
+        assert memory.valid[(memory.ptr - 1) % max_len] == 0
+        assert memory.valid[(memory.ptr - 2) % max_len] == 1
+
+    def test_append(self, discrete, dim_state, dim_action, max_len, num_steps):
+        num_transitions = 200
+        memory = create_er_from_transitions(
+            discrete, dim_state, dim_action, max_len, num_steps, num_transitions
+        )
+        if discrete:
+            num_states, num_actions = dim_state, dim_action
+            dim_state, dim_action = 1, 1
+        else:
+            num_states, num_actions = -1, -1
+
+        observation = RawObservation.random_example(
+            dim_state=dim_state,
+            dim_action=dim_action,
+            num_states=num_states,
+            num_actions=num_actions,
+        )
+
+        memory.append(observation)
+        assert len(memory.valid_indexes) == min(max_len, num_transitions + 1)
+        assert memory.valid[(memory.ptr - 1) % max_len] == 1
+        assert memory.valid[(memory.ptr - 2) % max_len] == 1
+
+        assert memory.memory[(memory.ptr - 1) % max_len] is observation
+
+    def test_len(self, discrete, dim_state, dim_action, max_len, num_steps):
+        num_transitions = 200
+        memory = create_er_from_transitions(
+            discrete, dim_state, dim_action, max_len, num_steps, num_transitions
+        )
+        assert len(memory) == min(max_len, num_transitions)
+
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+        if num_steps == 0:
+            assert len(memory) == len(memory.valid_indexes)
+        else:
+            assert len(memory) > len(memory.valid_indexes)
+        assert len(memory) == min(max_len, num_episodes * (episode_length + num_steps))
+
+    def test_get_item(self, discrete, max_len, num_steps):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+        memory.end_episode()
+
+        observation, idx, weight = memory[0]
+        for attribute in observation:
+            assert attribute.shape[0] == max(1, num_steps)
+            assert idx == 0
+            assert weight == 1.0
+
+        for i in range(len(memory)):
+            observation, idx, weight = memory[i]
+            for attribute in observation:
+                assert attribute.shape[0] == max(1, num_steps)
+                if memory.valid[i]:
+                    assert idx == i
+                else:
+                    assert idx != i
+                assert weight == 1.0
+
+        i = np.random.choice(memory.valid_indexes)
+        observation, idx, weight = memory[i]
+        for attribute in observation:
+            assert attribute.shape[0] == max(1, num_steps)
+            assert idx == i
+            assert weight == 1.0
+
+    def test_is_full(self, discrete, dim_state, dim_action, max_len, num_steps):
+        num_transitions = 98
+        memory = create_er_from_transitions(
+            discrete, dim_state, dim_action, max_len, num_steps, num_transitions
+        )
+        if num_transitions >= max_len:
+            assert memory.is_full
+        else:
+            assert not memory.is_full
+
+        memory.end_episode()
+
+        if num_transitions + num_steps >= max_len:
+            assert memory.is_full
+        else:
+            assert not memory.is_full
+
+    def test_all_data(self, discrete, max_len, num_steps):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+        observation = memory.all_data
+        len_valid_data = len(memory.valid_indexes)
+        if memory.is_full:
+            for attribute in observation:
+                assert attribute.shape[0] == max_len - num_steps
+                assert attribute.shape[0] == len_valid_data
+        else:
+            for attribute in observation:
+                assert attribute.shape[0] == num_episodes * episode_length
+                assert attribute.shape[0] == len_valid_data
+
+    def test_num_steps(self, discrete, max_len, num_steps):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+
+        assert memory.num_steps == num_steps
+
+        memory.num_steps = 10
+        assert memory.num_steps == 10
+
+        if memory.is_full:
+            assert len(memory) == max_len
+            if num_steps == 0:
+                assert len(memory.valid_indexes) == max_len
+            else:
+                assert len(memory.valid_indexes) == max_len - 10
+        else:
+            if num_steps == 0:
+                assert len(memory) == num_episodes * episode_length
+                assert memory.ptr == (num_episodes * episode_length) % max_len
+            else:
+                assert len(memory) == num_episodes * (episode_length + 10)
+                assert memory.ptr == (num_episodes * (episode_length + 10)) % max_len
+
+            assert len(memory.valid_indexes) == num_episodes * episode_length
+
+    def test_append_error(self):
+        memory = ExperienceReplay(max_len=100)
+        with pytest.raises(TypeError):
+            memory.append((1, 2, 3, 4, 5))
+
+    def test_valid_indexes(self, discrete, max_len, num_steps):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+        for i in memory.valid_indexes:
+            assert memory.valid[i] == 1
+        if not memory.is_full:
+            assert len(memory.valid_indexes) == num_episodes * episode_length
+        else:
+            assert len(memory.valid_indexes) == max_len - num_steps
+
+    def test_iter(self, discrete, max_len, num_steps):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+
+        for idx, (observation, idx_, weight) in enumerate(memory):
+            if idx >= len(memory):
+                continue
+
+            if memory.valid[idx] == 1:
+                assert idx == idx_
+            else:
+                assert idx != idx_
+
+            assert weight == 1.0
+            for attribute in observation:
+                assert attribute.shape[0] == max(1, num_steps)

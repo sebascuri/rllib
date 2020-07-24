@@ -100,13 +100,11 @@ class RawObservation(NamedTuple):
         discrete_action = num_actions >= 0
         if discrete_action:
             action = 1.0 * torch.randint(num_actions, ())
-            next_action = 1.0 * torch.randint(num_actions, ())
             log_prob_action = torch.tensor(1.0)
 
         else:
             action = torch.randn(dim_action)
-            next_action = torch.randn(dim_action)
-            log_prob_action = torch.ones(dim_action)
+            log_prob_action = torch.tensor(1.0)
 
         reward = torch.rand(1)[0]
         done = np.random.choice([0.0, 1.0])
@@ -116,26 +114,24 @@ class RawObservation(NamedTuple):
             state = 0 * state
             next_state = 0 * next_state
             action = 0 * action
-            next_action = 0 * next_action
             reward = 0 * reward
             done = 1.0
         elif kind == "nan":
             state = NaN * state
             next_state = NaN * next_state
             action = NaN * action
-            next_action = NaN * next_action
             reward = NaN * reward
             done = 1.0
         else:
             raise NotImplementedError
 
-        return RawObservation(
+        return Observation(
             state=state,
             action=action,
             reward=reward,
             next_state=next_state,
             done=torch.tensor(done),
-            next_action=next_action,
+            next_action=torch.tensor(NaN),
             log_prob_action=log_prob_action,
             entropy=torch.tensor(0.0),
             state_scale_tril=torch.tensor(NaN),
