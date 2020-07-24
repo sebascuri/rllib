@@ -61,7 +61,7 @@ class MPPO(AbstractAlgorithm):
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         regularization: bool = ...,
-        reward_transformer: RewardTransformer = RewardTransformer(),
+        reward_transformer: RewardTransformer = ...,
         gamma: float = ...,
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...

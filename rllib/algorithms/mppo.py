@@ -78,7 +78,7 @@ class MPPOWorker(nn.Module):
 
             self.epsilon = torch.tensor(epsilon)
             self.epsilon_mean = torch.tensor(epsilon_mean)
-            self.epislon_var = torch.tensor(epsilon_var)
+            self.epsilon_var = torch.tensor(epsilon_var)
 
     def forward(self, q_values, action_log_probs, kl_mean, kl_var):
         """Return primal and dual loss terms from MMPO.
@@ -180,7 +180,7 @@ class MPPO(AbstractAlgorithm):
         epsilon_var=0.0001,
         regularization=False,
         gamma=0.99,
-        reward_transformer=RewardTransformer,
+        reward_transformer=RewardTransformer(),
     ):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
