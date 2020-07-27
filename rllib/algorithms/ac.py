@@ -42,7 +42,7 @@ class ActorCritic(AbstractAlgorithm):
 
     eps = 1e-12
 
-    def __init__(self, policy, critic, criterion, gamma):
+    def __init__(self, policy, critic, criterion, gamma=0.99, num_samples=15):
         super().__init__()
         # Actor
         self.policy = policy
@@ -54,6 +54,8 @@ class ActorCritic(AbstractAlgorithm):
 
         self.criterion = criterion
         self.gamma = gamma
+
+        self.num_samples = num_samples
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
@@ -84,7 +86,11 @@ class ActorCritic(AbstractAlgorithm):
             # CRITIC LOSS
             with torch.no_grad():
                 next_pi = tensor_to_distribution(self.policy(next_state))
-                next_v = integrate(lambda a: self.critic_target(next_state, a), next_pi)
+                next_v = integrate(
+                    lambda a: self.critic_target(next_state, a),
+                    next_pi,
+                    num_samples=self.num_samples,
+                )
                 target_q = reward + self.gamma * next_v * (1 - done)
 
             pred_q = self.critic(state, action)

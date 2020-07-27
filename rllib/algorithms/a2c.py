@@ -44,5 +44,7 @@ class A2C(ActorCritic):
         state, action = trajectory.state, trajectory.action
         pred_q = self.critic(state, action)
         pi = tensor_to_distribution(self.policy(state))
-        returns = pred_q - integrate(lambda a: self.critic(state, a), pi)
+        returns = pred_q - integrate(
+            lambda a: self.critic(state, a), pi, num_samples=self.num_samples
+        )
         return returns

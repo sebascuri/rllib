@@ -19,12 +19,14 @@ class ActorCritic(AbstractAlgorithm):
     criterion: _Loss
     gamma: float
     eps: float = 1e-12
+    num_samples: int
     def __init__(
         self,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
         criterion: _Loss,
-        gamma: float,
+        gamma: float = ...,
+        num_samples: int = ...,
     ) -> None: ...
     def returns(self, trajectory: Observation) -> Tensor: ...
     def forward(self, *args: List[Observation], **kwargs) -> ACLoss: ...

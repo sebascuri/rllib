@@ -68,12 +68,13 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, critic, policy=None, gamma=0.99, lambda_=1):
+    def __init__(self, critic, policy=None, gamma=0.99, lambda_=1.0, num_samples=15):
         super().__init__()
         self.critic = critic
         self.policy = policy
         self.gamma = gamma
         self.lambda_ = lambda_
+        self.num_samples = num_samples
 
     @abstractmethod
     def correction(self, pi_log_prob, mu_log_prob):
@@ -113,7 +114,9 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                 if self.policy is not None:
                     next_pi = tensor_to_distribution(self.policy(next_state[:, t]))
                     next_v = integrate(
-                        lambda a: self.q_function(next_state[:, t], a), next_pi
+                        lambda a: self.q_function(next_state[:, t], a),
+                        next_pi,
+                        num_samples=self.num_samples,
                     ) * (1.0 - done[:, t])
                 else:  # Use sampled next action. This allows to compute n-step returns.
                     if t < n_steps - 1:

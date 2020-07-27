@@ -13,12 +13,14 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     policy: Optional[AbstractPolicy]
     gamma: float
     lambda_: float
+    num_samples: int
     def __init__(
         self,
         critic: AbstractQFunction,
         policy: Optional[AbstractPolicy] = ...,
         gamma: float = ...,
         lambda_: float = ...,
+        num_samples: int = ...,
     ) -> None: ...
     @abstractmethod
     def correction(self, pi_log_prob: Tensor, mu_log_prob: Tensor) -> Tensor: ...

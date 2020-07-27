@@ -35,13 +35,14 @@ class ESARSA(AbstractAlgorithm):
     temporal-difference learning algorithms. Utrecht University.
     """
 
-    def __init__(self, q_function, criterion, policy, gamma):
+    def __init__(self, q_function, criterion, policy, gamma=0.99, num_samples=15):
         super().__init__()
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
         self.policy = policy
         self.criterion = criterion
         self.gamma = gamma
+        self.num_samples = num_samples
 
     def _build_return(self, pred_q, target_q):
         return TDLoss(
@@ -59,7 +60,9 @@ class ESARSA(AbstractAlgorithm):
         pred_q = self.q_function(state, action)
         with torch.no_grad():
             pi = tensor_to_distribution(self.policy(state))
-            next_v = integrate(lambda a: self.q_target(next_state, a), pi)
+            next_v = integrate(
+                lambda a: self.q_target(next_state, a), pi, num_samples=self.num_samples
+            )
             target_q = reward + self.gamma * next_v * (1 - done)
 
         return self._build_return(pred_q, target_q)
@@ -91,7 +94,9 @@ class GradientESARSA(ESARSA):
 
         pred_q = self.q_function(state, action)
         pi = tensor_to_distribution(self.policy(state))
-        next_v = integrate(lambda a: self.q_function(next_state, a), pi)
+        next_v = integrate(
+            lambda a: self.q_function(next_state, a), pi, num_samples=self.num_samples
+        )
         target_q = reward + self.gamma * next_v * (1 - done)
 
         return self._build_return(pred_q, target_q)

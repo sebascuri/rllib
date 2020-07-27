@@ -45,11 +45,16 @@ class ExpectedActorCritic(ActorCritic):
 
             def iq(a):
                 return self.critic(state, a) - integrate(
-                    lambda a_: self.critic(state, a_), pi
+                    lambda a_: self.critic(state, a_), pi, num_samples=self.num_samples
                 )
 
             actor_loss += discount_sum(
-                integrate(lambda a: -pi.log_prob(a) * iq(a).detach(), pi).sum(), 1
+                integrate(
+                    lambda a: -pi.log_prob(a) * iq(a).detach(),
+                    pi,
+                    num_samples=self.num_samples,
+                ).sum(),
+                1,
             )
 
             # CRITIC LOSS

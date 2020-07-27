@@ -20,7 +20,7 @@ def get_backend(array):
         raise TypeError
 
 
-def integrate(function, distribution, out_dim=None, num_samples=1):
+def integrate(function, distribution, out_dim=None, num_samples=15):
     r"""Integrate a function over a distribution.
 
     Compute:

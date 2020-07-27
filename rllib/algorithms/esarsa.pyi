@@ -13,12 +13,14 @@ class ESARSA(AbstractAlgorithm):
     policy: AbstractPolicy
     criterion: _Loss
     gamma: float
+    num_samples: int
     def __init__(
         self,
         q_function: AbstractQFunction,
         criterion: _Loss,
         policy: AbstractPolicy,
-        gamma: float,
+        gamma: float = ...,
+        num_samples: int = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs) -> TDLoss: ...
     def _build_return(self, pred_q: Tensor, target_q: Tensor) -> TDLoss: ...
