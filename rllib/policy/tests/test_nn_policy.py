@@ -245,14 +245,6 @@ class TestFelixNet(object):
     def init(self, dim_state, dim_action):
         self.policy = FelixPolicy(dim_state, dim_action)
 
-    def test_discrete(self, dim_state, dim_action):
-        with pytest.raises(ValueError):
-            FelixPolicy(1, dim_action, num_states=dim_state)
-        with pytest.raises(ValueError):
-            FelixPolicy(dim_state, 1, num_actions=dim_action)
-        with pytest.raises(ValueError):
-            FelixPolicy(1, 1, num_states=dim_state, num_actions=dim_action)
-
     def test_num_states_actions(self, dim_state, dim_action):
         self.init(dim_state, dim_action)
         assert self.policy.num_states == -1
