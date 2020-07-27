@@ -17,10 +17,10 @@ from rllib.value_function import NNQFunction
 # ENVIRONMENT = 'CartPole-v0'
 ENVIRONMENT = "Pendulum-v0"
 
-EPSILON = 0.01
-EPSILON_MEAN = 0.01
+EPSILON = 0.1
+EPSILON_MEAN = 0.1
 EPSILON_VAR = 1e-4
-NUM_EPISODES = 50
+NUM_EPISODES = 500
 BATCH_SIZE = 100
 # MAX_STEPS = 2000
 MAX_STEPS = 1000
@@ -56,7 +56,7 @@ policy = FelixPolicy(
 )
 
 q_function = NNQFunction(
-    env.dim_state, env.dim_action, env.num_states, env.num_actions, layers=[64, 64]
+    env.dim_state, env.dim_action, env.num_states, env.num_actions, layers=[200, 200]
 )
 
 
@@ -71,6 +71,7 @@ agent = MPPOAgent(
     epsilon=EPSILON,
     epsilon_mean=EPSILON_MEAN,
     epsilon_var=EPSILON_VAR,
+    regularization=False,
     num_action_samples=NUM_ACTION_SAMPLES,
     train_frequency=0,
     num_rollouts=NUM_ROLLOUTS,
