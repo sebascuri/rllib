@@ -3,3 +3,13 @@ from .gaussian_system import GaussianSystem
 from .inverted_pendulum import InvertedPendulum
 from .linear_system import LinearSystem
 from .model_system import ModelSystem
+
+systems = [
+    "Cart1D",
+    "CartPole",
+    "InvertedPendulum",
+    "LinearSystem",
+    "MagneticLevitation",
+    "PitchControl",
+    "UnderwaterVehicle",
+]

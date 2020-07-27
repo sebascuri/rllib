@@ -2,11 +2,12 @@
 
 import numpy as np
 
+from rllib.environment import SystemEnvironment
 from rllib.environment.systems.ode_system import ODESystem
 
 
-class MagneticLevitaiton(ODESystem):
-    """Magnetic Levitaiton Control.
+class MagneticLevitation(ODESystem):
+    """Magnetic Levitation Control.
 
     Parameters
     ----------
@@ -103,8 +104,15 @@ class MagneticLevitaiton(ODESystem):
         return np.array([x1_dot, x2_dot, x3_dot])
 
 
+class MagneticLevitationEnv(SystemEnvironment):
+    """Magnetic Levitation Environment."""
+
+    def __init__(self):
+        super().__init__(MagneticLevitation())  # TODO: Add reward function.
+
+
 if __name__ == "__main__":
-    sys = MagneticLevitaiton()
+    sys = MagneticLevitation()
     f = sys.func(None, np.ones(sys.dim_state), np.ones(sys.dim_action))
     print(f)
     sys.linearize()

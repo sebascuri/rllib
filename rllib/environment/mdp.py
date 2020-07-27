@@ -1,15 +1,18 @@
 """Interface for Markov Decision Processes."""
 
 from itertools import product
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from gym import spaces
+from gym import Env, spaces
 
 from rllib.environment.abstract_environment import AbstractEnvironment
 
+Transition = Dict[Tuple[int, int], List[Dict[str, Union[float, int]]]]
 
-class MDP(AbstractEnvironment):
+
+class MDP(AbstractEnvironment, Env):
     """Interface MDP environments.
 
     Parameters

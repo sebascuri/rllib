@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from rllib.environment import SystemEnvironment
 from rllib.environment.systems.ode_system import ODESystem
 from rllib.util.utilities import get_backend
 
@@ -87,6 +88,13 @@ class CartPole(ODESystem):
         ) / det
 
         return np.array((x_dot, theta_dot, v_dot, omega_dot))
+
+
+class CartPoleEnv(SystemEnvironment):
+    """CartPole Environment."""
+
+    def __init__(self, pendulum_mass=1, cart_mass=1, length=1):
+        super().__init__(CartPole(pendulum_mass, cart_mass, length))
 
 
 if __name__ == "__main__":

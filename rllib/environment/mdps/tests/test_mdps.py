@@ -1,19 +1,36 @@
+import importlib
+
 import numpy as np
 import pytest
 
-from rllib.environment.mdps import (
-    BairdStar,
-    BoyanChain,
-    DoubleChainProblem,
-    EasyGridWorld,
-    RandomMDP,
-    SingleChainProblem,
-    TwoStateProblem,
-)
+from rllib.environment import GymEnvironment
 
 
-class TestBairdStar(object):
+@pytest.fixture(params=[True, False])
+def gym_env(request):
+    """Request number of states."""
+    return request.param
+
+
+class MDPTest(object):
+    """Basic class for MDP testing."""
+
+    name: str
+
+    def get_env(self, gym_env, **kwargs):
+        """Get environment."""
+        if gym_env:
+            env = GymEnvironment(f"{self.name}-v0", **kwargs)
+        else:
+            module = importlib.import_module("rllib.environment.mdps")
+            env = getattr(module, self.name)(**kwargs)
+        return env
+
+
+class TestBairdStar(MDPTest):
     """Test Baird Star environment."""
+
+    name = "BairdStar"
 
     @pytest.fixture(params=[7, 14], scope="class")
     def num_states(self, request):
@@ -21,19 +38,19 @@ class TestBairdStar(object):
         return request.param
 
     def test_transitions(self, num_states):
-        env = BairdStar(num_states)
+        env = self.get_env(gym_env=False, num_states=num_states)
         assert env.num_actions == 2
         assert env.num_states == num_states
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
-    def test_initial_state(self):
-        env = BairdStar()
+    def test_initial_state(self, gym_env, num_states):
+        env = self.get_env(gym_env=gym_env, num_states=num_states)
         for i in range(10):
             state = env.reset()
             assert state in range(env.num_states)
 
-    def test_interaction(self):
-        env = BairdStar()
+    def test_interaction(self, gym_env, num_states):
+        env = self.get_env(gym_env=gym_env, num_states=num_states)
         env.reset()
         for i in range(100):
             action = env.action_space.sample()
@@ -44,8 +61,10 @@ class TestBairdStar(object):
                 assert next_state in range(1, env.num_states)
 
 
-class TestBoyanChain(object):
+class TestBoyanChain(MDPTest):
     """Test Boyan Chain environment."""
+
+    name = "BoyanChain"
 
     @pytest.fixture(params=[7, 14], scope="class")
     def num_states(self, request):
@@ -53,32 +72,32 @@ class TestBoyanChain(object):
         return request.param
 
     def test_transitions(self, num_states):
-        env = BoyanChain(num_states)
+        env = self.get_env(gym_env=False, num_states=num_states)
         assert env.num_actions == 1
         assert env.num_states == num_states
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
-    def test_initial_state(self):
-        env = BoyanChain()
+    def test_initial_state(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
+
         for i in range(10):
             state = env.reset()
             assert state == 0
 
-    def test_interaction(self):
-        env = BoyanChain()
-
+    def test_interaction(self, gym_env, num_states):
+        env = self.get_env(gym_env=False, num_states=num_states)
         for _ in range(20):
             state = env.reset()
             for i in range(env.num_states):
                 action = env.action_space.sample()
                 next_state, reward, done, info = env.step(action)
 
-                if state < env.num_states - 2:
+                if state < num_states - 2:
                     assert next_state in [state + 1, state + 2]
                     assert reward == -3
                 else:
-                    assert next_state == env.num_states - 1
-                    if state == env.num_states - 2:
+                    assert next_state == num_states - 1
+                    if state == num_states - 2:
                         assert reward == -2
                     else:
                         assert reward == 0
@@ -86,8 +105,10 @@ class TestBoyanChain(object):
                 state = next_state
 
 
-class TestDoubleChainProblem(object):
+class TestDoubleChainProblem(MDPTest):
     """Test Double Chain Problem."""
+
+    name = "DoubleChainProblem"
 
     @pytest.fixture(params=[5, 10], scope="class")
     def chain_length(self, request):
@@ -95,19 +116,19 @@ class TestDoubleChainProblem(object):
         return request.param
 
     def test_transitions(self, chain_length):
-        env = DoubleChainProblem(chain_length)
+        env = self.get_env(gym_env=False, chain_length=chain_length)
         assert env.num_actions == 2
         assert env.num_states == 2 * chain_length - 1
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
-    def test_initial_state(self):
-        env = DoubleChainProblem()
+    def test_initial_state(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
         for i in range(10):
             state = env.reset()
             assert state == 0
 
-    def test_interaction(self, chain_length):
-        env = DoubleChainProblem(chain_length)
+    def test_interaction(self, gym_env, chain_length):
+        env = self.get_env(gym_env=gym_env, chain_length=chain_length)
 
         env.state = 0
         next_state, reward, done, info = env.step(0)
@@ -142,8 +163,10 @@ class TestDoubleChainProblem(object):
             state = next_state
 
 
-class TestEasyGridWorld(object):
+class TestEasyGridWorld(MDPTest):
     """Test Easy grid world."""
+
+    name = "EasyGridWorld"
 
     @pytest.fixture(params=[0, 0.2], scope="class")
     def noise(self, request):
@@ -156,20 +179,19 @@ class TestEasyGridWorld(object):
         return request.param
 
     def test_transitions(self, num_actions, noise):
-        env = EasyGridWorld(num_actions=num_actions, noise=noise)
+        env = self.get_env(gym_env=False, num_actions=num_actions, noise=noise)
         assert env.num_actions == num_actions
         assert env.num_states == env.height * env.width
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
     def test_initial_state(self):
-        env = EasyGridWorld()
+        env = self.get_env(gym_env=False)
         for i in range(10):
             state = env.reset()
             assert state in range(env.num_states)
 
     def test_interaction(self, num_actions, noise):
-        env = EasyGridWorld(num_actions=num_actions, noise=noise)
-
+        env = self.get_env(gym_env=False, num_actions=num_actions, noise=noise)
         state = env.reset()
         for _ in range(200):
             action = env.action_space.sample()
@@ -190,8 +212,10 @@ class TestEasyGridWorld(object):
             state = next_state
 
 
-class TestSingleChainProblem(object):
+class TestSingleChainProblem(MDPTest):
     """Test Single Chain Problem."""
+
+    name = "SingleChainProblem"
 
     @pytest.fixture(params=[5, 10], scope="class")
     def chain_length(self, request):
@@ -199,19 +223,19 @@ class TestSingleChainProblem(object):
         return request.param
 
     def test_transitions(self, chain_length):
-        env = SingleChainProblem(chain_length)
+        env = self.get_env(gym_env=False, chain_length=chain_length)
         assert env.num_actions == 2
         assert env.num_states == chain_length
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
-    def test_initial_state(self):
-        env = SingleChainProblem()
+    def test_initial_state(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
         for i in range(10):
             state = env.reset()
             assert state == 0
 
-    def test_interaction(self, chain_length):
-        env = SingleChainProblem(chain_length)
+    def test_interaction(self, gym_env, chain_length):
+        env = self.get_env(gym_env=gym_env, chain_length=chain_length)
 
         state = env.reset()
         for _ in range(2 ** chain_length):
@@ -232,8 +256,10 @@ class TestSingleChainProblem(object):
             state = next_state
 
 
-class TestRandomMDP(object):
+class TestRandomMDP(MDPTest):
     """Test Random MDP."""
+
+    name = "RandomMDP"
 
     @pytest.fixture(params=[20, 400], scope="class")
     def num_states(self, request):
@@ -246,42 +272,48 @@ class TestRandomMDP(object):
         return request.param
 
     def test_transitions(self, num_states, num_actions):
-        env = RandomMDP(num_states, num_actions)
+        env = self.get_env(
+            gym_env=False, num_states=num_states, num_actions=num_actions
+        )
+
         assert env.num_actions == num_actions
         assert env.num_states == num_states
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
-    def test_initial_state(self):
-        env = RandomMDP()
+    def test_initial_state(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
+
         for i in range(10):
             state = env.reset()
             assert state in range(env.num_states)
 
-    def test_interaction(self):
-        env = RandomMDP()
+    def test_interaction(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
 
         for _ in range(10):
             action = env.action_space.sample()
             env.step(action)
 
 
-class TestTwoStateProblem(object):
+class TestTwoStateProblem(MDPTest):
     """Test Two State Problem."""
 
+    name = "TwoStateProblem"
+
     def test_transitions(self):
-        env = TwoStateProblem()
+        env = self.get_env(gym_env=False)
         assert env.num_actions == 2
         assert env.num_states == 2
         env.check_transitions(env.transitions, env.num_states, env.num_actions)
 
-    def test_initial_state(self):
-        env = TwoStateProblem()
+    def test_initial_state(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
         for i in range(10):
             state = env.reset()
             assert state in [0, 1]
 
-    def test_interaction(self):
-        env = TwoStateProblem()
+    def test_interaction(self, gym_env):
+        env = self.get_env(gym_env=gym_env)
 
         state = env.reset()
         for _ in range(20):

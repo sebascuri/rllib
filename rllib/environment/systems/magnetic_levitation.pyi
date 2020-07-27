@@ -2,7 +2,7 @@ from rllib.dataset.datatypes import Action, State
 
 from .ode_system import ODESystem
 
-class MagneticLevitaiton(ODESystem):
+class MagneticLevitation(ODESystem):
     mass: float
     resistance: float
     x_inf: float

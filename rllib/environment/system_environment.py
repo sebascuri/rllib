@@ -1,10 +1,12 @@
 """Wrapper for Custom System Environments."""
+from gym import Env
+
 from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_environment import AbstractEnvironment
 
 
-class SystemEnvironment(AbstractEnvironment):
+class SystemEnvironment(AbstractEnvironment, Env):
     """Wrapper for System Environments.
 
     Parameters
