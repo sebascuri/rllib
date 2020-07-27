@@ -55,8 +55,6 @@ class FelixPolicy(AbstractPolicy):
         self,
         dim_state: int,
         dim_action: int,
-        num_states: int = ...,
-        num_actions: int = ...,
         tau: float = ...,
         initial_scale: float = ...,
         deterministic: bool = ...,

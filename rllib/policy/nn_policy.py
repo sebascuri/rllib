@@ -189,10 +189,6 @@ class FelixPolicy(NNPolicy):
         dimension of state.
     dim_action: int
         dimension of action.
-    num_states: int, optional
-        number of discrete states (None if state is continuous).
-    num_actions: int, optional
-        number of discrete actions (None if action is continuous).
 
     Notes
     -----
@@ -204,8 +200,6 @@ class FelixPolicy(NNPolicy):
         self,
         dim_state,
         dim_action,
-        num_states=-1,
-        num_actions=-1,
         tau=0.0,
         initial_scale=0.5,
         deterministic=False,
@@ -215,8 +209,8 @@ class FelixPolicy(NNPolicy):
         super().__init__(
             dim_state,
             dim_action,
-            num_states,
-            num_actions,
+            -1,
+            -1,
             tau=tau,
             deterministic=deterministic,
             input_transform=input_transform,
