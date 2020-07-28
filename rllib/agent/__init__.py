@@ -23,3 +23,28 @@ from .on_policy import (
     SARSAAgent,
 )
 from .random_agent import RandomAgent
+
+AGENTS = [
+    "GPUCB",
+    "MBDPG",
+    "MBMPPO",
+    "MBSAC",
+    "MPC",
+    "DDQN",
+    "DPG",
+    "DQN",
+    "MPPO",
+    "QLearning",
+    "QREPS",
+    "REPS",
+    "SAC",
+    "SoftQLearning",
+    "TD3",
+    "A2C",
+    "ActorCritic",
+    "ExpectedActorCritic",
+    "ExpectedSARSA",
+    "GAAC",
+    "REINFORCE",
+    "SARSA",
+]
