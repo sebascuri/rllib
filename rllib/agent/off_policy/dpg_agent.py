@@ -149,9 +149,9 @@ class DPGAgent(OffPolicyAgent):
             deterministic=True,
         )
 
-        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
+        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=3e-4)
         criterion = loss.MSELoss
-        memory = ExperienceReplay(max_len=50000, num_steps=0)
+        memory = ExperienceReplay(max_len=100000, num_steps=0)
 
         return cls(
             q_function=q_function,

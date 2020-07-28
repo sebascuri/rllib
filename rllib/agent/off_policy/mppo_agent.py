@@ -137,7 +137,7 @@ class MPPOAgent(OffPolicyAgent):
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             regularization=False,
-            num_iter=5 if test else 500,
+            num_iter=5 if test else 1000,
             batch_size=100,
             target_update_frequency=1,
             train_frequency=0,

@@ -94,3 +94,6 @@ class OnPolicyAgent(AbstractAgent):
                 self.algorithm.update()
                 for param in self.params.values():
                     param.update()
+
+            if self._early_stop_training(losses, **self.algorithm.info()):
+                break

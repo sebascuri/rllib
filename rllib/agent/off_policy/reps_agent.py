@@ -121,10 +121,12 @@ class REPSAgent(OffPolicyAgent):
                 loss_.backward()
                 return loss_
 
-            loss = self.optimizer.step(closure=closure).item()
-            self.logger.update(**{loss_name: loss})
+            losses = self.optimizer.step(closure=closure).item()
+            self.logger.update(**{loss_name: losses})
 
             self.counters["train_steps"] += 1
+            if self._early_stop_training(losses, **self.algorithm.info()):
+                break
 
     @classmethod
     def default(

@@ -5,6 +5,8 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.utilities import average_named_tuple
 from rllib.util.neural_networks.utilities import disable_gradient
 
+# import torch.nn.utils
+
 
 class OffPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
@@ -88,6 +90,10 @@ class OffPolicyAgent(AbstractAgent):
                 )
                 loss = (losses_.loss * weight.detach()).mean()
                 loss.backward()
+                #
+                # torch.nn.utils.clip_grad_norm_(
+                #     self.optimizer.param_groups[0]["params"], self.max_grad_norm
+                # )
                 return losses_
 
             if self.train_steps % self.policy_update_frequency == 0:
@@ -110,5 +116,8 @@ class OffPolicyAgent(AbstractAgent):
                 self.algorithm.update()
                 for param in self.params.values():
                     param.update()
+
+            if self._early_stop_training(losses, **self.algorithm.info()):
+                break
 
         self.algorithm.reset()

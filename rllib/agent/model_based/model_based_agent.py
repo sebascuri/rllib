@@ -509,4 +509,7 @@ class ModelBasedAgent(AbstractAgent):
                 for param in self.params.values():
                     param.update()
 
+            if self._early_stop_training(losses, **self.algorithm.info()):
+                break
+
         self.algorithm.reset()
