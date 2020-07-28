@@ -19,6 +19,7 @@ from .on_policy import (
     ExpectedActorCriticAgent,
     ExpectedSARSAAgent,
     GAACAgent,
+    PPOAgent,
     REINFORCEAgent,
     SARSAAgent,
 )
@@ -47,4 +48,5 @@ AGENTS = [
     "GAAC",
     "REINFORCE",
     "SARSA",
+    "PPO",
 ]

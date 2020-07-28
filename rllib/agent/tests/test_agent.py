@@ -16,6 +16,7 @@ from rllib.agent import (
     MBSACAgent,
     MPCAgent,
     MPPOAgent,
+    PPOAgent,
     QLearningAgent,
     QREPSAgent,
     REINFORCEAgent,
@@ -66,6 +67,7 @@ def continuous_environment(request):
         REPSAgent,
         QREPSAgent,
         MPPOAgent,
+        PPOAgent,
     ]
 )
 def discrete_agent(request):
@@ -89,6 +91,7 @@ def discrete_agent(request):
         MBSACAgent,
         MBDPGAgent,
         MPCAgent,
+        PPOAgent,
     ]
 )
 def continuous_agent(request):

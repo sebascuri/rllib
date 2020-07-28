@@ -20,19 +20,20 @@ class PPO(AbstractAlgorithm):
 
     epsilon: ParameterDecay
 
-    value_loss: _Loss
+    value_loss_criterion: _Loss
     weight_value_function: float
     weight_entropy: float
     gae: GAE
+    eps: float
     def __init__(
         self,
         policy: AbstractPolicy,
         value_function: AbstractValueFunction,
-        value_loss: Type[_Loss] = ...,
+        criterion: Type[_Loss] = ...,
         epsilon: Union[ParameterDecay, float] = ...,
         weight_value_function: float = ...,
         weight_entropy: float = ...,
         lambda_: float = ...,
-        gamma=...,
+        gamma: float = ...,
     ) -> None: ...
     def forward(self, *trajectories: Tensor, **kwargs) -> PPOLoss: ...

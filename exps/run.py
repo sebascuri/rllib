@@ -12,8 +12,9 @@ from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
 
 try:
-    from rllib.environment.dm_environment import DMSuiteEnvironment
     from dm_control.suite import BENCHMARKING
+
+    from rllib.environment.dm_environment import DMSuiteEnvironment
 except Exception:  # dm_control not installed.
     # DMSuiteEnvironment = GymEnvironment
     BENCHMARKING = []

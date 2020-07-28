@@ -5,6 +5,7 @@ from torch.optim import Adam
 
 from rllib.algorithms.ppo import PPO
 from rllib.policy import NNPolicy
+from rllib.util.neural_networks.utilities import freeze_parameters
 from rllib.value_function import NNValueFunction
 
 from .on_policy_agent import OnPolicyAgent
@@ -27,7 +28,7 @@ class PPOAgent(OnPolicyAgent):
         criterion,
         epsilon=0.2,
         lambda_=0.97,
-        target_kl=1.0,
+        target_kl=0.01,
         weight_value_function=1.0,
         weight_entropy=0.01,
         num_iter=80,
@@ -44,7 +45,7 @@ class PPOAgent(OnPolicyAgent):
             value_function=value_function,
             policy=policy,
             epsilon=epsilon,
-            value_loss=criterion,
+            criterion=criterion,
             weight_value_function=weight_value_function,
             weight_entropy=weight_entropy,
             lambda_=lambda_,
@@ -67,7 +68,13 @@ class PPOAgent(OnPolicyAgent):
 
     def _early_stop_training(self, *args, **kwargs):
         """Early stop the training algorithm."""
-        return kwargs.get("approximate_kl", self.target_kl) >= 1.5 * self.target_kl
+        print(kwargs.get("kl_div"))
+        if (
+            kwargs.get("kl_div", kwargs.get("approx_kl_div", self.target_kl))
+            >= 1.5 * self.target_kl
+        ):
+            freeze_parameters(self.policy)
+        return False
 
     @classmethod
     def default(
@@ -120,9 +127,9 @@ class PPOAgent(OnPolicyAgent):
             optimizer=optimizer,
             criterion=criterion,
             epsilon=0.2,
-            lambda_=0.97,
-            target_kl=1.0,
-            weight_value_function=1.0,
+            lambda_=0.95,
+            target_kl=0.01,
+            weight_value_function=0.5,
             weight_entropy=0.01,
             num_iter=80,
             target_update_frequency=1,

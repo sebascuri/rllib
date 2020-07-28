@@ -63,7 +63,7 @@ class OnPolicyAgent(AbstractAgent):
             and self.total_steps >= self.exploration_steps  # enough steps.
             and self.total_episodes >= self.exploration_episodes  # enough episodes.
             and self.num_rollouts > 0  # train after num_rollouts transitions.
-            and self.total_episodes % self.num_rollouts == 0  # correct steps.
+            and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
         ):
             self._train()
             self.trajectories = list()
@@ -73,16 +73,16 @@ class OnPolicyAgent(AbstractAgent):
         super().end_episode()
 
     def _train(self):
-        trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
         """Train Policy Gradient Agent."""
+        trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
         for _ in range(self.num_iter):
 
             def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses = self.algorithm(trajectories)
-                losses.loss.backward()
-                return losses
+                losses_ = self.algorithm(trajectories)
+                losses_.loss.backward()
+                return losses_
 
             losses = self.optimizer.step(closure=closure)
             # Update logs
@@ -97,3 +97,5 @@ class OnPolicyAgent(AbstractAgent):
 
             if self._early_stop_training(losses, **self.algorithm.info()):
                 break
+
+        self.algorithm.reset()
