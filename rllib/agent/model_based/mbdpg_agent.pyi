@@ -43,6 +43,7 @@ class MBDPGAgent(ModelBasedAgent):
         dpg_noise_clip: float = ...,
         dpg_policy_noise: float = ...,
         dpg_as_td3: bool = ...,
+        dpg_policy_update_frequency: int = ...,
         sim_num_steps: int = ...,
         sim_initial_states_num_trajectories: int = ...,
         sim_initial_dist_num_trajectories: int = ...,

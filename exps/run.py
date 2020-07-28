@@ -37,7 +37,9 @@ def main(args):
 
     # %% Initialize module.
     agent_module = importlib.import_module("rllib.agent")
-    agent = getattr(agent_module, f"{args.agent}Agent").default(environment)
+    agent = getattr(agent_module, f"{args.agent}Agent").default(
+        environment, exploration_steps=args.exp_steps
+    )
 
     # %% Train Agent.
     train_agent(
@@ -71,6 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-steps", type=int, default=1000, help="Maximum steps.")
     parser.add_argument("--num-train", type=int, default=200, help="Training episodes.")
     parser.add_argument("--num-test", type=int, default=5, help="Testing episodes.")
+    parser.add_argument("--exp-steps", type=int, default=0, help="Exploration Steps.")
     parser.add_argument("--render-test", action="store_true", default=False)
 
     main(parser.parse_args())

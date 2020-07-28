@@ -44,6 +44,7 @@ class MBDPGAgent(ModelBasedAgent):
         dpg_noise_clip=1.0,
         dpg_policy_noise=1.0,
         dpg_as_td3=False,
+        dpg_policy_update_frequency=1,
         sim_num_steps=200,
         sim_initial_states_num_trajectories=8,
         sim_initial_dist_num_trajectories=0,
@@ -103,6 +104,7 @@ class MBDPGAgent(ModelBasedAgent):
             policy_opt_batch_size=dpg_batch_size,
             policy_opt_gradient_steps=dpg_gradient_steps,
             policy_opt_target_update_frequency=dpg_target_update_frequency,
+            policy_update_frequency=dpg_policy_update_frequency,
             optimizer=optimizer,
             sim_num_steps=sim_num_steps,
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
@@ -145,7 +147,9 @@ class MBDPGAgent(ModelBasedAgent):
         model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
 
         reward_model = QuadraticReward(
-            torch.eye(environment.dim_state), torch.eye(environment.dim_action)
+            torch.eye(environment.dim_state),
+            torch.eye(environment.dim_action),
+            goal=environment.goal,
         )
 
         policy = NNPolicy(
@@ -157,6 +161,7 @@ class MBDPGAgent(ModelBasedAgent):
             squashed_output=True,
             input_transform=None,
             action_scale=environment.action_scale,
+            goal=environment.goal,
             deterministic=True,
             tau=5e-3,
         )

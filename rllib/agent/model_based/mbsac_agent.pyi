@@ -45,6 +45,7 @@ class MBSACAgent(ModelBasedAgent):
         sac_action_samples: int = ...,
         sac_target_num_steps: int = ...,
         sac_target_update_frequency: int = ...,
+        sac_policy_update_frequency: int = ...,
         sim_num_steps: int = ...,
         sim_initial_states_num_trajectories: int = ...,
         sim_initial_dist_num_trajectories: int = ...,

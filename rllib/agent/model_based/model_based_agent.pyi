@@ -70,6 +70,7 @@ class ModelBasedAgent(AbstractAgent):
         policy_opt_batch_size: Optional[int] = ...,
         policy_opt_gradient_steps: int = ...,
         policy_opt_target_update_frequency: int = ...,
+        policy_update_frequency: int = ...,
         optimizer: Optional[Optimizer] = ...,
         sim_num_steps: int = ...,
         sim_initial_states_num_trajectories: int = ...,

@@ -40,6 +40,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self,
         train_frequency,
         num_rollouts,
+        policy_update_frequency=1,
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
@@ -55,6 +56,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.exploration_steps = exploration_steps
         self.train_frequency = train_frequency
         self.num_rollouts = num_rollouts
+        self.policy_update_frequency = policy_update_frequency
 
         self._training = True
 

@@ -56,6 +56,7 @@ class DPGAgent(OffPolicyAgent):
         noise_clip=1.0,
         train_frequency=1,
         num_rollouts=0,
+        policy_update_frequency=1,
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
@@ -70,6 +71,7 @@ class DPGAgent(OffPolicyAgent):
             target_update_frequency=target_update_frequency,
             train_frequency=train_frequency,
             num_rollouts=num_rollouts,
+            policy_update_frequency=policy_update_frequency,
             gamma=gamma,
             exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
@@ -107,7 +109,7 @@ class DPGAgent(OffPolicyAgent):
         """Set the agent in evaluation mode."""
         super().eval(val)
         self.dist_params.update(
-            add_noise=True, policy_noise=self.params["exploration_noise"]
+            add_noise=False, policy_noise=self.params["exploration_noise"]
         )
 
     @classmethod
@@ -126,7 +128,7 @@ class DPGAgent(OffPolicyAgent):
             dim_action=environment.dim_action,
             num_states=environment.num_states,
             num_actions=environment.num_actions,
-            layers=[400, 300],
+            layers=[256, 256],
             biased_head=True,
             non_linearity="ReLU",
             tau=5e-3,
@@ -137,7 +139,9 @@ class DPGAgent(OffPolicyAgent):
             dim_action=environment.dim_action,
             num_states=environment.num_states,
             num_actions=environment.num_actions,
-            layers=[400, 300],
+            action_scale=environment.action_scale,
+            goal=environment.goal,
+            layers=[256, 256],
             biased_head=True,
             non_linearity="ReLU",
             tau=5e-3,
@@ -156,6 +160,7 @@ class DPGAgent(OffPolicyAgent):
             optimizer=optimizer,
             memory=memory,
             exploration_noise=0.1,
+            policy_update_frequency=2,
             num_iter=1,
             batch_size=100,
             target_update_frequency=1,

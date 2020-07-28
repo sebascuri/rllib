@@ -22,6 +22,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     exploration_episodes: int
     num_rollouts: int
     train_frequency: int
+    policy_update_frequency: int
     _training: bool
     comment: str
     dist_params: dict
@@ -31,6 +32,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self,
         train_frequency: int,
         num_rollouts: int,
+        policy_update_frequency: int = ...,
         gamma: float = ...,
         exploration_steps: int = ...,
         exploration_episodes: int = ...,

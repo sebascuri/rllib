@@ -5,6 +5,7 @@ A model based agent has three behaviors:
 - It optimizes policies with simulated data from the models.
 - It plans with the model and policies (as guiding sampler).
 """
+import contextlib
 
 import gpytorch
 import torch
@@ -111,6 +112,7 @@ class ModelBasedAgent(AbstractAgent):
         policy_opt_batch_size=None,
         policy_opt_gradient_steps=0,
         policy_opt_target_update_frequency=1,
+        policy_update_frequency=1,
         optimizer=None,
         sim_num_steps=20,
         sim_initial_states_num_trajectories=8,
@@ -130,6 +132,7 @@ class ModelBasedAgent(AbstractAgent):
         super().__init__(
             train_frequency=0,
             num_rollouts=0,
+            policy_update_frequency=policy_update_frequency,
             gamma=gamma,
             exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
@@ -489,7 +492,13 @@ class ModelBasedAgent(AbstractAgent):
                 losses.loss.backward()
                 return losses
 
-            losses = self.optimizer.step(closure=closure)
+            if self.train_steps % self.policy_update_frequency == 0:
+                cm = contextlib.nullcontext()
+            else:
+                cm = disable_gradient(self.plan_policy)
+
+            with cm:
+                losses = self.optimizer.step(closure=closure)
 
             self.logger.update(**average_named_tuple(losses)._asdict())
             self.logger.update(**self.algorithm.info())

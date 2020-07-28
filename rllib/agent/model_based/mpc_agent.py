@@ -136,7 +136,9 @@ class MPCAgent(ModelBasedAgent):
         model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
 
         reward_model = QuadraticReward(
-            torch.eye(environment.dim_state), torch.eye(environment.dim_action)
+            torch.eye(environment.dim_state),
+            torch.eye(environment.dim_action),
+            goal=environment.goal,
         )
 
         value_function = NNValueFunction(

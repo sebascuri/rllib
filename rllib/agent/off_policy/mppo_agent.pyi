@@ -34,6 +34,7 @@ class MPPOAgent(OffPolicyAgent):
         target_update_frequency: int = ...,
         train_frequency: int = ...,
         num_rollouts: int = ...,
+        policy_update_frequency: int = ...,
         gamma: float = ...,
         exploration_steps: int = ...,
         exploration_episodes: int = ...,
