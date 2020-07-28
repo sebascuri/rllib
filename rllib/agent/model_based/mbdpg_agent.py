@@ -1,8 +1,15 @@
 """Model-Based Deterministic Policy Gradient Agent."""
+from itertools import chain
+
+import torch
 import torch.nn as nn
+from torch.optim import Adam
 
 from rllib.algorithms.dpg import MBDPG
-from rllib.value_function import NNEnsembleQFunction
+from rllib.model import EnsembleModel, TransformedModel
+from rllib.policy import NNPolicy
+from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.value_function import NNEnsembleQFunction, NNQFunction
 
 from .model_based_agent import ModelBasedAgent
 
@@ -76,7 +83,7 @@ class MBDPGAgent(ModelBasedAgent):
             ],
             **optimizer.defaults,
         )
-        self.dist_params = {"tanh": True, "action_scale": policy.action_scale}
+        self.dist_params = {"action_scale": policy.action_scale}
 
         super().__init__(
             policy=policy,
@@ -111,4 +118,97 @@ class MBDPGAgent(ModelBasedAgent):
             exploration_episodes=exploration_episodes,
             tensorboard=tensorboard,
             comment=comment,
+        )
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        model = EnsembleModel(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_heads=5,
+            layers=[200, 200],
+            biased_head=False,
+            non_linearity="ReLU",
+            input_transform=None,
+            deterministic=False,
+        )
+        dynamical_model = TransformedModel(model, list())
+        model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
+
+        reward_model = QuadraticReward(
+            torch.eye(environment.dim_state), torch.eye(environment.dim_action)
+        )
+
+        policy = NNPolicy(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            layers=[100, 100],
+            biased_head=True,
+            non_linearity="ReLU",
+            squashed_output=True,
+            input_transform=None,
+            action_scale=environment.action_scale,
+            deterministic=True,
+            tau=5e-3,
+        )
+
+        q_function = NNQFunction(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            layers=[200, 200],
+            biased_head=True,
+            non_linearity="ReLU",
+            input_transform=None,
+            tau=5e-3,
+        )
+
+        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=5e-3)
+
+        return cls(
+            model_optimizer,
+            policy,
+            q_function,
+            dynamical_model,
+            reward_model,
+            optimizer,
+            termination=None,
+            initial_distribution=None,
+            plan_horizon=1,
+            plan_samples=8,
+            plan_elites=1,
+            max_memory=10000,
+            model_learn_batch_size=64,
+            model_learn_num_iter=4 if test else 30,
+            bootstrap=True,
+            dpg_num_iter=1,
+            dpg_gradient_steps=1,
+            dpg_batch_size=None,
+            dpg_action_samples=15,
+            dpg_target_num_steps=1,
+            dpg_target_update_frequency=1,
+            dpg_noise_clip=0.5,
+            dpg_policy_noise=0.2,
+            dpg_as_td3=True,
+            sim_num_steps=5 if test else 200,
+            sim_initial_states_num_trajectories=8,
+            sim_initial_dist_num_trajectories=0,
+            sim_memory_num_trajectories=0,
+            sim_refresh_interval=0,
+            sim_num_subsample=1,
+            sim_max_memory=10000,
+            thompson_sampling=False,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
         )

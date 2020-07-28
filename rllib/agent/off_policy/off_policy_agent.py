@@ -16,7 +16,7 @@ class OffPolicyAgent(AbstractAgent):
         batch_size=64,
         train_frequency=0,
         num_rollouts=1,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,

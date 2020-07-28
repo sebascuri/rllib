@@ -1,6 +1,13 @@
 """Implementation of DQNAgent Algorithms."""
+from itertools import chain
+
+import torch.nn.modules.loss as loss
+from torch.optim import Adam
+
 from rllib.algorithms.sac import SoftActorCritic
-from rllib.value_function import NNEnsembleQFunction
+from rllib.dataset.experience_replay import ExperienceReplay
+from rllib.policy import NNPolicy
+from rllib.value_function import NNEnsembleQFunction, NNQFunction
 
 from .off_policy_agent import OffPolicyAgent
 
@@ -89,3 +96,62 @@ class SACAgent(OffPolicyAgent):
         )
         self.policy = self.algorithm.policy
         self.dist_params.update(tanh=True)
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        q_function = NNQFunction(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            layers=[256, 256],
+            biased_head=True,
+            non_linearity="ReLU",
+            tau=5e-3,
+            input_transform=None,
+        )
+        policy = NNPolicy(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            layers=[256, 256],
+            biased_head=True,
+            non_linearity="ReLU",
+            tau=5e-3,
+            input_transform=None,
+            deterministic=False,
+        )
+
+        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
+        criterion = loss.MSELoss
+        memory = ExperienceReplay(max_len=50000, num_steps=0)
+
+        return cls(
+            q_function=q_function,
+            policy=policy,
+            criterion=criterion,
+            optimizer=optimizer,
+            memory=memory,
+            eta=0.2,
+            regularization=False,
+            num_iter=50,
+            train_frequency=50,
+            batch_size=100,
+            target_update_frequency=1,
+            num_rollouts=0,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
+        )

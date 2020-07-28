@@ -1,6 +1,13 @@
 """Implementation of QLearning Algorithms."""
 
+import torch.nn.modules.loss as loss
+from torch.optim import Adam
+
 from rllib.algorithms.q_learning import QLearning
+from rllib.dataset.experience_replay import ExperienceReplay
+from rllib.policy import EpsGreedy
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.value_function import NNQFunction
 
 from .off_policy_agent import OffPolicyAgent
 
@@ -56,7 +63,7 @@ class QLearningAgent(OffPolicyAgent):
         target_update_frequency=4,
         train_frequency=1,
         num_rollouts=0,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
@@ -78,3 +85,48 @@ class QLearningAgent(OffPolicyAgent):
         )
         self.policy = policy
         self.algorithm = QLearning(q_function, criterion(reduction="none"), gamma)
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        q_function = NNQFunction(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            layers=[200, 200],
+            biased_head=True,
+            non_linearity="Tanh",
+            tau=5e-3,
+            input_transform=None,
+        )
+        policy = EpsGreedy(q_function, ExponentialDecay(1.0, 0.01, 500))
+        optimizer = Adam(q_function.parameters(), lr=3e-4)
+        criterion = loss.MSELoss
+        memory = ExperienceReplay(max_len=50000, num_steps=0)
+
+        return cls(
+            q_function=q_function,
+            policy=policy,
+            criterion=criterion,
+            optimizer=optimizer,
+            memory=memory,
+            num_iter=1,
+            batch_size=100,
+            target_update_frequency=1,
+            train_frequency=1,
+            num_rollouts=0,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
+        )

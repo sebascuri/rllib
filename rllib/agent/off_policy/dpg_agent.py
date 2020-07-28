@@ -1,7 +1,14 @@
 """Implementation of Deterministic Policy Gradient Algorithms."""
+from itertools import chain
+
+import torch.nn.modules.loss as loss
+from torch.optim import Adam
 
 from rllib.algorithms.dpg import DPG
+from rllib.dataset.experience_replay import ExperienceReplay
+from rllib.policy import NNPolicy
 from rllib.util.parameter_decay import Constant, ParameterDecay
+from rllib.value_function import NNQFunction
 
 from .off_policy_agent import OffPolicyAgent
 
@@ -13,6 +20,7 @@ class DPGAgent(OffPolicyAgent):
     the computation of the TD-Error, which leads to different algorithms.
 
     TODO: build compatible q-function approximation.
+    TODO: Add policy update frequency.
 
     Parameters
     ----------
@@ -48,7 +56,7 @@ class DPGAgent(OffPolicyAgent):
         noise_clip=1.0,
         train_frequency=1,
         num_rollouts=0,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
@@ -100,4 +108,64 @@ class DPGAgent(OffPolicyAgent):
         super().eval(val)
         self.dist_params.update(
             add_noise=True, policy_noise=self.params["exploration_noise"]
+        )
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        q_function = NNQFunction(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            layers=[400, 300],
+            biased_head=True,
+            non_linearity="ReLU",
+            tau=5e-3,
+            input_transform=None,
+        )
+        policy = NNPolicy(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            layers=[400, 300],
+            biased_head=True,
+            non_linearity="ReLU",
+            tau=5e-3,
+            input_transform=None,
+            deterministic=True,
+        )
+
+        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
+        criterion = loss.MSELoss
+        memory = ExperienceReplay(max_len=50000, num_steps=0)
+
+        return cls(
+            q_function=q_function,
+            policy=policy,
+            criterion=criterion,
+            optimizer=optimizer,
+            memory=memory,
+            exploration_noise=0.1,
+            num_iter=1,
+            batch_size=100,
+            target_update_frequency=1,
+            policy_noise=0.2,
+            noise_clip=0.5,
+            train_frequency=1,
+            num_rollouts=0,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
         )

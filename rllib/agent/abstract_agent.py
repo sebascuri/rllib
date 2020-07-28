@@ -40,7 +40,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self,
         train_frequency,
         num_rollouts,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
@@ -62,6 +62,19 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.last_trajectory = []
         self.params = {}
         self.dist_params = {}
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """Get default agent for a given environment."""
+        raise NotImplementedError
 
     def __str__(self):
         """Generate string to parse the agent."""

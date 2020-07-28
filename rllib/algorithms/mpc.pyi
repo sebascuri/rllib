@@ -115,7 +115,7 @@ class MPPIShooting(MPCSolver):
         num_samples: Optional[int] = ...,
         kappa: Union[float, ParameterDecay] = ...,
         filter_coefficients: Optional[List[float]] = ...,
-        termination: Termination = ...,
+        termination: Optional[Termination] = ...,
         terminal_reward: AbstractValueFunction = ...,
         warm_start: bool = ...,
         action_scale: float = ...,

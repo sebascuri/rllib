@@ -1,8 +1,16 @@
 """Model-Based Soft Actor Critic Agent."""
+from itertools import chain
+
+import torch
 import torch.nn as nn
+import torch.nn.modules.loss as loss
+from torch.optim import Adam
 
 from rllib.algorithms.sac import MBSoftActorCritic
-from rllib.value_function import NNEnsembleQFunction
+from rllib.model import EnsembleModel, TransformedModel
+from rllib.policy import NNPolicy
+from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.value_function import NNEnsembleQFunction, NNQFunction
 
 from .model_based_agent import ModelBasedAgent
 
@@ -109,4 +117,97 @@ class MBSACAgent(ModelBasedAgent):
             exploration_episodes=exploration_episodes,
             tensorboard=tensorboard,
             comment=comment,
+        )
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        model = EnsembleModel(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_heads=5,
+            layers=[200, 200],
+            biased_head=False,
+            non_linearity="ReLU",
+            input_transform=None,
+            deterministic=False,
+        )
+        dynamical_model = TransformedModel(model, list())
+        model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
+
+        reward_model = QuadraticReward(
+            torch.eye(environment.dim_state), torch.eye(environment.dim_action)
+        )
+
+        policy = NNPolicy(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            layers=[100, 100],
+            biased_head=True,
+            non_linearity="ReLU",
+            squashed_output=True,
+            input_transform=None,
+            action_scale=environment.action_scale,
+            deterministic=False,
+            tau=5e-3,
+        )
+
+        q_function = NNQFunction(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            layers=[200, 200],
+            biased_head=True,
+            non_linearity="ReLU",
+            input_transform=None,
+            tau=5e-3,
+        )
+
+        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=5e-3)
+
+        return cls(
+            model_optimizer,
+            policy,
+            q_function,
+            dynamical_model,
+            reward_model,
+            optimizer,
+            termination=None,
+            initial_distribution=None,
+            plan_horizon=1,
+            plan_samples=8,
+            plan_elites=1,
+            max_memory=10000,
+            model_learn_batch_size=64,
+            model_learn_num_iter=4 if test else 30,
+            bootstrap=True,
+            sac_value_learning_criterion=loss.MSELoss,
+            sac_eta=0.2,
+            sac_regularization=False,
+            sac_num_iter=5 if test else 100,
+            sac_gradient_steps=5 if test else 50,
+            sac_batch_size=None,
+            sac_action_samples=15,
+            sac_target_num_steps=1,
+            sac_target_update_frequency=4,
+            sim_num_steps=5 if test else 200,
+            sim_initial_states_num_trajectories=8,
+            sim_initial_dist_num_trajectories=0,
+            sim_memory_num_trajectories=0,
+            sim_refresh_interval=0,
+            sim_num_subsample=1,
+            sim_max_memory=10000,
+            thompson_sampling=False,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
         )

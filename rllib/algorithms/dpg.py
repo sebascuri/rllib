@@ -162,9 +162,7 @@ class MBDPG(DPG):
         self.termination = termination
         self.num_steps = num_steps
         self.num_samples = num_samples
-        self.value_function = IntegrateQValueFunction(
-            self.q_target, self.policy, 1, dist_params=self.dist_params
-        )
+        self.value_function = IntegrateQValueFunction(self.q_target, self.policy, 1)
 
     def forward(self, state):
         """Compute the losses."""
@@ -180,7 +178,6 @@ class MBDPG(DPG):
                 value_function=self.value_function,
                 num_samples=self.num_samples,
                 termination=self.termination,
-                **self.dist_params,
             )
 
         critic_loss, td_error = self.critic_loss(
@@ -188,7 +185,7 @@ class MBDPG(DPG):
         )
 
         # Actor loss
-        actor_loss = self.actor_loss(state)
+        actor_loss = self.actor_loss(state).sum()
 
         return ACLoss(
             loss=(actor_loss + critic_loss).squeeze(-1),

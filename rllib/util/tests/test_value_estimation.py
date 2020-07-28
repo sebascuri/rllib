@@ -59,7 +59,7 @@ class TestMCReturn(object):
     @pytest.fixture(params=[True, False], scope="class")
     def value_function(self, request):
         if request:
-            return lambda x: 0.01
+            return lambda x: torch.tensor(0.01)
         else:
             return None
 

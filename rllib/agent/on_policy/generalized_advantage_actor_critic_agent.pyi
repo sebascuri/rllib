@@ -17,7 +17,7 @@ class GAACAgent(ActorCriticAgent):
         critic: AbstractValueFunction,
         optimizer: Optimizer,
         criterion: Type[_Loss],
-        num_inter: int = ...,
+        num_iter: int = ...,
         target_update_frequency: int = ...,
         lambda_: float = ...,
         train_frequency: int = ...,

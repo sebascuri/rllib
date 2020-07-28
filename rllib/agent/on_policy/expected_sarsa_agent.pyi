@@ -18,7 +18,7 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         policy: AbstractQFunctionPolicy,
         criterion: Type[_Loss],
         optimizer: Optimizer,
-        num_inter: int = ...,
+        num_iter: int = ...,
         batch_size: int = ...,
         target_update_frequency: int = ...,
         train_frequency: int = ...,

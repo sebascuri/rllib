@@ -3,9 +3,14 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.optim import Adam
 
+from rllib.algorithms.mpc import CEMShooting
 from rllib.algorithms.td import ModelBasedTDLearning
+from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
+from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.value_function import NNValueFunction
 
 from .model_based_agent import ModelBasedAgent
 
@@ -105,3 +110,83 @@ class MPCAgent(ModelBasedAgent):
             self.logger.update(
                 critic_losses=loss.item(), td_errors=losses.td_error.abs().mean().item()
             )
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        model = EnsembleModel(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_heads=5,
+            layers=[200, 200],
+            biased_head=False,
+            non_linearity="ReLU",
+            input_transform=None,
+            deterministic=False,
+        )
+        dynamical_model = TransformedModel(model, list())
+        model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
+
+        reward_model = QuadraticReward(
+            torch.eye(environment.dim_state), torch.eye(environment.dim_action)
+        )
+
+        value_function = NNValueFunction(
+            dim_state=environment.dim_state,
+            layers=[200, 200],
+            biased_head=True,
+            non_linearity="ReLU",
+            input_transform=None,
+            tau=5e-3,
+        )
+
+        mpc_solver = CEMShooting(
+            dynamical_model,
+            reward_model,
+            5 if test else 25,
+            gamma=gamma,
+            num_iter=2 if test else 5,
+            num_samples=20 if test else 400,
+            num_elites=5 if test else 40,
+            termination=None,
+            terminal_reward=value_function,
+            warm_start=True,
+            default_action="zero",
+            num_cpu=1,
+        )
+        policy = MPCPolicy(mpc_solver)
+
+        value_optimizer = Adam(value_function.parameters(), lr=5e-3)
+
+        return cls(
+            policy,
+            model_learn_num_iter=4 if test else 30,
+            model_learn_batch_size=64,
+            bootstrap=True,
+            model_optimizer=model_optimizer,
+            value_optimizer=value_optimizer,
+            max_memory=1,
+            value_opt_num_iter=0,
+            value_opt_batch_size=None,
+            value_num_steps_returns=1,
+            value_gradient_steps=4 if test else 50,
+            sim_num_steps=0,
+            sim_initial_states_num_trajectories=0,
+            sim_initial_dist_num_trajectories=0,
+            sim_memory_num_trajectories=0,
+            initial_distribution=None,
+            thompson_sampling=False,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
+        )

@@ -8,7 +8,6 @@ from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.environment.mdps import EasyGridWorld
 from rllib.policy import EpsGreedy, MellowMax, SoftMax
-from rllib.util.parameter_decay import ExponentialDecay
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 
@@ -40,38 +39,6 @@ def agent(request):
 @pytest.fixture(params=[EpsGreedy, SoftMax, MellowMax])
 def policy(request):
     return request.param
-
-
-def test_nnq_interaction(environment, agent):
-    environment = GymEnvironment(environment, SEED)
-
-    q_function = NNQFunction(
-        environment.dim_observation,
-        environment.dim_action,
-        num_states=environment.num_states,
-        num_actions=environment.num_actions,
-        layers=LAYERS,
-        tau=TARGET_UPDATE_TAU,
-    )
-    policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
-
-    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
-    criterion = torch.nn.MSELoss
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
-
-    agent = agent(
-        q_function=q_function,
-        policy=policy,
-        criterion=criterion,
-        optimizer=optimizer,
-        memory=memory,
-        target_update_frequency=TARGET_UPDATE_FREQUENCY,
-        gamma=GAMMA,
-        batch_size=BATCH_SIZE,
-        exploration_steps=2,
-    )
-    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
-    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
 
 
 def test_policies(environment, policy):

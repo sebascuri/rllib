@@ -1,6 +1,11 @@
 """Implementation of Q-REPS Agent."""
+from torch.optim import Adam
+
 from rllib.algorithms.reps import QREPS
+from rllib.dataset.experience_replay import ExperienceReplay
+from rllib.policy import NNPolicy
 from rllib.policy.q_function_policy import SoftMax
+from rllib.value_function import NNQFunction, NNValueFunction
 
 from .reps_agent import REPSAgent
 
@@ -30,7 +35,7 @@ class QREPSAgent(REPSAgent):
         num_iter=1000,
         train_frequency=0,
         num_rollouts=1,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
@@ -82,3 +87,69 @@ class QREPSAgent(REPSAgent):
 
         self.memory.reset()  # Erase memory.
         self.algorithm.update()  # Step the etas in REPS.
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=1.0,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        value_function = NNValueFunction(
+            dim_state=environment.dim_state,
+            num_states=environment.num_states,
+            layers=[200, 200],
+            biased_head=True,
+            non_linearity="Tanh",
+            tau=5e-3,
+            input_transform=None,
+        )
+        q_function = NNQFunction(
+            environment.dim_state,
+            environment.dim_action,
+            environment.num_states,
+            environment.num_actions,
+            layers=[64, 64],
+        )
+
+        if environment.num_actions > 0:
+            policy = None
+        else:
+            policy = NNPolicy(
+                dim_state=environment.dim_state,
+                dim_action=environment.dim_action,
+                num_states=environment.num_states,
+                num_actions=environment.num_actions,
+                layers=[200, 200],
+                biased_head=True,
+                non_linearity="Tanh",
+                tau=5e-3,
+                input_transform=None,
+                deterministic=False,
+            )
+
+        optimizer = Adam(value_function.parameters(), lr=3e-4)
+        memory = ExperienceReplay(max_len=50000, num_steps=0)
+
+        return cls(
+            policy=policy,
+            q_function=q_function,
+            value_function=value_function,
+            optimizer=optimizer,
+            memory=memory,
+            epsilon=1.0,
+            regularization=False,
+            num_iter=5 if test else 200,
+            batch_size=100,
+            train_frequency=0,
+            num_rollouts=15,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
+        )

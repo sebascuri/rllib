@@ -30,4 +30,6 @@ class AbstractReward(nn.Module, metaclass=ABCMeta):
     @torch.jit.export
     def set_goal(self, goal):
         """Set reward model goal."""
+        if goal is None:
+            return
         self.goal = goal

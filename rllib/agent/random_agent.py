@@ -35,6 +35,29 @@ class RandomAgent(AbstractAgent):
         )
         self.dataset = TrajectoryDataset(sequence_length=1)
 
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        return RandomAgent(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
+        )
+
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         self.dataset.append(self.last_trajectory)

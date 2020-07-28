@@ -18,7 +18,7 @@ class TD3Agent(DPGAgent):
         q_function that is learned.
     policy: AbstractPolicy
         policy that is learned.
-    exploration: AbstractExplorationStrategy.
+    exploration_noise: ParameterDecay.
         exploration strategy that returns the actions.
     criterion: nn.Module
     optimizer: nn.Optimizer
@@ -48,7 +48,7 @@ class TD3Agent(DPGAgent):
         noise_clip=1.0,
         train_frequency=1,
         num_rollouts=0,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,

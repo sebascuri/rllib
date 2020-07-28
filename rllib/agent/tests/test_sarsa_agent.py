@@ -5,7 +5,6 @@ from rllib.agent import ExpectedSARSAAgent, SARSAAgent
 from rllib.environment import GymEnvironment
 from rllib.environment.mdps import EasyGridWorld
 from rllib.policy import EpsGreedy, MellowMax, SoftMax
-from rllib.util.parameter_decay import ExponentialDecay
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 
@@ -42,34 +41,6 @@ def policy(request):
 @pytest.fixture(params=[1, 4])
 def batch_size(request):
     return request.param
-
-
-def test_nnq_interaction(environment, agent):
-    environment = GymEnvironment(environment, SEED)
-
-    q_function = NNQFunction(
-        environment.dim_observation,
-        environment.dim_action,
-        num_states=environment.num_states,
-        num_actions=environment.num_actions,
-        layers=LAYERS,
-        tau=TARGET_UPDATE_TAU,
-    )
-    policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
-
-    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
-    criterion = torch.nn.MSELoss
-    agent = agent(
-        q_function=q_function,
-        policy=policy,
-        criterion=criterion,
-        optimizer=optimizer,
-        target_update_frequency=TARGET_UPDATE_FREQUENCY,
-        gamma=GAMMA,
-        exploration_episodes=2,
-    )
-    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
-    evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
 
 
 def test_policies(environment, policy, batch_size):

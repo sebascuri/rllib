@@ -124,7 +124,10 @@ def mc_return(
     if value_function is not None:
         final_state = trajectory[-1].next_state
         is_terminal = trajectory[-1].done
-        value += discount * value_function(final_state) * (1.0 - is_terminal)
+        final_value = value_function(final_state)
+        if final_value.ndim > value.ndim:
+            final_value = final_value.min(dim=-1)[0]
+        value += discount * final_value * (1.0 - is_terminal)
     return value
 
 

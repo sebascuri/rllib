@@ -22,4 +22,4 @@ class QuadraticReward(AbstractReward):
         """See `abstract_reward.forward'."""
         state_cost = torch_quadratic(state - self.goal, self.q)
         action_cost = torch_quadratic(action, self.r)
-        return -(state_cost + action_cost).squeeze(), torch.zeros(1)
+        return -(state_cost + action_cost).squeeze(-1), torch.zeros(1)

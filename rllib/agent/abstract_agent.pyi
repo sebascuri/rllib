@@ -1,12 +1,15 @@
 from abc import ABCMeta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type, TypeVar
 
 from torch import Tensor
 
 from rllib.dataset.datatypes import Action, Distribution, Observation, State
+from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
 from rllib.util.parameter_decay import ParameterDecay
+
+T = TypeVar("T", bound="AbstractAgent")
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
@@ -34,6 +37,16 @@ class AbstractAgent(object, metaclass=ABCMeta):
         tensorboard: bool = ...,
         comment: str = ...,
     ) -> None: ...
+    @classmethod
+    def default(
+        cls: Type[T],
+        environment: AbstractEnvironment,
+        gamma: float = ...,
+        exploration_steps: int = ...,
+        exploration_episodes: int = ...,
+        tensorboard: bool = ...,
+        test: bool = ...,
+    ) -> T: ...
     def act(self, state: State) -> Action: ...
     def observe(self, observation: Observation) -> None: ...
     def start_episode(self) -> None: ...

@@ -1,6 +1,12 @@
 """Implementation of Expected SARSA Agent."""
 
+import torch.nn.modules.loss as loss
+from torch.optim import Adam
+
 from rllib.algorithms.esarsa import ESARSA
+from rllib.policy import EpsGreedy
+from rllib.util.parameter_decay import ExponentialDecay
+from rllib.value_function import NNQFunction
 
 from .on_policy_agent import OnPolicyAgent
 
@@ -48,7 +54,7 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         target_update_frequency=1,
         train_frequency=1,
         num_rollouts=0,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
@@ -69,3 +75,46 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         )
         self.algorithm = ESARSA(q_function, criterion(reduction="mean"), policy, gamma)
         self.policy = policy
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=0.99,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        test=False,
+    ):
+        """See `AbstractAgent.default'."""
+        q_function = NNQFunction(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            layers=[200, 200],
+            biased_head=True,
+            non_linearity="Tanh",
+            tau=0,
+            input_transform=None,
+        )
+
+        policy = EpsGreedy(q_function, ExponentialDecay(start=1.0, end=0.01, decay=500))
+        optimizer = Adam(q_function.parameters(), lr=3e-4)
+        criterion = loss.MSELoss
+
+        return cls(
+            q_function=q_function,
+            policy=policy,
+            optimizer=optimizer,
+            criterion=criterion,
+            num_iter=1,
+            target_update_frequency=4,
+            train_frequency=0,
+            num_rollouts=1,
+            gamma=gamma,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
+            tensorboard=tensorboard,
+            comment=environment.name,
+        )

@@ -49,7 +49,7 @@ class DDQNAgent(QLearningAgent):
         target_update_frequency=4,
         train_frequency=1,
         num_rollouts=0,
-        gamma=1.0,
+        gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,

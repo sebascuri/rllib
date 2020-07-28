@@ -5,7 +5,7 @@ import torch
 
 from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
-from rllib.util.gaussian_processes import SparseGP
+from rllib.util.gaussian_processes import ExactGP, SparseGP
 from rllib.util.gaussian_processes.utilities import add_data_to_gp, bkb
 from rllib.util.parameter_decay import Constant, ParameterDecay
 
@@ -125,3 +125,24 @@ class GPUCBAgent(AbstractAgent):
             inducing_points = bkb(self.policy.gp, inducing_points)
             self.policy.gp.set_inducing_points(inducing_points)
             self.logger.update(num_inducing_points=self.policy.gp.xu.shape[0])
+
+    @classmethod
+    def default(
+        cls,
+        environment,
+        gamma=1,
+        exploration_steps=0,
+        exploration_episodes=0,
+        tensorboard=False,
+        comment="",
+    ):
+        """See `AbstractAgent.default'."""
+        x = torch.linspace(-1, 6, 100)
+        likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        likelihood.noise_covar.noise = 0.1 ** 2
+        x0 = x[x > 0.2][[0]].unsqueeze(-1)
+        _, y0, _, _ = environment.step(x0.numpy())
+        y0 = torch.tensor(y0, dtype=torch.get_default_dtype())
+
+        model = ExactGP(x0, y0, likelihood)
+        return cls(model, x, beta=2.0, noisy=False, tensorboard=tensorboard)
