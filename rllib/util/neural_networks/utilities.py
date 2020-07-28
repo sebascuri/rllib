@@ -23,11 +23,33 @@ class Swish(nn.Module):
 
     The swish activation function is given by:
         f(x) = x * sigmoid(x)
+
+    References
+    ----------
+    Ramachandran, P., Zoph, B., & Le, Q. V. (2017).
+    Swish: a self-gated activation function. arXiv.
     """
 
     def forward(self, x):
         """Apply forward computation of the module."""
         return x * torch.sigmoid(x)
+
+
+class Mish(nn.Module):
+    """Mish activation function.
+
+    The swish activation function is given by:
+        f(x) = x * tanh(softplus(x))
+
+    References
+    ----------
+    Misra, D. (2019).
+    Mish: A self regularized non-monotonic neural activation function. arXiv.
+    """
+
+    def forward(self, x):
+        """Apply forward computation of module."""
+        return x * (torch.tanh(torch.nn.functional.softplus(x)))
 
 
 def parse_nonlinearity(non_linearity):
@@ -40,6 +62,8 @@ def parse_nonlinearity(non_linearity):
         return getattr(nn, non_linearity.upper())
     elif non_linearity.lower() == "swish":
         return Swish
+    elif non_linearity.lower() == "mish":
+        return Mish
     else:
         raise NotImplementedError(f"non-linearity {non_linearity} not implemented")
 
@@ -409,6 +433,7 @@ def freeze_parameters(module):
     """
     for param in module.parameters():
         param.requires_grad = False
+        param.grad = None
 
 
 def unfreeze_parameters(module):
@@ -422,6 +447,7 @@ def unfreeze_parameters(module):
     """
     for param in module.parameters():
         param.requires_grad = True
+        param.grad = torch.zeros_like(param.data)
 
 
 class disable_gradient(object):
