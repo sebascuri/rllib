@@ -8,7 +8,7 @@ import torch
 
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
-from rllib.util.utilities import RewardTransformer
+from rllib.util.utilities import RewardTransformer, get_backend
 
 MBValueReturn = namedtuple("MBValueReturn", ["value_estimate", "trajectory"])
 
@@ -38,9 +38,16 @@ def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
     From rllab.
     """
     rewards = reward_transformer(rewards)
+    bk = get_backend(rewards)
+    if bk is torch and not rewards.requires_grad:
+        rewards = rewards.numpy()
     if type(rewards) is np.ndarray:
         # The copy is for future transforms to pytorch
-        return scipy.signal.lfilter([1], [1, -float(gamma)], rewards[::-1])[::-1].copy()
+        returns = scipy.signal.lfilter([1], [1, -gamma], rewards[::-1])[::-1].copy()
+        if bk is torch:
+            return torch.tensor(returns, dtype=torch.get_default_dtype())
+        else:
+            return returns
 
     val = torch.zeros_like(rewards)
     r = 0
