@@ -41,13 +41,13 @@ class OnPolicyAgent(AbstractAgent):
         super().observe(observation)
         self.trajectories[-1].append(observation)
         if (
-            self._training
-            and len(self.trajectories[-1]) >= self.batch_size  # training mode.
-            and self.train_frequency > 0  # enough data.
-            and self.total_steps  # train after train_frequency transitions.
-            % self.train_frequency
-            == 0
-        ):  # correct steps.
+            self._training  # training mode.
+            and self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
+            and len(self.trajectories[-1]) >= self.batch_size  # enough data.
+            and self.train_frequency > 0  # train after train_frequency transitions.
+            and self.total_steps % self.train_frequency == 0  # correct steps.
+        ):
             self._train()
             self.trajectories[-1] = []
 
@@ -59,12 +59,12 @@ class OnPolicyAgent(AbstractAgent):
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if (
-            self._training
-            and self.num_rollouts > 0  # training mode.
-            and self.total_episodes  # train after num_rollouts transitions.
-            % self.num_rollouts
-            == 0
-        ):  # correct steps.
+            self._training  # training mode.
+            and self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
+            and self.num_rollouts > 0  # train after num_rollouts transitions.
+            and self.total_episodes % self.num_rollouts == 0  # correct steps.
+        ):
             self._train()
             self.trajectories = list()
         if self.num_rollouts == 0:

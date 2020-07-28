@@ -1,7 +1,9 @@
 """Off Policy Agent."""
+import contextlib
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.utilities import average_named_tuple
+from rllib.util.neural_networks.utilities import disable_gradient
 
 
 class OffPolicyAgent(AbstractAgent):
@@ -16,6 +18,7 @@ class OffPolicyAgent(AbstractAgent):
         batch_size=64,
         train_frequency=0,
         num_rollouts=1,
+        policy_update_frequency=1,
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
@@ -25,6 +28,7 @@ class OffPolicyAgent(AbstractAgent):
         super().__init__(
             train_frequency=train_frequency,
             num_rollouts=num_rollouts,
+            policy_update_frequency=policy_update_frequency,
             gamma=gamma,
             exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
@@ -45,16 +49,20 @@ class OffPolicyAgent(AbstractAgent):
         self.memory.append(observation)
         if (
             self._training  # training mode.
+            and self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
             and len(self.memory) >= self.batch_size  # enough data.
             and self.train_frequency > 0  # train after a transition.
             and self.total_steps % self.train_frequency == 0  # correct steps.
-        ):  # correct steps.
+        ):
             self._train()
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
         if (
             self._training  # training mode.
+            and self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
             and len(self.memory) > self.batch_size  # enough data.
             and self.num_rollouts > 0  # train once the episode ends.
             and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
@@ -82,7 +90,13 @@ class OffPolicyAgent(AbstractAgent):
                 loss.backward()
                 return losses_
 
-            losses = self.optimizer.step(closure=closure)
+            if self.train_steps % self.policy_update_frequency == 0:
+                cm = contextlib.nullcontext()
+            else:
+                cm = disable_gradient(self.policy)
+
+            with cm:
+                losses = self.optimizer.step(closure=closure)
 
             # Update memory
             self.memory.update(idx, losses.td_error.abs().detach())
