@@ -44,17 +44,21 @@ class PPO(AbstractAlgorithm):
     ----------
     Schulman, J., Wolski, F., Dhariwal, P., Radford, A., & Klimov, O. (2017).
     Proximal policy optimization algorithms. ArXiv.
+
+    Engstrom, L., et al. (2020).
+    Implementation Matters in Deep Policy Gradients: A Case Study on PPO and TRPO. ICLR.
     """
 
     def __init__(
         self,
         policy,
         value_function,
+        criterion=nn.MSELoss,
         epsilon=0.2,
-        weight_value_function=1,
-        weight_entropy=0,
+        weight_value_function=1.0,
+        weight_entropy=0.01,
         lambda_=0.97,
-        gamma=1.0,
+        gamma=0.99,
     ):
         old_policy = deep_copy_module(policy)
         freeze_parameters(old_policy)
@@ -71,11 +75,16 @@ class PPO(AbstractAlgorithm):
             epsilon = Constant(epsilon)
         self.epsilon = epsilon
 
-        self.value_loss = nn.MSELoss(reduction="mean")
+        self.value_loss = criterion(reduction="mean")
         self.weight_value_function = weight_value_function
         self.weight_entropy = weight_entropy
 
-        self.gae = GAE(lambda_, self.gamma, self.value_function_target)
+        self.gae = GAE(
+            lambda_=lambda_, gamma=self.gamma, value_function=self.value_function_target
+        )
+        self.gae1 = GAE(
+            lambda_=1, gamma=self.gamma, value_function=self.value_function_target
+        )
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
@@ -109,17 +118,23 @@ class PPO(AbstractAlgorithm):
         approx_kl_div = torch.tensor(0.0)
 
         for trajectory in trajectories:
+            state, action, reward, next_state, done, *r = trajectory
+            value_pred = self.value_function(state)
             with torch.no_grad():
                 adv = self.gae(trajectory)
+                adv = (adv - adv.mean()) / adv.std()
 
-            state, action, reward, next_state, done, *r = trajectory
+                # value_target = adv + self.value_function_target(state)
+                value_target = self.gae1(trajectory)
+
             pi = tensor_to_distribution(self.policy(state))
             pi_old = tensor_to_distribution(self.old_policy(state))
             log_p, log_p_old = pi.log_prob(action), pi_old.log_prob(action)
 
             # Compute Value loss.
-            value_pred = self.value_function(state)
-            value_loss += self.value_loss(value_pred, adv + value_pred.detach())
+
+            # value_loss += self.value_loss(value_pred, adv + value_pred.detach())
+            value_loss += self.value_loss(value_pred, value_target)
 
             # Compute surrogate loss.
             ratio = torch.exp(log_p - log_p_old)

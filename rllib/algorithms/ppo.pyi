@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Type, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -28,6 +28,7 @@ class PPO(AbstractAlgorithm):
         self,
         policy: AbstractPolicy,
         value_function: AbstractValueFunction,
+        value_loss: Type[_Loss] = ...,
         epsilon: Union[ParameterDecay, float] = ...,
         weight_value_function: float = ...,
         weight_entropy: float = ...,
