@@ -28,6 +28,16 @@ $ sudo apt-get install -y --no-install-recommends --quiet build-essential libope
 ```
 
 
+## Running an experiment.
+```bash
+$ python exps/run $ENVIRONMENT $AGENT
+```
+
+For help, see
+```bash
+$ python exps/run.py --help
+```
+
 ## Pre Commit
 install pre-commit with
 ```bash
