@@ -24,6 +24,8 @@ class PPOAgent(OnPolicyAgent):
         target_kl: float = ...,
         weight_value_function: float = ...,
         weight_entropy: float = ...,
+        monte_carlo_target: bool = ...,
+        clamp_value: bool = ...,
         num_iter: int = ...,
         target_update_frequency: int = ...,
         train_frequency: int = ...,

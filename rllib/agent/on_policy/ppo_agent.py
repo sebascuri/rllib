@@ -31,6 +31,8 @@ class PPOAgent(OnPolicyAgent):
         target_kl=0.01,
         weight_value_function=1.0,
         weight_entropy=0.01,
+        monte_carlo_target=False,
+        clamp_value=False,
         num_iter=80,
         target_update_frequency=1,
         train_frequency=0,
@@ -48,6 +50,8 @@ class PPOAgent(OnPolicyAgent):
             criterion=criterion,
             weight_value_function=weight_value_function,
             weight_entropy=weight_entropy,
+            monte_carlo_target=monte_carlo_target,
+            clamp_value=clamp_value,
             lambda_=lambda_,
             gamma=gamma,
         )
@@ -68,7 +72,6 @@ class PPOAgent(OnPolicyAgent):
 
     def _early_stop_training(self, *args, **kwargs):
         """Early stop the training algorithm."""
-        print(kwargs.get("kl_div"))
         if (
             kwargs.get("kl_div", kwargs.get("approx_kl_div", self.target_kl))
             >= 1.5 * self.target_kl
@@ -131,8 +134,10 @@ class PPOAgent(OnPolicyAgent):
             target_kl=0.01,
             weight_value_function=0.5,
             weight_entropy=0.01,
+            monte_carlo_target=False,
+            clamp_value=True,
             num_iter=80,
-            target_update_frequency=1,
+            target_update_frequency=4,
             train_frequency=0,
             num_rollouts=4,
             gamma=gamma,

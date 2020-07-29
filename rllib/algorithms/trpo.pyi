@@ -5,8 +5,8 @@ from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
 from rllib.algorithms.gae import GAE
-from rllib.policy import AbstractPolicy
 from rllib.dataset.datatypes import Observation
+from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractValueFunction
 
