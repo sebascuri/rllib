@@ -175,7 +175,6 @@ class PPO(AbstractAlgorithm):
         entropy_bonus = torch.tensor(0.0)
         kl_div = torch.tensor(0.0)
 
-        num_t = len(trajectories)
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory
             with torch.no_grad():
@@ -207,19 +206,20 @@ class PPO(AbstractAlgorithm):
             # Compute exact and approximate KL divergence
             kl_div += kl_div_
 
+        num_trajectories = len(trajectories)
         combined_loss = (
             surrogate_loss
             + self.weight_value_function * value_loss
             - self.weight_entropy * entropy_bonus
         )
 
-        self._info = {"kl_div": kl_div / num_t}
+        self._info = {"kl_div": kl_div / num_trajectories}
 
         return PPOLoss(
-            loss=combined_loss / num_t,
-            critic_loss=value_loss / num_t,
-            surrogate_loss=surrogate_loss / num_t,
-            entropy=entropy_bonus / num_t,
+            loss=combined_loss / num_trajectories,
+            critic_loss=value_loss / num_trajectories,
+            surrogate_loss=surrogate_loss / num_trajectories,
+            entropy=entropy_bonus / num_trajectories,
         )
 
     def forward(self, trajectories):
@@ -242,11 +242,11 @@ class PPO(AbstractAlgorithm):
         kl_div: torch.Tensor
             The average KL divergence of the policy.
         """
-        try:
-            # When possible, paralelize the trajectories.
-            trajectories = [stack_list_of_tuples(trajectories)]
-        except RuntimeError:
-            pass
+        if len(trajectories) > 1:
+            try:  # When possible, paralelize the trajectories.
+                trajectories = [stack_list_of_tuples(trajectories)]
+            except RuntimeError:
+                pass
         return self.forward_slow(trajectories)
 
     def update(self):

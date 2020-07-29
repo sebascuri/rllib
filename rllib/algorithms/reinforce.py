@@ -2,6 +2,7 @@
 
 import torch
 
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 from rllib.util.utilities import tensor_to_distribution
 
@@ -55,7 +56,7 @@ class REINFORCE(AbstractAlgorithm):
         """Estimate the returns of a trajectory."""
         return self.gae(trajectory)  # GAE returns.
 
-    def forward(self, trajectories):
+    def forward_slow(self, trajectories):
         """Compute the losses."""
         actor_loss = torch.tensor(0.0)
         baseline_loss = torch.tensor(0.0)
@@ -81,7 +82,21 @@ class REINFORCE(AbstractAlgorithm):
 
                 baseline_loss += self.criterion(self.baseline(state), target_v)
 
-        return PGLoss(actor_loss + baseline_loss, actor_loss, baseline_loss)
+        num_trajectories = len(trajectories)
+        return PGLoss(
+            loss=actor_loss + baseline_loss,
+            policy_loss=actor_loss,
+            baseline_loss=baseline_loss / num_trajectories,
+        )
+
+    def forward(self, trajectories):
+        """Compute the losses of a trajectory."""
+        if len(trajectories) > 1:
+            try:  # When possible, paralelize the trajectories.
+                trajectories = [stack_list_of_tuples(trajectories)]
+            except RuntimeError:
+                pass
+        return self.forward_slow(trajectories)
 
     def update(self):
         """Update the baseline network."""

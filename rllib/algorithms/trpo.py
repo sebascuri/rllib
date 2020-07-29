@@ -5,6 +5,7 @@ import torch.distributions
 import torch.nn as nn
 
 from rllib.algorithms.gae import GAE
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import (
     deep_copy_module,
     freeze_parameters,
@@ -175,7 +176,7 @@ class TRPO(AbstractAlgorithm):
 
         return adv, value_target
 
-    def forward(self, trajectories):
+    def forward_slow(self, trajectories):
         """Compute the losses a trajectory.
 
         Parameters
@@ -203,7 +204,6 @@ class TRPO(AbstractAlgorithm):
         kl_mean = torch.tensor(0.0)
         kl_var = torch.tensor(0.0)
 
-        num_t = len(trajectories)
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory
             value_pred = self.value_function(state)
@@ -235,21 +235,31 @@ class TRPO(AbstractAlgorithm):
 
         combined_loss = surrogate_loss + kl_loss + dual_loss
 
+        num_trajectories = len(trajectories)
         self._info = {
-            "kl_div": (kl_mean + kl_var) / num_t,
-            "kl_mean": kl_mean / num_t,
-            "kl_var": kl_var / num_t,
+            "kl_div": (kl_mean + kl_var) / num_trajectories,
+            "kl_mean": kl_mean / num_trajectories,
+            "kl_var": kl_var / num_trajectories,
             "eta_mean": self.eta_mean(),
             "eta_var": self.eta_var(),
         }
 
         return TRPOLoss(
-            loss=combined_loss / num_t,
-            critic_loss=value_loss / num_t,
-            surrogate_loss=surrogate_loss / num_t,
-            kl_loss=kl_loss,
-            dual_loss=dual_loss / num_t,
+            loss=combined_loss / num_trajectories,
+            critic_loss=value_loss / num_trajectories,
+            surrogate_loss=surrogate_loss / num_trajectories,
+            kl_loss=kl_loss / num_trajectories,
+            dual_loss=dual_loss / num_trajectories,
         )
+
+    def forward(self, trajectories):
+        """Compute the losses of a trajectory."""
+        if len(trajectories) > 1:
+            try:  # When possible, paralelize the trajectories.
+                trajectories = [stack_list_of_tuples(trajectories)]
+            except RuntimeError:
+                pass
+        return self.forward_slow(trajectories)
 
     def update(self):
         """Update the baseline network."""

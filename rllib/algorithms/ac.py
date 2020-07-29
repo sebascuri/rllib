@@ -1,6 +1,7 @@
 """Actor-Critic Algorithm."""
 import torch
 
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util import discount_sum, integrate, tensor_to_distribution
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 
@@ -64,8 +65,8 @@ class ActorCritic(AbstractAlgorithm):
         returns = pred_q
         return returns
 
-    def forward(self, trajectories):
-        """Compute the losses."""
+    def forward_slow(self, trajectories):
+        """Compute the losses iterating through the trajectories."""
         actor_loss = torch.tensor(0.0)
         critic_loss = torch.tensor(0.0)
         td_error = torch.tensor(0.0)
@@ -99,11 +100,20 @@ class ActorCritic(AbstractAlgorithm):
 
         num_trajectories = len(trajectories)
         return ACLoss(
-            (actor_loss + critic_loss) / num_trajectories,
-            actor_loss / num_trajectories,
-            critic_loss / num_trajectories,
-            td_error / num_trajectories,
+            loss=(actor_loss + critic_loss) / num_trajectories,
+            policy_loss=actor_loss / num_trajectories,
+            critic_loss=critic_loss / num_trajectories,
+            td_error=td_error / num_trajectories,
         )
+
+    def forward(self, trajectories):
+        """Compute the losses of a trajectory."""
+        if len(trajectories) > 1:
+            try:  # When possible, paralelize the trajectories.
+                trajectories = [stack_list_of_tuples(trajectories)]
+            except RuntimeError:
+                pass
+        return self.forward_slow(trajectories)
 
     def update(self):
         """Update the baseline network."""

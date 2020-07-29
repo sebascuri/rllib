@@ -29,7 +29,7 @@ class ExpectedActorCritic(ActorCritic):
 
     eps = 1e-12
 
-    def forward(self, trajectories):
+    def forward_slow(self, trajectories):
         """Compute the losses."""
         actor_loss = torch.tensor(0.0)
         critic_loss = torch.tensor(0.0)
