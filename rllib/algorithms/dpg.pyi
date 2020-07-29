@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from rllib.dataset.datatypes import Termination
+from rllib.dataset.datatypes import Observation, Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
@@ -38,7 +38,7 @@ class DPG(AbstractAlgorithm):
     def critic_loss(
         self, state: Tensor, action: Tensor, q_target: Tensor
     ) -> TDLoss: ...
-    def forward(self, *args: Tensor, **kwargs) -> ACLoss: ...
+    def forward(self, observation: Observation, **kwargs) -> ACLoss: ...
 
 class MBDPG(DPG):
     dynamical_model: AbstractModel

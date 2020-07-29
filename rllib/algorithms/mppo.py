@@ -236,21 +236,13 @@ class MPPO(AbstractAlgorithm):
 
         return kl_mean, kl_var, pi_dist
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the losses for one step of MPPO.
 
         Parameters
         ----------
-        state: torch.Tensor
-            The state at which to compute the losses.
-        action: torch.Tensor
-            Sampled action.
-        reward: torch.Tensor
-            Sampled reward.
-        next_state: torch.Tensor
-            Sampled next state.
-        done: torch.Tensor
-            Sampled done flag.
+        observation: Observation
+            Observation batch.
 
         Returns
         -------
@@ -265,6 +257,8 @@ class MPPO(AbstractAlgorithm):
         kl_div: torch.Tensor
             The average KL divergence of the policy.
         """
+        state, action, reward, next_state, done, *r = observation
+
         value_pred = self.q_function(state, action / self.policy.action_scale)
         state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
         next_state = repeat_along_dimension(

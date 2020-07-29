@@ -54,8 +54,10 @@ class QLearning(AbstractAlgorithm):
         self.criterion = criterion
         self.gamma = gamma
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *r = observation
+
         pred_q = self.q_function(state, action)
 
         with torch.no_grad():
@@ -89,8 +91,10 @@ class GradientQLearning(QLearning):
     Q-learning. Machine learning.
     """
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *r = observation
+
         pred_q = self.q_function(state, action)
 
         # target = r + gamma * max Q(x', a) and stop gradient.
@@ -115,8 +119,10 @@ class DQN(QLearning):
     Nature 518.7540 (2015): 529-533.
     """
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *r = observation
+
         pred_q = self.q_function(state, action)
 
         with torch.no_grad():
@@ -144,8 +150,10 @@ class DDQN(QLearning):
     Deep reinforcement learning with double q-learning. AAAI.
     """
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *r = observation
+
         pred_q = self.q_function(state, action)
 
         with torch.no_grad():
@@ -200,8 +208,9 @@ class SoftQLearning(QLearning):
         self.policy_target = SoftMax(self.q_target, temperature)
         self.policy_target.param = self.policy.param
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *r = observation
         pred_q = self.q_function(state, action)
 
         # target = r + gamma \ tau * logsumexp(Q)

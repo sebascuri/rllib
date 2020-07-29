@@ -7,7 +7,7 @@ from torch import Tensor
 from torch.distributions import Distribution
 from torch.nn.modules.loss import _Loss
 
-from rllib.dataset.datatypes import Termination
+from rllib.dataset.datatypes import Observation, Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
@@ -66,7 +66,7 @@ class MPPO(AbstractAlgorithm):
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
     def reset(self) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> MPOLoss: ...
+    def forward(self, observation: Observation, **kwargs) -> MPOLoss: ...
 
 class MBMPPO(AbstractAlgorithm):
     dynamical_model: AbstractModel

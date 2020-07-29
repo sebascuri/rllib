@@ -108,8 +108,9 @@ class SoftActorCritic(AbstractAlgorithm):
 
         return TDLoss(critic_loss, td_error)
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the losses."""
+        state, action, reward, next_state, done, *r = observation
         # Critic Loss
         with torch.no_grad():
             q_target = self.get_q_target(reward, next_state, done)

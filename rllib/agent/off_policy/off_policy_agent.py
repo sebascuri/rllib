@@ -80,14 +80,12 @@ class OffPolicyAgent(AbstractAgent):
         """Train the off-policy agent."""
         self.algorithm.reset()
         for _ in range(self.num_iter):
-            obs, idx, weight = self.memory.sample_batch(self.batch_size)
+            observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
             def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses_ = self.algorithm(
-                    obs.state, obs.action, obs.reward, obs.next_state, obs.done
-                )
+                losses_ = self.algorithm(observation)
                 loss = (losses_.loss * weight.detach()).mean()
                 loss.backward()
                 #

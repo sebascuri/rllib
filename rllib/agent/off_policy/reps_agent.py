@@ -108,16 +108,14 @@ class REPSAgent(OffPolicyAgent):
     def _optimize_loss(self, num_iter, loss_name="dual"):
         """Optimize the loss performing `num_iter' gradient steps."""
         for i in range(num_iter):
-            obs, idx, weight = self.memory.sample_batch(self.batch_size)
+            observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
             def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses = self.algorithm(
-                    obs.state, obs.action, obs.reward, obs.next_state, obs.done
-                )
+                losses_ = self.algorithm(observation)
                 self.optimizer.zero_grad()
-                loss_ = getattr(losses, loss_name)
+                loss_ = getattr(losses_, loss_name)
                 loss_.backward()
                 return loss_
 

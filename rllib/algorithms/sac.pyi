@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from rllib.dataset.datatypes import Termination
+from rllib.dataset.datatypes import Observation, Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
@@ -42,7 +42,7 @@ class SoftActorCritic(AbstractAlgorithm):
     def critic_loss(
         self, state: Tensor, action: Tensor, q_target: Tensor
     ) -> TDLoss: ...
-    def forward(self, *args: Tensor, **kwargs) -> SACLoss: ...
+    def forward(self, observation: Observation, **kwargs) -> SACLoss: ...
 
 class MBSoftActorCritic(SoftActorCritic):
     """Model Based Soft-Actor Critic."""

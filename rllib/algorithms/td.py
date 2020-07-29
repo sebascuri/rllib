@@ -45,8 +45,9 @@ class TDLearning(AbstractAlgorithm):
         self.gamma = gamma
         # self.n_steps = n_steps
 
-    def forward(self, state, action, reward, next_state, done):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *r = observation
         n_steps = state.shape[1]
         pred_v = self.value_function(state[:, 0])
 

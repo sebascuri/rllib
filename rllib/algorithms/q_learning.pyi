@@ -3,6 +3,7 @@ from typing import Union
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
+from rllib.dataset.datatypes import Observation
 from rllib.policy.q_function_policy import SoftMax
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractQFunction
@@ -17,7 +18,7 @@ class QLearning(AbstractAlgorithm):
     def __init__(
         self, q_function: AbstractQFunction, criterion: _Loss, gamma: float
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TDLoss: ...
+    def forward(self, observation: Observation, **kwargs) -> TDLoss: ...
     def _build_return(self, pred_q: Tensor, target_q: Tensor) -> TDLoss: ...
     def update(self) -> None: ...
 
