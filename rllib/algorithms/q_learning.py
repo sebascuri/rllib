@@ -54,15 +54,19 @@ class QLearning(AbstractAlgorithm):
         self.criterion = criterion
         self.gamma = gamma
 
+    def get_target(self, reward, next_state, done):
+        """Get q function target."""
+        next_v = self.q_function(next_state).max(dim=-1)[0]
+        target_q = reward + self.gamma * next_v * (1 - done)
+        return target_q
+
     def forward(self, observation):
         """Compute the loss and the td-error."""
         state, action, reward, next_state, done, *r = observation
 
         pred_q = self.q_function(state, action)
-
         with torch.no_grad():
-            next_v = self.q_function(next_state).max(dim=-1)[0]
-            target_q = reward + self.gamma * next_v * (1 - done)
+            target_q = self.get_target(reward, next_state, done)
 
         return self._build_return(pred_q, target_q)
 
@@ -91,17 +95,12 @@ class GradientQLearning(QLearning):
     Q-learning. Machine learning.
     """
 
-    def forward(self, observation):
-        """Compute the loss and the td-error."""
-        state, action, reward, next_state, done, *r = observation
-
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma * max Q(x', a) and stop gradient.
-        target_q = self.q_function(next_state).max(dim=-1)[0]
-        target_q = reward + self.gamma * target_q * (1 - done)
-
-        return self._build_return(pred_q, target_q)
+    def get_target(self, reward, next_state, done):
+        """Get q function target."""
+        with torch.enable_grad():  # Require gradient after it's been disabled.
+            next_v = self.q_function(next_state).max(dim=-1)[0]
+            target_q = reward + self.gamma * next_v * (1 - done)
+            return target_q
 
 
 class DQN(QLearning):
@@ -119,17 +118,11 @@ class DQN(QLearning):
     Nature 518.7540 (2015): 529-533.
     """
 
-    def forward(self, observation):
-        """Compute the loss and the td-error."""
-        state, action, reward, next_state, done, *r = observation
-
-        pred_q = self.q_function(state, action)
-
-        with torch.no_grad():
-            next_v = self.q_target(next_state).max(dim=-1)[0]
-            target_q = reward + self.gamma * next_v * (1 - done)
-
-        return self._build_return(pred_q, target_q)
+    def get_target(self, reward, next_state, done):
+        """Get q function target."""
+        next_v = self.q_target(next_state).max(dim=-1)[0]
+        target_q = reward + self.gamma * next_v * (1 - done)
+        return target_q
 
 
 class DDQN(QLearning):
@@ -150,18 +143,12 @@ class DDQN(QLearning):
     Deep reinforcement learning with double q-learning. AAAI.
     """
 
-    def forward(self, observation):
-        """Compute the loss and the td-error."""
-        state, action, reward, next_state, done, *r = observation
-
-        pred_q = self.q_function(state, action)
-
-        with torch.no_grad():
-            next_action = self.q_function(next_state).argmax(dim=-1)
-            next_v = self.q_target(next_state, next_action)
-            target_q = reward + self.gamma * next_v * (1 - done)
-
-        return self._build_return(pred_q, target_q)
+    def get_target(self, reward, next_state, done):
+        """Get q function target."""
+        next_action = self.q_function(next_state).argmax(dim=-1)
+        next_v = self.q_target(next_state, next_action)
+        target_q = reward + self.gamma * next_v * (1 - done)
+        return target_q
 
 
 class SoftQLearning(QLearning):
@@ -208,20 +195,12 @@ class SoftQLearning(QLearning):
         self.policy_target = SoftMax(self.q_target, temperature)
         self.policy_target.param = self.policy.param
 
-    def forward(self, observation):
-        """Compute the loss and the td-error."""
-        state, action, reward, next_state, done, *r = observation
-        pred_q = self.q_function(state, action)
-
-        # target = r + gamma \ tau * logsumexp(Q)
-        with torch.no_grad():
-            tau = self.policy.param()
-
-            target_v = tau * torch.logsumexp(self.q_target(next_state) / tau, dim=-1)
-
-            target_q = reward + self.gamma * target_v * (1 - done)
-
-        return self._build_return(pred_q, target_q)
+    def get_target(self, reward, next_state, done):
+        """Get q function target."""
+        tau = self.policy.param()
+        target_v = tau * torch.logsumexp(self.q_target(next_state) / tau, dim=-1)
+        target_q = reward + self.gamma * target_v * (1 - done)
+        return target_q
 
     def update(self):
         """Update the target network."""
