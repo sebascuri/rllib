@@ -40,3 +40,6 @@ SACLoss = namedtuple(
     "SACLoss", ["loss", "policy_loss", "critic_loss", "eta_loss", "td_error"]
 )
 PPOLoss = namedtuple("PPOLoss", ["loss", "surrogate_loss", "critic_loss", "entropy"])
+TRPOLoss = namedtuple(
+    "TRPOLoss", ["loss", "surrogate_loss", "critic_loss", "dual_loss", "kl_loss"]
+)

@@ -7,3 +7,4 @@ from .generalized_advantage_actor_critic_agent import GAACAgent
 from .ppo_agent import PPOAgent
 from .reinforce_agent import REINFORCEAgent
 from .sarsa_agent import SARSAAgent
+from .trpo_agent import TRPOAgent

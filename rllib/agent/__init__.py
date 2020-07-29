@@ -22,6 +22,7 @@ from .on_policy import (
     PPOAgent,
     REINFORCEAgent,
     SARSAAgent,
+    TRPOAgent,
 )
 from .random_agent import RandomAgent
 
@@ -49,4 +50,5 @@ AGENTS = [
     "REINFORCE",
     "SARSA",
     "PPO",
+    "TRPO",
 ]

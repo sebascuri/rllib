@@ -51,3 +51,10 @@ class PPOLoss(NamedTuple):
     surrogate_loss: Tensor
     critic_loss: Tensor
     entropy: Tensor
+
+class TRPOLoss(NamedTuple):
+    loss: Tensor
+    surrogate_loss: Tensor
+    critic_loss: Tensor
+    dual_loss: Tensor
+    kl_loss: Tensor
