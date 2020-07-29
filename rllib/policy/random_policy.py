@@ -30,10 +30,10 @@ class RandomPolicy(AbstractPolicy):
             goal=goal,
         )
 
-    def forward(self, state, **kwargs):
+    def forward(self, state):
         """Get distribution over actions."""
-        batch_size = get_batch_size(state)
+        batch_size = get_batch_size(state, self.dim_state)
         if batch_size:
-            return self.random(batch_size, **kwargs)
+            return self.random(batch_size)
         else:
-            return self.random(**kwargs)
+            return self.random()

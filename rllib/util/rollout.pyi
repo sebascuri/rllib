@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from numpy import ndarray
 from torch import Tensor
@@ -59,7 +59,7 @@ def rollout_policy(
     num_episodes: int = ...,
     max_steps: int = ...,
     render: bool = ...,
-    **kwargs,
+    **kwargs: Any,
 ) -> List[Trajectory]: ...
 def rollout_model(
     dynamical_model: AbstractModel,
@@ -68,7 +68,7 @@ def rollout_model(
     initial_state: State,
     termination: Optional[Termination] = ...,
     max_steps: int = ...,
-    **kwargs,
+    **kwargs: Any,
 ) -> Trajectory: ...
 def rollout_actions(
     dynamical_model: AbstractModel,

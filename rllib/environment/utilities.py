@@ -4,9 +4,23 @@ from collections import defaultdict
 
 import numpy as np
 import torch
+from gym.spaces import Box, Discrete
 
 from rllib.environment.mdp import MDP
 from rllib.util.utilities import tensor_to_distribution
+
+
+def parse_space(space):
+    """Parse a space."""
+    if isinstance(space, Discrete):
+        dim = ()
+        num = space.n
+    elif isinstance(space, Box):
+        num = -1
+        dim = space.shape
+    else:
+        raise NotImplementedError(f"Do not know what to do with {space}.")
+    return dim, num
 
 
 def gym2mdp(environment):

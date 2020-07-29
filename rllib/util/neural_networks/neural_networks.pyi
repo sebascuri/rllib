@@ -18,8 +18,8 @@ class FeedForwardNN(nn.Module):
     _max_scale: float
     def __init__(
         self,
-        in_dim: int,
-        out_dim: int,
+        in_dim: Tuple,
+        out_dim: Tuple,
         layers: Optional[List[int]] = ...,
         non_linearity: str = ...,
         biased_head: bool = ...,
@@ -28,17 +28,17 @@ class FeedForwardNN(nn.Module):
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...
-    def forward(self, *args: Tensor, **kwargs) -> Any: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Any: ...
     def last_layer_embeddings(self, x: Tensor) -> Tensor: ...
 
 class DeterministicNN(FeedForwardNN):
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
 
 class CategoricalNN(FeedForwardNN):
     def __init__(
         self,
-        in_dim: int,
-        out_dim: int,
+        in_dim: Tuple,
+        out_dim: Tuple,
         layers: Optional[List[int]] = ...,
         non_linearity: str = ...,
         biased_head: bool = ...,
@@ -46,11 +46,11 @@ class CategoricalNN(FeedForwardNN):
 
 class HeteroGaussianNN(FeedForwardNN):
     _scale: nn.Linear
-    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...
 
 class HomoGaussianNN(FeedForwardNN):
     _scale: nn.Parameter
-    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...
 
 class Ensemble(HeteroGaussianNN):
     num_heads: int
@@ -59,8 +59,8 @@ class Ensemble(HeteroGaussianNN):
     prediction_strategy: str
     def __init__(
         self,
-        in_dim: int,
-        out_dim: int,
+        in_dim: Tuple,
+        out_dim: Tuple,
         num_heads: int,
         prediction_strategy: str = ...,
         layers: Optional[List[int]] = ...,
@@ -77,13 +77,13 @@ class Ensemble(HeteroGaussianNN):
         num_heads: int,
         prediction_strategy: str = ...,
     ) -> T: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...
     def set_head(self, new_head: int) -> None: ...
     def get_head(self) -> int: ...
 
 class FelixNet(FeedForwardNN):
     _scale: nn.Linear
     def __init__(
-        self, in_dim: int, out_dim: int, initial_scale: float = ...
+        self, in_dim: Tuple, out_dim: Tuple, initial_scale: float = ...
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tuple[Tensor, Tensor]: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tuple[Tensor, Tensor]: ...

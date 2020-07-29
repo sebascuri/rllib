@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from gym.spaces import Space
@@ -7,9 +7,9 @@ from gym.spaces import Space
 from rllib.dataset.datatypes import Action, Done, Reward, State
 
 class AbstractEnvironment(object, metaclass=ABCMeta):
-    dim_action: int
-    dim_state: int
-    dim_observation: int
+    dim_action: Tuple
+    dim_state: Tuple
+    dim_observation: Tuple
     num_actions: int
     num_states: int
     num_observations: int
@@ -19,6 +19,17 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     action_space: Space
     observation_space: Space
     metadata: Dict[str, List]
+    def __init__(
+        self,
+        dim_state: Tuple,
+        dim_action: Tuple,
+        observation_space: Space,
+        action_space: Space,
+        dim_observation: Optional[Tuple] = ...,
+        num_states: Optional[int] = ...,
+        num_actions: Optional[int] = ...,
+        num_observations: Optional[int] = ...,
+    ) -> None: ...
     def __str__(self) -> str: ...
     @abstractmethod
     def step(self, action: Action) -> Tuple[State, Reward, Done, dict]: ...

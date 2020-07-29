@@ -3,12 +3,14 @@
 from typing import Dict, List, Tuple
 
 import numpy as np
+from gym.spaces import Space
 
 from rllib.policy import AbstractPolicy
 
 from .gym_environment import GymEnvironment
 from .mdp import MDP
 
+def parse_space(space: Space) -> Tuple[Tuple, int]: ...
 def gym2mdp(environment: GymEnvironment) -> MDP: ...
 def mdp2mrp(environment: MDP, policy: AbstractPolicy) -> MDP: ...
 def kernelreward2transitions(

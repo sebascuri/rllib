@@ -28,7 +28,7 @@ class MPPOAgent(OffPolicyAgent):
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization=...,
+        regularization: bool = ...,
         num_iter: int = ...,
         batch_size: int = ...,
         target_update_frequency: int = ...,

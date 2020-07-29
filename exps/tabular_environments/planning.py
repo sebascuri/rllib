@@ -13,8 +13,8 @@ GAMMA = 0.9
 EPS = 1e-6
 
 policy = RandomPolicy(
-    dim_state=1,
-    dim_action=1,
+    dim_state=(),
+    dim_action=(),
     num_states=environment.num_states,
     num_actions=environment.num_actions,
 )  # type: AbstractPolicy

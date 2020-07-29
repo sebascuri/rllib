@@ -65,19 +65,19 @@ class RawObservation(NamedTuple):
 
     @staticmethod
     def get_example(
-        dim_state: int = 1,
-        dim_action: int = 1,
+        dim_state: Tuple = (1,),
+        dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
         kind: str = "zero",
-    ):
+    ) -> Observation:
         """Get example observation.
 
         Parameters
         ----------
-        dim_state: int, optional (default=1).
+        dim_state: Tuple, optional (default=(1,)).
             State dimension.
-        dim_action: int, optional (default=1).
+        dim_action: Tuple, optional (default=(1,)).
             Action dimension.
         num_states: int, optional (default=-1).
             Number of states, if discrete.
@@ -140,11 +140,11 @@ class RawObservation(NamedTuple):
 
     @staticmethod
     def nan_example(
-        dim_state: int = 1,
-        dim_action: int = 1,
+        dim_state: Tuple = (1,),
+        dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
-    ):
+    ) -> Observation:
         """Return a NaN Example."""
         return RawObservation.get_example(
             dim_state=dim_state,
@@ -156,11 +156,11 @@ class RawObservation(NamedTuple):
 
     @staticmethod
     def zero_example(
-        dim_state: int = 1,
-        dim_action: int = 1,
+        dim_state: Tuple = (1,),
+        dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
-    ):
+    ) -> Observation:
         """Return a Zero Example."""
         return RawObservation.get_example(
             dim_state=dim_state,
@@ -172,11 +172,11 @@ class RawObservation(NamedTuple):
 
     @staticmethod
     def random_example(
-        dim_state: int = 1,
-        dim_action: int = 1,
+        dim_state: Tuple = (1,),
+        dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
-    ):
+    ) -> Observation:
         """Return a Random Example."""
         return RawObservation.get_example(
             dim_state=dim_state,

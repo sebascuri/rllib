@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 import torch
 import torch.jit
@@ -15,8 +15,8 @@ class EnsembleModel(NNModel):
     deterministic: bool
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_heads: int,
         num_states: int = ...,
         num_actions: int = ...,
@@ -28,7 +28,7 @@ class EnsembleModel(NNModel):
         input_transform: Optional[List[torch.nn.Module]] = ...,
         deterministic: bool = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     def sample_posterior(self) -> None: ...
     def scale(self, state: Tensor, action: Tensor) -> Tensor: ...
     @torch.jit.export
@@ -36,7 +36,7 @@ class EnsembleModel(NNModel):
     @torch.jit.export
     def get_head(self) -> int: ...
     @torch.jit.export
-    def set_head_idx(self, head_ptr: Tensor): ...
+    def set_head_idx(self, head_ptr: Tensor) -> None: ...
     @torch.jit.export
     def get_head_idx(self) -> Tensor: ...
     @torch.jit.export

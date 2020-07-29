@@ -10,9 +10,9 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     observation_space: gym.env.Spaces
     action_space: gym.env.Spaces

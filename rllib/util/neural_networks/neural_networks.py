@@ -14,9 +14,9 @@ class FeedForwardNN(nn.Module):
 
     Parameters
     ----------
-    in_dim: int
+    in_dim: Tuple[int]
         input dimension of neural network.
-    out_dim: int
+    out_dim: Tuple[int]
         output dimension of neural network.
     layers: list of int, optional
         list of width of neural network layers, each separated with a non-linearity.
@@ -48,7 +48,7 @@ class FeedForwardNN(nn.Module):
 
         self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
-        self.head = nn.Linear(in_dim, out_dim, bias=biased_head)
+        self.head = nn.Linear(in_dim, out_dim[0], bias=biased_head)
         self.squashed_output = squashed_output
         self._init_scale_transformed = inverse_softplus(torch.tensor([initial_scale]))
         self._min_scale = 1e-6
@@ -130,7 +130,7 @@ class HeteroGaussianNN(FeedForwardNN):
             initial_scale=initial_scale,
         )
         in_dim = self.head.in_features
-        self._scale = nn.Linear(in_dim, out_dim, bias=biased_head)
+        self._scale = nn.Linear(in_dim, out_dim[0], bias=biased_head)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -238,9 +238,9 @@ class Ensemble(HeteroGaussianNN):
 
     Parameters
     ----------
-    in_dim: int
+    in_dim: Tuple
         input dimension of neural network.
-    out_dim: int
+    out_dim: Tuple
         output dimension of neural network.
     num_heads: int
         number of heads of ensemble
@@ -275,7 +275,7 @@ class Ensemble(HeteroGaussianNN):
     ):
         super().__init__(
             in_dim,
-            out_dim * num_heads,
+            (out_dim[0] * num_heads,),
             layers=layers,
             non_linearity=non_linearity,
             biased_head=biased_head,
@@ -419,7 +419,7 @@ class FelixNet(FeedForwardNN):
         torch.nn.init.zeros_(self.hidden_layers[2].bias)
         # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
 
-        self._scale = nn.Linear(64, out_dim, bias=False)
+        self._scale = nn.Linear(64, out_dim[0], bias=False)
         # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
         # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
 

@@ -54,10 +54,10 @@ class TestIntegrateValueFunction(object):
         biased_head=True,
     ):
         self.num_states, self.dim_state = (
-            (dim_state, 1) if discrete_state else (-1, dim_state)
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
         )
         self.num_actions, self.dim_action = (
-            (dim_action, 1) if discrete_action else (-1, dim_action)
+            (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
 
         layers = layers if layers is not None else [32, 32]

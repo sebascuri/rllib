@@ -103,7 +103,7 @@ class PendulumModel(AbstractModel):
     def __init__(
         self, mass, length, friction, step_size=1 / 80, noise: MultivariateNormal = None
     ):
-        super().__init__(dim_state=2, dim_action=1)
+        super().__init__(dim_state=(2,), dim_action=(1,))
         self.mass = mass
         self.length = length
         self.friction = friction
@@ -298,15 +298,15 @@ def solve_mppo(
     reward_model = PendulumReward(action_cost)
     freeze_parameters(dynamical_model)
     value_function = NNValueFunction(
-        dim_state=2,
+        dim_state=(2,),
         layers=[64, 64],
         biased_head=False,
         input_transform=StateTransform(),
     )
 
     policy = NNPolicy(
-        dim_state=2,
-        dim_action=1,
+        dim_state=(2,),
+        dim_action=(1,),
         layers=[64, 64],
         biased_head=False,
         squashed_output=True,

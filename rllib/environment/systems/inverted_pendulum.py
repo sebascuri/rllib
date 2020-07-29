@@ -34,7 +34,9 @@ class InvertedPendulum(ODESystem):
         self.friction = friction
         self.gravity = gravity
 
-        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=2)
+        super().__init__(
+            func=self._ode, step_size=step_size, dim_action=(1,), dim_state=(2,)
+        )
         self.viewer = None
         self.last_action = None
 

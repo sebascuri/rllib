@@ -1,4 +1,4 @@
-"""Interface for reward models."""
+from typing import Any
 
 from gpytorch.models import ExactGP
 from torch import Tensor
@@ -11,4 +11,4 @@ class GPBanditReward(AbstractReward):
 
     model: ExactGP
     def __init__(self, model: ExactGP) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

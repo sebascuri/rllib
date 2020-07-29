@@ -42,7 +42,7 @@ pydocstyle $module || { exit 1; }
 
 # Run mypy tests
 echo -e "${GREEN}Running mypy tests.${NC}"
-mypy $module || { exit 1; }
+mypy --no-implicit-optional --ignore-missing-imports --disallow-incomplete-defs --pretty  $module || { exit 1; }
 
 # Run unit tests
 echo -e "${GREEN}Running unit tests.${NC}"

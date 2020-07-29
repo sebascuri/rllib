@@ -38,7 +38,7 @@ class BanditEnvironment(AbstractEnvironment):
         self.t = 0
 
         super().__init__(
-            dim_state=1,
+            dim_state=(),
             num_states=1,
             dim_action=dim_action,
             num_actions=num_actions,

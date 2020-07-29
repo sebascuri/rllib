@@ -13,9 +13,9 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     num_states: int, optional
         number of discrete states (None if state is continuous).
@@ -24,9 +24,9 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
     Attributes
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     num_states: int
         number of discrete states (None if state is continuous).
@@ -67,11 +67,11 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
         elif not isinstance(action_scale, torch.Tensor):
             action_scale = torch.full(
-                (self.dim_action,), action_scale, dtype=torch.get_default_dtype()
+                self.dim_action, action_scale, dtype=torch.get_default_dtype()
             )
 
-        if not self.discrete_action and len(action_scale) < self.dim_action:
-            extra_dim = self.dim_action - len(action_scale)
+        if not self.discrete_action and len(action_scale) < self.dim_action[0]:
+            extra_dim = self.dim_action[0] - len(action_scale)
             action_scale = torch.cat((action_scale, torch.ones(extra_dim)))
 
         self.action_scale = action_scale
@@ -97,16 +97,16 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             else:
                 return torch.ones(*batch_size, self.num_actions)
         else:
-            cov = torch.eye(self.dim_action)
+            cov = torch.eye(self.dim_action[0])
             if not normalized:
                 cov *= self.action_scale
 
             if batch_size is None:
-                return torch.zeros(self.dim_action), cov
+                return torch.zeros(self.dim_action[0]), cov
             else:
                 return (
-                    torch.zeros(*batch_size, self.dim_action),
-                    cov.expand(*batch_size, self.dim_action, self.dim_action),
+                    torch.zeros(*batch_size, self.dim_action[0]),
+                    cov.expand(*batch_size, self.dim_action[0], self.dim_action[0]),
                 )
 
     @torch.jit.export

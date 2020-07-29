@@ -1,3 +1,5 @@
+from typing import Any
+
 from torch import Tensor
 
 from rllib.agent import AbstractAgent
@@ -14,7 +16,7 @@ class GPUCBPolicy(AbstractPolicy):
     def __init__(
         self, gp: ExactGP, x: Tensor, beta: float = ..., noisy: bool = ...
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
 
 class GPUCBAgent(AbstractAgent):
     policy: GPUCBPolicy

@@ -26,11 +26,12 @@ class EpsGreedy(AbstractQFunctionPolicy):
 
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
-        if self.q_function.discrete_state:
-            batch_size = get_batch_size(state.long())
-        else:
-            batch_size = get_batch_size(state)
-        aux_size = (1,) if not batch_size else batch_size
+        # if self.q_function.discrete_state:
+        #     batch_size = get_batch_size(state.long())
+        # else:
+        #     batch_size = get_batch_size(state)
+        batch_size = get_batch_size(state, self.dim_state)
+        aux_size = (1,) if len(batch_size) == 0 else batch_size
         if len(aux_size) > 1:
             raise NotImplementedError
         else:

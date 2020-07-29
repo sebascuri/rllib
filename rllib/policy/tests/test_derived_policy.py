@@ -50,16 +50,26 @@ class TestDerivedPolicy(object):
     ):
 
         self.num_states, self.dim_state = (
-            (dim_state, 1) if discrete_state else (-1, dim_state)
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
         )
 
         self.num_actions, self.dim_action = (
-            (dim_action, 1) if discrete_action else (-1, dim_action)
+            (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
+
+        if discrete_state:
+            base_dim = 1
+        else:
+            base_dim = self.dim_state[0]
+
+        if discrete_action:
+            base_dim += 1
+        else:
+            base_dim += self.dim_action[0]
 
         base_policy = NNPolicy(
             self.dim_state,
-            self.dim_action + self.dim_state,
+            (base_dim,),
             self.num_states,
             self.num_actions,
             layers=[32, 32],
@@ -78,8 +88,8 @@ class TestDerivedPolicy(object):
 
     def test_property_values(self, dim_state, dim_action):
         self.init(False, False, dim_state, dim_action)
-        assert self.policy.dim_action == dim_action
-        assert self.policy.dim_state == dim_state
+        assert self.policy.dim_action == (dim_action,)
+        assert self.policy.dim_state == (dim_state,)
         assert not self.policy.discrete_action
         assert not self.policy.discrete_state
 
@@ -89,7 +99,7 @@ class TestDerivedPolicy(object):
         distribution = tensor_to_distribution(self.policy.random())
         sample = distribution.sample()
 
-        assert distribution.mean.shape == (self.dim_action,)
+        assert distribution.mean.shape == self.dim_action
         assert sample.shape == (dim_action,)
 
     def test_forward(self, dim_state, dim_action, batch_size, deterministic):
@@ -104,22 +114,22 @@ class TestDerivedPolicy(object):
             assert isinstance(distribution, MultivariateNormal)
 
         if batch_size:
-            assert distribution.mean.shape == (batch_size, self.dim_action)
+            assert distribution.mean.shape == (batch_size,) + self.dim_action
             if not deterministic:
                 assert distribution.covariance_matrix.shape == (
                     batch_size,
-                    self.dim_action,
-                    self.dim_action,
+                    self.dim_action[0],
+                    self.dim_action[0],
                 )
             assert sample.shape == (batch_size, dim_action)
         else:
-            assert distribution.mean.shape == (self.dim_action,)
+            assert distribution.mean.shape == self.dim_action
             if not deterministic:
                 assert distribution.covariance_matrix.shape == (
-                    self.dim_action,
-                    self.dim_action,
+                    self.dim_action[0],
+                    self.dim_action[0],
                 )
-            assert sample.shape == (dim_action,)
+            assert sample.shape == torch.Size((dim_action,))
 
     def test_goal(self, batch_size):
         goal = random_tensor(False, 3, None)

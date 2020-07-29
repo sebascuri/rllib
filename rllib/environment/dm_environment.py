@@ -32,7 +32,7 @@ try:
             self._name = f"{env_name} {env_task}"
 
             action_spec = self.env.action_spec()
-            dim_action = action_spec.shape[0]
+            dim_action = action_spec.shape
             action_space = Box(low=action_spec.minimum, high=action_spec.maximum)
 
             observation_spec = self.env.observation_spec()
@@ -48,7 +48,7 @@ try:
 
             super().__init__(
                 dim_action=dim_action,
-                dim_state=dim_state,
+                dim_state=(dim_state,),
                 action_space=action_space,
                 observation_space=observation_space,
                 num_actions=-1,
@@ -84,7 +84,8 @@ try:
         def reset(self):
             """See `AbstractEnvironment.reset'."""
             self._time = 0
-            return self.env.reset()
+            dm_obs = self.env.reset()
+            return self._stack_observations(dm_obs.observation)
 
         @property
         def goal(self):

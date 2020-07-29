@@ -75,6 +75,7 @@ def parse_layers(layers, in_dim, non_linearity):
 
     nonlinearity = parse_nonlinearity(non_linearity)
     layers_ = list()
+    in_dim = in_dim[0]
     for layer in layers:
         layers_.append(nn.Linear(in_dim, layer))
         layers_.append(nonlinearity())
@@ -369,28 +370,26 @@ def one_hot_encode(tensor, num_classes: int):
         return out.reshape(tensor.shape + (num_classes,))
 
 
-def get_batch_size(tensor):
+def get_batch_size(tensor, base_size):
     """Get the batch size of a tensor if it is a discrete or continuous tensor.
 
     Parameters
     ----------
-    tensor: torch.tensor
-        tensor to identify batch size
+    tensor: torch.tensor.
+        Tensor to identify batch size
+    base_size: Tuple.
+        Base size of tensor.
 
     Returns
     -------
     batch_size: int or None
 
     """
-    if tensor.dim() == 0:
-        return None
-    elif tensor.dim() == 1:
-        if tensor.dtype is torch.long:
-            return (len(tensor),)
-        else:
-            return None
+    size = tensor.shape
+    if len(base_size) == 0:  # Discrete
+        return tuple(size)
     else:
-        return tensor.shape[:-1]
+        return tuple(size[: -len(base_size)])
 
 
 def random_tensor(discrete, dim, batch_size=None):

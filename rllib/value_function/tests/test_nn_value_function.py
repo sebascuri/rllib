@@ -73,10 +73,10 @@ class TestNNValueFunction(object):
     def init(self, discrete_state, dim_state):
         if discrete_state:
             self.num_states = dim_state
-            self.dim_state = 1
+            self.dim_state = ()
         else:
-            self.num_states = None
-            self.dim_state = dim_state
+            self.num_states = -1
+            self.dim_state = (dim_state,)
 
         layers = [32, 32]
         self.value_function = NNValueFunction(self.dim_state, self.num_states, layers)
@@ -111,7 +111,7 @@ class TestNNValueFunction(object):
 
     def test_input_transform(self, batch_size):
         value_function = NNValueFunction(
-            2,
+            (2,),
             -1,
             layers=[64, 64],
             non_linearity="Tanh",
@@ -136,7 +136,7 @@ class TestNNValueFunction(object):
                     layers=[20, 20],
                     biased_head=False,
                 ),
-                dim_state,
+                self.dim_state,
                 num_states=self.num_states,
             )
         )
@@ -155,17 +155,17 @@ class TestNNQFunction(object):
     def init(self, discrete_state, discrete_action, dim_state, dim_action):
         if discrete_state:
             self.num_states = dim_state
-            self.dim_state = 1
+            self.dim_state = ()
         else:
-            self.num_states = None
-            self.dim_state = dim_state
+            self.num_states = -1
+            self.dim_state = (dim_state,)
 
         if discrete_action:
             self.num_actions = dim_action
-            self.dim_action = 1
+            self.dim_action = ()
         else:
-            self.num_actions = None
-            self.dim_action = dim_action
+            self.num_actions = -1
+            self.dim_action = (dim_action,)
 
         layers = [32, 32]
         self.q_function = NNQFunction(
@@ -185,8 +185,8 @@ class TestNNQFunction(object):
 
     def test_input_transform(self, batch_size):
         q_function = NNQFunction(
-            2,
-            1,
+            (2,),
+            (1,),
             layers=[64, 64],
             non_linearity="Tanh",
             input_transform=StateTransform(),
@@ -255,11 +255,11 @@ class TestNNQFunction(object):
             self.init(discrete_state, discrete_action, dim_state, dim_action)
             q_function = NNQFunction.from_nn(
                 nn.Linear(
-                    self.q_function.nn.kwargs["in_dim"],
-                    self.q_function.nn.kwargs["out_dim"],
+                    self.q_function.nn.kwargs["in_dim"][0],
+                    self.q_function.nn.kwargs["out_dim"][0],
                 ),
-                dim_state,
-                dim_action,
+                self.dim_state,
+                self.dim_action,
                 num_states=self.num_states,
                 num_actions=self.num_actions,
             )

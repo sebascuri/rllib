@@ -36,7 +36,9 @@ class CartPole(ODESystem):
         self.rot_friction = rot_friction
         self.gravity = gravity
 
-        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=4)
+        super().__init__(
+            func=self._ode, step_size=step_size, dim_action=(1,), dim_state=(4,)
+        )
 
     def _ode(self, _, state, action):
         """Compute the state time-derivative.

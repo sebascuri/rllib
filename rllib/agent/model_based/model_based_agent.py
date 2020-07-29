@@ -241,7 +241,7 @@ class ModelBasedAgent(AbstractAgent):
             self.pi = policy
             action = self._plan(state).detach().numpy()
 
-        action = action[..., : self.dynamical_model.base_model.dim_action]
+        action = action[..., : self.dynamical_model.base_model.dim_action[0]]
         return action.clip(
             -self.policy.action_scale.numpy(), self.policy.action_scale.numpy()
         )
@@ -475,7 +475,7 @@ class ModelBasedAgent(AbstractAgent):
         )
 
         self.sim_trajectory = stack_list_of_tuples(trajectory)
-        states = self.sim_trajectory.state.reshape(-1, self.dynamical_model.dim_state)
+        states = self.sim_trajectory.state.reshape(-1, *self.dynamical_model.dim_state)
         self.sim_dataset.append(states[:: self.sim_num_subsample])
 
     def _optimize_policy(self):

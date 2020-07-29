@@ -11,6 +11,6 @@ def add_data_to_gp(
 def summarize_gp(
     gp_model: ExactGP,
     max_num_points: Optional[int] = ...,
-    weight_function=Callable[[Tensor], Tensor],
+    weight_function: Optional[Callable[[Tensor], Tensor]] = ...,
 ) -> None: ...
 def bkb(gp_model: ExactGP, inducing_points: Tensor, q_bar: float = ...) -> Tensor: ...

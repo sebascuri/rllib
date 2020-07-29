@@ -37,7 +37,8 @@ class SoftActorCritic(AbstractAlgorithm):
         super().__init__()
         # Actor
         self.policy = policy
-        self.target_entropy = -policy.dim_action
+        self.target_entropy = -policy.dim_action[0]
+        assert len(policy.dim_action) == 1, "Only Nx1 continuous actions implemented."
 
         # Critic
         self.q_function = q_function

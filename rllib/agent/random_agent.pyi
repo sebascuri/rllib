@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from rllib.dataset import TrajectoryDataset
 from rllib.dataset.datatypes import Observation
@@ -14,8 +14,8 @@ class RandomAgent(AbstractAgent):
     dataset: TrajectoryDataset
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
         train_frequency: int = ...,

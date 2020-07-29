@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, TypeVar
+from typing import Any, List, Optional, Tuple, Type, TypeVar
 
 import torch.nn
 from torch import Tensor
@@ -11,7 +11,7 @@ class NNEnsembleValueFunction(NNValueFunction):
     nn: torch.nn.ModuleList
     def __init__(
         self,
-        dim_state: int,
+        dim_state: Tuple,
         num_heads: int,
         num_states: int = ...,
         layers: Optional[List[int]] = ...,
@@ -24,15 +24,15 @@ class NNEnsembleValueFunction(NNValueFunction):
     def from_value_function(
         cls: Type[T], value_function: NNValueFunction, num_heads: int
     ) -> T: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
 
 class NNEnsembleQFunction(NNQFunction):
     nn: torch.nn.ModuleList
     num_heads: int
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_heads: int,
         num_states: int = ...,
         num_actions: int = ...,
@@ -44,4 +44,4 @@ class NNEnsembleQFunction(NNQFunction):
     ) -> None: ...
     @classmethod
     def from_q_function(cls: Type[T], q_function: NNQFunction, num_heads: int) -> T: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

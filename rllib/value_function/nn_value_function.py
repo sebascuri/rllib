@@ -13,7 +13,7 @@ class NNValueFunction(AbstractValueFunction):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
     num_states: int, optional
         number of discrete states (None if state is continuous).
@@ -39,17 +39,18 @@ class NNValueFunction(AbstractValueFunction):
         super().__init__(dim_state, num_states, tau=tau)
 
         if self.discrete_state:
-            num_inputs = self.num_states
+            num_inputs = (self.num_states,)
         else:
             num_inputs = self.dim_state
 
         self.input_transform = input_transform
         if hasattr(input_transform, "extra_dim"):
-            num_inputs += getattr(input_transform, "extra_dim")
+            assert len(num_inputs) == 1, "Only implemented N x 1 inputs."
+            num_inputs = (num_inputs[0] + getattr(input_transform, "extra_dim"),)
 
         self.nn = DeterministicNN(
             num_inputs,
-            1,
+            (1,),
             layers=layers,
             squashed_output=False,
             non_linearity=non_linearity,
@@ -103,9 +104,9 @@ class NNQFunction(AbstractQFunction):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     num_states: int, optional
         number of discrete states (None if state is continuous).
@@ -134,20 +135,21 @@ class NNQFunction(AbstractQFunction):
         super().__init__(dim_state, dim_action, num_states, num_actions, tau=tau)
 
         if not self.discrete_state and not self.discrete_action:
-            num_inputs = self.dim_state + self.dim_action
-            num_outputs = 1
+            num_inputs = (self.dim_state[0] + self.dim_action[0],)
+            num_outputs = (1,)
         elif self.discrete_state and self.discrete_action:
-            num_inputs = self.num_states
-            num_outputs = self.num_actions
+            num_inputs = (self.num_states,)
+            num_outputs = (self.num_actions,)
         elif not self.discrete_state and self.discrete_action:
             num_inputs = self.dim_state
-            num_outputs = self.num_actions
+            num_outputs = (self.num_actions,)
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
         self.input_transform = input_transform
         if hasattr(input_transform, "extra_dim"):
-            num_inputs += getattr(input_transform, "extra_dim")
+            assert len(num_inputs) == 1, "Only implemented N x 1 inputs."
+            num_inputs = (num_inputs[0] + getattr(input_transform, "extra_dim"),)
 
         self.nn = DeterministicNN(
             num_inputs,

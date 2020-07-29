@@ -1,5 +1,5 @@
 """Model implemented by a Neural Network."""
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -14,8 +14,8 @@ class NNModel(AbstractModel):
     deterministic: bool
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: Optional[int] = ...,
         num_actions: Optional[int] = ...,
         initial_scale: float = ...,
@@ -25,4 +25,4 @@ class NNModel(AbstractModel):
         input_transform: Optional[torch.nn.Module] = ...,
         deterministic: bool = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

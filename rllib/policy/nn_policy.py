@@ -18,9 +18,9 @@ class NNPolicy(AbstractPolicy):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     num_states: int, optional
         number of discrete states (None if state is continuous).
@@ -67,7 +67,7 @@ class NNPolicy(AbstractPolicy):
         if self.discrete_action:
             self.nn = CategoricalNN(
                 in_dim,
-                self.num_actions,
+                (self.num_actions,),
                 layers=layers,
                 non_linearity=non_linearity,
                 biased_head=biased_head,
@@ -132,15 +132,15 @@ class NNPolicy(AbstractPolicy):
     def _preprocess_input_dim(self):
         """Get input dimension of Neural Network."""
         if self.discrete_state:
-            in_dim = self.num_states
+            in_dim = (self.num_states,)
         else:
             in_dim = self.dim_state
 
         if hasattr(self.input_transform, "extra_dim"):
-            in_dim += getattr(self.input_transform, "extra_dim")
+            in_dim = (in_dim[0] + getattr(self.input_transform, "extra_dim"),)
 
         if self.goal is not None:
-            in_dim += self.goal.shape[-1]
+            in_dim = (in_dim[0] + self.goal.shape[-1],)
 
         return in_dim
 
@@ -185,9 +185,9 @@ class FelixPolicy(NNPolicy):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
 
     Notes

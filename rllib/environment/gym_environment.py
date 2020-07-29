@@ -1,8 +1,11 @@
 """Wrapper for OpenAI-Gym Environments."""
 
 import gym
+import gym.envs.atari
+import gym.wrappers
 
 from .abstract_environment import AbstractEnvironment
+from .utilities import parse_space
 
 
 class GymEnvironment(AbstractEnvironment):
@@ -18,22 +21,20 @@ class GymEnvironment(AbstractEnvironment):
     """
 
     def __init__(self, env_name, seed=None, **kwargs):
-        self.env = gym.make(env_name, **kwargs).unwrapped
+        env = gym.make(env_name, **kwargs)
+        if isinstance(env, gym.wrappers.TimeLimit) and not kwargs.get(
+            "episodic", False
+        ):
+            env = env.unwrapped
+        if isinstance(env, gym.envs.atari.AtariEnv):
+            env = gym.wrappers.AtariPreprocessing(env)
+        self.env = env
         self.env.seed(seed)
-        try:
-            dim_action = self.env.action_space.shape[0]
-            num_actions = -1
-        except IndexError:
-            dim_action = 1
-            num_actions = self.env.action_space.n
 
-        try:
-            dim_state = self.env.observation_space.shape[0]
-            num_states = -1
-        except IndexError:
-            dim_state = 1
-            # Add an extra final state as terminal state.
-            num_states = self.env.observation_space.n + 1
+        dim_action, num_actions = parse_space(self.env.action_space)
+        dim_state, num_states = parse_space(self.env.observation_space)
+        if num_states > -1:
+            num_states += 1  # Add a terminal state.
 
         super().__init__(
             dim_action=dim_action,
@@ -51,7 +52,7 @@ class GymEnvironment(AbstractEnvironment):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         next_state, reward, done, info = self.env.step(action)
-        if self.num_states > 0 and done:
+        if self.num_states > 0 and done:  # Move to terminal state.
             next_state = self.num_states - 1
         return next_state, reward, done, info
 

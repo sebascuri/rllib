@@ -66,7 +66,8 @@ def get_agent_and_environment(params, agent_name):
 
     input_transform = None
     exploratory_distribution = torch.distributions.MultivariateNormal(
-        torch.zeros(environment.dim_state), 1e-6 * torch.eye(environment.dim_state)
+        torch.zeros(environment.dim_state[0]),
+        1e-6 * torch.eye(environment.dim_state[0]),
     )
 
     if agent_name == "mpc":

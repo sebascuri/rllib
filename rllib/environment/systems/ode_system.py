@@ -17,8 +17,8 @@ class ODESystem(AbstractSystem):
         func is the right hand side of as xdot = f(t, x).
         with actions, extend x to be states, actions.
     step_size : float
-    dim_state: int
-    dim_action : int
+    dim_state: Tuple
+    dim_action : Tuple
     """
 
     def __init__(

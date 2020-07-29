@@ -11,9 +11,9 @@ class NNEnsembleValueFunction(NNValueFunction):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    num_states: int, optional
+    num_states: Tuple, optional
         number of discrete states (None if state is continuous).
     layers: list, optional
         width of layers, each layer is connected with a non-linearity.
@@ -93,9 +93,9 @@ class NNEnsembleQFunction(NNQFunction):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     num_states: int, optional
         number of discrete states (None if state is continuous).

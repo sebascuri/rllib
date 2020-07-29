@@ -15,7 +15,7 @@ def eps_start(request):
 
 @pytest.fixture
 def q_function():
-    return NNQFunction(num_actions=2, num_states=4, dim_state=1, dim_action=1)
+    return NNQFunction(num_actions=2, num_states=4, dim_state=(), dim_action=())
 
 
 def test_epsilon(eps_start, q_function):

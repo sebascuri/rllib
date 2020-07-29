@@ -1,27 +1,28 @@
 from abc import ABCMeta
+from typing import Any, Tuple
 
 import torch.nn as nn
 from torch import Tensor
 
 class AbstractQFunction(nn.Module, metaclass=ABCMeta):
-    dim_action: int
+    dim_action: Tuple
     num_actions: int
     discrete_action: bool
-    dim_state: int
+    dim_state: Tuple
     num_states: int
     tau: float
     discrete_state: bool
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
         tau: float = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
 
 class AbstractValueFunction(AbstractQFunction):
     def __init__(
-        self, dim_state: int, num_states: int = ..., tau: float = ...
+        self, dim_state: Tuple, num_states: int = ..., tau: float = ...
     ) -> None: ...

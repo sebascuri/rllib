@@ -37,7 +37,7 @@ def train_exact_gp_type2mll_step(
 ) -> Tensor: ...
 def train_model(
     model: AbstractModel,
-    train_loader: DataLoader,  # type: ignore
+    train_loader: DataLoader,
     optimizer: Optimizer,
     max_iter: int = ...,
     logger: Optional[Logger] = ...,

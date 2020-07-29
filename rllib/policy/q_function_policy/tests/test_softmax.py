@@ -14,7 +14,7 @@ def t_start(request):
 
 @pytest.fixture
 def q_function():
-    return NNQFunction(num_actions=2, dim_action=1, num_states=4, dim_state=1)
+    return NNQFunction(num_actions=2, dim_action=(), num_states=4, dim_state=())
 
 
 def test_discrete(t_start, q_function):

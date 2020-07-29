@@ -28,8 +28,6 @@ class TDLearning(AbstractAlgorithm):
         Criterion to optimize.
     gamma: float
         Discount factor.
-    n_steps: int, optional.
-        Number of steps to optimize.
 
     References
     ----------
@@ -137,7 +135,7 @@ class ModelBasedTDLearning(TDLearning):
                 policy=self.policy,
                 reward_model=self.reward_model,
                 num_steps=self.num_steps,
-                value_function=self.value_target,
+                value_function=self.value_target,  # type: ignore
                 gamma=self.gamma,
                 termination=self.termination,
             )

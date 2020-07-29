@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, Tuple, Type
 
 from scipy.integrate import OdeSolver
 
@@ -15,8 +15,8 @@ class ODESystem(AbstractSystem):
         self,
         func: Callable,
         step_size: float,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         integrator: Type[OdeSolver] = ...,
     ) -> None: ...
     def step(self, action: Action) -> State: ...

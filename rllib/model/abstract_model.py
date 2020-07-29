@@ -14,11 +14,11 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
-    dim_observation: int
+    dim_observation: Tuple
         dimension of observation.
     num_states: int, optional
         number of discrete states (None if state is continuous).

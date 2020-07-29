@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from gym import spaces
@@ -7,12 +7,15 @@ from gym import spaces
 from rllib.dataset.datatypes import Action, State
 
 class AbstractSystem(object, metaclass=ABCMeta):
-    dim_state: int
-    dim_action: int
-    dim_observation: int
+    dim_state: Tuple
+    dim_action: Tuple
+    dim_observation: Tuple
     _time: float
     def __init__(
-        self, dim_state: int, dim_action: int, dim_observation: Optional[int] = ...
+        self,
+        dim_state: Tuple,
+        dim_action: Tuple,
+        dim_observation: Optional[Tuple] = ...,
     ) -> None: ...
     @property  # type: ignore
     @abstractmethod

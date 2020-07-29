@@ -31,8 +31,8 @@ def test_inverse_softplus():
 
 
 def test_zero_bias():
-    in_dim = 4
-    out_dim = 2
+    in_dim = (4,)
+    out_dim = (2,)
     layers = [2, 4, 6, 8, 4, 2]
     n = DeterministicNN(in_dim, out_dim, layers)
     zero_bias(n)
@@ -43,8 +43,8 @@ def test_zero_bias():
 
 
 def test_init_head():
-    in_dim = 4
-    out_dim = 2
+    in_dim = (4,)
+    out_dim = (2,)
     layers = [2, 4, 6, 8, 4, 2]
     net = DeterministicNN(in_dim, out_dim, layers)
     init_head_bias(net, offset=1, delta=0)
@@ -76,8 +76,8 @@ class TestUpdateParams(object):
 
     def test_network(self, tau, network):
         class_ = network
-        in_dim = 16
-        out_dim = 4
+        in_dim = (16,)
+        out_dim = (4,)
         layers = [32, 4]
         if class_ is Ensemble:
             net1 = class_(in_dim, out_dim, num_heads=5, layers=layers)
@@ -281,17 +281,25 @@ class TestGetBatchSize(object):
         size = (batch_size,) if batch_size else ()
         tensor = torch.randint(4, size)
         if batch_size:
-            assert (batch_size,) == get_batch_size(tensor)
+            assert get_batch_size(tensor, ()) == (batch_size,)
         else:
-            assert get_batch_size(tensor) is None
+            assert get_batch_size(tensor, ()) == ()
 
     def test_continuous(self, batch_size):
         if batch_size:
             tensor = torch.randn(batch_size, 4)
-            assert (batch_size,) == get_batch_size(tensor)
+            assert get_batch_size(tensor, (4,)) == (batch_size,)
         else:
             tensor = torch.randn(4)
-            assert get_batch_size(tensor) is None
+            assert get_batch_size(tensor, (4,)) == ()
+
+    def test_images(self, batch_size):
+        if batch_size:
+            tensor = torch.randn(batch_size, 32, 32, 3)
+            assert get_batch_size(tensor, (32, 32, 3)) == (batch_size,)
+        else:
+            tensor = torch.randn(32, 32, 3)
+            assert get_batch_size(tensor, (32, 32, 3)) == ()
 
 
 class TestRandomTensor(object):

@@ -11,9 +11,9 @@ class NNModel(AbstractModel):
 
     Parameters
     ----------
-    dim_state: int
+    dim_state: Tuple
         dimension of state.
-    dim_action: int
+    dim_action: Tuple
         dimension of action.
     num_states: int, optional
         number of discrete states (None if state is continuous).
@@ -45,17 +45,19 @@ class NNModel(AbstractModel):
         self.input_transform = input_transform
 
         if self.discrete_state:
-            out_dim = self.num_states
+            out_dim = (self.num_states,)
         else:
             out_dim = self.dim_state
 
+        assert len(out_dim) == 1, "No images allowed."
+
         if self.discrete_action:
-            in_dim = out_dim + self.num_actions
+            in_dim = (out_dim[0] + self.num_actions,)
         else:
-            in_dim = out_dim + self.dim_action
+            in_dim = (out_dim[0] + self.dim_action[0],)
 
         if hasattr(input_transform, "extra_dim"):
-            in_dim += getattr(input_transform, "extra_dim")
+            in_dim = (in_dim[0] + getattr(input_transform, "extra_dim"),)
 
         if self.discrete_action:
             self.nn = CategoricalNN(

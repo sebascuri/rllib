@@ -25,9 +25,9 @@ def _get_model(
 ):
     transformations = list() if not transformations else transformations
 
-    state = torch.zeros(1, dim_state)
-    action = torch.zeros(1, dim_action)
-    next_state = torch.zeros(1, dim_state)
+    state = torch.zeros(1, dim_state[0])
+    action = torch.zeros(1, dim_action[0])
+    next_state = torch.zeros(1, dim_state[0])
     if params.model_kind == "ExactGP":
         model = ExactGPModel(
             state,
@@ -79,7 +79,7 @@ def _get_model(
     else:
         raise NotImplementedError
     try:  # Select GP initial Model.
-        for i in range(model.dim_state):
+        for i in range(model.dim_state[0]):
             model.gp[i].output_scale = torch.tensor(0.1)
             model.gp[i].length_scale = torch.tensor([[9.0]])
             model.likelihood[i].noise = torch.tensor([1e-4])
@@ -181,7 +181,7 @@ def _get_value_function(dim_state, params, input_transform=None):
 
 def _get_q_function(dim_state, dim_action, params, input_transform=None):
     if params.exploration == "optimistic":
-        dim_action += dim_state
+        dim_action = (dim_action[0] + dim_state[0],)
 
     q_function = NNQFunction(
         dim_state=dim_state,
@@ -200,7 +200,7 @@ def _get_q_function(dim_state, dim_action, params, input_transform=None):
 
 def _get_nn_policy(dim_state, dim_action, params, action_scale, input_transform=None):
     if params.exploration == "optimistic":
-        dim_action += dim_state
+        dim_action = (dim_action[0] + dim_state[0],)
 
     policy = NNPolicy(
         dim_state=dim_state,

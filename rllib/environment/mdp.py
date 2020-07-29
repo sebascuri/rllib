@@ -52,9 +52,9 @@ class MDP(AbstractEnvironment, Env):
         observation_space = spaces.Discrete(num_states)
         action_space = spaces.Discrete(num_actions)
         super().__init__(
-            dim_state=1,
-            dim_action=1,
-            dim_observation=1,
+            dim_state=(),
+            dim_action=(),
+            dim_observation=(),
             observation_space=observation_space,
             action_space=action_space,
             num_states=num_states,

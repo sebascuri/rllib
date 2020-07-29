@@ -234,7 +234,7 @@ def plot_pendulum_trajectories(agent, episode: int):
         sim_obs = transformation(sim_obs)
     if isinstance(model, ExactGPModel):
         fig, axes = plt.subplots(
-            1 + model.dim_state // 2, 2, sharex="col", sharey="row"
+            1 + model.dim_state[0] // 2, 2, sharex="col", sharey="row"
         )
     else:
         fig, axes = plt.subplots(1, 2, sharex="col", sharey="row")
@@ -266,7 +266,7 @@ def plot_pendulum_trajectories(agent, episode: int):
     axes[0, 1].set_title("Sim Trajectory.")
 
     if isinstance(model, ExactGPModel):
-        for i in range(model.dim_state):
+        for i in range(model.dim_state[0]):
             inputs = model.gp[i].train_inputs[0]
             sin, cos = inputs[:, 1], inputs[:, 0]
             axes[1 + i // 2, i % 2].scatter(

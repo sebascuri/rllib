@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from torch import Tensor
 
@@ -29,4 +29,4 @@ class IntegrateQValueFunction(AbstractValueFunction):
         num_samples: int = 15,
         dist_params: Optional[Dict] = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

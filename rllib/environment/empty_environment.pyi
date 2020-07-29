@@ -11,8 +11,8 @@ class EmptyEnvironment(AbstractEnvironment):
 
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
     ) -> None: ...

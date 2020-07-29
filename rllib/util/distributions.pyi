@@ -3,7 +3,7 @@
 import gpytorch
 from torch import Tensor
 
-class Delta(gpytorch.distributions.Delta):  # type: ignore
+class Delta(gpytorch.distributions.Delta):
     """Delta Distribution."""
 
     def __str__(self) -> str: ...

@@ -62,7 +62,7 @@ class StateTransform(nn.Module):
 class TestNNEnsembleValueFunction(object):
     def init(self, discrete_state, dim_state, num_heads, layers=None, biased_head=True):
         self.num_states, self.dim_state = (
-            (dim_state, 1) if discrete_state else (-1, dim_state)
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
         )
         layers = layers if layers is not None else [32, 32]
 
@@ -114,7 +114,7 @@ class TestNNEnsembleValueFunction(object):
 
     def test_input_transform(self, num_heads, batch_size):
         value_function = NNEnsembleValueFunction(
-            dim_state=2,
+            dim_state=(2,),
             num_heads=num_heads,
             layers=[64, 64],
             non_linearity="Tanh",
@@ -128,7 +128,9 @@ class TestNNEnsembleValueFunction(object):
         assert value.dtype is torch.get_default_dtype()
 
     def test_from_value_function(self, discrete_state, dim_state, num_heads):
-        num_states, dim_state = (dim_state, 1) if discrete_state else (-1, dim_state)
+        num_states, dim_state = (
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
+        )
 
         value_function = NNValueFunction(dim_state=dim_state, num_states=num_states)
 
@@ -150,10 +152,10 @@ class TestNNEnsembleQFunction(object):
         biased_head=True,
     ):
         self.num_states, self.dim_state = (
-            (dim_state, 1) if discrete_state else (-1, dim_state)
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
         )
         self.num_actions, self.dim_action = (
-            (dim_action, 1) if discrete_action else (-1, dim_action)
+            (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
 
         layers = layers if layers is not None else [32, 32]
@@ -227,8 +229,8 @@ class TestNNEnsembleQFunction(object):
 
     def test_input_transform(self, num_heads, batch_size):
         q_function = NNEnsembleQFunction(
-            2,
-            1,
+            (2,),
+            (1,),
             num_heads=num_heads,
             layers=[64, 64],
             non_linearity="Tanh",
@@ -270,9 +272,11 @@ class TestNNEnsembleQFunction(object):
     def test_from_q_function(
         self, discrete_state, discrete_action, dim_state, dim_action, num_heads
     ):
-        num_states, dim_state = (dim_state, 1) if discrete_state else (-1, dim_state)
+        num_states, dim_state = (
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
+        )
         num_actions, dim_action = (
-            (dim_action, 1) if discrete_action else (-1, dim_action)
+            (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
 
         if not (discrete_state and not discrete_action):

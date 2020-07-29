@@ -76,7 +76,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self.terminal_reward = terminal_reward
         self.warm_start = warm_start
         self.default_action = default_action
-        self.dim_action = self.dynamical_model.dim_action
+        self.dim_action = self.dynamical_model.dim_action[0]
 
         self.mean = None
         self._scale = scale

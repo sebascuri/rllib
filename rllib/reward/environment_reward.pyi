@@ -1,4 +1,4 @@
-"""Reward implemented by querying an environment."""
+from typing import Any
 
 from torch import Tensor
 
@@ -9,4 +9,4 @@ from rllib.reward import AbstractReward
 class EnvironmentReward(AbstractReward):
     environment: AbstractEnvironment
     def __init__(self, environment: AbstractEnvironment) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

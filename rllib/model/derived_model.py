@@ -106,13 +106,13 @@ class OptimisticModel(TransformedModel):
 
     def __init__(self, base_model, transformations, beta=1.0):
         super().__init__(base_model, transformations)
-        self.dim_action = self.dim_action + self.dim_state
+        self.dim_action = (self.dim_action[0] + self.dim_state[0],)
         self.beta = beta
 
     def forward(self, state, action):
         """Get Optimistic Next state."""
-        control_action = action[..., : -self.dim_state]
-        optimism_vars = action[..., -self.dim_state :]
+        control_action = action[..., : -self.dim_state[0]]
+        optimism_vars = action[..., -self.dim_state[0] :]
         optimism_vars = torch.clamp(optimism_vars, -1.0, 1.0)
 
         mean, tril = self.next_state(state, control_action)
@@ -123,7 +123,7 @@ class OptimisticModel(TransformedModel):
 
     def scale(self, state, action):
         """Get scale at current state-action pair."""
-        control_action = action[..., : -self.dim_state]
+        control_action = action[..., : -self.dim_state[0]]
         scale = super().scale(state, control_action)
 
         return scale

@@ -11,9 +11,9 @@ class AbstractSystem(object, metaclass=ABCMeta):
 
     Parameters
     ----------
-    dim_state: int
-    dim_action: int
-    dim_observation: int, optional
+    dim_state: Tuple
+    dim_action: Tuple
+    dim_observation: Tuple, optional
 
     Methods
     -------

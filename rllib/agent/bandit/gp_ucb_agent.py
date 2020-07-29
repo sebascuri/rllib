@@ -35,11 +35,11 @@ class GPUCBPolicy(AbstractPolicy):
 
     def __init__(self, gp, x, beta=2.0, noisy=False):
         if x.ndim == 1:
-            dim_action = 1
+            dim_action = (1,)
         else:
-            dim_action = x.shape[-1]
+            dim_action = x.shape
         super().__init__(
-            dim_state=1,
+            dim_state=(),
             dim_action=dim_action,
             num_states=1,
             num_actions=-1,

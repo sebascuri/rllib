@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import gym
 import numpy as np
@@ -10,7 +10,9 @@ from .abstract_environment import AbstractEnvironment
 class GymEnvironment(AbstractEnvironment):
     env: gym.envs.registration
     _time: float
-    def __init__(self, env_name: str, seed: Optional[int] = ..., **kwargs) -> None: ...
+    def __init__(
+        self, env_name: str, seed: Optional[int] = ..., **kwargs: Any
+    ) -> None: ...
     def step(self, action: Action) -> Tuple[State, float, bool, dict]: ...
     def close(self) -> None: ...
     def reset(self) -> State: ...

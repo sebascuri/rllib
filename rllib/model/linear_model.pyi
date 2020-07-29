@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from torch import Tensor
 
@@ -13,4 +13,4 @@ class LinearModel(AbstractModel):
     def __init__(
         self, a: Tensor, b: Tensor, noise: Optional[Tensor] = None
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

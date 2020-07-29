@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from typing import Any, Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -6,9 +7,9 @@ from torch import Tensor
 from rllib.dataset.datatypes import TupleDistribution
 
 class AbstractModel(nn.Module, metaclass=ABCMeta):
-    dim_state: int
-    dim_action: int
-    dim_observation: int
+    dim_state: Tuple
+    dim_action: Tuple
+    dim_observation: Tuple
     num_states: int
     num_actions: int
     num_observations: int
@@ -16,14 +17,14 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     discrete_action: bool
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
-        dim_observation: int = ...,
+        dim_state: Tuple,
+        dim_action: Tuple,
+        dim_observation: Tuple = ...,
         num_states: int = ...,
         num_actions: int = ...,
         num_observations: int = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     @property
     def name(self) -> str: ...
     def sample_posterior(self) -> None: ...

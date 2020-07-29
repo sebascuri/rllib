@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -7,8 +7,8 @@ from torch import Tensor
 from rllib.dataset.datatypes import Action, TupleDistribution
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
-    dim_state: int
-    dim_action: int
+    dim_state: Tuple
+    dim_action: Tuple
     num_states: int
     num_actions: int
     deterministic: bool
@@ -19,8 +19,8 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     goal: Optional[Tensor]
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
         tau: float = ...,
@@ -28,7 +28,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         action_scale: Action = ...,
         goal: Optional[Tensor] = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     def random(
         self, batch_size: Optional[Tuple[int]] = ..., normalized: bool = ...
     ) -> TupleDistribution: ...

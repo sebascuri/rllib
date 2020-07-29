@@ -19,12 +19,14 @@ from rllib.agent import (
     PPOAgent,
     QLearningAgent,
     QREPSAgent,
+    RandomAgent,
     REINFORCEAgent,
     REPSAgent,
     SACAgent,
     SARSAAgent,
     SoftQLearningAgent,
     TD3Agent,
+    TRPOAgent,
 )
 from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
@@ -68,6 +70,8 @@ def continuous_environment(request):
         QREPSAgent,
         MPPOAgent,
         PPOAgent,
+        TRPOAgent,
+        RandomAgent,
     ]
 )
 def discrete_agent(request):
@@ -92,6 +96,8 @@ def discrete_agent(request):
         MBDPGAgent,
         MPCAgent,
         PPOAgent,
+        TRPOAgent,
+        RandomAgent,
     ]
 )
 def continuous_agent(request):

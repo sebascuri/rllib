@@ -1,6 +1,6 @@
 """Abstract calculation of TD-Target."""
 from abc import ABCMeta, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -24,7 +24,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     ) -> None: ...
     @abstractmethod
     def correction(self, pi_log_prob: Tensor, mu_log_prob: Tensor) -> Tensor: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
     def td(
         self, this_v: Tensor, next_v: Tensor, reward: Tensor, correction: Tensor
     ) -> Tensor: ...

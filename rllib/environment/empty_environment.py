@@ -13,12 +13,16 @@ class EmptyEnvironment(AbstractEnvironment):
         if num_actions >= 0:
             action_space = Discrete(num_actions)
         else:
-            action_space = Box(np.array([-1] * dim_action), np.array([1] * dim_action))
+            action_space = Box(
+                np.array([-1] * dim_action[0]), np.array([1] * dim_action[0])
+            )
 
         if num_states >= 0:
             state_space = Discrete(num_states)
         else:
-            state_space = Box(np.array([-1] * dim_state), np.array([1] * dim_state))
+            state_space = Box(
+                np.array([-1] * dim_state[0]), np.array([1] * dim_state[0])
+            )
 
         super().__init__(
             dim_state,

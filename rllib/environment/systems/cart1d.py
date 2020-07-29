@@ -18,7 +18,9 @@ class Cart1d(ODESystem):
     def __init__(self, step_size=0.01, max_action=1.0):
         """Initialization; see `CartPole`."""
         self.max_action = max_action
-        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=2)
+        super().__init__(
+            func=self._ode, step_size=step_size, dim_action=(1,), dim_state=(2,)
+        )
 
     def _ode(self, t, state, action):
         """Compute the state time-derivative.

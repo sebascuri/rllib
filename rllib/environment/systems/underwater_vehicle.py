@@ -20,7 +20,9 @@ class UnderwaterVehicle(ODESystem):
     """
 
     def __init__(self, step_size=0.01):
-        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=1)
+        super().__init__(
+            func=self._ode, step_size=step_size, dim_action=(1,), dim_state=(1,)
+        )
 
     def thrust(self, velocity, thrust):
         """Get the thrust coefficient."""

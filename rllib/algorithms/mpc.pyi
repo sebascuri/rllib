@@ -1,6 +1,5 @@
-"""MPC Algorithms."""
 from abc import ABCMeta, abstractmethod
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -55,7 +54,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     @abstractmethod
     def update_sequence_generation(self, elite_actions: Tensor) -> None: ...
     def initialize_actions(self, batch_shape: torch.Size) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
     def reset(self, warm_action: Optional[Tensor] = ...) -> None: ...
 
 class CEMShooting(MPCSolver):

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from torch import Tensor
 
@@ -9,4 +9,4 @@ class QuadraticReward(AbstractReward):
     q: Tensor
     r: Tensor
     def __init__(self, q: Tensor, r: Tensor, goal: Optional[Tensor] = ...) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> TupleDistribution: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

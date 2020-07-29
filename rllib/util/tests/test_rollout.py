@@ -27,9 +27,9 @@ def test_rollout_policy(environment):
 
 def test_rollout_agent(environment):
     agent = RandomAgent(
-        environment.name,
         environment.dim_state,
         environment.dim_action,
+        num_states=environment.num_states,
         num_actions=environment.num_actions,
     )
     rollout_agent(environment, agent)

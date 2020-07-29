@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Union
+from typing import Any, Union
 
 from torch import Tensor
 
@@ -14,4 +14,4 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
     def __init__(
         self, q_function: AbstractQFunction, param: Union[float, ParameterDecay]
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

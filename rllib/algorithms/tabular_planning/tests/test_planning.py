@@ -18,8 +18,8 @@ def test_iterative_policy_evaluation():
     EPS = 1e-3
 
     policy = RandomPolicy(
-        dim_state=1,
-        dim_action=1,
+        dim_state=(),
+        dim_action=(),
         num_states=environment.num_states,
         num_actions=environment.num_actions,
     )
@@ -67,8 +67,8 @@ def test_linear_system_policy_evaluation():
     EPS = 1e-3
 
     policy = RandomPolicy(
-        dim_state=1,
-        dim_action=1,
+        dim_state=(),
+        dim_action=(),
         num_states=environment.num_states,
         num_actions=environment.num_actions,
     )
@@ -315,8 +315,8 @@ def test_value_iteration():
 def test_not_implemented():
     environment = GymEnvironment("CartPole-v0")
     with pytest.raises(AttributeError):
-        iterative_policy_evaluation(0, environment, 0.9)
+        iterative_policy_evaluation(0, environment, 0.9)  # type: ignore
     with pytest.raises(AttributeError):
-        value_iteration(environment, 0.9)
+        value_iteration(environment, 0.9)  # type: ignore
     with pytest.raises(AttributeError):
-        policy_iteration(environment, 0.9)
+        policy_iteration(environment, 0.9)  # type: ignore

@@ -53,7 +53,9 @@ class MagneticLevitation(ODESystem):
         self.max_action = max_action
         self.gravity = gravity
 
-        super().__init__(func=self._ode, step_size=step_size, dim_action=1, dim_state=3)
+        super().__init__(
+            func=self._ode, step_size=step_size, dim_action=(1,), dim_state=(3,)
+        )
 
     def alpha(self, x1, x2, x3):
         """Compute alpha coefficient."""

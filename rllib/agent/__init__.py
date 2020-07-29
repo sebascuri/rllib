@@ -51,4 +51,5 @@ AGENTS = [
     "SARSA",
     "PPO",
     "TRPO",
+    "Random",
 ]

@@ -13,8 +13,8 @@ class TabularPolicy(NNPolicy):
 
     def __init__(self, num_states, num_actions):
         super().__init__(
-            dim_state=1,
-            dim_action=1,
+            dim_state=(),
+            dim_action=(),
             num_states=num_states,
             num_actions=num_actions,
             biased_head=False,

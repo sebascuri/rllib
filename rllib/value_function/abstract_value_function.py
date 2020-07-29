@@ -15,9 +15,9 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
 
     Parameters
     ----------
-    dim_state: int.
+    dim_state: Tuple.
         Dimension of the state.
-    dim_action: int.
+    dim_action: Tuple.
         Dimension of the action
     num_states: int.
         Number of states in discrete environments.
@@ -49,7 +49,7 @@ class AbstractValueFunction(AbstractQFunction):
 
     Parameters
     ----------
-    dim_state: int.
+    dim_state: Tuple.
         Dimension of the state.
     num_states: int.
         Number of states in discrete environments.

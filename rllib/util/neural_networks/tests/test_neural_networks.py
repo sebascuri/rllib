@@ -34,12 +34,12 @@ def batch_size(request):
 
 @pytest.fixture(params=[1, 16])
 def in_dim(request):
-    return request.param
+    return (request.param,)
 
 
 @pytest.fixture(params=[2, 4])
 def out_dim(request):
-    return request.param
+    return (request.param,)
 
 
 @pytest.fixture(params=[5, 32])
@@ -94,11 +94,11 @@ class TestDeterministicNN(object):
         if batch_size is None:
             t = torch.randn(in_dim)
             o = net(t)
-            assert o.shape == torch.Size([out_dim])
+            assert o.shape == torch.Size(out_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn((batch_size,) + in_dim)
             o = net(t)
-            assert o.shape == torch.Size([batch_size, out_dim])
+            assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_layers(self, net, in_dim, out_dim, layers):
         net = torch.jit.script(net(in_dim, out_dim, layers))
@@ -108,7 +108,7 @@ class TestDeterministicNN(object):
         assert 2 * (len(layers) + 1) == len([*net.parameters()])
 
         # Check shapes
-        layers.append(out_dim)
+        layers.append(out_dim[0])
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
 
@@ -128,25 +128,25 @@ class TestHeteroGaussianNN(object):
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([out_dim])
+            assert o.shape == torch.Size(out_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn((batch_size,) + in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([batch_size, out_dim])
+            assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
         net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, 2, in_dim)
+            t = torch.randn((batch_size, 2) + in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else []
+            (batch_size, 2) if batch_size is not None else []
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
@@ -157,12 +157,12 @@ class TestHeteroGaussianNN(object):
         assert 2 * (len(layers) + 2) == len([*net.parameters()])
 
         # Check shapes
-        layers.append(out_dim)
-        layers.append(out_dim)
+        layers.append(out_dim[0])
+        layers.append(out_dim[0])
         i = 0
         for name, param in net.named_parameters():
             if name.startswith("_scale"):
-                assert param.shape[0] == out_dim  # * out_dim
+                assert param.shape[0] == out_dim[0]  # * out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
                 i += 1
@@ -183,25 +183,25 @@ class TestHomoGaussianNN(object):
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([out_dim])
+            assert o.shape == torch.Size(out_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn((batch_size,) + in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([batch_size, out_dim])
+            assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
         net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, 2, in_dim)
+            t = torch.randn((batch_size, 2) + in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else []
+            (batch_size, 2) if batch_size is not None else ()
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
@@ -212,11 +212,11 @@ class TestHomoGaussianNN(object):
         assert 2 * (len(layers) + 1) + 1 == len([*net.parameters()])
 
         # Check shapes
-        layers.append(out_dim)
+        layers.append(out_dim[0])
         i = 0
         for name, param in net.named_parameters():
             if name.startswith("_scale"):
-                assert param.shape[0] == out_dim
+                assert param.shape[0] == out_dim[0]
             else:
                 assert param.shape[0] == layers[i // 2]
                 i += 1
@@ -239,7 +239,7 @@ class TestCategoricalNN(object):
             o = tensor_to_distribution(net(t)).sample()
             assert o.shape == torch.Size([])
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn((batch_size,) + in_dim)
             o = tensor_to_distribution(net(t)).sample()
             assert o.shape == torch.Size([batch_size])
 
@@ -248,14 +248,14 @@ class TestCategoricalNN(object):
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, 2, in_dim)
+            t = torch.randn((batch_size, 2) + in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.Categorical)
         assert not o.has_rsample
         assert o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else []
+            (batch_size, 2) if batch_size is not None else ()
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
@@ -266,7 +266,7 @@ class TestCategoricalNN(object):
         assert 2 * (len(layers) + 1) == len([*net.parameters()])
 
         # Check shapes
-        layers.append(out_dim)
+        layers.append(out_dim[0])
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
 
@@ -286,37 +286,43 @@ class TestEnsembleNN(object):
         return request.param
 
     def test_num_heads(self, net, num_heads, deterministic):
-        net = Ensemble(4, 2, num_heads=num_heads, deterministic=deterministic)
+        net = Ensemble((4,), (2,), num_heads=num_heads, deterministic=deterministic)
         # net = torch.jit.script(net)
         assert net.num_heads == num_heads
 
     def test_output_shape(self, out_dim, batch_size, num_heads, deterministic):
-        net = Ensemble(4, out_dim, num_heads=num_heads, deterministic=deterministic)
+        in_dim = (4,)
+        net = Ensemble(
+            in_dim, out_dim, num_heads=num_heads, deterministic=deterministic
+        )
         # net = torch.jit.script(net)
         if batch_size is None:
-            t = torch.randn(4)
+            t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([out_dim])
+            assert o.shape == torch.Size(out_dim)
         else:
-            t = torch.randn(batch_size, 4)
+            t = torch.randn((batch_size,) + in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([batch_size, out_dim])
+            assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, out_dim, num_heads, batch_size, deterministic):
-        net = Ensemble(4, out_dim, num_heads=num_heads, deterministic=deterministic)
+        in_dim = (4,)
+        net = Ensemble(
+            in_dim, out_dim, num_heads=num_heads, deterministic=deterministic
+        )
 
         # net = torch.jit.script(net)
         if batch_size is None:
-            t = torch.randn(4)
+            t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, 2, 4)
+            t = torch.randn((batch_size, 2) + in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else []
+            (batch_size, 2) if batch_size is not None else ()
         )
 
         net.set_prediction_strategy("set_head")
@@ -327,14 +333,14 @@ class TestEnsembleNN(object):
         else:
             assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else []
+            (batch_size, 2) if batch_size is not None else ()
         )
 
         assert o.has_rsample
         assert not o.has_enumerate_support
 
     def test_layers(self, out_dim, num_heads, layers, deterministic):
-        in_dim = 4
+        in_dim = (4,)
         net = Ensemble(in_dim, out_dim, layers=layers, num_heads=num_heads)
 
         # net = torch.jit.script(net)
@@ -344,24 +350,25 @@ class TestEnsembleNN(object):
         assert 2 * (len(layers) + 2) == len([*net.parameters()])
 
         # Check shapes
-        layers.append(out_dim * num_heads)
-        layers.append(out_dim * num_heads)
+        layers.append(out_dim[0] * num_heads)
+        layers.append(out_dim[0] * num_heads)
 
         # Check shapes
         i = 0
         for name, param in net.named_parameters():
             if name.startswith("_scale"):
-                assert param.shape[0] == out_dim * num_heads  # * out_dim
+                assert param.shape[0] == out_dim[0] * num_heads  # * out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
                 i += 1
 
     def test_class_method(self, net, batch_size, out_dim, num_heads):
         layers = [64, 64]
+        in_dim = (4,)
         try:
-            n1 = net(4, out_dim, layers=layers, num_heads=num_heads)
+            n1 = net(in_dim, out_dim, layers=layers, num_heads=num_heads)
         except TypeError:
-            base_net = net(4, out_dim, layers=layers)
+            base_net = net(in_dim, out_dim, layers=layers)
             n1 = Ensemble.from_feedforward(base_net, num_heads=num_heads)
 
             if isinstance(base_net, DeterministicNN):
@@ -378,28 +385,28 @@ class TestEnsembleNN(object):
         assert 2 * (len(layers) + 2) == len([*n1.parameters()])
 
         # Check shapes
-        layers.append(out_dim * num_heads)
-        layers.append(out_dim * num_heads)
+        layers.append(out_dim[0] * num_heads)
+        layers.append(out_dim[0] * num_heads)
         i = 0
         for name, param in n1.named_parameters():
             if name.startswith("_scale"):
-                assert param.shape[0] == out_dim * num_heads  # * out_dim
+                assert param.shape[0] == out_dim[0] * num_heads  # * out_dim
             else:
                 assert param.shape[0] == layers[i // 2]
                 i += 1
 
         # Check output
         if batch_size is None:
-            t = torch.randn(4)
+            t = torch.randn(in_dim)
             o = tensor_to_distribution(n1(t))
-            assert o.sample().shape == torch.Size([out_dim])
+            assert o.sample().shape == torch.Size(out_dim)
             assert o.batch_shape == torch.Size([])
 
         else:
-            t = torch.randn(batch_size, 2, 4)
+            t = torch.randn((batch_size, 2) + in_dim)
             o = tensor_to_distribution(n1(t))
-            assert o.sample().shape == torch.Size([batch_size, 2, out_dim])
-            assert o.batch_shape == torch.Size([batch_size, 2])
+            assert o.sample().shape == torch.Size((batch_size, 2) + out_dim)
+            assert o.batch_shape == torch.Size((batch_size, 2))
 
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
@@ -416,25 +423,25 @@ class TestFelixNet(object):
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([out_dim])
+            assert o.shape == torch.Size(out_dim)
         else:
-            t = torch.randn(batch_size, in_dim)
+            t = torch.randn((batch_size,) + in_dim)
             o = tensor_to_distribution(net(t)).sample()
-            assert o.shape == torch.Size([batch_size, out_dim])
+            assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
         net = torch.jit.script(net(in_dim, out_dim))
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
-            t = torch.randn(batch_size, 2, in_dim)
+            t = torch.randn((batch_size, 2) + in_dim)
 
         o = tensor_to_distribution(net(t))
         assert isinstance(o, torch.distributions.MultivariateNormal)
         assert o.has_rsample
         assert not o.has_enumerate_support
         assert o.batch_shape == torch.Size(
-            [batch_size, 2] if batch_size is not None else []
+            (batch_size, 2) if batch_size is not None else ()
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
@@ -445,7 +452,7 @@ class TestFelixNet(object):
         assert 2 * (len(layers)) + 2 == len([*net.parameters()])
 
         # Check shapes
-        layers.append(out_dim)
+        layers.append(out_dim[0])
         for i, param in enumerate(net.parameters()):
             assert param.shape[0] == layers[i // 2]
 

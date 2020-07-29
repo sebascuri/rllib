@@ -147,8 +147,8 @@ class MBDPGAgent(ModelBasedAgent):
         model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
 
         reward_model = QuadraticReward(
-            torch.eye(environment.dim_state),
-            torch.eye(environment.dim_action),
+            torch.eye(environment.dim_state[0]),
+            torch.eye(environment.dim_action[0]),
             goal=environment.goal,
         )
 

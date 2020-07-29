@@ -36,17 +36,17 @@ class TestRandomPolicy(object):
 
         if discrete_state:
             self.num_states = dim_state
-            self.dim_state = 1
+            self.dim_state = ()
         else:
-            self.num_states = None
-            self.dim_state = dim_state
+            self.num_states = -1
+            self.dim_state = (dim_state,)
 
         if discrete_action:
             self.num_actions = dim_action
-            self.dim_action = 1
+            self.dim_action = ()
         else:
-            self.num_actions = None
-            self.dim_action = dim_action
+            self.num_actions = -1
+            self.dim_action = (dim_action,)
 
         self.policy = RandomPolicy(
             self.dim_state, self.dim_action, self.num_states, self.num_actions
@@ -78,7 +78,7 @@ class TestRandomPolicy(object):
             assert distribution.logits.shape == (self.num_actions,)
             assert sample.shape == ()
         else:  # Continuous
-            assert distribution.mean.shape == (self.dim_action,)
+            assert distribution.mean.shape == self.dim_action
             assert sample.shape == (dim_action,)
 
     def test_call(
@@ -100,17 +100,17 @@ class TestRandomPolicy(object):
         else:  # Continuous
             assert isinstance(distribution, MultivariateNormal)
             if batch_size:
-                assert distribution.mean.shape == (batch_size, self.dim_action)
+                assert distribution.mean.shape == (batch_size,) + self.dim_action
                 assert distribution.covariance_matrix.shape == (
                     batch_size,
-                    self.dim_action,
-                    self.dim_action,
+                    self.dim_action[0],
+                    self.dim_action[0],
                 )
                 assert sample.shape == (batch_size, dim_action)
             else:
-                assert distribution.mean.shape == (self.dim_action,)
+                assert distribution.mean.shape == self.dim_action
                 assert distribution.covariance_matrix.shape == (
-                    self.dim_action,
-                    self.dim_action,
+                    self.dim_action[0],
+                    self.dim_action[0],
                 )
                 assert sample.shape == (dim_action,)

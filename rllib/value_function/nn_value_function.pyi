@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, TypeVar
+from typing import Any, List, Optional, Tuple, Type, TypeVar
 
 import torch.nn
 from torch import Tensor
@@ -13,7 +13,7 @@ class NNValueFunction(AbstractValueFunction):
     nn: torch.nn.Module
     def __init__(
         self,
-        dim_state: int,
+        dim_state: Tuple,
         num_states: int = -1,
         layers: Optional[List[int]] = ...,
         biased_head: bool = ...,
@@ -27,12 +27,12 @@ class NNValueFunction(AbstractValueFunction):
     def from_nn(
         cls: Type[T],
         module: torch.nn.Module,
-        dim_state: int,
+        dim_state: Tuple,
         num_states: int = ...,
         tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
     ) -> T: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
     def embeddings(self, state: Tensor) -> Tensor: ...
 
 class NNQFunction(AbstractQFunction):
@@ -41,8 +41,8 @@ class NNQFunction(AbstractQFunction):
     tau: float
     def __init__(
         self,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
         layers: Optional[List[int]] = ...,
@@ -57,11 +57,11 @@ class NNQFunction(AbstractQFunction):
     def from_nn(
         cls: Type[T],
         module: torch.nn.Module,
-        dim_state: int,
-        dim_action: int,
+        dim_state: Tuple,
+        dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
         tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
     ) -> T: ...
-    def forward(self, *args: Tensor, **kwargs) -> Tensor: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

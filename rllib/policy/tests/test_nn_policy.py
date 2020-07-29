@@ -87,11 +87,11 @@ class TestMLPPolicy(object):
     ):
 
         self.num_states, self.dim_state = (
-            (dim_state, 1) if discrete_state else (-1, dim_state)
+            (dim_state, ()) if discrete_state else (-1, (dim_state,))
         )
 
         self.num_actions, self.dim_action = (
-            (dim_action, 1) if discrete_action else (-1, dim_action)
+            (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
 
         self.policy = NNPolicy(
@@ -128,7 +128,7 @@ class TestMLPPolicy(object):
             assert distribution.logits.shape == (self.num_actions,)
             assert sample.shape == ()
         else:  # Continuous
-            assert distribution.mean.shape == (self.dim_action,)
+            assert distribution.mean.shape == self.dim_action
             assert sample.shape == (dim_action,)
 
     def test_forward(
@@ -160,20 +160,20 @@ class TestMLPPolicy(object):
                 assert isinstance(distribution, MultivariateNormal)
 
             if batch_size:
-                assert distribution.mean.shape == (batch_size, self.dim_action)
+                assert distribution.mean.shape == (batch_size,) + self.dim_action
                 if not deterministic:
                     assert distribution.covariance_matrix.shape == (
                         batch_size,
-                        self.dim_action,
-                        self.dim_action,
+                        self.dim_action[0],
+                        self.dim_action[0],
                     )
                 assert sample.shape == (batch_size, dim_action)
             else:
-                assert distribution.mean.shape == (self.dim_action,)
+                assert distribution.mean.shape == self.dim_action
                 if not deterministic:
                     assert distribution.covariance_matrix.shape == (
-                        self.dim_action,
-                        self.dim_action,
+                        self.dim_action[0],
+                        self.dim_action[0],
                     )
                 assert sample.shape == (dim_action,)
 
@@ -188,7 +188,7 @@ class TestMLPPolicy(object):
         assert embeddings.dtype is torch.get_default_dtype()
 
     def test_input_transform(self, batch_size):
-        policy = NNPolicy(2, 4, layers=[64, 64], input_transform=StateTransform())
+        policy = NNPolicy((2,), (4,), layers=[64, 64], input_transform=StateTransform())
         out = tensor_to_distribution(policy(random_tensor(False, 2, batch_size)))
         action = out.sample()
         assert action.shape == torch.Size([batch_size, 4] if batch_size else [4])
@@ -196,7 +196,7 @@ class TestMLPPolicy(object):
 
     def test_goal(self, batch_size):
         goal = random_tensor(False, 3, None)
-        policy = NNPolicy(4, 2, layers=[32, 32], goal=goal)
+        policy = NNPolicy((4,), (2,), layers=[32, 32], goal=goal)
         state = random_tensor(False, 4, batch_size)
         pi = tensor_to_distribution(policy(state))
         action = pi.sample()
@@ -223,8 +223,8 @@ class TestMLPPolicy(object):
                 layers=[20, 20],
                 biased_head=False,
             ),
-            dim_state,
-            dim_action,
+            self.dim_state,
+            self.dim_action,
             num_states=self.num_states,
             num_actions=self.num_actions,
         )
@@ -243,7 +243,7 @@ class TestMLPPolicy(object):
 
 class TestFelixNet(object):
     def init(self, dim_state, dim_action):
-        self.policy = FelixPolicy(dim_state, dim_action)
+        self.policy = FelixPolicy((dim_state,), (dim_action,))
 
     def test_num_states_actions(self, dim_state, dim_action):
         self.init(dim_state, dim_action)
@@ -251,8 +251,8 @@ class TestFelixNet(object):
         assert self.policy.num_actions == -1
         assert not self.policy.discrete_state
         assert not self.policy.discrete_action
-        assert self.policy.dim_state == dim_state
-        assert self.policy.dim_action == dim_action
+        assert self.policy.dim_state == (dim_state,)
+        assert self.policy.dim_action == (dim_action,)
 
     def test_random_action(self, dim_state, dim_action):
         self.init(dim_state, dim_action)

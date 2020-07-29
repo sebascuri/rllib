@@ -1,5 +1,4 @@
-"""Soft Actor-Critic Algorithm."""
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -42,7 +41,7 @@ class SoftActorCritic(AbstractAlgorithm):
     def critic_loss(
         self, state: Tensor, action: Tensor, q_target: Tensor
     ) -> TDLoss: ...
-    def forward(self, observation: Observation, **kwargs) -> SACLoss: ...
+    def forward(self, observation: Observation, **kwargs: Any) -> SACLoss: ...
 
 class MBSoftActorCritic(SoftActorCritic):
     """Model Based Soft-Actor Critic."""
@@ -68,4 +67,4 @@ class MBSoftActorCritic(SoftActorCritic):
         num_steps: int = ...,
         num_samples: int = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs) -> SACLoss: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> SACLoss: ...
