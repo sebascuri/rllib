@@ -52,6 +52,18 @@ class Mish(nn.Module):
         return x * (torch.tanh(torch.nn.functional.softplus(x)))
 
 
+class View(nn.Module):
+    """View Layer.
+
+    The  view layer flattens a tensor.
+    It is useful for changing from convolutions to FC layers.
+    """
+
+    def forward(self, x):
+        """Apply forward computation of module."""
+        return x.view(x.size(0), -1)
+
+
 def parse_nonlinearity(non_linearity):
     """Parse non-linearity."""
     if hasattr(nn, non_linearity):
@@ -75,7 +87,29 @@ def parse_layers(layers, in_dim, non_linearity):
 
     nonlinearity = parse_nonlinearity(non_linearity)
     layers_ = list()
-    in_dim = in_dim[0]
+    if len(in_dim) > 1:  # Convolutional Layers.
+        layers_.append(
+            nn.Conv2d(in_channels=in_dim[0], out_channels=32, kernel_size=8, stride=4)
+        )
+        layers_.append(nn.BatchNorm2d(32))
+        layers_.append(nn.ReLU())
+
+        layers_.append(
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2)
+        )
+        layers_.append(nn.BatchNorm2d(64))
+        layers_.append(nn.ReLU())
+
+        layers_.append(
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1)
+        )
+        layers_.append(nn.BatchNorm2d(64))
+        layers_.append(nn.ReLU())
+        layers_.append(View())
+        in_dim = 7 * 7 * 64
+    else:
+        in_dim = in_dim[0]
+
     for layer in layers:
         layers_.append(nn.Linear(in_dim, layer))
         layers_.append(nonlinearity())
@@ -108,10 +142,13 @@ def update_parameters(target_module, new_module, tau=0.0):
             if target_state_dict[name] is new_state_dict[name]:
                 continue
             else:
-                target_state_dict[name].data[:] = (
-                    tau * target_state_dict[name].data
-                    + (1 - tau) * new_state_dict[name].data
-                )
+                if target_state_dict[name].data.ndim == 0:
+                    target_state_dict[name].data = new_state_dict[name].data
+                else:
+                    target_state_dict[name].data[:] = (
+                        tau * target_state_dict[name].data
+                        + (1 - tau) * new_state_dict[name].data
+                    )
 
         # It is not necessary to load the dict again as it modifies the pointer.
         # target_module.load_state_dict(target_state_dict)

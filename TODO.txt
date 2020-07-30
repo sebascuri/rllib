@@ -1,5 +1,3 @@
-Add mypy --strict.
-Add pre-commit pytest only to push.
-
-- Reward magnitude
-- Experience Replay
+Add model tests.
+Add gradient clipping.
+Make experience replay agnostic to input.
