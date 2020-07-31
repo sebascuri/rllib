@@ -7,7 +7,7 @@ from torch.optim import Adam
 from rllib.algorithms.dpg import DPG
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.policy import NNPolicy
-from rllib.util.parameter_decay import Constant, ParameterDecay
+from rllib.util.parameter_decay import Constant, OUNoise, ParameterDecay
 from rllib.value_function import NNQFunction
 
 from .off_policy_agent import OffPolicyAgent
@@ -159,7 +159,7 @@ class DPGAgent(OffPolicyAgent):
             criterion=criterion,
             optimizer=optimizer,
             memory=memory,
-            exploration_noise=0.1,
+            exploration_noise=OUNoise(dim=environment.dim_action),
             policy_update_frequency=2,
             num_iter=1,
             batch_size=100,

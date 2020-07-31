@@ -13,15 +13,21 @@ class ParameterDecay(nn.Module, metaclass=ABCMeta):
 
     def __init__(self, start, end=None, decay=None):
         super().__init__()
-        self.start = nn.Parameter(torch.tensor(start), requires_grad=False)
+        if not isinstance(start, torch.Tensor):
+            start = torch.tensor(start)
+        self.start = nn.Parameter(start, requires_grad=False)
 
         if end is None:
             end = start
-        self.end = nn.Parameter(torch.tensor(end), requires_grad=False)
+        if not isinstance(end, torch.Tensor):
+            end = torch.tensor(end)
+        self.end = nn.Parameter(end, requires_grad=False)
 
         if decay is None:
             decay = 1.0
-        self.decay = nn.Parameter(torch.tensor(decay), requires_grad=False)
+        if not isinstance(decay, torch.Tensor):
+            decay = torch.tensor(decay)
+        self.decay = nn.Parameter(decay, requires_grad=False)
 
         self.step = 0
 
@@ -94,3 +100,52 @@ class LinearGrowth(ParameterDecay):
     def forward(self):
         """See `ParameterDecay.__call__'."""
         return min(self.end, self.start + self.decay * self.step)
+
+
+class OUNoise(ParameterDecay):
+    """Ornstein-Uhlenbeck Noise process.
+
+    Parameters
+    ----------
+    mean: Tensor
+        Mean of OU process.
+    std_deviation: Tensor
+        Standard Deviation of OU Process.
+    theta: float
+        Parameter of OU Process.
+    dt: float
+        Time discretization.
+    dim: Tuple
+        Dimensions of noise.
+
+    References
+    ----------
+    https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process.
+    """
+
+    def __init__(self, mean=0, std_deviation=0.2, theta=0.15, dt=1e-2, dim=(1,)):
+        if not isinstance(mean, torch.Tensor):
+            mean = mean * torch.ones(dim)
+        self.mean = mean
+
+        if not isinstance(std_deviation, torch.Tensor):
+            std_deviation = std_deviation * torch.ones(dim)
+        self.std_dev = std_deviation
+
+        self.theta = theta
+        self.dt = dt
+        super().__init__(start=torch.zeros_like(mean))
+
+    def forward(self):
+        """Compute Ornstein-Uhlenbeck sample."""
+        x_prev = self.start.data
+
+        x = (
+            x_prev
+            + self.theta * (self.mean - x_prev) * self.dt
+            + self.std_dev
+            * torch.sqrt(torch.tensor(self.dt))
+            * torch.randn(self.mean.shape)
+        )
+        self.start.data = x
+        return x
