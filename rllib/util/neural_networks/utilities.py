@@ -469,7 +469,6 @@ def freeze_parameters(module):
     """
     for param in module.parameters():
         param.requires_grad = False
-        param.grad = None
 
 
 def unfreeze_parameters(module):
@@ -483,11 +482,40 @@ def unfreeze_parameters(module):
     """
     for param in module.parameters():
         param.requires_grad = True
+
+
+def stop_learning(module):
+    """Stop learning all module parameters.
+
+    Can be used for early stopping parameters of the graph.
+
+    Parameters
+    ----------
+    module : torch.nn.Module
+    """
+    for param in module.parameters():
+        param.requires_grad = False
+        param.grad = None
+
+
+def resume_learning(module):
+    """Resume learning all module parameters.
+
+    Can be used to resume learning after early stopping parameters of the graph.
+
+    Parameters
+    ----------
+    module : torch.nn.Module
+    """
+    for param in module.parameters():
+        param.requires_grad = True
         param.grad = torch.zeros_like(param.data)
 
 
 class disable_gradient(object):
     """Context manager to disable gradients temporarily.
+
+    Gradients terms will be zero-ed, momentum terms will continue.
 
     Parameters
     ----------
@@ -507,3 +535,28 @@ class disable_gradient(object):
         """Unfreeze the parameters."""
         for module in self.modules:
             unfreeze_parameters(module)
+
+
+class disable_optimizer(object):
+    """Context manager to disable optimization steps temporarily.
+
+    Gradients and momentum terms will be zero-ed.
+
+    Parameters
+    ----------
+    modules : sequence
+        List of torch.nn.Module.
+    """
+
+    def __init__(self, *modules):
+        self.modules = modules
+
+    def __enter__(self):
+        """Freeze the parameters."""
+        for module in self.modules:
+            stop_learning(module)
+
+    def __exit__(self, *args):
+        """Unfreeze the parameters."""
+        for module in self.modules:
+            resume_learning(module)

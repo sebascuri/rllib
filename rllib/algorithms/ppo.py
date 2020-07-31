@@ -9,7 +9,7 @@ from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import (
     deep_copy_module,
     freeze_parameters,
-    unfreeze_parameters,
+    resume_learning,
     update_parameters,
 )
 from rllib.util.parameter_decay import Constant, ParameterDecay
@@ -102,7 +102,8 @@ class PPO(AbstractAlgorithm):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
-        unfreeze_parameters(self.policy)
+        # Resume learning after early stopping.
+        resume_learning(self.policy)
 
     def get_log_p_and_entropy(self, state, action):
         """Get log probability, entropy and kl_divergence at sampled state-actions.

@@ -5,7 +5,7 @@ from torch.optim import Adam
 
 from rllib.algorithms.ppo import PPO
 from rllib.policy import NNPolicy
-from rllib.util.neural_networks.utilities import freeze_parameters
+from rllib.util.neural_networks.utilities import stop_learning
 from rllib.value_function import NNValueFunction
 
 from .on_policy_agent import OnPolicyAgent
@@ -76,7 +76,7 @@ class PPOAgent(OnPolicyAgent):
             kwargs.get("kl_div", kwargs.get("approx_kl_div", self.target_kl))
             >= 1.5 * self.target_kl
         ):
-            freeze_parameters(self.policy)
+            stop_learning(self.policy)
         return False
 
     @classmethod
@@ -137,7 +137,7 @@ class PPOAgent(OnPolicyAgent):
             monte_carlo_target=False,
             clamp_value=True,
             num_iter=80,
-            target_update_frequency=4,
+            target_update_frequency=1,
             train_frequency=0,
             num_rollouts=4,
             gamma=gamma,
