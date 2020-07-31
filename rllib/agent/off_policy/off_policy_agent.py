@@ -57,7 +57,7 @@ class OffPolicyAgent(AbstractAgent):
             and self.train_frequency > 0  # train after a transition.
             and self.total_steps % self.train_frequency == 0  # correct steps.
         ):
-            self._train()
+            self.learn()
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
@@ -69,14 +69,14 @@ class OffPolicyAgent(AbstractAgent):
             and self.num_rollouts > 0  # train once the episode ends.
             and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
         ):  # use total_episodes + 1 because the super() is called after training.
-            self._train()
+            self.learn()
 
-        if len(self.memory) > 0:  # Maybe _train() resets the memory.
+        if len(self.memory) > 0:  # Maybe learn() resets the memory.
             self.memory.end_episode()
 
         super().end_episode()  # this update total episodes.
 
-    def _train(self):
+    def learn(self):
         """Train the off-policy agent."""
         self.algorithm.reset()
         for _ in range(self.num_iter):
@@ -115,7 +115,7 @@ class OffPolicyAgent(AbstractAgent):
                 for param in self.params.values():
                     param.update()
 
-            if self._early_stop_training(losses, **self.algorithm.info()):
+            if self.early_stop(losses, **self.algorithm.info()):
                 break
 
         self.algorithm.reset()

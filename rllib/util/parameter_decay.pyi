@@ -1,8 +1,8 @@
 from abc import ABCMeta
 from typing import Optional, Tuple, Union
 
-from torch import Tensor
 import torch.nn as nn
+from torch import Tensor
 
 class ParameterDecay(nn.Module, metaclass=ABCMeta):
     start: nn.Parameter

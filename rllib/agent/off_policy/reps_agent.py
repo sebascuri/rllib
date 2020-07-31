@@ -82,11 +82,11 @@ class REPSAgent(OffPolicyAgent):
         """See `AbstractAgent.end_episode'."""
         if (self.total_episodes + 1) % self.num_rollouts == 0:
             if self._training:
-                self._train()
+                self.learn()
 
         super().end_episode()
 
-    def _train(self):
+    def learn(self):
         """See `AbstractAgent.train_agent'."""
         old_policy = deep_copy_module(self.policy)
         self._optimizer_dual()
@@ -123,7 +123,7 @@ class REPSAgent(OffPolicyAgent):
             self.logger.update(**{loss_name: losses})
 
             self.counters["train_steps"] += 1
-            if self._early_stop_training(losses, **self.algorithm.info()):
+            if self.early_stop(losses, **self.algorithm.info()):
                 break
 
     @classmethod

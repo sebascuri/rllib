@@ -158,11 +158,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """End the interaction with the environment."""
         pass
 
-    def _train(self):
+    def learn(self):
         """Train the agent."""
         pass
 
-    def _early_stop_training(self, *args, **kwargs):
+    def early_stop(self, *args, **kwargs):
         """Early stop the training algorithm."""
         return False
 

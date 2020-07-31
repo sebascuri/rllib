@@ -70,7 +70,7 @@ class PPOAgent(OnPolicyAgent):
         self.policy = self.algorithm.policy
         self.target_kl = target_kl
 
-    def _early_stop_training(self, *args, **kwargs):
+    def early_stop(self, *args, **kwargs):
         """Early stop the training algorithm."""
         if (
             kwargs.get("kl_div", kwargs.get("approx_kl_div", self.target_kl))

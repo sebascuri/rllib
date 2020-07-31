@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -36,6 +36,6 @@ class PPOAgent(OnPolicyAgent):
         tensorboard: bool = ...,
         comment: str = ...,
     ) -> None: ...
-    def _early_stop_training(self, *args, **kwargs):
+    def early_stop(self, *args: Any, **kwargs: Any) -> bool:
         """Early stop the training algorithm."""
         return kwargs.get("approximate_kl", self.target_kl) >= 1.5 * self.target_kl

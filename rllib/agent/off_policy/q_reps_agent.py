@@ -79,7 +79,7 @@ class QREPSAgent(REPSAgent):
         )
         self.policy = self.algorithm.policy
 
-    def _train(self):
+    def learn(self):
         """See `AbstractAgent.train_agent'."""
         # old_policy = deep_copy_module(self.policy)
         self._optimizer_dual()

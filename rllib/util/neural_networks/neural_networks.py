@@ -75,11 +75,9 @@ class FeedForwardNN(nn.Module):
         out: torch.Tensor.
             Tensor of size [batch_size x out_dim].
         """
-        if len(self.kwargs["in_dim"]) == 3 and x.ndim == 3:
-            x = x.unsqueeze(0)
+        x = x.unsqueeze(0)  # Always un-squeeze to produce a batch.
         out = self.head(self.hidden_layers(x))
-        if len(self.kwargs["in_dim"]) == 3 and x.ndim == 3:
-            out = out.squeeze(0)
+        out = out.squeeze(0)  # Squeeze back!
         if self.squashed_output:
             return torch.tanh(out)
         return out

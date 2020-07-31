@@ -239,7 +239,7 @@ class ModelBasedAgent(AbstractAgent):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
             policy = tensor_to_distribution(self.policy(state), **self.dist_params)
             self.pi = policy
-            action = self._plan(state).detach().numpy()
+            action = self.plan(state).detach().numpy()
 
         action = action[..., : self.dynamical_model.base_model.dim_action[0]]
         return action.clip(
@@ -295,10 +295,10 @@ class ModelBasedAgent(AbstractAgent):
                             **{f"gp{i} num inducing inputs": gp.xu.shape[0]}
                         )
 
-            self._train()
+            self.learn()
         super().end_episode()
 
-    def _plan(self, state):
+    def plan(self, state):
         """Plan with current model and policy by (approximately) solving MPC.
 
         To solve MPC, the policy is sampled to guide random shooting.
@@ -322,26 +322,26 @@ class ModelBasedAgent(AbstractAgent):
         # Return first action and the mean over the elite samples.
         return actions[0, idx].mean(0)
 
-    def _train(self):
+    def learn(self):
         """Train the agent.
 
         This consists of two steps:
             Step 1: Train Model with new data.
-                Calls self._train_model().
+                Calls self.learn_model().
             Step 2: Optimize policy with simulated data.
-                Calls self._simulate_and_optimize_policy().
+                Calls self.simulate_and_learn_policy().
         """
         # Step 1: Train Model with new data.
-        self._train_model()
+        self.learn_model()
         if self.total_steps < self.exploration_steps or (
             self.total_episodes < self.exploration_episodes
         ):
             return
 
         # Step 2: Optimize policy with simulated data.
-        self._simulate_and_optimize_policy()
+        self.simulate_and_learn_policy()
 
-    def _train_model(self):
+    def learn_model(self):
         """Train the models.
 
         This consists of different steps:
@@ -363,14 +363,14 @@ class ModelBasedAgent(AbstractAgent):
                 logger=self.logger,
             )
 
-    def _simulate_and_optimize_policy(self):
+    def simulate_and_learn_policy(self):
         """Simulate the model and optimize the policy with the learned data.
 
         This consists of two steps:
             Step 1: Simulate trajectories with the model.
-                Calls self._simulate_model().
+                Calls self.simulate_model().
             Step 2: Implement a model free RL method that optimizes the policy.
-                Calls self._optimize_policy(). To be implemented by a Base Class.
+                Calls self.learn_policy(). To be implemented by a Base Class.
         """
         print(colorize("Optimizing Policy with Model Data", "yellow"))
         self.dynamical_model.eval()
@@ -379,7 +379,7 @@ class ModelBasedAgent(AbstractAgent):
             for i in tqdm(range(self.policy_opt_num_iter)):
                 # Step 1: Compute the state distribution
                 with torch.no_grad():
-                    self._simulate_model()
+                    self.simulate_model()
 
                 # Log last simulations.
                 average_return = self.sim_trajectory.reward.sum(0).mean().item()
@@ -425,7 +425,7 @@ class ModelBasedAgent(AbstractAgent):
                     pass
 
                 # Step 2: Optimize policy
-                self._optimize_policy()
+                self.learn_policy()
 
                 if (
                     self.sim_refresh_interval
@@ -433,7 +433,7 @@ class ModelBasedAgent(AbstractAgent):
                 ):
                     self.sim_dataset.reset()
 
-    def _simulate_model(self):
+    def simulate_model(self):
         """Simulate the model.
 
         The simulation is initialized by concatenating samples from:
@@ -478,7 +478,7 @@ class ModelBasedAgent(AbstractAgent):
         states = self.sim_trajectory.state.reshape(-1, *self.dynamical_model.dim_state)
         self.sim_dataset.append(states[:: self.sim_num_subsample])
 
-    def _optimize_policy(self):
+    def learn_policy(self):
         """Optimize the policy."""
         # Iterate over state batches in the state distribution
         self.algorithm.reset()
@@ -509,7 +509,7 @@ class ModelBasedAgent(AbstractAgent):
                 for param in self.params.values():
                     param.update()
 
-            if self._early_stop_training(losses, **self.algorithm.info()):
+            if self.early_stop(losses, **self.algorithm.info()):
                 break
 
         self.algorithm.reset()
