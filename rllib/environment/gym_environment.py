@@ -58,6 +58,26 @@ class GymEnvironment(AbstractEnvironment):
         self._time = 0
         self.metadata = self.env.metadata
 
+    def add_wrapper(self, wrapper, **kwargs):
+        """Add a wrapper for the environment."""
+        self.env = wrapper(self.env, **kwargs)
+
+        dim_action, num_actions = parse_space(self.env.action_space)
+        dim_state, num_states = parse_space(self.env.observation_space)
+        if num_states > -1:
+            num_states += 1  # Add a terminal state.
+
+        super().__init__(
+            dim_action=dim_action,
+            dim_state=dim_state,
+            action_space=self.env.action_space,
+            observation_space=self.env.observation_space,
+            num_actions=num_actions,
+            num_states=num_states,
+            num_observations=num_states,
+        )
+        self._time = 0
+
     def step(self, action):
         """See `AbstractEnvironment.step'."""
         self._time += 1
