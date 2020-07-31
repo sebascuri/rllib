@@ -83,7 +83,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         comment = self.comment if len(self.comment) else self.policy.__class__.__name__
         opening = "=" * 88
         str_ = (
-            f"\n{opening}\n{self.name} with {comment}\n"
+            f"\n{opening}\n{self.name} & {comment}\n"
             f"Total episodes {self.total_episodes}\n"
             f"Total steps {self.total_steps}\n"
             f"Train steps {self.train_steps}\n"
