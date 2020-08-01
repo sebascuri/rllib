@@ -16,8 +16,8 @@ from exps.gpucrl.inverted_pendulum.plotters import (
     plot_trajectory_states_and_rewards,
     plot_values_and_policy,
 )
-from exps.gpucrl.util import get_mb_mppo_agent, get_mb_sac_agent, get_mpc_agent
-from rllib.algorithms.mppo import MBMPPO
+from exps.gpucrl.util import get_mb_mpo_agent, get_mb_sac_agent, get_mpc_agent
+from rllib.algorithms.mpo import MBMPO
 from rllib.dataset.transforms import ActionScaler, DeltaState, MeanFunction
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.environment.system_environment import SystemEnvironment
@@ -179,8 +179,8 @@ def test_policy_on_environment(
     return env_rewards, trajectory
 
 
-def train_mppo(
-    mppo: MBMPPO,
+def train_mpo(
+    mpo: MBMPO,
     initial_distribution,
     optimizer,
     num_iter,
@@ -190,7 +190,7 @@ def train_mppo(
     batch_size,
     num_subsample,
 ):
-    """Train MPPO policy."""
+    """Train MPO policy."""
     value_losses = []  # type: List[float]
     policy_losses = []  # type: List[float]
     returns = []  # type: List[float]
@@ -199,7 +199,7 @@ def train_mppo(
     for i in tqdm(range(num_iter)):
         # Compute the state distribution
         state_batches = _simulate_model(
-            mppo,
+            mpo,
             initial_distribution,
             num_trajectories,
             num_simulation_steps,
@@ -210,7 +210,7 @@ def train_mppo(
         )
 
         policy_episode_loss, value_episode_loss, episode_kl_div = _optimize_policy(
-            mppo, state_batches, optimizer, num_gradient_steps
+            mpo, state_batches, optimizer, num_gradient_steps
         )
 
         value_losses.append(value_episode_loss / len(state_batches))
@@ -221,7 +221,7 @@ def train_mppo(
 
 
 def _simulate_model(
-    mppo,
+    mpo,
     initial_distribution,
     num_trajectories,
     num_simulation_steps,
@@ -235,9 +235,9 @@ def _simulate_model(
         initial_states = initial_distribution.sample((num_trajectories // 2,))
         initial_states = torch.cat((initial_states, test_states), dim=0)
         trajectory = rollout_model(
-            mppo.dynamical_model,
-            reward_model=mppo.reward_model,
-            policy=mppo.policy,
+            mpo.dynamical_model,
+            reward_model=mpo.reward_model,
+            policy=mpo.policy,
             initial_state=initial_states,
             max_steps=num_simulation_steps,
         )
@@ -252,20 +252,20 @@ def _simulate_model(
     return state_batches
 
 
-def _optimize_policy(mppo, state_batches, optimizer, num_gradient_steps):
+def _optimize_policy(mpo, state_batches, optimizer, num_gradient_steps):
     policy_episode_loss = 0.0
     value_episode_loss = 0.0
     episode_kl_div = 0.0
 
     # Copy over old policy for KL divergence
-    mppo.reset()
+    mpo.reset()
 
     # Iterate over state batches in the state distribution
     for _ in range(num_gradient_steps):
         idx = np.random.choice(len(state_batches))
         states = state_batches[idx]
         optimizer.zero_grad()
-        losses = mppo(states)
+        losses = mpo(states)
         losses.loss.backward()
         optimizer.step()
 
@@ -273,12 +273,12 @@ def _optimize_policy(mppo, state_batches, optimizer, num_gradient_steps):
         value_episode_loss += losses.critic_loss.item()
         policy_episode_loss += losses.policy_loss.item()
         # episode_kl_div += losses.kl_div.item()
-        mppo.update()
+        mpo.update()
 
     return policy_episode_loss, value_episode_loss, episode_kl_div
 
 
-def solve_mppo(
+def solve_mpo(
     dynamical_model,
     action_cost,
     num_iter,
@@ -294,7 +294,7 @@ def solve_mppo(
     regularization,
     lr,
 ):
-    """Solve MPPO optimization problem."""
+    """Solve MPO optimization problem."""
     reward_model = PendulumReward(action_cost)
     freeze_parameters(dynamical_model)
     value_function = NNValueFunction(
@@ -319,7 +319,7 @@ def solve_mppo(
     )
 
     # %% Define MPC solver.
-    mppo = MBMPPO(
+    mpo = MBMPO(
         dynamical_model,
         reward_model,
         policy,
@@ -333,7 +333,7 @@ def solve_mppo(
         criterion=nn.MSELoss,
     )
 
-    optimizer = optim.Adam([p for p in mppo.parameters() if p.requires_grad], lr=lr)
+    optimizer = optim.Adam([p for p in mpo.parameters() if p.requires_grad], lr=lr)
 
     # %% Train Controller
     test_state = torch.tensor(np.array([np.pi, 0.0]), dtype=torch.get_default_dtype())
@@ -343,8 +343,8 @@ def solve_mppo(
 
     for _ in range(num_episodes):
         with gpytorch.settings.fast_pred_var(), gpytorch.settings.detach_test_caches():
-            vloss_, ploss_, kl_div_, return_, entropy_, = train_mppo(
-                mppo,
+            vloss_, ploss_, kl_div_, return_, entropy_, = train_mpo(
+                mpo,
                 init_distribution,
                 optimizer,
                 num_iter=num_iter,
@@ -363,13 +363,13 @@ def solve_mppo(
 
         # # %% Test controller on Model.
         test_policy_on_model(
-            mppo.dynamical_model, mppo.reward_model, mppo.policy, test_state
+            mpo.dynamical_model, mpo.reward_model, mpo.policy, test_state
         )
         _, trajectory = test_policy_on_model(
-            mppo.dynamical_model,
-            mppo.reward_model,
+            mpo.dynamical_model,
+            mpo.reward_model,
             lambda x: (
-                mppo.policy(x)[0][: mppo.dynamical_model.dim_action],
+                mpo.policy(x)[0][: mpo.dynamical_model.dim_action],
                 torch.zeros(1),
             ),
             test_state,
@@ -377,7 +377,7 @@ def solve_mppo(
         )
 
         model_rewards, _ = test_policy_on_model(
-            mppo.dynamical_model, mppo.reward_model, mppo.policy, test_state
+            mpo.dynamical_model, mpo.reward_model, mpo.policy, test_state
         )
 
         # %% Test controller on Environment.
@@ -387,13 +387,13 @@ def solve_mppo(
             reward=reward_model,
         )
         environment_rewards, trajectory = test_policy_on_environment(
-            environment, mppo.policy, test_state
+            environment, mpo.policy, test_state
         )
 
         environment_rewards, _ = test_policy_on_environment(
             environment,
             lambda x: (
-                mppo.policy(x)[0][: mppo.dynamical_model.dim_action],
+                mpo.policy(x)[0][: mpo.dynamical_model.dim_action],
                 torch.zeros(1),
             ),
             test_state,
@@ -462,8 +462,8 @@ def get_agent_and_environment(params, agent_name):
             termination=large_state_termination,
             initial_distribution=exploratory_distribution,
         )
-    elif agent_name == "mbmppo":
-        agent = get_mb_mppo_agent(
+    elif agent_name == "mbmpo":
+        agent = get_mb_mpo_agent(
             environment.dim_state,
             environment.dim_action,
             params,

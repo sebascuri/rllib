@@ -1,11 +1,11 @@
-"""Model-Based MPPO Agent."""
+"""Model-Based MPO Agent."""
 from typing import Optional, Type, Union
 
 from torch.distributions import Distribution
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
-from rllib.algorithms.mppo import MBMPPO
+from rllib.algorithms.mpo import MBMPO
 from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
@@ -15,8 +15,8 @@ from rllib.value_function import AbstractValueFunction
 
 from .model_based_agent import ModelBasedAgent
 
-class MBMPPOAgent(ModelBasedAgent):
-    algorithm: MBMPPO
+class MBMPOAgent(ModelBasedAgent):
+    algorithm: MBMPO
     def __init__(
         self,
         model_optimizer: Optional[Optimizer],
@@ -34,17 +34,17 @@ class MBMPPOAgent(ModelBasedAgent):
         model_learn_batch_size: int = ...,
         model_learn_num_iter: int = ...,
         bootstrap: bool = ...,
-        mppo_value_learning_criterion: Type[_Loss] = ...,
-        mppo_epsilon: Union[ParameterDecay, float] = ...,
-        mppo_epsilon_mean: Union[ParameterDecay, float] = ...,
-        mppo_epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        mppo_regularization: bool = ...,
-        mppo_num_action_samples: int = ...,
-        mppo_num_iter: int = ...,
-        mppo_gradient_steps: int = ...,
-        mppo_batch_size: Optional[int] = ...,
-        mppo_target_update_frequency: int = ...,
-        mppo_policy_update_frequency: int = ...,
+        mpo_value_learning_criterion: Type[_Loss] = ...,
+        mpo_epsilon: Union[ParameterDecay, float] = ...,
+        mpo_epsilon_mean: Union[ParameterDecay, float] = ...,
+        mpo_epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
+        mpo_regularization: bool = ...,
+        mpo_num_action_samples: int = ...,
+        mpo_num_iter: int = ...,
+        mpo_gradient_steps: int = ...,
+        mpo_batch_size: Optional[int] = ...,
+        mpo_target_update_frequency: int = ...,
+        mpo_policy_update_frequency: int = ...,
         sim_num_steps: int = ...,
         sim_initial_states_num_trajectories: int = ...,
         sim_initial_dist_num_trajectories: int = ...,

@@ -1,11 +1,11 @@
 from .abstract_agent import AbstractAgent
 from .bandit import GPUCBAgent
-from .model_based import MBDPGAgent, MBMPPOAgent, MBSACAgent, MPCAgent
+from .model_based import MBDPGAgent, MBMPOAgent, MBSACAgent, MPCAgent
 from .off_policy import (
     DDQNAgent,
     DPGAgent,
     DQNAgent,
-    MPPOAgent,
+    MPOAgent,
     QLearningAgent,
     QREPSAgent,
     REPSAgent,
@@ -29,13 +29,13 @@ from .random_agent import RandomAgent
 AGENTS = [
     "GPUCB",
     "MBDPG",
-    "MBMPPO",
+    "MBMPO",
     "MBSAC",
     "MPC",
     "DDQN",
     "DPG",
     "DQN",
-    "MPPO",
+    "MPO",
     "QLearning",
     "QREPS",
     "REPS",

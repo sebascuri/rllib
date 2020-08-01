@@ -1,10 +1,10 @@
-"""MPPO Agent Implementation."""
+"""MPO Agent Implementation."""
 from itertools import chain
 
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
-from rllib.algorithms.mppo import MPPO
+from rllib.algorithms.mpo import MPO
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.policy import NNPolicy
 from rllib.value_function import NNQFunction
@@ -12,8 +12,8 @@ from rllib.value_function import NNQFunction
 from .off_policy_agent import OffPolicyAgent
 
 
-class MPPOAgent(OffPolicyAgent):
-    """Implementation of an agent that runs MPPO."""
+class MPOAgent(OffPolicyAgent):
+    """Implementation of an agent that runs MPO."""
 
     def __init__(
         self,
@@ -39,7 +39,7 @@ class MPPOAgent(OffPolicyAgent):
         tensorboard=False,
         comment="",
     ):
-        self.algorithm = MPPO(
+        self.algorithm = MPO(
             policy=policy,
             q_function=q_function,
             num_action_samples=num_action_samples,

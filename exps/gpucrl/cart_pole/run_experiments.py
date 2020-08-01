@@ -4,7 +4,7 @@ from lsf_runner import init_runner, make_commands
 
 from exps.gpucrl.cart_pole import ACTION_COST
 
-for agent in ["mpc", "mbmppo"]:
+for agent in ["mpc", "mbmpo"]:
     runner = init_runner(f"GPUCRL_CartPole_{agent}", num_threads=1)
 
     cmd_list = make_commands(

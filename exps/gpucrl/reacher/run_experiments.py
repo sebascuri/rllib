@@ -4,7 +4,7 @@ from lsf_runner import init_runner, make_commands
 
 from exps.gpucrl.reacher import ACTION_COST
 
-for agent in ["mpc", "mbmppo"]:
+for agent in ["mpc", "mbmpo"]:
     runner = init_runner(f"GPUCRL_Reacher_{agent}", num_threads=1, wall_time=1439)
 
     cmd_list = make_commands(

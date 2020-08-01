@@ -5,7 +5,7 @@ import pandas as pd
 from exps.gpucrl.plotters import COLORS, LABELS, set_figure_params
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle("inverted_mbmppo_rff.pkl")
+df = pd.read_pickle("inverted_mbmpo_rff.pkl")
 dfqff = df[
     (df.action_cost == 0)
     & df.seed.isin([2, 3])
@@ -18,8 +18,8 @@ dfrff = df[
 ]
 df1 = df[(df.action_cost > 0)]
 thompson_rff = pd.concat((dfqff, dfrff, df1))
-qff = pd.read_pickle("inverted_mbmppo_qff_optimistic_expected.pkl")
-rff = pd.read_pickle("inverted_mbmppo_rff_optimistic_expected.pkl")
+qff = pd.read_pickle("inverted_mbmpo_qff_optimistic_expected.pkl")
+rff = pd.read_pickle("inverted_mbmpo_rff_optimistic_expected.pkl")
 
 df = pd.concat((thompson_rff, qff, rff), sort=True)
 

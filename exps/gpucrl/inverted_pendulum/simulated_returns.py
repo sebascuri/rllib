@@ -6,7 +6,7 @@ import pandas as pd
 from exps.gpucrl.plotters import COLORS, LABELS, set_figure_params
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle("inverted_mbmppo_scale.pkl")
+df = pd.read_pickle("inverted_mbmpo_scale.pkl")
 df = df[df.seed < 4]
 
 action_costs = [0, 0.1, 0.2]

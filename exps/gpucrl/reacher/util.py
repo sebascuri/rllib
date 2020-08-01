@@ -5,7 +5,7 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from exps.gpucrl.util import get_mb_mppo_agent, get_mb_sac_agent, get_mpc_agent
+from exps.gpucrl.util import get_mb_mpo_agent, get_mb_sac_agent, get_mpc_agent
 from rllib.dataset.transforms import (
     ActionScaler,
     AngleWrapper,
@@ -170,8 +170,8 @@ def get_agent_and_environment(params, agent_name):
             termination=large_state_termination,
             initial_distribution=exploratory_distribution,
         )
-    elif agent_name == "mbmppo":
-        agent = get_mb_mppo_agent(
+    elif agent_name == "mbmpo":
+        agent = get_mb_mpo_agent(
             (environment.dim_state[0] + 3,),
             environment.dim_action,
             params=params,

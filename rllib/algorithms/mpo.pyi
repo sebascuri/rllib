@@ -19,7 +19,7 @@ class MPOLosses(NamedTuple):
     primal_loss: Tensor
     dual_loss: Tensor
 
-class MPPOWorker(nn.Module):
+class MPOWorker(nn.Module):
     eta: ParameterDecay
     eta_mean: ParameterDecay
     eta_var: ParameterDecay
@@ -36,7 +36,7 @@ class MPPOWorker(nn.Module):
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> MPOLosses: ...
 
-class MPPO(AbstractAlgorithm):
+class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
     policy: AbstractPolicy
     q_function: AbstractQFunction
@@ -45,7 +45,7 @@ class MPPO(AbstractAlgorithm):
     gamma: float
     num_action_samples: int
 
-    mppo_loss: MPPOWorker
+    mpo_loss: MPOWorker
     value_loss: _Loss
     entropy_reg: float
     reward_transformer: RewardTransformer
@@ -66,7 +66,7 @@ class MPPO(AbstractAlgorithm):
     def reset(self) -> None: ...
     def forward(self, observation: Observation, **kwargs: Any) -> MPOLoss: ...
 
-class MBMPPO(AbstractAlgorithm):
+class MBMPO(AbstractAlgorithm):
     dynamical_model: AbstractModel
     reward_model: AbstractReward
     policy: AbstractPolicy
@@ -75,7 +75,7 @@ class MBMPPO(AbstractAlgorithm):
 
     gamma: float
 
-    mppo_loss: MPPOWorker
+    mpo_loss: MPOWorker
     value_loss: _Loss
     num_action_samples: int
     entropy_reg: float

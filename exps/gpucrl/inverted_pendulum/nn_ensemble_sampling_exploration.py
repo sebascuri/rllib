@@ -1,4 +1,4 @@
-"""Solve MPPO with a PE model and collecting data querying randomly a simulator."""
+"""Solve MPO with a PE model and collecting data querying randomly a simulator."""
 
 from typing import List
 
@@ -11,7 +11,7 @@ from exps.gpucrl.inverted_pendulum.util import (
     PendulumModel,
     PendulumReward,
     StateTransform,
-    solve_mppo,
+    solve_mpo,
 )
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.transforms import (
@@ -61,8 +61,8 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
 # %% Train a Model
 ensemble = EnsembleModel(
-    2,
-    1,
+    (2,),
+    (1,),
     num_heads=ensemble_size,
     layers=[64],
     biased_head=True,
@@ -93,7 +93,7 @@ num_iter = 100
 num_sim_steps = 400
 num_gradient_steps = 50
 
-solve_mppo(
+solve_mpo(
     dynamical_model,
     action_cost=action_cost,
     num_iter=num_iter,

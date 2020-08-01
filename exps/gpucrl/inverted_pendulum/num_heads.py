@@ -12,7 +12,7 @@ COLORS = OrderedDict(sim_return="C0", model_return="C2")
 LABELS = OrderedDict(sim_return=r"\textbf{H-UCRL}", model_return="Best Head")
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle("inverted_mbmppo_num_heads.pkl")
+df = pd.read_pickle("inverted_mbmpo_num_heads.pkl")
 df = df[df.seed != 2]
 
 mean = (

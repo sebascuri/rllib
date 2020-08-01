@@ -1,9 +1,9 @@
-"""Solve MPPO with true model."""
+"""Solve MPO with true model."""
 
 import numpy as np
 import torch.distributions
 
-from exps.gpucrl.inverted_pendulum.util import PendulumModel, solve_mppo
+from exps.gpucrl.inverted_pendulum.util import PendulumModel, solve_mpo
 
 torch.manual_seed(0)
 np.random.seed(0)
@@ -26,7 +26,7 @@ num_sim_steps = 400
 num_gradient_steps = 50
 
 for action_cost in [0.0, 0.1, 0.2]:
-    returns = solve_mppo(
+    returns = solve_mpo(
         dynamical_model,
         action_cost=action_cost,
         num_iter=num_iter,

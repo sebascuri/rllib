@@ -1,11 +1,11 @@
-"""Model-Based MPPO Agent."""
+"""Model-Based MPO Agent."""
 from itertools import chain
 
 import torch
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
-from rllib.algorithms.mppo import MBMPPO
+from rllib.algorithms.mpo import MBMPO
 from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy import NNPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
@@ -14,8 +14,8 @@ from rllib.value_function import NNValueFunction
 from .model_based_agent import ModelBasedAgent
 
 
-class MBMPPOAgent(ModelBasedAgent):
-    """Implementation of Model-Based MPPO Agent."""
+class MBMPOAgent(ModelBasedAgent):
+    """Implementation of Model-Based MPO Agent."""
 
     def __init__(
         self,
@@ -25,7 +25,7 @@ class MBMPPOAgent(ModelBasedAgent):
         dynamical_model,
         reward_model,
         optimizer,
-        mppo_value_learning_criterion,
+        mpo_value_learning_criterion,
         termination=None,
         initial_distribution=None,
         plan_horizon=1,
@@ -35,16 +35,16 @@ class MBMPPOAgent(ModelBasedAgent):
         model_learn_batch_size=64,
         model_learn_num_iter=30,
         bootstrap=True,
-        mppo_epsilon=0.1,
-        mppo_epsilon_mean=0.1,
-        mppo_epsilon_var=0.0001,
-        mppo_regularization=False,
-        mppo_num_iter=100,
-        mppo_gradient_steps=50,
-        mppo_batch_size=None,
-        mppo_num_action_samples=15,
-        mppo_target_update_frequency=4,
-        mppo_policy_update_frequency=1,
+        mpo_epsilon=0.1,
+        mpo_epsilon_mean=0.1,
+        mpo_epsilon_var=0.0001,
+        mpo_regularization=False,
+        mpo_num_iter=100,
+        mpo_gradient_steps=50,
+        mpo_batch_size=None,
+        mpo_num_action_samples=15,
+        mpo_target_update_frequency=4,
+        mpo_policy_update_frequency=1,
         sim_num_steps=200,
         sim_initial_states_num_trajectories=8,
         sim_initial_dist_num_trajectories=0,
@@ -60,17 +60,17 @@ class MBMPPOAgent(ModelBasedAgent):
         comment="",
     ):
 
-        self.algorithm = MBMPPO(
+        self.algorithm = MBMPO(
             dynamical_model,
             reward_model,
             policy,
             value_function,
-            criterion=mppo_value_learning_criterion,
-            epsilon=mppo_epsilon,
-            epsilon_mean=mppo_epsilon_mean,
-            epsilon_var=mppo_epsilon_var,
-            regularization=mppo_regularization,
-            num_action_samples=mppo_num_action_samples,
+            criterion=mpo_value_learning_criterion,
+            epsilon=mpo_epsilon,
+            epsilon_mean=mpo_epsilon_mean,
+            epsilon_var=mpo_epsilon_var,
+            regularization=mpo_regularization,
+            num_action_samples=mpo_num_action_samples,
             gamma=gamma,
             termination=termination,
         )
@@ -97,11 +97,11 @@ class MBMPPOAgent(ModelBasedAgent):
             model_learn_batch_size=model_learn_batch_size,
             bootstrap=bootstrap,
             max_memory=max_memory,
-            policy_opt_num_iter=mppo_num_iter,
-            policy_opt_batch_size=mppo_batch_size,
-            policy_opt_gradient_steps=mppo_gradient_steps,
-            policy_opt_target_update_frequency=mppo_target_update_frequency,
-            policy_update_frequency=mppo_policy_update_frequency,
+            policy_opt_num_iter=mpo_num_iter,
+            policy_opt_batch_size=mpo_batch_size,
+            policy_opt_gradient_steps=mpo_gradient_steps,
+            policy_opt_target_update_frequency=mpo_target_update_frequency,
+            policy_update_frequency=mpo_policy_update_frequency,
             optimizer=optimizer,
             sim_num_steps=sim_num_steps,
             sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
@@ -183,7 +183,7 @@ class MBMPPOAgent(ModelBasedAgent):
             dynamical_model,
             reward_model,
             optimizer,
-            mppo_value_learning_criterion=loss.MSELoss,
+            mpo_value_learning_criterion=loss.MSELoss,
             termination=None,
             initial_distribution=None,
             plan_horizon=1,
@@ -193,15 +193,15 @@ class MBMPPOAgent(ModelBasedAgent):
             model_learn_batch_size=64,
             model_learn_num_iter=4 if test else 30,
             bootstrap=True,
-            mppo_epsilon=0.1,
-            mppo_epsilon_mean=0.1,
-            mppo_epsilon_var=0.0001,
-            mppo_regularization=False,
-            mppo_num_iter=5 if test else 200,
-            mppo_gradient_steps=50,
-            mppo_batch_size=None,
-            mppo_num_action_samples=15,
-            mppo_target_update_frequency=4,
+            mpo_epsilon=0.1,
+            mpo_epsilon_mean=0.1,
+            mpo_epsilon_var=0.0001,
+            mpo_regularization=False,
+            mpo_num_iter=5 if test else 200,
+            mpo_gradient_steps=50,
+            mpo_batch_size=None,
+            mpo_num_action_samples=15,
+            mpo_target_update_frequency=4,
             sim_num_steps=5 if test else 200,
             sim_initial_states_num_trajectories=8,
             sim_initial_dist_num_trajectories=0,

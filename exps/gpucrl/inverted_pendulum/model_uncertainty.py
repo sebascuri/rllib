@@ -7,7 +7,7 @@ import pandas as pd
 from exps.gpucrl.plotters import COLORS, LABELS, set_figure_params
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle("inverted_mbmppo_scale.pkl")
+df = pd.read_pickle("inverted_mbmpo_scale.pkl")
 action_costs = [0, 0.1, 0.2]
 fig, axes = plt.subplots(1, len(action_costs), sharey="row")
 # axes = [axes]

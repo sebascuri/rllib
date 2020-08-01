@@ -9,7 +9,7 @@ runner = init_runner(
 )
 
 cmd_list = make_commands(
-    "mbmppo.py",
+    "mbmpo.py",
     base_args={
         "num-threads": 1,
         "model-kind": "ProbabilisticEnsemble",

@@ -1,7 +1,7 @@
-"""Command line arguments for MB-MPPO Agents."""
+"""Command line arguments for MB-MPO Agents."""
 import argparse
 
-parser = argparse.ArgumentParser(description="Parameters for Model-Based MPPO.")
+parser = argparse.ArgumentParser(description="Parameters for Model-Based MPO.")
 
 parser.add_argument(
     "--exploration",

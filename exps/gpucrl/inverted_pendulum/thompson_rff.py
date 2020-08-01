@@ -12,7 +12,7 @@ COLORS = OrderedDict({"QFF": "C1", "RFF": "C4"})
 LABELS = ["QFF", "RFF"]
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle("inverted_mbmppo_rff.pkl")
+df = pd.read_pickle("inverted_mbmpo_rff.pkl")
 dfqff = df[
     (df.action_cost == 0)
     & df.seed.isin([2, 3])

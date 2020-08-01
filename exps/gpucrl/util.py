@@ -8,7 +8,7 @@ import torch.jit
 import torch.nn as nn
 import torch.optim as optim
 
-from rllib.agent import MBMPPOAgent, MBSACAgent, MPCAgent
+from rllib.agent import MBMPOAgent, MBSACAgent, MPCAgent
 from rllib.algorithms.mpc import CEMShooting, MPPIShooting, RandomShooting
 from rllib.model.derived_model import OptimisticModel, TransformedModel
 from rllib.model.ensemble_model import EnsembleModel
@@ -219,7 +219,7 @@ def _get_nn_policy(dim_state, dim_action, params, action_scale, input_transform=
     return policy
 
 
-def get_mb_mppo_agent(
+def get_mb_mpo_agent(
     dim_state,
     dim_action,
     params,
@@ -230,7 +230,7 @@ def get_mb_mppo_agent(
     termination=None,
     initial_distribution=None,
 ):
-    """Get a MB-MPPO agent."""
+    """Get a MB-MPO agent."""
     # Define Base Model
     dynamical_model = _get_model(
         dim_state, dim_action, params, input_transform, transformations
@@ -270,14 +270,14 @@ def get_mb_mppo_agent(
     # Define Agent
     optimizer = optim.Adam(
         chain(policy.parameters(), value_function.parameters()),
-        lr=params.mppo_opt_lr,
-        weight_decay=params.mppo_opt_weight_decay,
+        lr=params.mpo_opt_lr,
+        weight_decay=params.mpo_opt_weight_decay,
     )
 
     model_name = dynamical_model.base_model.name
     comment = f"{model_name} {params.exploration.capitalize()} {params.action_cost}"
 
-    agent = MBMPPOAgent(
+    agent = MBMPOAgent(
         policy=policy,
         value_function=value_function,
         reward_model=reward_model,
@@ -291,16 +291,16 @@ def get_mb_mppo_agent(
         plan_horizon=params.plan_horizon,
         plan_samples=params.plan_samples,
         plan_elites=params.plan_elites,
-        mppo_value_learning_criterion=nn.MSELoss,
-        mppo_epsilon=params.mppo_epsilon,
-        mppo_epsilon_mean=params.mppo_epsilon_mean,
-        mppo_epsilon_var=params.mppo_epsilon_var,
-        mppo_regularization=params.mppo_regularization,
-        mppo_num_action_samples=params.mppo_num_action_samples,
-        mppo_num_iter=params.mppo_num_iter,
-        mppo_gradient_steps=params.mppo_gradient_steps,
-        mppo_batch_size=params.mppo_batch_size,
-        mppo_target_update_frequency=params.mppo_target_update_frequency,
+        mpo_value_learning_criterion=nn.MSELoss,
+        mpo_epsilon=params.mpo_epsilon,
+        mpo_epsilon_mean=params.mpo_epsilon_mean,
+        mpo_epsilon_var=params.mpo_epsilon_var,
+        mpo_regularization=params.mpo_regularization,
+        mpo_num_action_samples=params.mpo_num_action_samples,
+        mpo_num_iter=params.mpo_num_iter,
+        mpo_gradient_steps=params.mpo_gradient_steps,
+        mpo_batch_size=params.mpo_batch_size,
+        mpo_target_update_frequency=params.mpo_target_update_frequency,
         sim_num_steps=params.sim_num_steps,
         sim_initial_states_num_trajectories=params.sim_initial_states_num_trajectories,
         sim_initial_dist_num_trajectories=params.sim_initial_dist_num_trajectories,

@@ -1,4 +1,4 @@
-"""Solve MPPO with the learned models."""
+"""Solve MPO with the learned models."""
 
 import os
 import shutil
@@ -14,8 +14,8 @@ from exps.gpucrl.inverted_pendulum import (
     TRAIN_EPISODES,
     get_agent_and_environment,
 )
-from exps.gpucrl.inverted_pendulum.util import solve_mppo
-from exps.gpucrl.mb_mppo_arguments import parser
+from exps.gpucrl.inverted_pendulum.util import solve_mpo
+from exps.gpucrl.mb_mpo_arguments import parser
 from rllib.model.derived_model import TransformedModel
 
 torch.manual_seed(0)
@@ -23,7 +23,7 @@ np.random.seed(0)
 
 PLAN_HORIZON, SIM_TRAJECTORIES = 1, 8
 
-parser.description = "Run Swing-up Inverted Pendulum using Model-Based MPPO."
+parser.description = "Run Swing-up Inverted Pendulum using Model-Based MPO."
 parser.set_defaults(
     exploration="optimistic",
     action_cost=ACTION_COST,
@@ -41,9 +41,9 @@ parser.set_defaults(
 args = parser.parse_args()
 params = DotMap(vars(args))
 
-_, agent = get_agent_and_environment(params, "mbmppo")
+_, agent = get_agent_and_environment(params, "mbmpo")
 
-path = "runs/Invertedpendulum/MBMPPOAgent"
+path = "runs/Invertedpendulum/MBMPOAgent"
 i = 0
 df = pd.DataFrame(
     [],
@@ -73,22 +73,22 @@ for run in os.listdir(path):
         except ValueError:
             continue
         for time in [0, 4, 9]:
-            agent.load(f"{path}/{run}/MBMPPOAgent_{time}.pkl")
+            agent.load(f"{path}/{run}/MBMPOAgent_{time}.pkl")
             agent_model = agent.dynamical_model
             dynamical_model = TransformedModel(
                 base_model=agent_model.base_model,
                 transformations=agent.dataset.transformations,
             )
             epsilon, epsilon_mean, epsilon_var = None, None, None
-            eta = agent.algorithm.mppo_loss.eta().item()
-            eta_mean = agent.algorithm.mppo_loss.eta_mean().item()
-            eta_var = agent.algorithm.mppo_loss.eta_var().item()
+            eta = agent.algorithm.mpo_loss.eta().item()
+            eta_mean = agent.algorithm.mpo_loss.eta_mean().item()
+            eta_var = agent.algorithm.mpo_loss.eta_var().item()
 
             for head in range(dynamical_model.base_model.num_heads):
                 dynamical_model.base_model.nn.deterministic = True
                 dynamical_model.set_prediction_strategy("set_head")
                 dynamical_model.base_model.set_head(head)
-                model_rewards = solve_mppo(
+                model_rewards = solve_mpo(
                     dynamical_model,
                     action_cost=action_cost,
                     num_iter=4 * agent.policy_opt_num_iter,

@@ -17,7 +17,7 @@ def parse_results(base_dir, agent):
 
     Examples
     --------
-    parse_results('runs/Cartpoleenv', 'MBMPPO'))
+    parse_results('runs/Cartpoleenv', 'MBMPO'))
 
     """
     log_dirs = os.listdir(f"{base_dir}/{agent}Agent/")
@@ -117,7 +117,7 @@ def parse_statistics(base_dir, agent):
 
     Examples
     --------
-    parse_results('runs/Cartpoleenv', 'MBMPPO'))
+    parse_results('runs/Cartpoleenv', 'MBMPO'))
 
     """
     log_dirs = os.listdir(f"{base_dir}/{agent}Agent/")

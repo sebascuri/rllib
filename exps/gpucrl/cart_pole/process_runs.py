@@ -3,7 +3,7 @@
 from exps.gpucrl.post_process import parse_results, print_df
 
 base_dir = "runs/Cartpoleenv"
-for agent in ["MPC", "MBMPPO"]:
+for agent in ["MPC", "MBMPO"]:
     df = parse_results(base_dir, agent)
     print(agent)
     print_df(df, idx=19)

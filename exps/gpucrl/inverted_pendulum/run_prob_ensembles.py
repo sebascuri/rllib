@@ -21,7 +21,7 @@ for algorithm_hyper_args in [nn_ensemble_hyper_params]:
     )
 
     cmd_list = make_commands(
-        "mbmppo.py",
+        "mbmpo.py",
         base_args={"num-threads": 1},
         fixed_hyper_args={},
         common_hyper_args={

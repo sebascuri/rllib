@@ -1,11 +1,11 @@
-"""Working example of MPPO."""
+"""Working example of MPO."""
 from itertools import chain
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-from rllib.agent import MPPOAgent
+from rllib.agent import MPOAgent
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy, NNPolicy  # noqa: F401
@@ -62,7 +62,7 @@ q_function = NNQFunction(
 
 optimizer = torch.optim.Adam(chain(policy.parameters(), q_function.parameters()), lr=LR)
 memory = ExperienceReplay(max_len=int(MAX_STEPS * NUM_ROLLOUTS))
-agent = MPPOAgent(
+agent = MPOAgent(
     policy=policy,
     q_function=q_function,
     criterion=nn.MSELoss,

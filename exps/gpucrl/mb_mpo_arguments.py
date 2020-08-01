@@ -1,7 +1,7 @@
-"""Command line arguments for MB-MPPO Agents."""
+"""Command line arguments for MB-MPO Agents."""
 import argparse
 
-parser = argparse.ArgumentParser(description="Parameters for Model-Based MPPO.")
+parser = argparse.ArgumentParser(description="Parameters for Model-Based MPO.")
 
 parser.add_argument(
     "--exploration",
@@ -88,19 +88,19 @@ value_function_parser.add_argument(
 )
 policy_parser.add_argument("--value-function-tau", type=float, default=0)
 
-mppo_parser = parser.add_argument_group("mppo")
-mppo_parser.add_argument("--mppo-num-iter", type=int, default=50)
-mppo_parser.add_argument("--mppo-gradient-steps", type=int, default=50)
-mppo_parser.add_argument("--mppo-target-update-frequency", type=int, default=4)
-mppo_parser.add_argument("--mppo-batch_size", type=int, default=32)
-mppo_parser.add_argument("--mppo-opt-lr", type=float, default=5e-4)
-mppo_parser.add_argument("--mppo-opt-weight-decay", type=float, default=0)
-mppo_parser.add_argument("--mppo-epsilon", type=float, default=1.0)
-mppo_parser.add_argument("--mppo-epsilon-mean", type=float, default=1.7)
-mppo_parser.add_argument("--mppo-epsilon-var", type=float, default=1.1)
-mppo_parser.add_argument("--mppo-regularization", action="store_true", default=True)
+mpo_parser = parser.add_argument_group("mpo")
+mpo_parser.add_argument("--mpo-num-iter", type=int, default=50)
+mpo_parser.add_argument("--mpo-gradient-steps", type=int, default=50)
+mpo_parser.add_argument("--mpo-target-update-frequency", type=int, default=4)
+mpo_parser.add_argument("--mpo-batch_size", type=int, default=32)
+mpo_parser.add_argument("--mpo-opt-lr", type=float, default=5e-4)
+mpo_parser.add_argument("--mpo-opt-weight-decay", type=float, default=0)
+mpo_parser.add_argument("--mpo-epsilon", type=float, default=1.0)
+mpo_parser.add_argument("--mpo-epsilon-mean", type=float, default=1.7)
+mpo_parser.add_argument("--mpo-epsilon-var", type=float, default=1.1)
+mpo_parser.add_argument("--mpo-regularization", action="store_true", default=True)
 
-mppo_parser.add_argument("--mppo-num-action-samples", type=int, default=16)
+mpo_parser.add_argument("--mpo-num-action-samples", type=int, default=16)
 
 sim_parser = parser.add_argument_group("simulation")
 sim_parser.add_argument("--sim-num-steps", type=int, default=400)

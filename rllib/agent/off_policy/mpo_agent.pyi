@@ -4,16 +4,15 @@ from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
 from rllib.agent.off_policy.off_policy_agent import OffPolicyAgent
-from rllib.algorithms.mppo import MPPO
+from rllib.algorithms.mpo import MPO
 from rllib.dataset import ExperienceReplay
 from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractQFunction
 
-class MPPOAgent(OffPolicyAgent):
-    """Implementation of an agent that runs MPPO."""
+class MPOAgent(OffPolicyAgent):
 
-    algorithm: MPPO
+    algorithm: MPO
     optimizer: Optimizer
     target_update_frequency: int
     num_iter: int

@@ -4,7 +4,7 @@ from lsf_runner import init_runner, make_commands
 
 from exps.gpucrl.half_cheetah import ACTION_COST
 
-for agent in ["mpc", "mbmppo"]:
+for agent in ["mpc", "mbmpo"]:
     runner = init_runner(
         f"GPUCRL_HalfCheetah_{agent}", num_threads=2, wall_time=1439, memory=2048
     )

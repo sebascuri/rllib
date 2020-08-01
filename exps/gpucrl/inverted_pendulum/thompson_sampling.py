@@ -7,13 +7,13 @@ from exps.gpucrl.inverted_pendulum import (
     get_agent_and_environment,
 )
 from exps.gpucrl.inverted_pendulum.plotters import plot_pendulum_trajectories
-from exps.gpucrl.mb_mppo_arguments import parser
+from exps.gpucrl.mb_mpo_arguments import parser
 from exps.gpucrl.plotters import set_figure_params
 from exps.gpucrl.util import train_and_evaluate
 
 PLAN_HORIZON, SIM_TRAJECTORIES = 1, 8
 
-parser.description = "Run Swing-up Inverted Pendulum using Model-Based MPPO."
+parser.description = "Run Swing-up Inverted Pendulum using Model-Based MPO."
 parser.set_defaults(
     exploration="thompson",
     seed=0,
@@ -32,7 +32,7 @@ parser.set_defaults(
 args = parser.parse_args()
 params = DotMap(vars(args))
 
-environment, agent = get_agent_and_environment(params, "mbmppo")
+environment, agent = get_agent_and_environment(params, "mbmpo")
 set_figure_params(serif=True, fontsize=9)
 train_and_evaluate(
     agent,

@@ -7,7 +7,7 @@ from exps.gpucrl.inverted_pendulum import ACTION_COST
 runner = init_runner(f"GPUCRL_Inverted_Pendulum_plot", num_threads=1, num_workers=2)
 
 cmd_list = make_commands(
-    "mbmppo.py",
+    "mbmpo.py",
     base_args={
         "num-threads": 1,
         "model-kind": "ProbabilisticEnsemble",

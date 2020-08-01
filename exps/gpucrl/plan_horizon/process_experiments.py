@@ -5,7 +5,7 @@ import numpy as np
 from exps.gpucrl.post_process import parse_results
 
 base_dir = "runs/Cartpoleenv"
-df = parse_results(base_dir, "MBMPPO")
+df = parse_results(base_dir, "MBMPO")
 plan_horizon = df.plan_horizon.unique()
 
 fig, axes = plt.subplots(1, 2, sharey="row")

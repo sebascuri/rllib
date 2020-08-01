@@ -9,7 +9,7 @@ nn_ensemble_hyper_params = {
 }
 
 for algorithm_hyper_args in [nn_ensemble_hyper_params]:
-    for agent in ["mpc", "mbmppo"]:
+    for agent in ["mpc", "mbmpo"]:
         runner = init_runner(
             f"GPUCRL_CartPole_{algorithm_hyper_args['model-kind']}_{agent}",
             num_threads=1,

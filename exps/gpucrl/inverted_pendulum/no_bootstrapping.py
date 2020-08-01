@@ -7,7 +7,7 @@ import pandas as pd
 from exps.gpucrl.plotters import COLORS, LABELS, set_figure_params
 
 set_figure_params(serif=True, fontsize=9)
-df = pd.read_pickle("inverted_mbmppo_no_bootstrap.pkl")
+df = pd.read_pickle("inverted_mbmpo_no_bootstrap.pkl")
 df_0 = df[df.action_cost == 0]
 df_01 = df[(df.seed != 1) & (df.action_cost == 0.1)]
 df_02 = df[(df.seed != 3) & (df.action_cost == 0.2)]

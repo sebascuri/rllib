@@ -21,7 +21,7 @@ from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 MPOLosses = namedtuple("MPOLosses", ["primal_loss", "dual_loss"])
 
 
-class MPPOWorker(nn.Module):
+class MPOWorker(nn.Module):
     """Maximum a Posterior Policy Optimization Losses.
 
     This method uses critic values under samples from a policy to construct a
@@ -131,17 +131,17 @@ class MPPOWorker(nn.Module):
         return MPOLosses(primal_loss, dual_loss)
 
 
-class MPPO(AbstractAlgorithm):
+class MPO(AbstractAlgorithm):
     """Maximum a Posteriori Policy Optimizaiton.
 
-    The MPPO algorithm returns a loss that is a combination of three losses.
+    The MPO algorithm returns a loss that is a combination of three losses.
 
     - The dual loss associated with the variational distribution (Eq. 9)
     - The dual loss associated with the KL-hard constraint (Eq. 12).
     - The primal loss associated with the policy fitting term (Eq. 12).
     - A policy evaluation loss (Eq. 13).
 
-    To compute the primal and dual losses, it uses the MPPOLoss module.
+    To compute the primal and dual losses, it uses the MPOLoss module.
 
     Parameters
     ----------
@@ -194,7 +194,7 @@ class MPPO(AbstractAlgorithm):
         self.gamma = gamma
         self.reward_transformer = reward_transformer
 
-        self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
+        self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")
 
     def get_kl_and_pi(self, state):
@@ -237,7 +237,7 @@ class MPPO(AbstractAlgorithm):
         return kl_mean, kl_var, pi_dist
 
     def forward(self, observation):
-        """Compute the losses for one step of MPPO.
+        """Compute the losses for one step of MPO.
 
         Parameters
         ----------
@@ -270,7 +270,7 @@ class MPPO(AbstractAlgorithm):
         sampled_action = pi_dist.sample()
         action_log_probs = pi_dist.log_prob(sampled_action)
 
-        losses = self.mppo_loss(
+        losses = self.mpo_loss(
             q_values=self.q_target(state, sampled_action),
             action_log_probs=action_log_probs,
             kl_mean=kl_mean,
@@ -295,9 +295,9 @@ class MPPO(AbstractAlgorithm):
             "kl_div": kl_mean + kl_var,
             "kl_mean": kl_mean,
             "kl_var": kl_var,
-            "eta": self.mppo_loss.eta(),
-            "eta_mean": self.mppo_loss.eta_mean(),
-            "eta_var": self.mppo_loss.eta_var(),
+            "eta": self.mpo_loss.eta(),
+            "eta_mean": self.mpo_loss.eta_mean(),
+            "eta_var": self.mpo_loss.eta_var(),
         }
 
         return MPOLoss(
@@ -318,10 +318,10 @@ class MPPO(AbstractAlgorithm):
         update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
 
 
-class MBMPPO(AbstractAlgorithm):
-    """MPPO Algorithm based on a system model.
+class MBMPO(AbstractAlgorithm):
+    """Model-Based MPO Algorithm.
 
-    This method uses the `MPPOLoss`, but constructs the Q-function using the value
+    This method uses the `MPOLoss`, but constructs the Q-function using the value
     function together with the model.
 
     Parameters
@@ -371,7 +371,7 @@ class MBMPPO(AbstractAlgorithm):
         self.value_target = deep_copy_module(value_function)
         self.gamma = gamma
 
-        self.mppo_loss = MPPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
+        self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")
 
         self.num_action_samples = num_action_samples
@@ -382,7 +382,7 @@ class MBMPPO(AbstractAlgorithm):
     def forward(self, states):
         """Compute the losses for one step of MPO.
 
-        Note to future self: MPPO uses the reversed mode-seeking KL-divergence.
+        Note to future self: MPO uses the reversed mode-seeking KL-divergence.
         Don't change the next direction of the KL divergence.
 
         TRPO/PPO use the forward mean-seeking KL-divergence.
@@ -434,7 +434,7 @@ class MBMPPO(AbstractAlgorithm):
         )
 
         # Since actions come from policy, value is the expected q-value
-        losses = self.mppo_loss(
+        losses = self.mpo_loss(
             q_values=q_values,
             action_log_probs=action_log_probs,
             kl_mean=kl_mean,
@@ -452,9 +452,9 @@ class MBMPPO(AbstractAlgorithm):
             "kl_div": kl_mean + kl_var,
             "kl_mean": kl_mean,
             "kl_var": kl_var,
-            "eta": self.mppo_loss.eta(),
-            "eta_mean": self.mppo_loss.eta_mean(),
-            "eta_var": self.mppo_loss.eta_var(),
+            "eta": self.mpo_loss.eta(),
+            "eta_mean": self.mpo_loss.eta_mean(),
+            "eta_var": self.mpo_loss.eta_var(),
         }
 
         return MPOLoss(
