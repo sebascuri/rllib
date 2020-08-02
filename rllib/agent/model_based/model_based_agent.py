@@ -363,6 +363,38 @@ class ModelBasedAgent(AbstractAgent):
                 logger=self.logger,
             )
 
+    def _log_simulated_trajectory(self):
+        """Log simulated trajectory."""
+        average_return = self.sim_trajectory.reward.sum(0).mean().item()
+        average_scale = (
+            torch.diagonal(self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2)
+            .square()
+            .sum(-1)
+            .sum(0)
+            .mean()
+            .sqrt()
+            .item()
+        )
+        self.logger.update(sim_entropy=self.sim_trajectory.entropy.mean().item())
+        self.logger.update(sim_return=average_return)
+        self.logger.update(sim_scale=average_scale)
+        self.logger.update(sim_max_state=self.sim_trajectory.state.abs().max().item())
+        self.logger.update(sim_max_action=self.sim_trajectory.action.abs().max().item())
+        try:
+            r_ctrl = self.reward_model.reward_ctrl.mean().detach().item()
+            r_state = self.reward_model.reward_state.mean().detach().item()
+            self.logger.update(sim_reward_ctrl=r_ctrl)
+            self.logger.update(sim_reward_state=r_state)
+        except AttributeError:
+            pass
+        try:
+            r_o = self.reward_model.reward_dist_to_obj
+            r_g = self.reward_model.reward_dist_to_goal
+            self.logger.update(sim_reward_dist_to_obj=r_o.mean().detach().item())
+            self.logger.update(sim_reward_dist_to_goal=r_g.mean().detach().item())
+        except AttributeError:
+            pass
+
     def simulate_and_learn_policy(self):
         """Simulate the model and optimize the policy with the learned data.
 
@@ -382,53 +414,13 @@ class ModelBasedAgent(AbstractAgent):
                     self.simulate_model()
 
                 # Log last simulations.
-                average_return = self.sim_trajectory.reward.sum(0).mean().item()
-                average_scale = (
-                    torch.diagonal(
-                        self.sim_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
-                    )
-                    .square()
-                    .sum(-1)
-                    .sum(0)
-                    .mean()
-                    .sqrt()
-                    .item()
-                )
-                self.logger.update(
-                    sim_entropy=self.sim_trajectory.entropy.mean().item()
-                )
-                self.logger.update(sim_return=average_return)
-                self.logger.update(sim_scale=average_scale)
-                self.logger.update(
-                    sim_max_state=self.sim_trajectory.state.abs().max().item()
-                )
-                self.logger.update(
-                    sim_max_action=self.sim_trajectory.action.abs().max().item()
-                )
-                try:
-                    r_ctrl = self.reward_model.reward_ctrl.mean().detach().item()
-                    r_state = self.reward_model.reward_state.mean().detach().item()
-                    self.logger.update(sim_reward_ctrl=r_ctrl)
-                    self.logger.update(sim_reward_state=r_state)
-                except AttributeError:
-                    pass
-                try:
-                    r_o = self.reward_model.reward_dist_to_obj
-                    r_g = self.reward_model.reward_dist_to_goal
-                    self.logger.update(
-                        sim_reward_dist_to_obj=r_o.mean().detach().item()
-                    )
-                    self.logger.update(
-                        sim_reward_dist_to_goal=r_g.mean().detach().item()
-                    )
-                except AttributeError:
-                    pass
+                self._log_simulated_trajectory()
 
                 # Step 2: Optimize policy
                 self.learn_policy()
 
                 if (
-                    self.sim_refresh_interval
+                    self.sim_refresh_interval > 0
                     and (i + 1) % self.sim_refresh_interval == 0
                 ):
                     self.sim_dataset.reset()
