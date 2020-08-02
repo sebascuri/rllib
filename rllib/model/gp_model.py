@@ -23,8 +23,8 @@ class ExactGPModel(AbstractModel):
         input_transform=None,
         max_num_points=None,
     ):
-        dim_state = state.shape[-1]
-        dim_action = action.shape[-1]
+        dim_state = (state.shape[-1],)
+        dim_action = (action.shape[-1],)
         self.max_num_points = max_num_points
 
         super().__init__(dim_state, dim_action)

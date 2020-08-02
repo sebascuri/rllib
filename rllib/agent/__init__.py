@@ -12,6 +12,7 @@ from .off_policy import (
     SACAgent,
     SoftQLearningAgent,
     TD3Agent,
+    VMPOAgent,
 )
 from .on_policy import (
     A2CAgent,
@@ -52,4 +53,5 @@ AGENTS = [
     "PPO",
     "TRPO",
     "Random",
+    "VMPO",
 ]

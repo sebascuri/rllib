@@ -9,3 +9,4 @@ from .reps_agent import REPSAgent
 from .sac_agent import SACAgent
 from .soft_q_learning_agent import SoftQLearningAgent
 from .td3_agent import TD3Agent
+from .vmpo_agent import VMPOAgent
