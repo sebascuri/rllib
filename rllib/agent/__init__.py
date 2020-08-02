@@ -1,6 +1,6 @@
 from .abstract_agent import AbstractAgent
 from .bandit import GPUCBAgent
-from .model_based import MBDPGAgent, MBMPOAgent, MBSACAgent, MPCAgent
+from .model_based import MPCAgent
 from .off_policy import (
     DDQNAgent,
     DPGAgent,
@@ -29,9 +29,6 @@ from .random_agent import RandomAgent
 
 AGENTS = [
     "GPUCB",
-    "MBDPG",
-    "MBMPO",
-    "MBSAC",
     "MPC",
     "DDQN",
     "DPG",

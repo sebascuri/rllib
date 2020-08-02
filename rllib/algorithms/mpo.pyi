@@ -67,38 +67,3 @@ class MPO(AbstractAlgorithm):
     ) -> Tensor: ...
     def reset(self) -> None: ...
     def forward(self, observation: Observation, **kwargs: Any) -> MPOLoss: ...
-
-class MBMPO(AbstractAlgorithm):
-    dynamical_model: AbstractModel
-    reward_model: AbstractReward
-    policy: AbstractPolicy
-    value_function: AbstractValueFunction
-    value_function_target: AbstractValueFunction
-
-    gamma: float
-
-    mpo_loss: MPOWorker
-    value_loss: _Loss
-    num_action_samples: int
-    entropy_reg: float
-    reward_transformer: RewardTransformer
-    termination: Optional[Termination]
-    dist_params: dict
-    def __init__(
-        self,
-        dynamical_model: AbstractModel,
-        reward_model: AbstractReward,
-        policy: AbstractPolicy,
-        value_function: AbstractValueFunction,
-        criterion: _Loss,
-        epsilon: Union[ParameterDecay, float] = ...,
-        epsilon_mean: Union[ParameterDecay, float] = ...,
-        epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization: bool = ...,
-        gamma: float = ...,
-        num_action_samples: int = ...,
-        reward_transformer: RewardTransformer = ...,
-        termination: Optional[Termination] = ...,
-    ) -> None: ...
-    def reset(self) -> None: ...
-    def forward(self, *args: Tensor, **kwargs: Any) -> MPOLoss: ...

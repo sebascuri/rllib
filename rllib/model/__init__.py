@@ -8,8 +8,9 @@ inside the model.
 The derived models provide such functionality.
 """
 from .abstract_model import AbstractModel
-from .derived_model import ExpectedModel, OptimisticModel, TransformedModel
 from .ensemble_model import EnsembleModel
+from .expected_model import ExpectedModel
 from .gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
 from .linear_model import LinearModel
 from .nn_model import NNModel
+from .transformed_model import TransformedModel

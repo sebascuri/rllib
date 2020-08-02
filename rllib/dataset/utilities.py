@@ -29,7 +29,7 @@ def average_named_tuple(named_tuple_):
     return type(named_tuple_)(*map(lambda x: x.mean().item(), named_tuple_))
 
 
-def stack_list_of_tuples(iter_, dim=0):
+def stack_list_of_tuples(iter_, dim=None):
     """Convert a list of observation tuples to a list of numpy arrays.
 
     Parameters
@@ -48,7 +48,10 @@ def stack_list_of_tuples(iter_, dim=0):
             generator = map(torch.stack, zip(*iter_))
         else:
             generator = map(
-                lambda x: torch.stack(x, dim=(dim if x[0].ndim > 1 else 0)), zip(*iter_)
+                lambda x: torch.stack(
+                    x, dim=(dim if x[0].ndim > max(dim, -dim - 1) else -1)
+                ),
+                zip(*iter_),
             )
         return _cast_to_iter_class(generator, iter_[0].__class__)
     except (TypeError, AttributeError):
