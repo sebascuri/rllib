@@ -236,6 +236,15 @@ class MPO(AbstractAlgorithm):
 
         return kl_mean, kl_var, pi_dist
 
+    def get_value_target(self, reward, next_state, done):
+        """Get value target."""
+        next_pi = tensor_to_distribution(self.old_policy(next_state))
+        next_action = next_pi.sample()
+
+        next_values = self.q_target(next_state, next_action) * (1.0 - done)
+        value_target = self.reward_transformer(reward) + self.gamma * next_values
+        return value_target
+
     def forward(self, observation):
         """Compute the losses for one step of MPO.
 
@@ -278,11 +287,7 @@ class MPO(AbstractAlgorithm):
         )
 
         with torch.no_grad():
-            next_pi = tensor_to_distribution(self.old_policy(next_state))
-            next_action = next_pi.sample()
-
-            next_values = self.q_target(next_state, next_action) * (1.0 - done)
-            value_target = self.reward_transformer(reward) + self.gamma * next_values
+            value_target = self.get_value_target(reward, next_state, done)
 
         value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
         td_error = value_pred - value_target.mean(dim=0)

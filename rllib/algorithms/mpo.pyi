@@ -47,7 +47,6 @@ class MPO(AbstractAlgorithm):
 
     mpo_loss: MPOWorker
     value_loss: _Loss
-    entropy_reg: float
     reward_transformer: RewardTransformer
     def __init__(
         self,
@@ -63,6 +62,9 @@ class MPO(AbstractAlgorithm):
         gamma: float = ...,
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
+    def get_value_target(
+        self, reward: Tensor, next_state: Tensor, done: Tensor
+    ) -> Tensor: ...
     def reset(self) -> None: ...
     def forward(self, observation: Observation, **kwargs: Any) -> MPOLoss: ...
 
