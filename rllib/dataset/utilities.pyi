@@ -1,4 +1,4 @@
-from typing import Callable, List, TypeVar
+from typing import Callable, List, Optional, TypeVar
 
 import numpy as np
 
@@ -6,7 +6,7 @@ from .datatypes import Observation, Trajectory
 
 T = TypeVar("T")
 
-def stack_list_of_tuples(iter_: List[T]) -> T: ...
+def stack_list_of_tuples(iter_: List[T], dim: Optional[int] = ...) -> T: ...
 def average_named_tuple(named_tuple_: T) -> T: ...
 def map_and_cast(fun: Callable[[T], T], iter_: List[T]) -> T: ...
 def bootstrap_trajectory(
