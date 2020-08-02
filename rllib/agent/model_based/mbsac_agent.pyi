@@ -11,7 +11,7 @@ from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
 from rllib.util.parameter_decay import ParameterDecay
-from rllib.value_function import AbstractValueFunction
+from rllib.value_function import AbstractQFunction
 
 from .model_based_agent import ModelBasedAgent
 
@@ -23,7 +23,7 @@ class MBSACAgent(ModelBasedAgent):
         self,
         model_optimizer: Optional[Optimizer],
         policy: AbstractPolicy,
-        value_function: AbstractValueFunction,
+        q_function: AbstractQFunction,
         dynamical_model: AbstractModel,
         reward_model: AbstractReward,
         optimizer: Optimizer,
@@ -42,8 +42,8 @@ class MBSACAgent(ModelBasedAgent):
         sac_num_iter: int = ...,
         sac_gradient_steps: int = ...,
         sac_batch_size: Optional[int] = ...,
-        sac_action_samples: int = ...,
         sac_target_num_steps: int = ...,
+        sac_num_samples: int = ...,
         sac_target_update_frequency: int = ...,
         sac_policy_update_frequency: int = ...,
         sim_num_steps: int = ...,

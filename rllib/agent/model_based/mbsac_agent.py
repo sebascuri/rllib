@@ -6,7 +6,8 @@ import torch.nn as nn
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
-from rllib.algorithms.sac import MBSoftActorCritic
+from rllib.algorithms.model_based_algorithm import ModelBasedAlgorithm
+from rllib.algorithms.sac import SoftActorCritic
 from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy import NNPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
@@ -41,7 +42,7 @@ class MBSACAgent(ModelBasedAgent):
         sac_num_iter=100,
         sac_gradient_steps=50,
         sac_batch_size=None,
-        sac_action_samples=15,
+        sac_num_samples=15,
         sac_target_num_steps=1,
         sac_target_update_frequency=4,
         sac_policy_update_frequency=1,
@@ -62,24 +63,40 @@ class MBSACAgent(ModelBasedAgent):
         q_function = NNEnsembleQFunction.from_q_function(
             q_function=q_function, num_heads=2
         )
-        self.algorithm = MBSoftActorCritic(
+        base_algorithm = SoftActorCritic(
             policy,
             q_function,
-            dynamical_model,
-            reward_model,
             criterion=sac_value_learning_criterion(reduction="mean"),
+            gamma=gamma,
             eta=sac_eta,
             regularization=sac_regularization,
-            gamma=gamma,
+        )
+        self.algorithm = ModelBasedAlgorithm(
+            base_algorithm=base_algorithm,
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
             termination=termination,
             num_steps=sac_target_num_steps,
-            num_samples=sac_action_samples,
+            num_samples=sac_num_samples,
         )
+        # self.algorithm = MBSoftActorCritic(
+        #     policy,
+        #     q_function,
+        #     dynamical_model,
+        #     reward_model,
+        #     criterion=sac_value_learning_criterion(reduction="mean"),
+        #     eta=sac_eta,
+        #     regularization=sac_regularization,
+        #     gamma=gamma,
+        #     termination=termination,
+        #     num_steps=sac_target_num_steps,
+        #     num_samples=sac_action_samples,
+        # )
         optimizer = type(optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
-                if ("model" not in name and "target" not in name)
+                if ("model" not in name and "target" not in name and p.requires_grad)
             ],
             **optimizer.defaults,
         )
@@ -199,7 +216,7 @@ class MBSACAgent(ModelBasedAgent):
             sac_num_iter=5 if test else 100,
             sac_gradient_steps=5 if test else 50,
             sac_batch_size=None,
-            sac_action_samples=15,
+            sac_num_samples=15,
             sac_target_num_steps=1,
             sac_target_update_frequency=4,
             sim_num_steps=5 if test else 200,

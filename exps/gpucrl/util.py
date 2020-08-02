@@ -260,8 +260,8 @@ def get_mb_mpo_agent(
         == value_function.nn.hidden_layers[0].in_features
     )
 
-    zero_bias(policy)
-    init_head_weight(policy)
+    # zero_bias(policy)
+    # init_head_weight(policy)
     # zero_bias(value_function)
     # init_head_weight(value_function)
     zero_bias(dynamical_model)
@@ -391,12 +391,13 @@ def get_mb_sac_agent(
         plan_samples=params.plan_samples,
         plan_elites=params.plan_elites,
         sac_eta=params.sac_eta,
-        sac_epsilon=params.sac_epsilon,
+        sac_regularization=params.sac_regularization,
         sac_num_iter=params.sac_num_iter,
         sac_gradient_steps=params.sac_gradient_steps,
         sac_batch_size=params.sac_batch_size,
         sac_target_update_frequency=params.sac_target_update_frequency,
-        sac_action_samples=params.sac_num_action_samples,
+        sac_target_num_steps=params.sac_target_num_steps,
+        sac_num_samples=params.sac_num_samples,
         sim_num_steps=params.sim_num_steps,
         sim_initial_states_num_trajectories=params.sim_initial_states_num_trajectories,
         sim_initial_dist_num_trajectories=params.sim_initial_dist_num_trajectories,
