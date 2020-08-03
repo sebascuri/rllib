@@ -1,4 +1,4 @@
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -20,15 +20,7 @@ class REINFORCEAgent(OnPolicyAgent):
         policy: AbstractPolicy,
         optimizer: Optimizer,
         baseline: Optional[AbstractValueFunction] = ...,
-        critic: Optional[AbstractQFunction] = ...,
         criterion: Optional[Type[_Loss]] = ...,
-        num_iter: int = ...,
-        target_update_frequency: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

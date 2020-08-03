@@ -1,10 +1,10 @@
-from typing import Type, Union
+from typing import Any, Type, Union
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 
 from rllib.agent import QLearningAgent
-from rllib.algorithms.q_learning import SoftQLearning
+from rllib.algorithms.soft_q_learning import SoftQLearning
 from rllib.dataset import ExperienceReplay
 from rllib.policy import SoftMax
 from rllib.util.parameter_decay import ParameterDecay
@@ -20,14 +20,6 @@ class SoftQLearningAgent(QLearningAgent):
         optimizer: Optimizer,
         memory: ExperienceReplay,
         temperature: Union[float, ParameterDecay],
-        num_iter: int = ...,
-        batch_size: int = ...,
-        target_update_frequency: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

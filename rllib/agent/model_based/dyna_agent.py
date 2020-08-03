@@ -1,5 +1,4 @@
 """Model-Based DYNA Agent."""
-# from itertools import chain
 
 import torch
 from torch.optim import Adam
@@ -20,39 +19,16 @@ class DynaAgent(ModelBasedAgent):
     def __init__(
         self,
         base_algorithm,
-        model_optimizer,
         dynamical_model,
         reward_model,
+        model_optimizer,
         optimizer,
+        dyna_num_steps,
+        dyna_num_samples,
         termination=None,
-        initial_distribution=None,
-        plan_horizon=1,
-        plan_samples=8,
-        plan_elites=1,
-        max_memory=10000,
-        model_learn_batch_size=64,
-        model_learn_num_iter=30,
-        bootstrap=True,
-        policy_opt_num_iter=100,
-        policy_opt_gradient_steps=50,
-        policy_opt_batch_size=100,
-        dyna_num_samples=15,
-        dyna_num_steps=1,
-        policy_opt_target_update_frequency=4,
-        policy_update_frequency=1,
-        sim_num_steps=200,
-        sim_initial_states_num_trajectories=8,
-        sim_initial_dist_num_trajectories=0,
-        sim_memory_num_trajectories=0,
-        sim_refresh_interval=0,
-        sim_num_subsample=1,
-        sim_max_memory=10000,
-        thompson_sampling=False,
-        gamma=1.0,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        policy=None,
+        *args,
+        **kwargs,
     ):
         self.algorithm = DynaAlgorithm(
             base_algorithm=base_algorithm,
@@ -63,6 +39,9 @@ class DynaAgent(ModelBasedAgent):
             num_samples=dyna_num_samples,
         )
 
+        if hasattr(self.algorithm, "policy"):
+            policy = self.algorithm.policy
+
         optimizer = type(optimizer)(
             [
                 p
@@ -71,73 +50,28 @@ class DynaAgent(ModelBasedAgent):
             ],
             **optimizer.defaults,
         )
-        self.dist_params = {
-            "tanh": True,
-            "action_scale": self.algorithm.policy.action_scale,
-        }
+        self.dist_params = {"tanh": True, "action_scale": policy.action_scale}
 
         super().__init__(
-            policy=self.algorithm.policy,
+            policy=policy,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             model_optimizer=model_optimizer,
             termination=termination,
             value_function=self.algorithm.value_function,
-            plan_horizon=plan_horizon,
-            plan_samples=plan_samples,
-            plan_elites=plan_elites,
-            model_learn_num_iter=model_learn_num_iter,
-            model_learn_batch_size=model_learn_batch_size,
-            bootstrap=bootstrap,
-            max_memory=max_memory,
-            policy_opt_num_iter=policy_opt_num_iter,
-            policy_opt_batch_size=policy_opt_batch_size,
-            policy_opt_gradient_steps=policy_opt_gradient_steps,
-            policy_opt_target_update_frequency=policy_opt_target_update_frequency,
-            policy_update_frequency=policy_update_frequency,
             optimizer=optimizer,
-            sim_num_steps=sim_num_steps,
-            sim_initial_states_num_trajectories=sim_initial_states_num_trajectories,
-            sim_initial_dist_num_trajectories=sim_initial_dist_num_trajectories,
-            sim_memory_num_trajectories=sim_memory_num_trajectories,
-            sim_refresh_interval=sim_refresh_interval,
-            sim_num_subsample=sim_num_subsample,
-            sim_max_memory=sim_max_memory,
-            initial_distribution=initial_distribution,
-            thompson_sampling=thompson_sampling,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+            *args,
+            **kwargs,
         )
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        base_agent_name="SAC",
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-        *args,
-        **kwargs,
-    ):
+    def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
         """See `AbstractAgent.default'."""
         from importlib import import_module
 
-        base_agent = hasattr(
+        base_agent = getattr(
             import_module("rllib.agent"), f"{base_agent_name}Agent"
-        ).default(
-            environment,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=False,
-            test=test,
-        )
+        ).default(environment, *args, **kwargs)
         base_algorithm = base_agent.algorithm
 
         model = EnsembleModel(
@@ -150,11 +84,14 @@ class DynaAgent(ModelBasedAgent):
             input_transform=None,
             deterministic=False,
         )
-        dynamical_model = TransformedModel(model, list())
-        reward_model = QuadraticReward(
-            torch.eye(environment.dim_state[0]),
-            torch.eye(environment.dim_action[0]),
-            goal=environment.goal,
+        dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
+        reward_model = kwargs.get(
+            "reward_model",
+            QuadraticReward(
+                torch.eye(environment.dim_state[0]),
+                torch.eye(environment.dim_action[0]),
+                goal=environment.goal,
+            ),
         )
 
         model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
@@ -172,16 +109,18 @@ class DynaAgent(ModelBasedAgent):
             plan_elites=1,
             max_memory=10000,
             model_learn_batch_size=64,
-            model_learn_num_iter=4 if test else 30,
+            model_learn_num_iter=4 if kwargs.get("test", False) else 30,
             bootstrap=True,
-            policy_opt_num_iter=5 if test else 100,
-            policy_opt_gradient_steps=5 if test else base_algorithm.num_iter,
-            policy_opt_batch_size=base_algorithm.batch_size,
-            policy_update_frequency=base_algorithm.policy_update_frequency,
-            policy_opt_target_update_frequency=base_algorithm.target_update_frequency,
+            policy_opt_num_iter=5 if kwargs.get("test", False) else 100,
+            policy_opt_gradient_steps=5
+            if kwargs.get("test", False)
+            else base_algorithm.num_iter,
+            policy_opt_batch_size=100,
+            policy_update_frequency=1,
+            policy_opt_target_update_frequency=1,
             dyna_num_samples=15,
             dyna_num_steps=1,
-            sim_num_steps=5 if test else 200,
+            sim_num_steps=5 if kwargs.get("test", False) else 200,
             sim_initial_states_num_trajectories=8,
             sim_initial_dist_num_trajectories=0,
             sim_memory_num_trajectories=0,
@@ -189,9 +128,7 @@ class DynaAgent(ModelBasedAgent):
             sim_num_subsample=1,
             sim_max_memory=10000,
             thompson_sampling=False,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

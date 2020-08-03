@@ -71,9 +71,9 @@ def num_cpu(request):
 def get_solver(solver_, warm_start_, num_cpu_, default_action_):
     if solver_ == "random_shooting":
         mpc_solver = RandomShooting(
-            dynamical_model,
-            reward_model,
-            HORIZON,
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            horizon=HORIZON,
             gamma=1.0,
             num_samples=NUM_SAMPLES,
             num_elites=NUM_ELITES,
@@ -85,9 +85,9 @@ def get_solver(solver_, warm_start_, num_cpu_, default_action_):
         )
     elif solver_ == "cem_shooting":
         mpc_solver = CEMShooting(
-            dynamical_model,
-            reward_model,
-            HORIZON,
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            horizon=HORIZON,
             gamma=1.0,
             num_iter=NUM_ITER,
             num_samples=NUM_SAMPLES,
@@ -100,9 +100,9 @@ def get_solver(solver_, warm_start_, num_cpu_, default_action_):
         )
     elif solver_ == "mppi_shooting":
         mpc_solver = MPPIShooting(
-            dynamical_model,
-            reward_model,
-            HORIZON,
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            horizon=HORIZON,
             gamma=1.0,
             num_iter=NUM_ITER,
             kappa=KAPPA,

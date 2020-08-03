@@ -1,4 +1,4 @@
-from typing import List, Type, Union
+from typing import Any, List, Type, Union
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -8,9 +8,9 @@ from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
 
-from .abstract_agent import AbstractAgent
+from .on_policy_agent import OnPolicyAgent
 
-class SARSAAgent(AbstractAgent):
+class SARSAAgent(OnPolicyAgent):
     algorithm: SARSA
     policy: AbstractQFunctionPolicy
     optimizer: Optimizer
@@ -25,14 +25,6 @@ class SARSAAgent(AbstractAgent):
         policy: AbstractQFunctionPolicy,
         criterion: Type[_Loss],
         optimizer: Optimizer,
-        num_iter: int = ...,
-        batch_size: int = ...,
-        target_update_frequency: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

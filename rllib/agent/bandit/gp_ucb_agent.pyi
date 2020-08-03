@@ -26,5 +26,6 @@ class GPUCBAgent(AbstractAgent):
         x: Tensor,
         beta: float = ...,
         noisy: bool = ...,
-        tensorboard: bool = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

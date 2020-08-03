@@ -49,44 +49,21 @@ class DPGAgent(OffPolicyAgent):
         optimizer,
         memory,
         exploration_noise,
-        num_iter=1,
-        batch_size=64,
-        target_update_frequency=4,
-        policy_noise=0.0,
-        noise_clip=1.0,
-        train_frequency=1,
-        num_rollouts=0,
-        policy_update_frequency=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        policy_noise=0.2,
+        noise_clip=0.5,
+        *args,
+        **kwargs,
     ):
-        super().__init__(
-            optimizer=optimizer,
-            memory=memory,
-            batch_size=batch_size,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            policy_update_frequency=policy_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
+        super().__init__(optimizer=optimizer, memory=memory, *args, **kwargs)
 
         assert policy.deterministic, "Policy must be deterministic."
         self.algorithm = DPG(
-            q_function,
-            policy,
-            criterion(reduction="none"),
-            gamma,
-            policy_noise,
-            noise_clip,
+            q_function=q_function,
+            policy=policy,
+            criterion=criterion(reduction="none"),
+            gamma=self.gamma,
+            policy_noise=policy_noise,
+            noise_clip=noise_clip,
         )
         self.policy = self.algorithm.policy
 
@@ -113,15 +90,7 @@ class DPGAgent(OffPolicyAgent):
         )
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         q_function = NNQFunction(
             dim_state=environment.dim_state,
@@ -168,9 +137,7 @@ class DPGAgent(OffPolicyAgent):
             noise_clip=0.5,
             train_frequency=1,
             num_rollouts=0,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

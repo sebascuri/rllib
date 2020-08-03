@@ -33,16 +33,10 @@ class PPOAgent(OnPolicyAgent):
         weight_entropy=0.01,
         monte_carlo_target=False,
         clamp_value=False,
-        num_iter=80,
-        target_update_frequency=1,
-        train_frequency=0,
-        num_rollouts=4,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
+        super().__init__(optimizer=optimizer, *args, **kwargs)
         self.algorithm = PPO(
             value_function=value_function,
             policy=policy,
@@ -53,20 +47,9 @@ class PPOAgent(OnPolicyAgent):
             monte_carlo_target=monte_carlo_target,
             clamp_value=clamp_value,
             lambda_=lambda_,
-            gamma=gamma,
+            gamma=self.gamma,
         )
-        super().__init__(
-            optimizer=optimizer,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
+
         self.policy = self.algorithm.policy
         self.target_kl = target_kl
 
@@ -80,15 +63,7 @@ class PPOAgent(OnPolicyAgent):
         return False
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         policy = NNPolicy(
             dim_state=environment.dim_state,
@@ -140,9 +115,7 @@ class PPOAgent(OnPolicyAgent):
             target_update_frequency=1,
             train_frequency=0,
             num_rollouts=4,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

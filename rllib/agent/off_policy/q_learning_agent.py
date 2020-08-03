@@ -52,50 +52,14 @@ class QLearningAgent(OffPolicyAgent):
     """
 
     def __init__(
-        self,
-        q_function,
-        policy,
-        criterion,
-        optimizer,
-        memory,
-        num_iter=1,
-        batch_size=64,
-        target_update_frequency=4,
-        train_frequency=1,
-        num_rollouts=0,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        self, q_function, policy, criterion, optimizer, memory, *args, **kwargs
     ):
-        super().__init__(
-            optimizer=optimizer,
-            memory=memory,
-            batch_size=batch_size,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
+        super().__init__(optimizer=optimizer, memory=memory, *args, **kwargs)
         self.policy = policy
-        self.algorithm = QLearning(q_function, criterion(reduction="none"), gamma)
+        self.algorithm = QLearning(q_function, criterion(reduction="none"), self.gamma)
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         q_function = NNQFunction(
             dim_state=environment.dim_state,
@@ -124,9 +88,7 @@ class QLearningAgent(OffPolicyAgent):
             target_update_frequency=1,
             train_frequency=1,
             num_rollouts=0,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

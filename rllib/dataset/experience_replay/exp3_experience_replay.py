@@ -61,6 +61,9 @@ class EXP3ExperienceReplay(PrioritizedExperienceReplay):
     Foundations and Trends® in Machine Learning.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @property
     def probabilities(self):
         """Get list of probabilities."""

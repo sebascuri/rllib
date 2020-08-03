@@ -30,24 +30,20 @@ class AbstractAgent(object, metaclass=ABCMeta):
     last_trajectory: List[Observation]
     def __init__(
         self,
-        train_frequency: int,
-        num_rollouts: int,
+        train_frequency: int = ...,
+        num_rollouts: int = ...,
         policy_update_frequency: int = ...,
         gamma: float = ...,
         exploration_steps: int = ...,
         exploration_episodes: int = ...,
         tensorboard: bool = ...,
         comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     @classmethod
     def default(
-        cls: Type[T],
-        environment: AbstractEnvironment,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        test: bool = ...,
+        cls: Type[T], environment: AbstractEnvironment, *args: Any, **kwargs: Any
     ) -> T: ...
     def act(self, state: State) -> Action: ...
     def observe(self, observation: Observation) -> None: ...

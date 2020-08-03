@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Any, Type, Union
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -21,17 +21,8 @@ class DPGAgent(OffPolicyAgent):
         optimizer: Optimizer,
         memory: ExperienceReplay,
         exploration_noise: Union[float, ParameterDecay],
-        num_iter: int = ...,
-        batch_size: int = ...,
-        target_update_frequency: int = ...,
         policy_noise: float = ...,
         noise_clip: float = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        policy_update_frequency: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

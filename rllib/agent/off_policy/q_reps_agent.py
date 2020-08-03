@@ -31,15 +31,8 @@ class QREPSAgent(REPSAgent):
         memory,
         epsilon,
         regularization=True,
-        batch_size=64,
-        num_iter=1000,
-        train_frequency=0,
-        num_rollouts=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
         if policy is None:
             policy = SoftMax(q_function, param=1.0 / epsilon)
@@ -49,16 +42,9 @@ class QREPSAgent(REPSAgent):
             memory=memory,
             epsilon=epsilon,
             regularization=regularization,
-            batch_size=batch_size,
             optimizer=optimizer,
-            num_iter=num_iter,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+            *args,
+            **kwargs,
         )
         self.algorithm = QREPS(
             policy=policy,
@@ -66,7 +52,7 @@ class QREPSAgent(REPSAgent):
             value_function=value_function,
             epsilon=epsilon,
             regularization=regularization,
-            gamma=gamma,
+            gamma=self.gamma,
         )
         # Over-write optimizer.
         self.optimizer = type(optimizer)(
@@ -89,15 +75,7 @@ class QREPSAgent(REPSAgent):
         self.algorithm.update()  # Step the etas in REPS.
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=1.0,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         value_function = NNValueFunction(
             dim_state=environment.dim_state,
@@ -143,13 +121,11 @@ class QREPSAgent(REPSAgent):
             memory=memory,
             epsilon=1.0,
             regularization=False,
-            num_iter=5 if test else 200,
+            num_iter=5 if kwargs.get("test", False) else 200,
             batch_size=100,
             train_frequency=0,
             num_rollouts=15,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

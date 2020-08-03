@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from rllib.dataset import TrajectoryDataset
 from rllib.dataset.datatypes import Observation
@@ -18,11 +18,6 @@ class RandomAgent(AbstractAgent):
         dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

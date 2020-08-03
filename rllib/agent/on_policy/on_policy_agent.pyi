@@ -1,5 +1,4 @@
-"""On Policy Agent."""
-from typing import List
+from typing import Any, List
 
 from torch.optim.optimizer import Optimizer
 
@@ -22,11 +21,7 @@ class OnPolicyAgent(AbstractAgent):
         batch_size: int = ...,
         target_update_frequency: int = ...,
         num_iter: int = ...,
-        train_frequency: int = ...,
         num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

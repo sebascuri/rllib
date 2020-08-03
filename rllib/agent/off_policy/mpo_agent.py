@@ -27,18 +27,11 @@ class MPOAgent(OffPolicyAgent):
         epsilon_mean=0.1,
         epsilon_var=0.001,
         regularization=False,
-        num_iter=100,
-        batch_size=64,
-        target_update_frequency=4,
-        train_frequency=0,
-        num_rollouts=1,
-        policy_update_frequency=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
+        super().__init__(memory=memory, optimizer=optimizer, *args, **kwargs)
+
         self.algorithm = MPO(
             policy=policy,
             q_function=q_function,
@@ -48,11 +41,10 @@ class MPOAgent(OffPolicyAgent):
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             regularization=regularization,
-            gamma=gamma,
+            gamma=self.gamma,
         )
-
-        self.policy = self.algorithm.policy
-        optimizer = type(optimizer)(
+        # Over-write optimizer.
+        self.optimizer = type(optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
@@ -60,32 +52,10 @@ class MPOAgent(OffPolicyAgent):
             ],
             **optimizer.defaults,
         )
-        super().__init__(
-            memory=memory,
-            optimizer=optimizer,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            batch_size=batch_size,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            policy_update_frequency=policy_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
+        self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         q_function = NNQFunction(
             dim_state=environment.dim_state,
@@ -137,14 +107,12 @@ class MPOAgent(OffPolicyAgent):
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             regularization=False,
-            num_iter=5 if test else 1000,
+            num_iter=5 if kwargs.get("test", False) else 1000,
             batch_size=100,
             target_update_frequency=1,
             train_frequency=0,
             num_rollouts=2,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

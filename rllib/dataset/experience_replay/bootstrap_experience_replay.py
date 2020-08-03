@@ -21,8 +21,6 @@ class BootstrapExperienceReplay(ExperienceReplay):
     ----------
     max_len: int.
         buffer size of experience replay algorithm.
-    batch_size: int.
-        batch size to sample.
     transformations: list of transforms.AbstractTransform, optional.
         A sequence of transformations to apply to the dataset, each of which is a
         callable that takes an observation as input and returns a modified observation.
@@ -37,8 +35,8 @@ class BootstrapExperienceReplay(ExperienceReplay):
     Deep exploration via bootstrapped DQN. NeuRIPS.
     """
 
-    def __init__(self, max_len, transformations=None, num_bootstraps=1, bootstrap=True):
-        super().__init__(max_len, transformations)
+    def __init__(self, num_bootstraps=1, bootstrap=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.weights = torch.empty(self.max_len, num_bootstraps, dtype=torch.int)
         self.mask_distribution = Poisson(torch.ones(num_bootstraps))
         self.bootstrap = bootstrap

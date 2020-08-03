@@ -9,7 +9,7 @@ from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Observation, Termination
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
-from rllib.model.derived_model import TransformedModel
+from rllib.model.transformed_model import TransformedModel
 from rllib.policy import AbstractPolicy
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.reward import AbstractReward

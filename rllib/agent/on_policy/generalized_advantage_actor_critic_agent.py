@@ -22,52 +22,23 @@ class GAACAgent(ActorCriticAgent):
     """
 
     def __init__(
-        self,
-        policy,
-        critic,
-        optimizer,
-        criterion,
-        num_iter=1,
-        target_update_frequency=1,
-        lambda_=0.97,
-        train_frequency=0,
-        num_rollouts=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        self, policy, critic, optimizer, criterion, lambda_=0.97, *args, **kwargs
     ):
         super().__init__(
             policy=policy,
             critic=critic,
             optimizer=optimizer,
             criterion=criterion,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+            *args,
+            **kwargs,
         )
         self.algorithm = GAAC(
-            policy, critic, criterion(reduction="none"), lambda_, gamma
+            policy, critic, criterion(reduction="none"), lambda_, self.gamma
         )
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         policy = NNPolicy(
             dim_state=environment.dim_state,
@@ -113,9 +84,7 @@ class GAACAgent(ActorCriticAgent):
             target_update_frequency=1,
             train_frequency=0,
             num_rollouts=1,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

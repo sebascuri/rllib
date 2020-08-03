@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -17,14 +17,6 @@ class GAACAgent(ActorCriticAgent):
         critic: AbstractValueFunction,
         optimizer: Optimizer,
         criterion: Type[_Loss],
-        num_iter: int = ...,
-        target_update_frequency: int = ...,
-        lambda_: float = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

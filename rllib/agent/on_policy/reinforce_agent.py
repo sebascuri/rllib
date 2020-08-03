@@ -23,46 +23,16 @@ class REINFORCEAgent(OnPolicyAgent):
     """
 
     def __init__(
-        self,
-        policy,
-        optimizer,
-        baseline=None,
-        criterion=nn.MSELoss,
-        num_iter=1,
-        target_update_frequency=1,
-        train_frequency=0,
-        num_rollouts=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        self, policy, optimizer, baseline=None, criterion=nn.MSELoss, *args, **kwargs
     ):
-        super().__init__(
-            optimizer=optimizer,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+        super().__init__(optimizer=optimizer, *args, **kwargs)
+        self.algorithm = REINFORCE(
+            policy, baseline, criterion(reduction="mean"), self.gamma
         )
-        self.algorithm = REINFORCE(policy, baseline, criterion(reduction="mean"), gamma)
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         policy = NNPolicy(
             dim_state=environment.dim_state,
@@ -107,9 +77,7 @@ class REINFORCEAgent(OnPolicyAgent):
             target_update_frequency=1,
             train_frequency=0,
             num_rollouts=1,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
@@ -18,14 +18,6 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         policy: AbstractQFunctionPolicy,
         criterion: Type[_Loss],
         optimizer: Optimizer,
-        num_iter: int = ...,
-        batch_size: int = ...,
-        target_update_frequency: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

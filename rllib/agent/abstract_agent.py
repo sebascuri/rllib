@@ -38,14 +38,16 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def __init__(
         self,
-        train_frequency,
-        num_rollouts,
+        train_frequency=1,
+        num_rollouts=0,
         policy_update_frequency=1,
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
         comment="",
+        *args,
+        **kwargs,
     ):
         self.logger = Logger(self.name, tensorboard=tensorboard, comment=comment)
         self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}
@@ -66,15 +68,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.dist_params = {}
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """Get default agent for a given environment."""
         raise NotImplementedError
 

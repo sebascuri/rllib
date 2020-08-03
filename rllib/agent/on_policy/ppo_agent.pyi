@@ -26,15 +26,8 @@ class PPOAgent(OnPolicyAgent):
         weight_entropy: float = ...,
         monte_carlo_target: bool = ...,
         clamp_value: bool = ...,
-        num_iter: int = ...,
-        target_update_frequency: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def early_stop(self, *args: Any, **kwargs: Any) -> bool:
         """Early stop the training algorithm."""

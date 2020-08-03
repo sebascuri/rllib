@@ -1,9 +1,7 @@
-from typing import List, Optional
+from typing import Any
 
 import numpy as np
 from torch.distributions import Poisson
-
-from rllib.dataset.transforms import AbstractTransform
 
 from .experience_replay import ExperienceReplay
 
@@ -12,8 +10,8 @@ class BootstrapExperienceReplay(ExperienceReplay):
     bootstrap: bool
     def __init__(
         self,
-        max_len: int,
-        transformations: Optional[List[AbstractTransform]] = ...,
         num_bootstraps: int = ...,
         bootstrap: bool = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

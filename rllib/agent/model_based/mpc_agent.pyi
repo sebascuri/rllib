@@ -5,7 +5,6 @@ from typing import Optional
 from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
-from rllib.algorithms.td import ModelBasedTDLearning
 from rllib.policy.mpc_policy import MPCPolicy
 
 from .model_based_agent import ModelBasedAgent
@@ -13,9 +12,6 @@ from .model_based_agent import ModelBasedAgent
 class MPCAgent(ModelBasedAgent):
     """Implementation of an agent that runs an MPC policy."""
 
-    value_optimizer: Optional[Optimizer]
-    value_gradient_steps: int
-    value_learning: ModelBasedTDLearning
     def __init__(
         self,
         mpc_policy: MPCPolicy,

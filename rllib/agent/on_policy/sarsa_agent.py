@@ -44,39 +44,18 @@ class SARSAAgent(OnPolicyAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(
-        self,
-        q_function,
-        policy,
-        criterion,
-        optimizer,
-        num_iter=1,
-        batch_size=1,
-        target_update_frequency=1,
-        train_frequency=1,
-        num_rollouts=0,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
-    ):
+    def __init__(self, q_function, policy, criterion, optimizer, *args, **kwargs):
         super().__init__(
             optimizer=optimizer,
-            num_iter=num_iter,
-            batch_size=batch_size + 1,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+            batch_size=kwargs.pop("batch_size", 1) + 1,
+            num_rollouts=kwargs.pop("num_rollouts", 0),
+            train_frequency=kwargs.pop("train_frequency", 1),
+            *args,
+            **kwargs,
         )
         # batch_size + 1 as it will always remove the last observation before training.
 
-        self.algorithm = SARSA(q_function, criterion(reduction="mean"), gamma)
+        self.algorithm = SARSA(q_function, criterion(reduction="mean"), self.gamma)
         self.policy = policy
 
     def act(self, state):
@@ -96,15 +75,7 @@ class SARSAAgent(OnPolicyAgent):
         super().learn()
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         q_function = NNQFunction(
             dim_state=environment.dim_state,
@@ -129,11 +100,9 @@ class SARSAAgent(OnPolicyAgent):
             criterion=criterion,
             num_iter=1,
             target_update_frequency=4,
-            train_frequency=0,
-            num_rollouts=1,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
+            train_frequency=1,
+            num_rollouts=0,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

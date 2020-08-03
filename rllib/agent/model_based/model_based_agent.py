@@ -112,7 +112,6 @@ class ModelBasedAgent(AbstractAgent):
         policy_opt_batch_size=None,
         policy_opt_gradient_steps=0,
         policy_opt_target_update_frequency=1,
-        policy_update_frequency=1,
         optimizer=None,
         sim_num_steps=20,
         sim_initial_states_num_trajectories=8,
@@ -123,22 +122,10 @@ class ModelBasedAgent(AbstractAgent):
         sim_num_subsample=1,
         initial_distribution=None,
         thompson_sampling=False,
-        gamma=1.0,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
-        super().__init__(
-            train_frequency=0,
-            num_rollouts=0,
-            policy_update_frequency=policy_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
+        super().__init__(train_frequency=0, num_rollouts=0, *args, **kwargs)
         if not isinstance(dynamical_model, TransformedModel):
             dynamical_model = TransformedModel(dynamical_model, [])
         self.dynamical_model = dynamical_model
@@ -480,9 +467,9 @@ class ModelBasedAgent(AbstractAgent):
             def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses = self.algorithm(states)
-                losses.loss.backward()
-                return losses
+                losses_ = self.algorithm(states)
+                losses_.loss.mean().backward()
+                return losses_
 
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()

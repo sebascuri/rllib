@@ -1,5 +1,5 @@
 from rllib.agent import QLearningAgent
-from rllib.algorithms.q_learning import DDQN
+from rllib.algorithms.ddqn import DDQN
 
 class DDQNAgent(QLearningAgent):
     algorithm: DDQN

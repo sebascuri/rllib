@@ -1,4 +1,5 @@
-"""Off Policy Agent."""
+from typing import Any
+
 from torch.optim.optimizer import Optimizer
 
 from rllib.agent.abstract_agent import AbstractAgent
@@ -16,17 +17,11 @@ class OffPolicyAgent(AbstractAgent):
     num_iter: int
     def __init__(
         self,
-        optimizer: Optimizer,
         memory: ExperienceReplay,
+        optimizer: Optimizer,
+        num_iter: int = ...,
         batch_size: int = ...,
         target_update_frequency: int = ...,
-        num_iter: int = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        policy_update_frequency: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

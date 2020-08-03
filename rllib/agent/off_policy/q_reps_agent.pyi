@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from torch.optim.optimizer import Optimizer
 
@@ -20,14 +20,7 @@ class QREPSAgent(REPSAgent):
         optimizer: Optimizer,
         memory: ExperienceReplay,
         epsilon: Union[float, ParameterDecay],
-        batch_size: int = ...,
-        num_iter: int = ...,
         regularization: bool = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

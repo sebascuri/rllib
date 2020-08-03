@@ -13,23 +13,10 @@ class OnPolicyAgent(AbstractAgent):
         batch_size=1,
         target_update_frequency=1,
         num_iter=1,
-        train_frequency=0,
-        num_rollouts=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
-        super().__init__(
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
+        super().__init__(num_rollouts=kwargs.pop("num_rollouts", 1), *args, **kwargs)
         self.trajectories = []
         self.batch_size = batch_size
         self.target_update_frequency = target_update_frequency

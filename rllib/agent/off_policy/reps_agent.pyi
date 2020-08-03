@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Union
 
 from torch.optim.optimizer import Optimizer
 
@@ -19,16 +19,9 @@ class REPSAgent(OffPolicyAgent):
         optimizer: Optimizer,
         memory: ExperienceReplay,
         epsilon: Union[float, ParameterDecay],
-        batch_size: int,
-        num_iter: int,
         regularization: bool = ...,
-        train_frequency: int = ...,
-        num_rollouts: int = ...,
-        gamma: float = ...,
-        exploration_steps: int = ...,
-        exploration_episodes: int = ...,
-        tensorboard: bool = ...,
-        comment: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def _optimizer_dual(self) -> None: ...
     def _fit_policy(self) -> None: ...

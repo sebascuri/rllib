@@ -49,18 +49,10 @@ class SACAgent(OffPolicyAgent):
         memory,
         eta,
         regularization=False,
-        num_iter=1,
-        batch_size=64,
-        target_update_frequency=4,
-        train_frequency=1,
-        num_rollouts=0,
-        policy_update_frequency=1,
-        gamma=1.0,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
+        super().__init__(optimizer=optimizer, memory=memory, *args, **kwargs)
         q_function = NNEnsembleQFunction.from_q_function(
             q_function=q_function, num_heads=2
         )
@@ -68,12 +60,12 @@ class SACAgent(OffPolicyAgent):
             policy=policy,
             q_function=q_function,
             criterion=criterion(reduction="none"),
-            gamma=gamma,
+            gamma=self.gamma,
             eta=eta,
             regularization=regularization,
         )
 
-        optimizer = type(optimizer)(
+        self.optimizer = type(optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
@@ -81,34 +73,11 @@ class SACAgent(OffPolicyAgent):
             ],
             **optimizer.defaults,
         )
-        super().__init__(
-            optimizer=optimizer,
-            memory=memory,
-            batch_size=batch_size,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            policy_update_frequency=policy_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
         self.policy = self.algorithm.policy
         self.dist_params.update(tanh=True)
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         q_function = NNQFunction(
             dim_state=environment.dim_state,
@@ -153,9 +122,7 @@ class SACAgent(OffPolicyAgent):
             batch_size=100,
             target_update_frequency=1,
             num_rollouts=0,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

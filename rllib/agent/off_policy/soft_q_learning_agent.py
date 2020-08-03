@@ -2,7 +2,7 @@
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
-from rllib.algorithms.q_learning import SoftQLearning
+from rllib.algorithms.soft_q_learning import SoftQLearning
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.value_function import NNQFunction
 
@@ -49,54 +49,25 @@ class SoftQLearningAgent(QLearningAgent):
     """
 
     def __init__(
-        self,
-        q_function,
-        criterion,
-        optimizer,
-        memory,
-        temperature,
-        num_iter=1,
-        batch_size=64,
-        target_update_frequency=4,
-        train_frequency=1,
-        num_rollouts=0,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        self, q_function, criterion, optimizer, memory, temperature, *args, **kwargs
     ):
-        self.algorithm = SoftQLearning(
-            q_function, criterion(reduction="none"), temperature, gamma
-        )
+
         super().__init__(
             q_function=q_function,
-            policy=self.algorithm.policy,
+            policy=None,  # type: ignore
             criterion=criterion,
             optimizer=optimizer,
             memory=memory,
-            num_iter=num_iter,
-            batch_size=batch_size,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+            *args,
+            **kwargs,
         )
+        self.algorithm = SoftQLearning(
+            q_function, criterion(reduction="none"), temperature, self.gamma
+        )
+        self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         q_function = NNQFunction(
             dim_state=environment.dim_state,
@@ -124,9 +95,7 @@ class SoftQLearningAgent(QLearningAgent):
             target_update_frequency=1,
             train_frequency=1,
             num_rollouts=0,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

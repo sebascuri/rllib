@@ -30,45 +30,27 @@ class REPSAgent(OffPolicyAgent):
         optimizer,
         memory,
         epsilon,
-        batch_size,
-        num_iter,
         regularization=False,
-        train_frequency=0,
-        num_rollouts=1,
-        gamma=1.0,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
+        super().__init__(memory=memory, optimizer=optimizer, *args, **kwargs)
+
         self.algorithm = REPS(
             policy=policy,
             value_function=value_function,
             epsilon=epsilon,
             regularization=regularization,
-            gamma=gamma,
+            gamma=self.gamma,
         )
-        optimizer = type(optimizer)(
+        # Over-write optimizer.
+        self.optimizer = type(optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if "target" not in name
             ],
             **optimizer.defaults,
-        )
-
-        super().__init__(
-            memory=memory,
-            batch_size=batch_size,
-            optimizer=optimizer,
-            num_iter=num_iter,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
         )
 
         self.policy = self.algorithm.policy
@@ -127,15 +109,7 @@ class REPSAgent(OffPolicyAgent):
                 break
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=1.0,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         value_function = NNValueFunction(
             dim_state=environment.dim_state,
@@ -169,13 +143,11 @@ class REPSAgent(OffPolicyAgent):
             memory=memory,
             epsilon=1.0,
             regularization=False,
-            num_iter=5 if test else 200,
+            num_iter=5 if kwargs.get("test", False) else 200,
             batch_size=100,
             train_frequency=0,
             num_rollouts=15,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

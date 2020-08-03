@@ -27,18 +27,11 @@ class VMPOAgent(OffPolicyAgent):
         epsilon_var=0.001,
         regularization=False,
         top_k_fraction=0.5,
-        num_iter=100,
-        batch_size=64,
-        target_update_frequency=4,
-        train_frequency=0,
-        num_rollouts=1,
-        policy_update_frequency=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
+        super().__init__(memory=memory, optimizer=optimizer, *args, **kwargs)
+
         self.algorithm = VMPO(
             policy=policy,
             value_function=value_function,
@@ -48,11 +41,11 @@ class VMPOAgent(OffPolicyAgent):
             epsilon_var=epsilon_var,
             regularization=regularization,
             top_k_fraction=top_k_fraction,
-            gamma=gamma,
+            gamma=self.gamma,
         )
 
         self.policy = self.algorithm.policy
-        optimizer = type(optimizer)(
+        self.optimizer = type(optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
@@ -60,32 +53,9 @@ class VMPOAgent(OffPolicyAgent):
             ],
             **optimizer.defaults,
         )
-        super().__init__(
-            memory=memory,
-            optimizer=optimizer,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            batch_size=batch_size,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            policy_update_frequency=policy_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         value_function = NNValueFunction(
             dim_state=environment.dim_state,
@@ -137,16 +107,14 @@ class VMPOAgent(OffPolicyAgent):
             epsilon_var=epsilon_var,
             regularization=False,
             top_k_fraction=0.5,
-            num_iter=5 if test else 1000,
+            num_iter=5 if kwargs.get("test", False) else 1000,
             batch_size=100,
             target_update_frequency=1,
             train_frequency=0,
             num_rollouts=2,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )
 
     def learn(self) -> None:

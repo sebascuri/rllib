@@ -24,6 +24,7 @@ from rllib.agent import (
     SoftQLearningAgent,
     TD3Agent,
     TRPOAgent,
+    VMPOAgent,
 )
 from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
@@ -69,6 +70,7 @@ def continuous_environment(request):
         PPOAgent,
         TRPOAgent,
         RandomAgent,
+        VMPOAgent,
     ]
 )
 def discrete_agent(request):
@@ -92,6 +94,7 @@ def discrete_agent(request):
         PPOAgent,
         TRPOAgent,
         RandomAgent,
+        VMPOAgent,
     ]
 )
 def continuous_agent(request):

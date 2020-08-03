@@ -51,16 +51,9 @@ class PrioritizedExperienceReplay(ExperienceReplay):
     """
 
     def __init__(
-        self,
-        max_len,
-        alpha=0.6,
-        beta=0.4,
-        epsilon=0.01,
-        max_priority=10.0,
-        transformations=None,
-        num_steps=0,
+        self, alpha=0.6, beta=0.4, epsilon=0.01, max_priority=10.0, *args, **kwargs
     ):
-        super().__init__(max_len, transformations, num_steps)
+        super().__init__(*args, **kwargs)
         if not isinstance(alpha, ParameterDecay):
             alpha = Constant(alpha)
         self.alpha = alpha
@@ -78,7 +71,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         self.weights = torch.zeros(self.max_len)
 
     @classmethod
-    def from_other(cls, other):
+    def from_other(cls, other, num_steps=None):
         """Initialize EXP3Experience Replay from another one."""
         new = cls(
             max_len=other.max_len,
@@ -87,6 +80,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
             epsilon=other.epsilon,
             max_priority=other.max_priority,
             transformations=other.transformations,
+            num_steps=num_steps if num_steps else other.num_steps,
         )
 
         for observation in other.memory:

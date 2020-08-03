@@ -5,8 +5,6 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.utilities import average_named_tuple
 from rllib.util.neural_networks.utilities import disable_gradient
 
-# import torch.nn.utils
-
 
 class OffPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
@@ -15,27 +13,14 @@ class OffPolicyAgent(AbstractAgent):
         self,
         memory,
         optimizer,
-        target_update_frequency=1,
         num_iter=1,
         batch_size=64,
-        train_frequency=0,
-        num_rollouts=1,
-        policy_update_frequency=1,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        target_update_frequency=1,
+        *args,
+        **kwargs,
     ):
         super().__init__(
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            policy_update_frequency=policy_update_frequency,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
+            train_frequency=kwargs.pop("train_frequency", 1), *args, **kwargs
         )
 
         self.batch_size = batch_size

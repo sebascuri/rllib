@@ -29,16 +29,11 @@ class TRPOAgent(OnPolicyAgent):
         epsilon_mean=0.05,
         epsilon_var=None,
         lambda_=0.97,
-        num_iter=80,
-        target_update_frequency=1,
-        train_frequency=0,
-        num_rollouts=4,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
+        *args,
+        **kwargs,
     ):
+        super().__init__(optimizer=optimizer, *args, **kwargs)
+
         self.algorithm = TRPO(
             value_function=value_function,
             policy=policy,
@@ -47,9 +42,10 @@ class TRPOAgent(OnPolicyAgent):
             epsilon_var=epsilon_var,
             criterion=criterion,
             lambda_=lambda_,
-            gamma=gamma,
+            gamma=self.gamma,
         )
-        optimizer = type(optimizer)(
+        # Over-write optimizer.
+        self.optimizer = type(optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
@@ -58,30 +54,10 @@ class TRPOAgent(OnPolicyAgent):
             **optimizer.defaults,
         )
 
-        super().__init__(
-            optimizer=optimizer,
-            num_iter=num_iter,
-            target_update_frequency=target_update_frequency,
-            train_frequency=train_frequency,
-            num_rollouts=num_rollouts,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
-            comment=comment,
-        )
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=0.99,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        test=False,
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         policy = NNPolicy(
             dim_state=environment.dim_state,
@@ -130,9 +106,7 @@ class TRPOAgent(OnPolicyAgent):
             target_update_frequency=1,
             train_frequency=0,
             num_rollouts=4,
-            gamma=gamma,
-            exploration_steps=exploration_steps,
-            exploration_episodes=exploration_episodes,
-            tensorboard=tensorboard,
             comment=environment.name,
+            *args,
+            **kwargs,
         )

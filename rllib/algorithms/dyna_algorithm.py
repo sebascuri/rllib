@@ -4,6 +4,7 @@ import torch
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
+from rllib.util.utilities import RewardTransformer
 from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm
@@ -26,7 +27,6 @@ class DynaAlgorithm(AbstractAlgorithm):
     ):
         super().__init__()
         self.base_algorithm = base_algorithm
-        self.policy = self.base_algorithm.policy
 
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
@@ -43,7 +43,19 @@ class DynaAlgorithm(AbstractAlgorithm):
         else:
             self.value_function = None
 
-        self.reward_transformer = self.base_algorithm.reward_transformer
+        if hasattr(self.base_algorithm, "policy"):
+            self.policy = self.base_algorithm.policy
+        else:
+            self.policy = None
+        if hasattr(self.base_algorithm, "criterion"):
+            self.base_algorithm.criterion = type(self.base_algorithm.criterion)(
+                reduction="mean"
+            )
+
+        if hasattr(self.base_algorithm, "reward_transformer"):
+            self.reward_transformer = self.base_algorithm.reward_transformer
+        else:
+            self.reward_transformer = RewardTransformer()
 
     def simulate(self, state):
         """Simulate trajectories starting from a state."""
@@ -63,7 +75,10 @@ class DynaAlgorithm(AbstractAlgorithm):
         with torch.no_grad():
             trajectory = self.simulate(observation)
             observation = stack_list_of_tuples(trajectory, dim=-2)
-        return self.base_algorithm(observation)
+        try:
+            return self.base_algorithm(observation)
+        except RuntimeError:
+            return self.base_algorithm(trajectory)
 
     @torch.jit.export
     def update(self):

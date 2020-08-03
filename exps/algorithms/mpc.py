@@ -5,7 +5,6 @@ import torch.nn as nn
 
 from rllib.agent import MPCAgent
 from rllib.algorithms.mpc import CEMShooting, MPCSolver, MPPIShooting, RandomShooting
-from rllib.algorithms.td import ModelBasedTDLearning
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.model.environment_model import EnvironmentModel
@@ -58,9 +57,9 @@ value_function = None  # NNValueFunction(env.dim_state, layers=[64, 64])
 
 if solver == "random_shooting":
     mpc_solver = RandomShooting(
-        dynamical_model,
-        reward_model,
-        horizon,
+        dynamical_model=dynamical_model,
+        reward_model=reward_model,
+        horizon=horizon,
         gamma=GAMMA,
         num_samples=num_samples,
         num_elites=num_elites,
@@ -72,9 +71,9 @@ if solver == "random_shooting":
     )  # type: MPCSolver
 elif solver == "cem_shooting":
     mpc_solver = CEMShooting(
-        dynamical_model,
-        reward_model,
-        horizon,
+        dynamical_model=dynamical_model,
+        reward_model=reward_model,
+        horizon=horizon,
         gamma=GAMMA,
         num_iter=num_iter,
         num_samples=num_samples,
@@ -87,9 +86,9 @@ elif solver == "cem_shooting":
     )
 elif solver == "mppi_shooting":
     mpc_solver = MPPIShooting(
-        dynamical_model,
-        reward_model,
-        horizon,
+        dynamical_model=dynamical_model,
+        reward_model=reward_model,
+        horizon=horizon,
         gamma=GAMMA,
         num_iter=num_iter,
         kappa=kappa,
@@ -105,16 +104,6 @@ else:
     raise NotImplementedError
 
 policy = MPCPolicy(mpc_solver)
-value_learning = ModelBasedTDLearning(
-    value_function,
-    criterion=nn.MSELoss(reduction="none"),
-    policy=policy,
-    dynamical_model=dynamical_model,
-    reward_model=reward_model,
-    termination=termination,
-    num_steps=num_steps,
-    gamma=GAMMA,
-)
 
 agent = MPCAgent(mpc_policy=policy)
 evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_STEPS, render=True)

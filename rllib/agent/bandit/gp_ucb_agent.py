@@ -98,16 +98,10 @@ class GPUCBAgent(AbstractAgent):
     On kernelized multi-armed bandits. JMLR.
     """
 
-    def __init__(self, gp, x, beta=2.0, noisy=False, tensorboard=False):
+    def __init__(self, gp, x, beta=2.0, noisy=False, *args, **kwargs):
         self.policy = GPUCBPolicy(gp, x, beta, noisy=noisy)
         super().__init__(
-            train_frequency=1,
-            num_rollouts=0,
-            gamma=1,
-            exploration_episodes=0,
-            exploration_steps=0,
-            tensorboard=tensorboard,
-            comment=gp.name,
+            train_frequency=1, num_rollouts=0, gamma=1, comment=gp.name, *args, **kwargs
         )
 
     def observe(self, observation) -> None:
@@ -127,15 +121,7 @@ class GPUCBAgent(AbstractAgent):
             self.logger.update(num_inducing_points=self.policy.gp.xu.shape[0])
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        gamma=1,
-        exploration_steps=0,
-        exploration_episodes=0,
-        tensorboard=False,
-        comment="",
-    ):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         x = torch.linspace(-1, 6, 100)
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -145,4 +131,4 @@ class GPUCBAgent(AbstractAgent):
         y0 = torch.tensor(y0, dtype=torch.get_default_dtype())
 
         model = ExactGP(x0, y0, likelihood)
-        return cls(model, x, beta=2.0, noisy=False, tensorboard=tensorboard)
+        return cls(model, x, beta=2.0, noisy=False, *args, **kwargs)

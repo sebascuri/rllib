@@ -163,7 +163,7 @@ class VMPO(AbstractAlgorithm):
         action_log_probs = pi_dist.log_prob(action / self.policy.action_scale)
 
         k = int(self.top_k_fraction * state.shape[0])
-        advantage_top_k, idx_top_k = torch.topk(advantage, k=k, dim=0)
+        advantage_top_k, idx_top_k = torch.topk(advantage, k=k, dim=0, largest=True)
         action_log_probs_top_k = action_log_probs[idx_top_k.squeeze()]
 
         # Since actions come from policy, value is the expected q-value

@@ -1,6 +1,6 @@
 from .abstract_agent import AbstractAgent
 from .bandit import GPUCBAgent
-from .model_based import MPCAgent
+from .model_based import DynaAgent, MPCAgent
 from .off_policy import (
     DDQNAgent,
     DPGAgent,
