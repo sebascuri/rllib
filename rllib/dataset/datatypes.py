@@ -130,7 +130,7 @@ class RawObservation(NamedTuple):
             action=action,
             reward=reward,
             next_state=next_state,
-            done=torch.tensor(done),
+            done=done,
             next_action=torch.tensor(NaN),
             log_prob_action=log_prob_action,
             entropy=torch.tensor(0.0),
