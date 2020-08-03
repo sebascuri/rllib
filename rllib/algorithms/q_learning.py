@@ -55,31 +55,13 @@ class QLearning(AbstractAlgorithm):
 
     def get_q_target(self, reward, next_state, done):
         """Get q function target."""
-        n_step = reward.shape[-1]
-        gamma = torch.pow(
-            torch.tensor(self.gamma, dtype=torch.get_default_dtype()),
-            torch.arange(n_step),
-        )
-        n_step_return = (reward * gamma).sum(-1)
-
-        if not self.q_function.discrete_state:
-            final_state = next_state[..., -1, :]
-        else:
-            final_state = next_state[..., -1]
-
-        final_v = self.q_function(final_state).max(dim=-1)[0]
-        target_q = n_step_return + self.gamma ** n_step * final_v * (1 - done[..., -1])
+        final_v = self.q_function(next_state).max(dim=-1)[0]
+        target_q = reward + self.gamma * final_v * (1 - done)
         return target_q
 
     def forward(self, observation):
         """Compute the loss and the td-error."""
         state, action, reward, next_state, done, *r = observation
-
-        if not self.q_function.discrete_state:
-            state = state[..., 0, :]
-        else:
-            state = state[..., 0]
-        action = action[..., 0]
 
         pred_q = self.q_function(state, action)
         with torch.no_grad():
