@@ -49,9 +49,10 @@ def create_er_from_transitions(
     """Create a memory with `num_transitions' transitions."""
     if discrete:
         num_states, num_actions = dim_state, dim_action
-        dim_state, dim_action = 1, 1
+        dim_state, dim_action = (), ()
     else:
         num_states, num_actions = -1, -1
+        dim_state, dim_action = (dim_state,), (dim_action,)
 
     memory = ExperienceReplay(max_len, num_steps=num_steps)
     for step in range(num_transitions):
@@ -92,13 +93,7 @@ class TestExperienceReplay(object):
     def batch_size(self, request):
         return request.param
 
-    def test_sample_batch(self, discrete, max_len, num_steps, batch_size):
-        num_episodes = 3
-        episode_length = 200
-        memory = create_er_from_episodes(
-            discrete, max_len, num_steps, num_episodes, episode_length
-        )
-
+    def _test_sample_batch(self, memory, batch_size, num_steps):
         observation, idx, weight = memory.sample_batch(batch_size=batch_size)
         for attribute in observation:
             if num_steps == 0:
@@ -108,6 +103,23 @@ class TestExperienceReplay(object):
 
         assert idx.shape == (batch_size,)
         assert weight.shape == (batch_size,)
+
+    def test_sample_batch_from_episode(self, discrete, max_len, num_steps, batch_size):
+        num_episodes = 3
+        episode_length = 200
+        memory = create_er_from_episodes(
+            discrete, max_len, num_steps, num_episodes, episode_length
+        )
+        self._test_sample_batch(memory, batch_size, num_steps)
+
+    def test_sample_batch_from_transitions(
+        self, discrete, dim_state, dim_action, max_len, num_steps, batch_size
+    ):
+        memory = create_er_from_transitions(
+            discrete, dim_state, dim_action, max_len, num_steps, 200
+        )
+
+        self._test_sample_batch(memory, batch_size, num_steps)
 
     def test_reset(self, discrete, max_len, num_steps):
         num_episodes = 3
@@ -136,16 +148,9 @@ class TestExperienceReplay(object):
         memory = create_er_from_transitions(
             discrete, dim_state, dim_action, max_len, num_steps, num_transitions
         )
-        assert len(memory.valid_indexes) == min(max_len, num_transitions)
-        assert (~(memory.memory == np.full((max_len,), None))).sum() == min(
-            max_len, num_transitions
-        )
+        ptr = memory.ptr
         memory.end_episode()
-
-        assert len(memory.valid_indexes) == min(max_len - num_steps, num_transitions)
-        assert (~(memory.memory == np.full((max_len,), None))).sum() == min(
-            max_len, num_transitions + num_steps
-        )
+        assert ptr + num_steps == memory.ptr
         for i in range(num_steps):
             assert memory.valid[memory.ptr - i - 1] == 0
 
@@ -154,7 +159,6 @@ class TestExperienceReplay(object):
         memory = create_er_from_transitions(
             discrete, dim_state, dim_action, max_len, num_steps, num_transitions
         )
-        assert len(memory.valid_indexes) == min(max_len, num_transitions)
         memory.append_invalid()
         assert memory.valid[(memory.ptr - 1) % max_len] == 0
         assert memory.valid[(memory.ptr - 2) % max_len] == 1
@@ -166,10 +170,10 @@ class TestExperienceReplay(object):
         )
         if discrete:
             num_states, num_actions = dim_state, dim_action
-            dim_state, dim_action = 1, 1
+            dim_state, dim_action = (), ()
         else:
             num_states, num_actions = -1, -1
-
+            dim_state, dim_action = (dim_state,), (dim_action,)
         observation = RawObservation.random_example(
             dim_state=dim_state,
             dim_action=dim_action,
@@ -178,10 +182,10 @@ class TestExperienceReplay(object):
         )
 
         memory.append(observation)
-        assert len(memory.valid_indexes) == min(max_len, num_transitions + 1)
         assert memory.valid[(memory.ptr - 1) % max_len] == 1
         assert memory.valid[(memory.ptr - 2) % max_len] == 1
-
+        for i in range(num_steps):
+            assert memory.valid[(memory.ptr + i) % max_len] == 0
         assert memory.memory[(memory.ptr - 1) % max_len] is observation
 
     def test_len(self, discrete, dim_state, dim_action, max_len, num_steps):
@@ -273,27 +277,16 @@ class TestExperienceReplay(object):
         memory = create_er_from_episodes(
             discrete, max_len, num_steps, num_episodes, episode_length
         )
-
+        self._test_sample_batch(memory, 10, num_steps)
         assert memory.num_steps == num_steps
 
         memory.num_steps = 10
         assert memory.num_steps == 10
+        self._test_sample_batch(memory, 10, 10)
 
-        if memory.is_full:
-            assert len(memory) == max_len
-            if num_steps == 0:
-                assert len(memory.valid_indexes) == max_len
-            else:
-                assert len(memory.valid_indexes) == max_len - 10
-        else:
-            if num_steps == 0:
-                assert len(memory) == num_episodes * episode_length
-                assert memory.ptr == (num_episodes * episode_length) % max_len
-            else:
-                assert len(memory) == num_episodes * (episode_length + 10)
-                assert memory.ptr == (num_episodes * (episode_length + 10)) % max_len
-
-            assert len(memory.valid_indexes) == num_episodes * episode_length
+        memory.num_steps = 2
+        assert memory.num_steps == 2
+        self._test_sample_batch(memory, 10, 2)
 
     def test_append_error(self):
         memory = ExperienceReplay(max_len=100)

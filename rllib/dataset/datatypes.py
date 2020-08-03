@@ -107,7 +107,7 @@ class RawObservation(NamedTuple):
             log_prob_action = torch.tensor(1.0)
 
         reward = torch.rand(1)[0]
-        done = np.random.choice([0.0, 1.0])
+        done = torch.round(torch.rand(()))
         if kind == "random":
             pass
         elif kind == "zero":
@@ -115,13 +115,13 @@ class RawObservation(NamedTuple):
             next_state = 0 * next_state
             action = 0 * action
             reward = 0 * reward
-            done = 1.0
+            done = torch.tensor(1.0)
         elif kind == "nan":
             state = NaN * state
             next_state = NaN * next_state
             action = NaN * action
             reward = NaN * reward
-            done = 1.0
+            done = torch.tensor(1.0)
         else:
             raise NotImplementedError
 

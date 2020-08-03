@@ -177,7 +177,7 @@ class ExperienceReplay(data.Dataset):
         It appends `num_steps' invalid transitions to the replay buffer.
         """
         for _ in range(self.num_steps):
-            self.append_invalid()
+            self.data_count += 1
 
     def append_invalid(self):
         """Append an invalid transition."""
@@ -210,6 +210,10 @@ class ExperienceReplay(data.Dataset):
 
         self.memory[self.ptr] = observation
         self.valid[self.ptr] = 1
+
+        for i in range(self.num_steps):
+            self.memory[(self.ptr + i + 1) % self.max_len] = self.zero_observation
+            self.valid[(self.ptr + i + 1) % self.max_len] = 0
         self.data_count += 1
 
         for transformation in self.transformations:
