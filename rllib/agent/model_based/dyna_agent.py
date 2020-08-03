@@ -96,6 +96,7 @@ class DynaAgent(ModelBasedAgent):
 
         model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
 
+        test = kwargs.get("test", False)
         return cls(
             base_algorithm=base_algorithm,
             model_optimizer=model_optimizer,
@@ -104,23 +105,21 @@ class DynaAgent(ModelBasedAgent):
             optimizer=base_agent.optimizer,
             termination=None,
             initial_distribution=None,
-            plan_horizon=1,
+            plan_horizon=0 if test else 5,
             plan_samples=8,
             plan_elites=1,
             max_memory=10000,
             model_learn_batch_size=64,
-            model_learn_num_iter=4 if kwargs.get("test", False) else 30,
+            model_learn_num_iter=4 if test else 30,
             bootstrap=True,
-            policy_opt_num_iter=5 if kwargs.get("test", False) else 100,
-            policy_opt_gradient_steps=5
-            if kwargs.get("test", False)
-            else base_algorithm.num_iter,
+            policy_opt_num_iter=5 if test else 100,
+            policy_opt_gradient_steps=2 if test else base_agent.num_iter,
             policy_opt_batch_size=100,
             policy_update_frequency=1,
             policy_opt_target_update_frequency=1,
             dyna_num_samples=15,
             dyna_num_steps=1,
-            sim_num_steps=5 if kwargs.get("test", False) else 200,
+            sim_num_steps=2 if test else 200,
             sim_initial_states_num_trajectories=8,
             sim_initial_dist_num_trajectories=0,
             sim_memory_num_trajectories=0,

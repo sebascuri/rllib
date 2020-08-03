@@ -7,14 +7,7 @@ from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
 
 MAX_STEPS = 25
-NUM_EPISODES = 25
-TARGET_UPDATE_FREQUENCY = 1
-NUM_ROLLOUTS = 1
-ACTOR_LEARNING_RATE = 1e-4
-CRITIC_LEARNING_RATE = 1e-2
-
-GAMMA = 0.99
-LAYERS = [200, 200]
+NUM_EPISODES = 2
 SEED = 0
 
 
@@ -23,7 +16,7 @@ def continuous_environment(request):
     return request.param
 
 
-@pytest.fixture(params=["DPG", "TD3", "SAC", "REPS", "MPO", "Random", "VMPO"])
+@pytest.fixture(params=["DPG", "TD3", "SAC", "MPO", "VMPO"])  # REPS
 def base_agent(request):
     return request.param
 
