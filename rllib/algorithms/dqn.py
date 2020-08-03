@@ -18,7 +18,7 @@ class DQN(QLearning):
     Nature 518.7540 (2015): 529-533.
     """
 
-    def get_target(self, reward, next_state, done):
+    def get_q_target(self, reward, next_state, done):
         """Get q function target."""
         next_v = self.q_target(next_state).max(dim=-1)[0]
         target_q = reward + self.gamma * next_v * (1 - done)

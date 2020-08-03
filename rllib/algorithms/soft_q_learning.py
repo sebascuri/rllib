@@ -51,7 +51,7 @@ class SoftQLearning(QLearning):
         self.policy_target = SoftMax(self.q_target, temperature)
         self.policy_target.param = self.policy.param
 
-    def get_target(self, reward, next_state, done):
+    def get_q_target(self, reward, next_state, done):
         """Get q function target."""
         tau = self.policy.param()
         target_v = tau * torch.logsumexp(self.q_target(next_state) / tau, dim=-1)

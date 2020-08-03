@@ -51,6 +51,12 @@ class SARSA(AbstractAlgorithm):
         self.criterion = criterion
         self.gamma = gamma
 
+    def get_q_target(self, reward, next_state, done, next_action):
+        """Get q function target."""
+        next_v = self.q_target(next_state, next_action)
+        target_q = reward + self.gamma * next_v * (1 - done)
+        return target_q
+
     def forward(self, trajectories):
         """Compute the loss and the td-error."""
         trajectory = trajectories[0]
@@ -60,8 +66,7 @@ class SARSA(AbstractAlgorithm):
         pred_q = self.q_function(state, action)
 
         with torch.no_grad():
-            next_v = self.q_target(next_state, next_action)
-            target_q = reward + self.gamma * next_v * (1 - done)
+            target_q = self.get_q_target(reward, next_state, done, next_action)
 
         return self._build_return(pred_q, target_q)
 

@@ -21,7 +21,7 @@ class DDQN(QLearning):
     Deep reinforcement learning with double q-learning. AAAI.
     """
 
-    def get_target(self, reward, next_state, done):
+    def get_q_target(self, reward, next_state, done):
         """Get q function target."""
         next_action = self.q_function(next_state).argmax(dim=-1)
         next_v = self.q_target(next_state, next_action)

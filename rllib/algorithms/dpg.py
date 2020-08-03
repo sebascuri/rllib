@@ -8,9 +8,7 @@ from rllib.util.neural_networks.utilities import (
     update_parameters,
 )
 from rllib.util.utilities import RewardTransformer, tensor_to_distribution
-from rllib.util.value_estimation import mb_return
 from rllib.value_function import NNEnsembleQFunction
-from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 
@@ -129,68 +127,3 @@ class DPG(AbstractAlgorithm):
         """Update the target network."""
         update_parameters(self.policy_target, self.policy, tau=self.policy.tau)
         update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
-
-
-class MBDPG(DPG):
-    """Model based implementation of DPG."""
-
-    def __init__(
-        self,
-        policy,
-        q_function,
-        dynamical_model,
-        reward_model,
-        criterion,
-        policy_noise,
-        noise_clip,
-        gamma,
-        reward_transformer=RewardTransformer(),
-        termination=None,
-        num_steps=1,
-        num_samples=15,
-    ):
-        super().__init__(
-            policy=policy,
-            q_function=q_function,
-            criterion=criterion,
-            gamma=gamma,
-            reward_transformer=reward_transformer,
-            policy_noise=policy_noise,
-            noise_clip=noise_clip,
-        )
-        self.dynamical_model = dynamical_model
-        self.reward_model = reward_model
-        self.termination = termination
-        self.num_steps = num_steps
-        self.num_samples = num_samples
-        self.value_function = IntegrateQValueFunction(self.q_target, self.policy, 1)
-
-    def forward(self, state):
-        """Compute the losses."""
-        with torch.no_grad():
-            q_target, trajectory = mb_return(
-                state=state,
-                dynamical_model=self.dynamical_model,
-                policy=self.policy,
-                reward_model=self.reward_model,
-                num_steps=self.num_steps,
-                gamma=self.gamma,
-                reward_transformer=self.reward_transformer,
-                value_function=self.value_function,
-                num_samples=self.num_samples,
-                termination=self.termination,
-            )
-
-        critic_loss, td_error = self.critic_loss(
-            trajectory[0].state, trajectory[0].action, q_target
-        )
-
-        # Actor loss
-        actor_loss = self.actor_loss(state).sum()
-
-        return ACLoss(
-            loss=(actor_loss + critic_loss).squeeze(-1),
-            policy_loss=actor_loss.squeeze(-1),
-            critic_loss=critic_loss.squeeze(-1),
-            td_error=td_error.squeeze(-1),
-        )

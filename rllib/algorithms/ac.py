@@ -65,6 +65,16 @@ class ActorCritic(AbstractAlgorithm):
         returns = pred_q
         return returns
 
+    def get_q_target(self, reward, next_state, done):
+        """Get q function target."""
+        next_pi = tensor_to_distribution(self.policy(next_state))
+        next_v = integrate(
+            lambda a: self.critic_target(next_state, a),
+            next_pi,
+            num_samples=self.num_samples,
+        )
+        return reward + self.gamma * next_v * (1 - done)
+
     def forward_slow(self, trajectories):
         """Compute the losses iterating through the trajectories."""
         actor_loss = torch.tensor(0.0)
@@ -86,13 +96,7 @@ class ActorCritic(AbstractAlgorithm):
 
             # CRITIC LOSS
             with torch.no_grad():
-                next_pi = tensor_to_distribution(self.policy(next_state))
-                next_v = integrate(
-                    lambda a: self.critic_target(next_state, a),
-                    next_pi,
-                    num_samples=self.num_samples,
-                )
-                target_q = reward + self.gamma * next_v * (1 - done)
+                target_q = self.get_q_target(reward, next_state, done)
 
             pred_q = self.critic(state, action)
             critic_loss += self.criterion(pred_q, target_q).mean()

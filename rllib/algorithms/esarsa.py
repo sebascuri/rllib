@@ -50,6 +50,14 @@ class ESARSA(AbstractAlgorithm):
             td_error=(pred_q - target_q).detach().squeeze(-1),
         )
 
+    def get_q_target(self, reward, next_state, done):
+        """Get q function target."""
+        pi = tensor_to_distribution(self.policy(next_state))
+        next_v = integrate(
+            lambda a: self.q_target(next_state, a), pi, num_samples=self.num_samples
+        )
+        return reward + self.gamma * next_v * (1 - done)
+
     def forward(self, trajectories):
         """Compute the loss and the td-error."""
         trajectory = trajectories[0]
@@ -59,11 +67,7 @@ class ESARSA(AbstractAlgorithm):
 
         pred_q = self.q_function(state, action)
         with torch.no_grad():
-            pi = tensor_to_distribution(self.policy(state))
-            next_v = integrate(
-                lambda a: self.q_target(next_state, a), pi, num_samples=self.num_samples
-            )
-            target_q = reward + self.gamma * next_v * (1 - done)
+            target_q = self.get_q_target(reward, next_state, done)
 
         return self._build_return(pred_q, target_q)
 

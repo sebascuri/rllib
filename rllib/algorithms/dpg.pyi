@@ -41,27 +41,3 @@ class DPG(AbstractAlgorithm):
         self, state: Tensor, action: Tensor, q_target: Tensor
     ) -> TDLoss: ...
     def forward(self, observation: Observation, **kwargs: Any) -> ACLoss: ...
-
-class MBDPG(DPG):
-    dynamical_model: AbstractModel
-    reward_model: AbstractReward
-    termination: Termination
-
-    num_steps: int
-    num_samples: int
-    def __init__(
-        self,
-        q_function: AbstractQFunction,
-        policy: AbstractPolicy,
-        dynamical_model: AbstractModel,
-        reward_model: AbstractReward,
-        criterion: _Loss,
-        policy_noise: float,
-        noise_clip: float,
-        gamma: float,
-        reward_transformer: RewardTransformer = ...,
-        termination: Optional[Termination] = ...,
-        num_steps: int = ...,
-        num_samples: int = ...,
-    ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs: Any) -> ACLoss: ...

@@ -235,7 +235,7 @@ class MPO(AbstractAlgorithm):
 
         return kl_mean, kl_var, pi_dist
 
-    def get_value_target(self, reward, next_state, done):
+    def get_q_target(self, reward, next_state, done):
         """Get value target."""
         next_pi = tensor_to_distribution(self.old_policy(next_state))
         next_action = next_pi.sample()
@@ -286,7 +286,7 @@ class MPO(AbstractAlgorithm):
         )
 
         with torch.no_grad():
-            value_target = self.get_value_target(reward, next_state, done)
+            value_target = self.get_q_target(reward, next_state, done)
 
         value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
         td_error = value_pred - value_target.mean(dim=0)
