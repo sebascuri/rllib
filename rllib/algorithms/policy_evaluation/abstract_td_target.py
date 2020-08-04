@@ -83,8 +83,6 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
 
     def forward(self, state, action, reward, next_state, done, action_log_prob):
         """Compute the loss and the td-error."""
-        assert state.dim() >= 3
-
         n_steps = state.shape[1]
 
         if isinstance(self.critic, AbstractValueFunction):

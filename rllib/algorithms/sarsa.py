@@ -3,6 +3,7 @@ import copy
 
 import torch
 
+from rllib.policy import EpsGreedy
 from rllib.util.neural_networks import update_parameters
 
 from .abstract_algorithm import AbstractAlgorithm, TDLoss
@@ -44,12 +45,11 @@ class SARSA(AbstractAlgorithm):
     Machine learning
     """
 
-    def __init__(self, q_function, criterion, gamma):
-        super().__init__()
+    def __init__(self, q_function, criterion, *args, **kwargs):
+        super().__init__(policy=EpsGreedy(q_function, 0), *args, **kwargs)
         self.q_function = q_function
         self.q_target = copy.deepcopy(q_function)
         self.criterion = criterion
-        self.gamma = gamma
 
     def get_q_target(self, reward, next_state, done, next_action):
         """Get q function target."""

@@ -41,14 +41,12 @@ class REINFORCE(AbstractAlgorithm):
 
     eps = 1e-12
 
-    def __init__(self, policy, baseline, criterion, gamma):
-        super().__init__()
+    def __init__(self, baseline, criterion, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Actor
-        self.policy = policy
         self.baseline = baseline
         self.baseline_target = deep_copy_module(baseline)
         self.criterion = criterion
-        self.gamma = gamma
 
         self.gae = GAE(1, self.gamma, self.baseline)
 

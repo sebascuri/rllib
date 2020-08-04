@@ -1,14 +1,11 @@
-from typing import Any, Optional
+from typing import Any
 
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
-from rllib.dataset.datatypes import Observation, Termination
-from rllib.model import AbstractModel
+from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
-from rllib.reward import AbstractReward
-from rllib.util.utilities import RewardTransformer
 from rllib.value_function import AbstractQFunction
 
 from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
@@ -16,22 +13,18 @@ from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
 class DPG(AbstractAlgorithm):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
-    policy: AbstractPolicy
     policy_target: AbstractPolicy
     criterion: _Loss
-    gamma: float
     policy_noise: float
     noise_clip: float
-    reward_transformer: RewardTransformer
     def __init__(
         self,
         q_function: AbstractQFunction,
-        policy: AbstractPolicy,
         criterion: _Loss,
         policy_noise: float,
         noise_clip: float,
-        gamma: float,
-        reward_transformer: RewardTransformer = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def get_q_target(
         self, reward: Tensor, next_state: Tensor, done: Tensor

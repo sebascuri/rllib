@@ -4,7 +4,6 @@ import torch
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
-from rllib.util.utilities import RewardTransformer
 from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm
@@ -24,8 +23,17 @@ class DynaAlgorithm(AbstractAlgorithm):
         num_steps=1,
         num_samples=15,
         termination=None,
+        *args,
+        **kwargs,
     ):
-        super().__init__()
+        if "gamma" not in kwargs:
+            kwargs["gamma"] = base_algorithm.gamma
+        super().__init__(
+            policy=base_algorithm.policy,
+            reward_transformer=base_algorithm.reward_transformer,
+            *args,
+            **kwargs,
+        )
         self.base_algorithm = base_algorithm
 
         self.dynamical_model = dynamical_model
@@ -43,19 +51,10 @@ class DynaAlgorithm(AbstractAlgorithm):
         else:
             self.value_function = None
 
-        if hasattr(self.base_algorithm, "policy"):
-            self.policy = self.base_algorithm.policy
-        else:
-            self.policy = None
         if hasattr(self.base_algorithm, "criterion"):
             self.base_algorithm.criterion = type(self.base_algorithm.criterion)(
                 reduction="mean"
             )
-
-        if hasattr(self.base_algorithm, "reward_transformer"):
-            self.reward_transformer = self.base_algorithm.reward_transformer
-        else:
-            self.reward_transformer = RewardTransformer()
 
     def simulate(self, state):
         """Simulate trajectories starting from a state."""

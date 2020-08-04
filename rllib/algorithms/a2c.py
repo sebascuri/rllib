@@ -18,26 +18,11 @@ class A2C(ActorCritic):
     advantage function is calculated as:
     .. math:: A(s, a) = Q(s, a) - V(s), V(s) = \int_{a} Q(s, a)
 
-
-    Parameters
-    ----------
-    policy : AbstractPolicy
-        Policy to optimize.
-    critic : AbstractQFunction
-        Critic that evaluates the current policy.
-    criterion : _Loss
-        Criterion to optimize the baseline.
-    gamma : float
-        Discount factor.
-
     References
     ----------
     Mnih, V., et al. (2016).
     Asynchronous methods for deep reinforcement learning. ICML.
     """
-
-    def __init__(self, policy, critic, criterion, gamma):
-        super().__init__(policy, critic, criterion, gamma)
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""

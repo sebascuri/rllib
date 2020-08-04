@@ -15,10 +15,8 @@ from .abstract_algorithm import AbstractAlgorithm, TRPOLoss
 class TRPO(AbstractAlgorithm):
 
     old_policy: AbstractPolicy
-    policy: AbstractPolicy
     value_function: AbstractValueFunction
     value_function_target: AbstractValueFunction
-    gamma: float
 
     epsilon_mean: Tensor
     epsilon_var: Tensor
@@ -30,14 +28,14 @@ class TRPO(AbstractAlgorithm):
     eps: float
     def __init__(
         self,
-        policy: AbstractPolicy,
         value_function: AbstractValueFunction,
         criterion: Type[_Loss] = ...,
         regularization: bool = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         lambda_: float = ...,
-        gamma: float = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def get_log_p_and_kl(
         self, state: Tensor, action: Tensor

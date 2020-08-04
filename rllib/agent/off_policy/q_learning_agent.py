@@ -56,7 +56,11 @@ class QLearningAgent(OffPolicyAgent):
     ):
         super().__init__(optimizer=optimizer, memory=memory, *args, **kwargs)
         self.policy = policy
-        self.algorithm = QLearning(q_function, criterion(reduction="none"), self.gamma)
+        self.algorithm = QLearning(
+            q_function=q_function,
+            criterion=criterion(reduction="none"),
+            gamma=self.gamma,
+        )
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

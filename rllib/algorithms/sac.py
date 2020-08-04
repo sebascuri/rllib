@@ -8,9 +8,8 @@ from rllib.util.neural_networks import (
     update_parameters,
 )
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import RewardTransformer, tensor_to_distribution
-from rllib.util.value_estimation import mb_return
-from rllib.value_function import IntegrateQValueFunction, NNEnsembleQFunction
+from rllib.util.utilities import tensor_to_distribution
+from rllib.value_function import NNEnsembleQFunction
 
 from .abstract_algorithm import AbstractAlgorithm, SACLoss, TDLoss
 
@@ -25,20 +24,14 @@ class SoftActorCritic(AbstractAlgorithm):
     """
 
     def __init__(
-        self,
-        policy,
-        q_function,
-        criterion,
-        gamma,
-        eta,
-        regularization=False,
-        reward_transformer=RewardTransformer(),
+        self, q_function, criterion, eta, regularization=False, *args, **kwargs
     ):
-        super().__init__()
+        super().__init__(*args, **kwargs)
         # Actor
-        self.policy = policy
-        self.target_entropy = -policy.dim_action[0]
-        assert len(policy.dim_action) == 1, "Only Nx1 continuous actions implemented."
+        self.target_entropy = -self.policy.dim_action[0]
+        assert (
+            len(self.policy.dim_action) == 1
+        ), "Only Nx1 continuous actions implemented."
 
         # Critic
         self.q_function = q_function
@@ -51,10 +44,7 @@ class SoftActorCritic(AbstractAlgorithm):
         else:  # Trust-Region: || KL(\pi || Uniform)|| < \epsilon
             self.eta = Learnable(eta, positive=True)
 
-        self.reward_transformer = reward_transformer
-
         self.criterion = criterion
-        self.gamma = gamma
 
     def actor_loss(self, state):
         """Get Actor Loss."""
@@ -134,82 +124,3 @@ class SoftActorCritic(AbstractAlgorithm):
     def update(self):
         """Update the baseline network."""
         update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
-
-
-class MBSoftActorCritic(SoftActorCritic):
-    """Model Based Soft-Actor Critic."""
-
-    def __init__(
-        self,
-        policy,
-        q_function,
-        dynamical_model,
-        reward_model,
-        criterion,
-        gamma,
-        eta,
-        regularization=False,
-        reward_transformer=RewardTransformer(),
-        termination=None,
-        num_steps=1,
-        num_samples=15,
-    ):
-        super().__init__(
-            policy=policy,
-            q_function=q_function,
-            criterion=criterion,
-            eta=eta,
-            regularization=regularization,
-            gamma=gamma,
-            reward_transformer=reward_transformer,
-        )
-
-        self.dynamical_model = dynamical_model
-        self.reward_model = reward_model
-        self.termination = termination
-        self.num_steps = num_steps
-        self.num_samples = num_samples
-        self.value_function = IntegrateQValueFunction(self.q_target, self.policy, 1)
-
-    def forward(self, state):
-        """Compute the losses."""
-        with torch.no_grad():
-            mc_return, trajectory = mb_return(
-                state=state,
-                dynamical_model=self.dynamical_model,
-                policy=self.policy,
-                reward_model=self.reward_model,
-                num_steps=self.num_steps,
-                gamma=self.gamma,
-                reward_transformer=self.reward_transformer,
-                value_function=self.value_function,
-                num_samples=self.num_samples,
-                termination=self.termination,
-            )
-            next_state = trajectory[-1].next_state
-            not_done = 1 - trajectory[-1].done
-            pi = tensor_to_distribution(self.policy(next_state), tanh=True)
-            next_action = pi.sample()
-            log_prob = pi.log_prob(next_action)
-            entropy = self.eta().detach() * log_prob * not_done
-            target_q = mc_return - self.gamma ** self.num_steps * entropy
-
-        # Critic Loss
-        critic_loss, td_error = self.critic_loss(
-            trajectory[0].state,
-            trajectory[0].action / self.policy.action_scale,
-            target_q,
-        )
-
-        # Actor loss
-        policy_loss, eta_loss = self.actor_loss(state)
-        self._info = {"eta": self.eta().detach().item()}
-
-        combined_loss = policy_loss + critic_loss + eta_loss
-        return SACLoss(
-            loss=combined_loss,
-            policy_loss=policy_loss,
-            critic_loss=critic_loss,
-            eta_loss=eta_loss,
-            td_error=td_error,
-        )

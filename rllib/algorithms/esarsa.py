@@ -35,13 +35,11 @@ class ESARSA(AbstractAlgorithm):
     temporal-difference learning algorithms. Utrecht University.
     """
 
-    def __init__(self, q_function, criterion, policy, gamma=0.99, num_samples=15):
-        super().__init__()
+    def __init__(self, q_function, criterion, num_samples=15, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
-        self.policy = policy
         self.criterion = criterion
-        self.gamma = gamma
         self.num_samples = num_samples
 
     def _build_return(self, pred_q, target_q):

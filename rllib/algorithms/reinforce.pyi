@@ -10,16 +10,14 @@ from .abstract_algorithm import AbstractAlgorithm, PGLoss
 
 class REINFORCE(AbstractAlgorithm):
     eps: float = ...
-    policy: AbstractPolicy
     baseline: AbstractValueFunction
     criterion: _Loss
-    gamma: float
     def __init__(
         self,
-        policy: AbstractPolicy,
         baseline: AbstractValueFunction,
         criterion: _Loss,
-        gamma: float,
+        *args: Any,
+        **kwawrgs: Any,
     ) -> None: ...
     def forward_slow(self, trajectories: List[Observation]) -> PGLoss: ...
     def forward(self, trajectories: List[Observation], **kwargs: Any) -> PGLoss: ...

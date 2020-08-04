@@ -27,7 +27,10 @@ class REINFORCEAgent(OnPolicyAgent):
     ):
         super().__init__(optimizer=optimizer, *args, **kwargs)
         self.algorithm = REINFORCE(
-            policy, baseline, criterion(reduction="mean"), self.gamma
+            policy=policy,
+            baseline=baseline,
+            criterion=criterion(reduction="mean"),
+            gamma=self.gamma,
         )
         self.policy = self.algorithm.policy
 

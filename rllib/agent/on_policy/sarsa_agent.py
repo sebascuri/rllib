@@ -55,7 +55,11 @@ class SARSAAgent(OnPolicyAgent):
         )
         # batch_size + 1 as it will always remove the last observation before training.
 
-        self.algorithm = SARSA(q_function, criterion(reduction="mean"), self.gamma)
+        self.algorithm = SARSA(
+            q_function=q_function,
+            criterion=criterion(reduction="mean"),
+            gamma=self.gamma,
+        )
         self.policy = policy
 
     def act(self, state):

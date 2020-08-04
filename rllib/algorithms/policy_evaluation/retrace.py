@@ -19,4 +19,4 @@ class ReTrace(AbstractTDTarget):
 
     def correction(self, pi_log_prob, mu_log_prob):
         """Return the correction at time step t."""
-        return self._lambda * torch.exp(pi_log_prob - mu_log_prob).clamp_max(1.0)
+        return self.lambda_ * torch.exp(pi_log_prob - mu_log_prob).clamp_max(1.0)

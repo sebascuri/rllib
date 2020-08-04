@@ -6,13 +6,20 @@ from collections import namedtuple
 import torch.jit
 import torch.nn as nn
 
+from rllib.util.utilities import RewardTransformer
+
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
 
-    def __init__(self):
+    def __init__(
+        self, gamma, policy, reward_transformer=RewardTransformer(), *args, **kwargs
+    ):
         super().__init__()
         self._info = {}
+        self.gamma = gamma
+        self.policy = policy
+        self.reward_transformer = reward_transformer
 
     @torch.jit.export
     def update(self):

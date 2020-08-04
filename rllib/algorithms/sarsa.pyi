@@ -12,9 +12,12 @@ class SARSA(AbstractAlgorithm):
     q_function: AbstractQFunction
     q_target: AbstractQFunction
     criterion: _Loss
-    gamma: float
     def __init__(
-        self, q_function: AbstractQFunction, criterion: _Loss, gamma: float
+        self,
+        q_function: AbstractQFunction,
+        criterion: _Loss,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def get_q_target(
         self, reward: Tensor, next_state: Tensor, done: Tensor, next_action: Tensor

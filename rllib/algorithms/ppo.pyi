@@ -40,6 +40,8 @@ class PPO(AbstractAlgorithm):
         clamp_value: bool = ...,
         lambda_: float = ...,
         gamma: float = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def get_log_p_and_entropy(
         self, state: Tensor, action: Tensor

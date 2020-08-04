@@ -1,13 +1,27 @@
 from abc import ABCMeta
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import torch.nn as nn
 from torch import Tensor
+
+from rllib.policy import AbstractPolicy
+from rllib.util.utilities import RewardTransformer
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
 
     _info: dict
+    gamma: float
+    reward_transformer: RewardTransformer
+    policy: AbstractPolicy
+    def __init__(
+        self,
+        gamma: float,
+        policy: AbstractPolicy,
+        reward_transformer: RewardTransformer = ...,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
     def update(self) -> None: ...
     def reset(self) -> None: ...
     def info(self) -> dict: ...

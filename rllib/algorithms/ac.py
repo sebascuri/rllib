@@ -43,18 +43,16 @@ class ActorCritic(AbstractAlgorithm):
 
     eps = 1e-12
 
-    def __init__(self, policy, critic, criterion, gamma=0.99, num_samples=15):
-        super().__init__()
+    def __init__(self, critic, criterion, num_samples=15, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Actor
-        self.policy = policy
-        self.policy_target = deep_copy_module(policy)
+        self.policy_target = deep_copy_module(self.policy)
 
         # Critic
         self.critic = critic
         self.critic_target = deep_copy_module(critic)
 
         self.criterion = criterion
-        self.gamma = gamma
 
         self.num_samples = num_samples
 

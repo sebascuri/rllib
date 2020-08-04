@@ -33,7 +33,11 @@ class GAACAgent(ActorCriticAgent):
             **kwargs,
         )
         self.algorithm = GAAC(
-            policy, critic, criterion(reduction="none"), lambda_, self.gamma
+            policy=policy,
+            critic=critic,
+            criterion=criterion(reduction="none"),
+            lambda_=lambda_,
+            gamma=self.gamma,
         )
         self.policy = self.algorithm.policy
 

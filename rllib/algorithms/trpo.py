@@ -52,25 +52,22 @@ class TRPO(AbstractAlgorithm):
 
     def __init__(
         self,
-        policy,
         value_function,
         criterion=nn.MSELoss,
         regularization=False,
         epsilon_mean=0.2,
         epsilon_var=1e-4,
         lambda_=0.97,
-        gamma=0.99,
+        *args,
+        **kwargs,
     ):
-        old_policy = deep_copy_module(policy)
+        super().__init__(*args, **kwargs)
+        old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
 
-        super().__init__()
         self.old_policy = old_policy
-        self.policy = policy
         self.value_function = value_function
         self.value_function_target = deep_copy_module(value_function)
-
-        self.gamma = gamma
 
         if epsilon_var is None:
             epsilon_var = epsilon_mean

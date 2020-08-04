@@ -7,7 +7,7 @@ from rllib.util.neural_networks.utilities import (
     disable_gradient,
     update_parameters,
 )
-from rllib.util.utilities import RewardTransformer, tensor_to_distribution
+from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
 from .abstract_algorithm import AbstractAlgorithm, ACLoss, TDLoss
@@ -41,29 +41,19 @@ class DPG(AbstractAlgorithm):
     """
 
     def __init__(
-        self,
-        q_function,
-        policy,
-        criterion,
-        gamma,
-        policy_noise,
-        noise_clip,
-        reward_transformer=RewardTransformer(),
+        self, q_function, criterion, policy_noise, noise_clip, *args, **kwargs
     ):
-        super().__init__()
+        super().__init__(*args, **kwargs)
         # Critic
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
         self.criterion = criterion
 
         # Actor
-        self.policy = policy
-        self.policy_target = deep_copy_module(policy)
+        self.policy_target = deep_copy_module(self.policy)
 
-        self.gamma = gamma
         self.policy_noise = policy_noise
         self.noise_clip = noise_clip
-        self.reward_transformer = reward_transformer
 
     def actor_loss(self, state):
         """Get Actor Loss."""

@@ -44,8 +44,8 @@ class SoftQLearning(QLearning):
     Combining policy gradient and Q-learning. ICLR.
     """
 
-    def __init__(self, q_function, criterion, temperature, gamma):
-        super().__init__(q_function, criterion, gamma)
+    def __init__(self, temperature, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.policy = SoftMax(self.q_function, temperature)
         self.policy_target = SoftMax(self.q_target, temperature)

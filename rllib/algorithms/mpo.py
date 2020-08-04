@@ -13,7 +13,7 @@ from rllib.util.neural_networks import (
     update_parameters,
 )
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import RewardTransformer, separated_kl, tensor_to_distribution
+from rllib.util.utilities import separated_kl, tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 
@@ -170,7 +170,6 @@ class MPO(AbstractAlgorithm):
 
     def __init__(
         self,
-        policy,
         q_function,
         num_action_samples,
         criterion,
@@ -178,20 +177,17 @@ class MPO(AbstractAlgorithm):
         epsilon_mean=0.0,
         epsilon_var=0.0001,
         regularization=False,
-        gamma=0.99,
-        reward_transformer=RewardTransformer(),
+        *args,
+        **kwargs,
     ):
-        old_policy = deep_copy_module(policy)
+        super().__init__(*args, **kwargs)
+        old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
 
-        super().__init__()
         self.old_policy = old_policy
-        self.policy = policy
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
         self.num_action_samples = num_action_samples
-        self.gamma = gamma
-        self.reward_transformer = reward_transformer
 
         self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")

@@ -31,7 +31,10 @@ class ActorCriticAgent(OnPolicyAgent):
     def __init__(self, policy, critic, optimizer, criterion, *args, **kwargs):
         super().__init__(optimizer=optimizer, *args, **kwargs)
         self.algorithm = ActorCritic(
-            policy, critic, criterion(reduction="none"), self.gamma
+            policy=policy,
+            critic=critic,
+            criterion=criterion(reduction="none"),
+            gamma=self.gamma,
         )
         self.policy = self.algorithm.policy
 

@@ -26,5 +26,10 @@ class A2CAgent(ActorCriticAgent):
             **kwargs,
         )
 
-        self.algorithm = A2C(policy, critic, criterion(reduction="none"), self.gamma)
+        self.algorithm = A2C(
+            policy=policy,
+            critic=critic,
+            criterion=criterion(reduction="none"),
+            gamma=self.gamma,
+        )
         self.policy = self.algorithm.policy

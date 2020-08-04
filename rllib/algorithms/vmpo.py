@@ -8,10 +8,11 @@ from rllib.util.neural_networks import (
     freeze_parameters,
     update_parameters,
 )
-from rllib.util.utilities import RewardTransformer, separated_kl, tensor_to_distribution
+from rllib.util.utilities import separated_kl, tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 from .mpo import MPOWorker
+from .policy_evaluation.vtrace import VTrace
 
 
 class VMPO(AbstractAlgorithm):
@@ -53,7 +54,6 @@ class VMPO(AbstractAlgorithm):
 
     def __init__(
         self,
-        policy,
         value_function,
         criterion,
         epsilon=0.1,
@@ -61,20 +61,15 @@ class VMPO(AbstractAlgorithm):
         epsilon_var=0.0001,
         regularization=False,
         top_k_fraction=0.5,
-        gamma=0.99,
-        reward_transformer=RewardTransformer(),
+        *args,
+        **kwargs,
     ):
-        old_policy = deep_copy_module(policy)
+        super().__init__(*args, **kwargs)
+        old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
-
-        super().__init__()
         self.old_policy = old_policy
-        self.policy = policy
         self.value_function = value_function
         self.value_target = deep_copy_module(value_function)
-
-        self.gamma = gamma
-        self.reward_transformer = reward_transformer
 
         self.top_k_fraction = top_k_fraction
         if not (0 <= top_k_fraction <= 1):
@@ -84,6 +79,13 @@ class VMPO(AbstractAlgorithm):
 
         self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")
+        self.value_trace = VTrace(
+            self.value_target,
+            policy=self.policy,
+            rho_bar=1.0,
+            gamma=self.gamma,
+            lambda_=1,
+        )
 
     def get_kl_and_pi(self, state):
         """Get kl divergence and current policy at a given state.
@@ -123,11 +125,16 @@ class VMPO(AbstractAlgorithm):
 
         return kl_mean, kl_var, pi_dist
 
-    def get_value_target(self, reward, next_state, done):
+    def get_value_target(
+        self, state, action, reward, next_state, done, action_log_prob
+    ):
         """Get the value function target."""
-        next_v = self.value_target(next_state) * (1.0 - done)
-        v_target = self.reward_transformer(reward) + self.gamma * next_v
-        return v_target
+        v_trace = self.value_trace(
+            state, action, reward, next_state, done, action_log_prob
+        )
+        # next_v = self.value_target(next_state) * (1.0 - done)
+        # v_target = self.reward_transformer(reward) + self.gamma * next_v
+        return v_trace.unsqueeze(-1)
 
     def forward(self, observation):
         """Compute the losses for one step of MPO.
@@ -157,7 +164,9 @@ class VMPO(AbstractAlgorithm):
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
         with torch.no_grad():
-            value_target = self.get_value_target(reward, next_state, done)
+            value_target = self.get_value_target(
+                state, action, reward, next_state, done, observation.log_prob_action
+            )
 
         advantage = value_target - value_prediction
         action_log_probs = pi_dist.log_prob(action / self.policy.action_scale)

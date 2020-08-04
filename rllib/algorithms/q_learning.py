@@ -2,6 +2,7 @@
 
 import torch
 
+from rllib.policy import EpsGreedy
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 
 from .abstract_algorithm import AbstractAlgorithm, TDLoss
@@ -46,12 +47,11 @@ class QLearning(AbstractAlgorithm):
     Playing atari with deep reinforcement learning. NIPS.
     """
 
-    def __init__(self, q_function, criterion, gamma):
-        super().__init__()
+    def __init__(self, q_function, criterion, *args, **kwargs):
+        super().__init__(policy=EpsGreedy(q_function, param=0), *args, **kwargs)
         self.q_function = q_function
         self.q_target = deep_copy_module(q_function)
         self.criterion = criterion
-        self.gamma = gamma
 
     def get_q_target(self, reward, next_state, done):
         """Get q function target."""

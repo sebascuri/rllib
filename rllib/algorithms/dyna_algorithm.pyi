@@ -13,12 +13,10 @@ from .abstract_algorithm import AbstractAlgorithm
 
 class DynaAlgorithm(AbstractAlgorithm):
     base_algorithm: AbstractAlgorithm
-    policy: Optional[AbstractPolicy]
 
     dynamical_model: AbstractModel
     reward_model: AbstractReward
     termination: Optional[Termination]
-    reward_transformer: RewardTransformer
     value_function: Optional[AbstractValueFunction]
 
     num_steps: int

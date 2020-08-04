@@ -16,16 +16,13 @@ from .mpo import MPOWorker
 
 class VMPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
-    policy: AbstractPolicy
     value_function: AbstractValueFunction
     value_target: AbstractValueFunction
 
-    gamma: float
     top_k_fraction: float
 
     mpo_loss: MPOWorker
     value_loss: _Loss
-    reward_transformer: RewardTransformer
     def __init__(
         self,
         policy: AbstractPolicy,
@@ -38,6 +35,8 @@ class VMPO(AbstractAlgorithm):
         top_k_fraction: float = ...,
         gamma: float = ...,
         reward_transformer: RewardTransformer = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
     def get_value_target(

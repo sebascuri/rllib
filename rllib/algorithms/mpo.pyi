@@ -5,13 +5,10 @@ from torch import Tensor
 from torch.distributions import Distribution
 from torch.nn.modules.loss import _Loss
 
-from rllib.dataset.datatypes import Observation, Termination
-from rllib.model import AbstractModel
+from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
-from rllib.reward import AbstractReward
 from rllib.util.parameter_decay import ParameterDecay
-from rllib.util.utilities import RewardTransformer
-from rllib.value_function import AbstractQFunction, AbstractValueFunction
+from rllib.value_function import AbstractQFunction
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
 
@@ -38,19 +35,15 @@ class MPOWorker(nn.Module):
 
 class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
-    policy: AbstractPolicy
     q_function: AbstractQFunction
     q_target: AbstractQFunction
 
-    gamma: float
     num_action_samples: int
 
     mpo_loss: MPOWorker
     value_loss: _Loss
-    reward_transformer: RewardTransformer
     def __init__(
         self,
-        policy: AbstractPolicy,
         q_function: AbstractQFunction,
         num_action_samples: int,
         criterion: _Loss,
@@ -58,8 +51,8 @@ class MPO(AbstractAlgorithm):
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         regularization: bool = ...,
-        reward_transformer: RewardTransformer = ...,
-        gamma: float = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
     def get_q_target(
