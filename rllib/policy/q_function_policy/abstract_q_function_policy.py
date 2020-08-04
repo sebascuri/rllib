@@ -2,7 +2,7 @@
 
 from abc import ABCMeta
 
-from rllib.util.parameter_decay import Constant
+from rllib.util.parameter_decay import Constant, ParameterDecay
 
 from ..abstract_policy import AbstractPolicy
 
@@ -27,7 +27,7 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
             num_actions=q_function.num_actions,
         )
         self.q_function = q_function
-        if type(param) is float:
+        if not isinstance(param, ParameterDecay):
             param = Constant(param)
         self.param = param
 
