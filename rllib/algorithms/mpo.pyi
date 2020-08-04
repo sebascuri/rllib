@@ -35,8 +35,8 @@ class MPOWorker(nn.Module):
 
 class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
-    q_function: AbstractQFunction
-    q_target: AbstractQFunction
+    critic: AbstractQFunction
+    critic_target: AbstractQFunction
 
     num_action_samples: int
 
@@ -44,9 +44,9 @@ class MPO(AbstractAlgorithm):
     value_loss: _Loss
     def __init__(
         self,
-        q_function: AbstractQFunction,
-        num_action_samples: int,
+        critic: AbstractQFunction,
         criterion: _Loss,
+        num_action_samples: int = ...,
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
@@ -55,8 +55,5 @@ class MPO(AbstractAlgorithm):
         **kwargs: Any,
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
-    def get_q_target(
-        self, reward: Tensor, next_state: Tensor, done: Tensor
-    ) -> Tensor: ...
     def reset(self) -> None: ...
     def forward(self, observation: Observation, **kwargs: Any) -> MPOLoss: ...

@@ -1,6 +1,7 @@
 """Generalized Advantage Actor-Critic Algorithm."""
+from rllib.algorithms.policy_evaluation.gae import GAE
+
 from .ac import ActorCritic
-from .gae import GAE
 
 
 class GAAC(ActorCritic):
@@ -39,3 +40,4 @@ class GAAC(ActorCritic):
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
         return self.gae(trajectory)  # GAE returns.
+        # return (advantage - advantage.mean()) / (advantage.std() + self.eps)

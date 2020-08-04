@@ -51,22 +51,20 @@ class SARSA(AbstractAlgorithm):
         self.q_target = copy.deepcopy(q_function)
         self.criterion = criterion
 
-    def get_q_target(self, reward, next_state, done, next_action):
+    def get_q_target(self, observation):
         """Get q function target."""
-        next_v = self.q_target(next_state, next_action)
-        target_q = reward + self.gamma * next_v * (1 - done)
-        return target_q
+        next_v = self.q_target(observation.next_state, observation.next_action)
+        next_v = next_v * (1 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def forward(self, trajectories):
         """Compute the loss and the td-error."""
         trajectory = trajectories[0]
         state, action = trajectory.state, trajectory.action
-        reward, done = trajectory.reward, trajectory.done
-        next_state, next_action = trajectory.next_state, trajectory.next_action
-        pred_q = self.q_function(state, action)
 
+        pred_q = self.q_function(state, action)
         with torch.no_grad():
-            target_q = self.get_q_target(reward, next_state, done, next_action)
+            target_q = self.get_q_target(trajectory)
 
         return self._build_return(pred_q, target_q)
 
@@ -92,16 +90,7 @@ class GradientSARSA(SARSA):
     TODO: find
     """
 
-    def forward(self, trajectories):
-        """Compute the loss and the td-error."""
-        trajectory = trajectories[0]
-        state, action = trajectory.state, trajectory.action
-        reward, done = trajectory.reward, trajectory.done
-        next_state, next_action = trajectory.next_state, trajectory.next_action
-
-        pred_q = self.q_function(state, action)
-
-        next_v = self.q_function(next_state, next_action)
-        target_q = reward + self.gamma * next_v * (1 - done)
-
-        return self._build_return(pred_q, target_q)
+    def get_q_target(self, observation):
+        """Get q function target."""
+        with torch.enable_grad():  # Require gradient after it's been disabled.
+            return super().get_q_target(observation)

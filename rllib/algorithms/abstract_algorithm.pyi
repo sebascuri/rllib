@@ -4,12 +4,14 @@ from typing import Any, NamedTuple
 import torch.nn as nn
 from torch import Tensor
 
+from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.util.utilities import RewardTransformer
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
 
+    eps: float = ...
     _info: dict
     gamma: float
     reward_transformer: RewardTransformer
@@ -25,6 +27,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def update(self) -> None: ...
     def reset(self) -> None: ...
     def info(self) -> dict: ...
+    def get_q_target(self, observation: Observation) -> Tensor: ...
 
 class TDLoss(NamedTuple):
     loss: Tensor

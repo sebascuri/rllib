@@ -16,7 +16,6 @@ class ActorCritic(AbstractAlgorithm):
     critic: AbstractQFunction
     critic_target: AbstractQFunction
     criterion: _Loss
-    eps: float = 1e-12
     num_samples: int
     def __init__(
         self,
@@ -29,6 +28,3 @@ class ActorCritic(AbstractAlgorithm):
     def returns(self, trajectory: Observation) -> Tensor: ...
     def forward_slow(self, trajectories: List[Observation]) -> ACLoss: ...
     def forward(self, trajectories: List[Observation], **kwargs: Any) -> ACLoss: ...
-    def get_q_target(
-        self, reward: Tensor, next_state: Tensor, done: Tensor
-    ) -> Tensor: ...

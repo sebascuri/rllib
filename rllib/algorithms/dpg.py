@@ -64,19 +64,19 @@ class DPG(AbstractAlgorithm):
                 q = q[..., 0]
         return -q
 
-    def get_q_target(self, reward, next_state, done):
+    def get_q_target(self, observation):
         """Get q function target."""
         next_action = tensor_to_distribution(
-            self.policy_target(next_state),
+            self.policy_target(observation.next_state),
             add_noise=True,
             policy_noise=self.policy_noise,
             noise_clip=self.noise_clip,
         ).sample()
-        next_v = self.q_target(next_state, next_action)
+        next_v = self.q_target(observation.next_state, next_action)
         if isinstance(self.q_target, NNEnsembleQFunction):
             next_v = torch.min(next_v, dim=-1)[0]
-        q_target = self.reward_transformer(reward) + self.gamma * next_v * (1 - done)
-        return q_target
+        next_v = next_v * (1 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
@@ -100,7 +100,7 @@ class DPG(AbstractAlgorithm):
         state, action, reward, next_state, done, *r = observation
         # Critic Loss
         with torch.no_grad():
-            q_target = self.get_q_target(reward, next_state, done)
+            q_target = self.get_q_target(observation)
         critic_loss, td_error = self.critic_loss(state, action, q_target)
 
         # Actor loss

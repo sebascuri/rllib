@@ -41,8 +41,6 @@ class ActorCritic(AbstractAlgorithm):
     Actor-critic algorithms. NIPS.
     """
 
-    eps = 1e-12
-
     def __init__(self, critic, criterion, num_samples=15, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Actor
@@ -59,19 +57,18 @@ class ActorCritic(AbstractAlgorithm):
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
-        pred_q = self.critic(state, action)
-        returns = pred_q
-        return returns
+        return self.critic(state, action)
 
-    def get_q_target(self, reward, next_state, done):
+    def get_q_target(self, observation):
         """Get q function target."""
-        next_pi = tensor_to_distribution(self.policy(next_state))
+        next_pi = tensor_to_distribution(self.policy(observation.next_state))
         next_v = integrate(
-            lambda a: self.critic_target(next_state, a),
+            lambda a: self.critic_target(observation.next_state, a),
             next_pi,
             num_samples=self.num_samples,
         )
-        return reward + self.gamma * next_v * (1 - done)
+        next_v = next_v * (1.0 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def forward_slow(self, trajectories):
         """Compute the losses iterating through the trajectories."""
@@ -94,7 +91,7 @@ class ActorCritic(AbstractAlgorithm):
 
             # CRITIC LOSS
             with torch.no_grad():
-                target_q = self.get_q_target(reward, next_state, done)
+                target_q = self.get_q_target(trajectory)
 
             pred_q = self.critic(state, action)
             critic_loss += self.criterion(pred_q, target_q).mean()

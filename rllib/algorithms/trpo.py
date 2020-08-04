@@ -4,7 +4,7 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
-from rllib.algorithms.gae import GAE
+from rllib.algorithms.policy_evaluation.gae import GAE
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import (
     deep_copy_module,
@@ -48,8 +48,6 @@ class TRPO(AbstractAlgorithm):
     Trust region policy optimization. ICML.
     """
 
-    eps = 1e-5
-
     def __init__(
         self,
         value_function,
@@ -57,6 +55,7 @@ class TRPO(AbstractAlgorithm):
         regularization=False,
         epsilon_mean=0.2,
         epsilon_var=1e-4,
+        monte_carlo_target=False,
         lambda_=0.97,
         *args,
         **kwargs,
@@ -98,13 +97,14 @@ class TRPO(AbstractAlgorithm):
         self.gae = GAE(
             lambda_=lambda_, gamma=self.gamma, value_function=self.value_function_target
         )
+        self.monte_carlo_target = monte_carlo_target
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
 
-    def get_log_p_and_kl(self, state, action):
+    def get_log_p_kl_entropy(self, state, action):
         """Get kl divergence and current policy at a given state.
 
         Compute the separated KL divergence between current and old policy.
@@ -142,36 +142,37 @@ class TRPO(AbstractAlgorithm):
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
             kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
+            entropy = pi_dist.entropy().mean()
         else:
             try:
                 kl_mean = torch.distributions.kl_divergence(
                     p=pi_dist_old, q=pi_dist
                 ).mean()
+                entropy = pi_dist.entropy().mean()
+
             except NotImplementedError:
                 kl_mean = (log_p_old - log_p).mean()
+                entropy = -log_p.mean()
 
             kl_var = torch.zeros_like(kl_mean)
 
-        return log_p, log_p_old, kl_mean, kl_var
+        return log_p, log_p_old, kl_mean, kl_var, entropy
 
-    def get_advantage_and_value_target(self, trajectory):
-        """Get advantage and value targets."""
-        state, action, reward, next_state, done, *r = trajectory
-
+    def returns(self, trajectory):
+        """Estimate the returns of a trajectory."""
         adv = self.gae(trajectory)
-        adv = (adv - adv.mean()) / (adv.std() + self.eps)
+        return (adv - adv.mean()) / (adv.std() + self.eps)
 
-        # value_target = adv + self.value_function_target(state)
-        final_state = next_state[-1:]
-        reward_to_go = self.value_function_target(final_state) * (1.0 - done[-1:])
-        value_target = discount_cumsum(
-            torch.cat((reward, reward_to_go)), gamma=self.gamma
-        )[:-1]
-        value_target = (value_target - value_target.mean()) / (
-            value_target.std() + self.eps
+    def get_q_target(self, observation):
+        """Get the Q-Target."""
+        final_state = observation.next_state[-1:]
+        reward_to_go = self.value_function_target(final_state) * (
+            1.0 - observation.done[-1:]
         )
-
-        return adv, value_target
+        value_target = discount_cumsum(
+            torch.cat((observation.reward, reward_to_go)), gamma=self.gamma
+        )[:-1]
+        return (value_target - value_target.mean()) / (value_target.std() + self.eps)
 
     def forward_slow(self, trajectories):
         """Compute the losses a trajectory.
@@ -200,14 +201,21 @@ class TRPO(AbstractAlgorithm):
 
         kl_mean = torch.tensor(0.0)
         kl_var = torch.tensor(0.0)
+        entropy = torch.tensor(0.0)
 
         for trajectory in trajectories:
             state, action, reward, next_state, done, *r = trajectory
             value_pred = self.value_function(state)
             with torch.no_grad():
-                adv, value_target = self.get_advantage_and_value_target(trajectory)
+                adv = self.returns(trajectory)
+                if self.monte_carlo_target:
+                    value_target = self.get_q_target(trajectory)
+                else:
+                    value_target = adv + self.value_function_target(state)
 
-            log_p, log_p_old, kl_mean_, kl_var_ = self.get_log_p_and_kl(state, action)
+            log_p, log_p_old, kl_mean_, kl_var_, entropy_ = self.get_log_p_kl_entropy(
+                state, action
+            )
 
             # Compute Value loss.
             value_loss += self.value_loss_criterion(value_pred, value_target)
@@ -229,6 +237,7 @@ class TRPO(AbstractAlgorithm):
             # Compute exact and approximate KL divergence
             kl_mean += kl_mean_
             kl_var += kl_var_
+            entropy += entropy_
 
         combined_loss = surrogate_loss + kl_loss + dual_loss
 
@@ -239,6 +248,7 @@ class TRPO(AbstractAlgorithm):
             "kl_var": kl_var / num_trajectories,
             "eta_mean": self.eta_mean(),
             "eta_var": self.eta_var(),
+            "entropy": entropy / num_trajectories,
         }
 
         return TRPOLoss(

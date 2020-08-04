@@ -16,6 +16,7 @@ from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import separated_kl, tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm, MPOLoss
+from .policy_evaluation.retrace import ReTrace
 
 MPOLosses = namedtuple("MPOLosses", ["primal_loss", "dual_loss"])
 
@@ -170,9 +171,9 @@ class MPO(AbstractAlgorithm):
 
     def __init__(
         self,
-        q_function,
-        num_action_samples,
+        critic,
         criterion,
+        num_action_samples=15,
         epsilon=0.1,
         epsilon_mean=0.0,
         epsilon_var=0.0001,
@@ -185,12 +186,19 @@ class MPO(AbstractAlgorithm):
         freeze_parameters(old_policy)
 
         self.old_policy = old_policy
-        self.q_function = q_function
-        self.q_target = deep_copy_module(q_function)
+        self.critic = critic
+        self.critic_target = deep_copy_module(critic)
         self.num_action_samples = num_action_samples
 
         self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.value_loss = criterion(reduction="mean")
+        self.trace = ReTrace(
+            policy=self.old_policy,
+            critic=self.critic_target,
+            gamma=self.gamma,
+            num_samples=self.num_action_samples,
+            lambda_=1.0,
+        )
 
     def get_kl_and_pi(self, state):
         """Get kl divergence and current policy at a given state.
@@ -231,14 +239,16 @@ class MPO(AbstractAlgorithm):
 
         return kl_mean, kl_var, pi_dist
 
-    def get_q_target(self, reward, next_state, done):
+    def get_q_target(self, observation):
         """Get value target."""
-        next_pi = tensor_to_distribution(self.old_policy(next_state))
-        next_action = next_pi.sample()
+        # next_pi = tensor_to_distribution(self.old_policy(next_state))
+        # next_action = next_pi.sample()
 
-        next_values = self.q_target(next_state, next_action) * (1.0 - done)
-        value_target = self.reward_transformer(reward) + self.gamma * next_values
-        return value_target
+        # next_values = self.q_target(next_state, next_action) * (1.0 - done)
+        # value_target = self.reward_transformer(reward) + self.gamma * next_values
+        # return value_target
+
+        return self.trace(observation).unsqueeze(-1)
 
     def forward(self, observation):
         """Compute the losses for one step of MPO.
@@ -263,11 +273,8 @@ class MPO(AbstractAlgorithm):
         """
         state, action, reward, next_state, done, *r = observation
 
-        value_pred = self.q_function(state, action / self.policy.action_scale)
+        value_pred = self.critic(state, action / self.policy.action_scale)
         state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
-        next_state = repeat_along_dimension(
-            next_state, number=self.num_action_samples, dim=0
-        )
 
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
@@ -275,17 +282,17 @@ class MPO(AbstractAlgorithm):
         action_log_probs = pi_dist.log_prob(sampled_action)
 
         losses = self.mpo_loss(
-            q_values=self.q_target(state, sampled_action),
+            q_values=self.critic_target(state, sampled_action),
             action_log_probs=action_log_probs,
             kl_mean=kl_mean,
             kl_var=kl_var,
         )
 
         with torch.no_grad():
-            value_target = self.get_q_target(reward, next_state, done)
+            value_target = self.get_q_target(observation)
 
-        value_loss = self.value_loss(value_pred, value_target.mean(dim=0))
-        td_error = value_pred - value_target.mean(dim=0)
+        value_loss = self.value_loss(value_pred, value_target)
+        td_error = value_pred - value_target
 
         dual_loss = losses.dual_loss.mean()
         policy_loss = losses.primal_loss.mean()
@@ -315,4 +322,4 @@ class MPO(AbstractAlgorithm):
 
     def update(self):
         """Update target networks."""
-        update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
+        update_parameters(self.critic_target, self.critic, tau=self.critic.tau)

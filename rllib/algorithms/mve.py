@@ -22,18 +22,18 @@ def mve_expand(
         """Derived Algorithm using MVE to calculate targets."""
 
         def __init__(self, base_alg):
-            super().__init__(**base_alg.__dict__)
+            super().__init__(**{**base_alg.__dict__, **dict(base_alg.named_modules())})
             self.dynamical_model = dynamical_model
             self.reward_model = reward_model
             self.num_steps = num_steps
             self.num_samples = num_samples
             self.termination = termination
 
-        def get_q_target(self, state):
+        def get_q_target(self, observation):
             """Rollout model and call base algorithm with transitions."""
             with torch.no_grad():
                 value, trajectory = mb_return(
-                    state,
+                    observation.state,
                     self.dynamical_model,
                     self.reward_model,
                     self.policy,

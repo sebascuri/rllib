@@ -27,7 +27,14 @@ class ExpectedActorCritic(ActorCritic):
     Expected policy gradients. AAAI.
     """
 
-    eps = 1e-12
+    def get_q_target(self, observation):
+        """Get q function target."""
+        next_pi = tensor_to_distribution(self.policy(observation.next_state))
+        next_v = integrate(
+            lambda a: self.critic_target(observation.next_state, a), next_pi
+        )
+        next_v = next_v * (1 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def forward_slow(self, trajectories):
         """Compute the losses."""
@@ -59,9 +66,7 @@ class ExpectedActorCritic(ActorCritic):
 
             # CRITIC LOSS
             with torch.no_grad():
-                next_pi = tensor_to_distribution(self.policy(next_state))
-                next_v = integrate(lambda a: self.critic_target(next_state, a), next_pi)
-                target_q = reward + self.gamma * next_v * (1 - done)
+                target_q = self.get_q_target(trajectory)
 
             pred_q = self.critic(state, action)
             critic_loss += self.criterion(pred_q, target_q).mean()

@@ -12,6 +12,8 @@ from rllib.util.utilities import RewardTransformer
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
 
+    eps = 1e-12
+
     def __init__(
         self, gamma, policy, reward_transformer=RewardTransformer(), *args, **kwargs
     ):
@@ -20,6 +22,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.gamma = gamma
         self.policy = policy
         self.reward_transformer = reward_transformer
+
+    def get_q_target(self, observation):
+        """Get Q target from the observation."""
+        return torch.zeros_like(observation.reward)
 
     @torch.jit.export
     def update(self):
@@ -46,6 +52,7 @@ MPOLoss = namedtuple(
 SACLoss = namedtuple(
     "SACLoss", ["loss", "policy_loss", "critic_loss", "eta_loss", "td_error"]
 )
+
 PPOLoss = namedtuple("PPOLoss", ["loss", "surrogate_loss", "critic_loss", "entropy"])
 TRPOLoss = namedtuple(
     "TRPOLoss", ["loss", "surrogate_loss", "critic_loss", "dual_loss", "kl_loss"]

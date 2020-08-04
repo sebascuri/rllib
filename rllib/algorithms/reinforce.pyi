@@ -2,16 +2,16 @@ from typing import Any, List
 
 from torch.nn.modules.loss import _Loss
 
+from rllib.algorithms.policy_evaluation.gae import GAE
 from rllib.dataset.datatypes import Observation
-from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm, PGLoss
 
 class REINFORCE(AbstractAlgorithm):
-    eps: float = ...
     baseline: AbstractValueFunction
     criterion: _Loss
+    gae: GAE
     def __init__(
         self,
         baseline: AbstractValueFunction,

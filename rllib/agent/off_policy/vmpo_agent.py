@@ -34,7 +34,7 @@ class VMPOAgent(OffPolicyAgent):
 
         self.algorithm = VMPO(
             policy=policy,
-            value_function=value_function,
+            critic=value_function,
             criterion=criterion,
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,

@@ -3,19 +3,12 @@
 import torch
 import torch.distributions
 
-from rllib.util.neural_networks import (
-    deep_copy_module,
-    freeze_parameters,
-    update_parameters,
-)
-from rllib.util.utilities import separated_kl, tensor_to_distribution
-
-from .abstract_algorithm import AbstractAlgorithm, MPOLoss
-from .mpo import MPOWorker
+from .abstract_algorithm import MPOLoss
+from .mpo import MPO
 from .policy_evaluation.vtrace import VTrace
 
 
-class VMPO(AbstractAlgorithm):
+class VMPO(MPO):
     """On-Policy Maximum a Posteriori Policy Optimizaiton.
 
     The V-MPO algorithm returns a loss that is a combination of four losses.
@@ -48,28 +41,10 @@ class VMPO(AbstractAlgorithm):
     Song, H. F., et al. (2019).
     V-MPO: on-policy maximum a posteriori policy optimization for discrete and
     continuous control. ICLR.
-
-    TODO: Add VTrace for policy evaluation.
     """
 
-    def __init__(
-        self,
-        value_function,
-        criterion,
-        epsilon=0.1,
-        epsilon_mean=0.0,
-        epsilon_var=0.0001,
-        regularization=False,
-        top_k_fraction=0.5,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, top_k_fraction=0.5, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        old_policy = deep_copy_module(self.policy)
-        freeze_parameters(old_policy)
-        self.old_policy = old_policy
-        self.value_function = value_function
-        self.value_target = deep_copy_module(value_function)
 
         self.top_k_fraction = top_k_fraction
         if not (0 <= top_k_fraction <= 1):
@@ -77,64 +52,14 @@ class VMPO(AbstractAlgorithm):
                 f"Top-k fraction should be in [0, 1]. Got {top_k_fraction} instead."
             )
 
-        self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
-        self.value_loss = criterion(reduction="mean")
-        self.value_trace = VTrace(
-            self.value_target,
+        self.trace = VTrace(
             policy=self.policy,
+            critic=self.critic_target,
+            num_samples=self.num_action_samples,
             rho_bar=1.0,
             gamma=self.gamma,
-            lambda_=1,
+            lambda_=1.0,
         )
-
-    def get_kl_and_pi(self, state):
-        """Get kl divergence and current policy at a given state.
-
-        Compute the separated KL divergence between current and old policy.
-        When the policy is a MultivariateNormal distribution, it compute the divergence
-        that correspond to the mean and the covariance separately.
-
-        When the policy is a Categorical distribution, it computes the divergence and
-        assigns it to the mean component. The variance component is kept to zero.
-
-        Parameters
-        ----------
-        state: torch.Tensor
-            Empirical state distribution.
-
-        Returns
-        -------
-        kl_mean: torch.Tensor
-            KL-Divergence due to the change in the mean between current and
-            previous policy.
-
-        kl_var: torch.Tensor
-            KL-Divergence due to the change in the variance between current and
-            previous policy.
-
-        pi_dist: torch.distribution.Distribution
-            Current policy distribution.
-        """
-        pi_dist = tensor_to_distribution(self.policy(state))
-        pi_dist_old = tensor_to_distribution(self.old_policy(state))
-        if isinstance(pi_dist, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
-        else:
-            kl_mean = torch.distributions.kl_divergence(p=pi_dist_old, q=pi_dist).mean()
-            kl_var = torch.zeros_like(kl_mean)
-
-        return kl_mean, kl_var, pi_dist
-
-    def get_value_target(
-        self, state, action, reward, next_state, done, action_log_prob
-    ):
-        """Get the value function target."""
-        v_trace = self.value_trace(
-            state, action, reward, next_state, done, action_log_prob
-        )
-        # next_v = self.value_target(next_state) * (1.0 - done)
-        # v_target = self.reward_transformer(reward) + self.gamma * next_v
-        return v_trace.unsqueeze(-1)
 
     def forward(self, observation):
         """Compute the losses for one step of MPO.
@@ -157,16 +82,14 @@ class VMPO(AbstractAlgorithm):
         kl_div: torch.Tensor
             The average KL divergence of the policy.
         """
-        state, action, reward, next_state, done, *r = observation
+        state, action, *r = observation
 
-        value_prediction = self.value_function(state)
+        value_prediction = self.critic(state)
 
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
         with torch.no_grad():
-            value_target = self.get_value_target(
-                state, action, reward, next_state, done, observation.log_prob_action
-            )
+            value_target = self.get_q_target(observation)
 
         advantage = value_target - value_prediction
         action_log_probs = pi_dist.log_prob(action / self.policy.action_scale)
@@ -175,7 +98,8 @@ class VMPO(AbstractAlgorithm):
         advantage_top_k, idx_top_k = torch.topk(advantage, k=k, dim=0, largest=True)
         action_log_probs_top_k = action_log_probs[idx_top_k.squeeze()]
 
-        # Since actions come from policy, value is the expected q-value
+        # Since actions come from policy, value is the expected q-value but we should
+        # correct inf the off-policy case.
         losses = self.mpo_loss(
             q_values=advantage_top_k,
             action_log_probs=action_log_probs_top_k,
@@ -205,15 +129,4 @@ class VMPO(AbstractAlgorithm):
             policy_loss=policy_loss,
             critic_loss=value_loss,
             td_error=td_error,
-        )
-
-    def reset(self):
-        """Reset the optimization (kl divergence) for the next epoch."""
-        # Copy over old policy for KL divergence
-        self.old_policy.load_state_dict(self.policy.state_dict())
-
-    def update(self):
-        """Update target networks."""
-        update_parameters(
-            self.value_target, self.value_function, tau=self.value_function.tau
         )

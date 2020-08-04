@@ -26,9 +26,6 @@ class DPG(AbstractAlgorithm):
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
-    def get_q_target(
-        self, reward: Tensor, next_state: Tensor, done: Tensor
-    ) -> Tensor: ...
     def actor_loss(self, state: Tensor) -> Tensor: ...
     def critic_loss(
         self, state: Tensor, action: Tensor, q_target: Tensor

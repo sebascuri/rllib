@@ -81,8 +81,11 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         """Return the correction at time step t."""
         raise NotImplementedError
 
-    def forward(self, state, action, reward, next_state, done, action_log_prob):
+    def forward(self, observation):
         """Compute the loss and the td-error."""
+        state, action, reward, next_state, done, *_ = observation
+        log_prob_action = observation.log_prob_action
+
         n_steps = state.shape[1]
 
         if isinstance(self.critic, AbstractValueFunction):
@@ -99,9 +102,9 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                 pi = tensor_to_distribution(self.policy(state[:, t]))
                 eval_log_prob = pi.log_prob(action[:, t])
             else:
-                eval_log_prob = action_log_prob[:, t]
+                eval_log_prob = log_prob_action[:, t]
 
-            correction = self.correction(eval_log_prob, action_log_prob[:, t])
+            correction = self.correction(eval_log_prob, log_prob_action[:, t])
 
             if isinstance(self.critic, AbstractValueFunction):
                 this_v = self.critic(state[:, t]) * (1.0 - done_t)
@@ -112,7 +115,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                 if self.policy is not None:
                     next_pi = tensor_to_distribution(self.policy(next_state[:, t]))
                     next_v = integrate(
-                        lambda a: self.q_function(next_state[:, t], a),
+                        lambda a: self.critic(next_state[:, t], a),
                         next_pi,
                         num_samples=self.num_samples,
                     ) * (1.0 - done[:, t])

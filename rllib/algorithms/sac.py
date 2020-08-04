@@ -67,20 +67,19 @@ class SoftActorCritic(AbstractAlgorithm):
 
         return actor_loss, eta_loss
 
-    def get_q_target(self, reward, next_state, done):
+    def get_q_target(self, observation):
         """Get the target of the q function."""
         # Target Q-values
-        pi = tensor_to_distribution(self.policy(next_state), tanh=True)
+        pi = tensor_to_distribution(self.policy(observation.next_state), tanh=True)
         next_action = pi.sample()
-        next_q = self.q_target(next_state, next_action)
+        next_q = self.q_target(observation.next_state, next_action)
         if isinstance(self.q_target, NNEnsembleQFunction):
             next_q = torch.min(next_q, dim=-1)[0]
 
         log_prob = pi.log_prob(next_action)
         next_v = next_q - self.eta().detach() * log_prob
-        not_done = 1.0 - done
-        target_q = self.reward_transformer(reward) + self.gamma * next_v * not_done
-        return target_q
+        next_v = next_v * (1.0 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def critic_loss(self, state, action, q_target):
         """Get Critic Loss and td-error."""
@@ -104,7 +103,7 @@ class SoftActorCritic(AbstractAlgorithm):
         state, action, reward, next_state, done, *r = observation
         # Critic Loss
         with torch.no_grad():
-            q_target = self.get_q_target(reward, next_state, done)
+            q_target = self.get_q_target(observation)
         critic_loss, td_error = self.critic_loss(
             state, action / self.policy.action_scale, q_target
         )

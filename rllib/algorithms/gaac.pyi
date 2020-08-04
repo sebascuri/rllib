@@ -1,7 +1,8 @@
 from typing import Any
 
+from rllib.algorithms.policy_evaluation.gae import GAE
+
 from .ac import ActorCritic
-from .gae import GAE
 
 class GAAC(ActorCritic):
     gae: GAE

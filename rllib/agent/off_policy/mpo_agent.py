@@ -34,7 +34,7 @@ class MPOAgent(OffPolicyAgent):
 
         self.algorithm = MPO(
             policy=policy,
-            q_function=q_function,
+            critic=q_function,
             num_action_samples=num_action_samples,
             criterion=criterion,
             epsilon=epsilon,

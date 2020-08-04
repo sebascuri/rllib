@@ -48,24 +48,25 @@ class ESARSA(AbstractAlgorithm):
             td_error=(pred_q - target_q).detach().squeeze(-1),
         )
 
-    def get_q_target(self, reward, next_state, done):
+    def get_q_target(self, observation):
         """Get q function target."""
-        pi = tensor_to_distribution(self.policy(next_state))
+        pi = tensor_to_distribution(self.policy(observation.next_state))
         next_v = integrate(
-            lambda a: self.q_target(next_state, a), pi, num_samples=self.num_samples
+            lambda a: self.q_target(observation.next_state, a),
+            pi,
+            num_samples=self.num_samples,
         )
-        return reward + self.gamma * next_v * (1 - done)
+        next_v = next_v * (1 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def forward(self, trajectories):
         """Compute the loss and the td-error."""
         trajectory = trajectories[0]
         state, action = trajectory.state, trajectory.action
-        reward, done = trajectory.reward, trajectory.done
-        next_state = trajectory.next_state
 
         pred_q = self.q_function(state, action)
         with torch.no_grad():
-            target_q = self.get_q_target(reward, next_state, done)
+            target_q = self.get_q_target(trajectory)
 
         return self._build_return(pred_q, target_q)
 
@@ -87,18 +88,7 @@ class GradientESARSA(ESARSA):
     TODO: Find.
     """
 
-    def forward(self, trajectories):
-        """Compute the loss and the td-error."""
-        trajectory = trajectories[0]
-        state, action = trajectory.state, trajectory.action
-        reward, done = trajectory.reward, trajectory.done
-        next_state = trajectory.next_state
-
-        pred_q = self.q_function(state, action)
-        pi = tensor_to_distribution(self.policy(state))
-        next_v = integrate(
-            lambda a: self.q_function(next_state, a), pi, num_samples=self.num_samples
-        )
-        target_q = reward + self.gamma * next_v * (1 - done)
-
-        return self._build_return(pred_q, target_q)
+    def get_q_target(self, observation):
+        """Get q function target."""
+        with torch.enable_grad():  # Require gradient after it's been disabled.
+            return super().get_q_target(observation)

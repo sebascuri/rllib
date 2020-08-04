@@ -2,12 +2,12 @@
 
 import torch
 
+from rllib.algorithms.policy_evaluation.gae import GAE
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm, PGLoss
-from .gae import GAE
 
 
 class REINFORCE(AbstractAlgorithm):
@@ -39,8 +39,6 @@ class REINFORCE(AbstractAlgorithm):
     learning. Machine learning.
     """
 
-    eps = 1e-12
-
     def __init__(self, baseline, criterion, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Actor
@@ -53,6 +51,12 @@ class REINFORCE(AbstractAlgorithm):
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
         return self.gae(trajectory)  # GAE returns.
+
+    def get_q_target(self, observation):
+        """Get baseline target."""
+        next_v = self.baseline_target(observation.next_state)
+        next_v = next_v * (1 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def forward_slow(self, trajectories):
         """Compute the losses."""
@@ -75,8 +79,7 @@ class REINFORCE(AbstractAlgorithm):
             # BASELINE LOSS
             if self.baseline is not None:
                 with torch.no_grad():
-                    next_v = self.baseline_target(next_state)
-                    target_v = reward + self.gamma * next_v * (1 - done)
+                    target_v = self.get_q_target(trajectory)
 
                 baseline_loss += self.criterion(self.baseline(state), target_v)
 

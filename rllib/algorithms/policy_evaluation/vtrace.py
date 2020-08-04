@@ -19,8 +19,8 @@ class VTrace(ReTrace):
     Architectures. ICML.
     """
 
-    def __init__(self, critic, policy=None, rho_bar=1.0, gamma=0.99, lambda_=1):
-        super().__init__(critic, policy=policy, gamma=gamma, lambda_=lambda_)
+    def __init__(self, rho_bar=1.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.rho_bar = rho_bar
         if rho_bar < 1:
             raise ValueError(r"\rho_bar must be larger or equal to 1.")

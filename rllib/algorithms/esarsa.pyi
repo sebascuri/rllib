@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
 
+from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractQFunctionPolicy
 from rllib.value_function import AbstractQFunction
 
@@ -26,8 +27,5 @@ class ESARSA(AbstractAlgorithm):
     def forward(self, *args: Tensor, **kwargs: Any) -> TDLoss: ...
     def _build_return(self, pred_q: Tensor, target_q: Tensor) -> TDLoss: ...
     def update(self) -> None: ...
-    def get_q_target(
-        self, reward: Tensor, next_state: Tensor, done: Tensor
-    ) -> Tensor: ...
 
 class GradientExpectedSARSA(ESARSA): ...
