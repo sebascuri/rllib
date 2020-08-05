@@ -106,7 +106,7 @@ class PPOAgent(OnPolicyAgent):
             criterion=criterion,
             epsilon=0.2,
             lambda_=0.95,
-            target_kl=0.01,
+            target_kl=0.005,
             weight_value_function=0.5,
             weight_entropy=0.01,
             monte_carlo_target=False,
