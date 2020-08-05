@@ -1,6 +1,28 @@
 """Setup script of rllib."""
 from setuptools import find_packages, setup
 
+extras = {
+    "test": [
+        "pytest>=5.0,<5.1",
+        "flake8>=3.7.8,<3.8",
+        "pydocstyle==4.0.0",
+        "black>=19.10b0",
+        "isort>=5.0.0",
+        "pytest_cov>=2.7,<3",
+        "mypy==0.750",
+    ],
+    "mujoco": ["mujoco-py<2.1,>=2.0", "imageio-ffmpeg==0.4.1", "dm_control"],
+    "logging": ["tensorboard>=2.0,<3"],
+    "experiments": [
+        "lsf_runner==0.0.5",
+        "torchvision>=0.6.0",
+        "Pillow==5.4.1",
+        "pandas==0.25.0",
+        "dotmap>=1.3.0,<1.4.0",
+    ],
+}
+extras["all"] = [item for group in extras.values() for item in group]
+
 setup(
     name="rllib",
     version="0.0.1",
@@ -20,26 +42,7 @@ setup(
         "gpytorch>=1.1.1,<1.2.0",
         "tensorboardX>=2.0,<3",
     ],
-    extras_require={
-        "test": [
-            "pytest>=5.0,<5.1",
-            "flake8>=3.7.8,<3.8",
-            "pydocstyle==4.0.0",
-            "black>=19.10b0",
-            "isort>=5.0.0",
-            "pytest_cov>=2.7,<3",
-            "mypy==0.750",
-        ],
-        "mujoco": ["mujoco-py<2.1,>=2.0", "imageio-ffmpeg==0.4.1", "dm_control"],
-        "logging": ["tensorboard>=2.0,<3"],
-        "experiments": [
-            "lsf_runner==0.0.5",
-            "torchvision>=0.6.0",
-            "Pillow==5.4.1",
-            "pandas==0.25.0",
-            "dotmap>=1.3.0,<1.4.0",
-        ],
-    },
+    extras_require=extras,
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
