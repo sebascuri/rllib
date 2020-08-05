@@ -7,7 +7,7 @@ setup(
     author="Sebastian Curi",
     author_email="sebascuri@gmail.com",
     license="MIT",
-    python_requires=">3.7.0",
+    python_requires=">=3.7.0",
     packages=find_packages(exclude=["docs"]),
     install_requires=[
         "numpy>=1.14,<2",
