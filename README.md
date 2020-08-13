@@ -67,3 +67,19 @@ If a goal is to follow a trajectory, it might be a good idea to encode it in the
 ## Policies
 Continuous Policies are "bounded" between [-1, 1] via a tanh transform unless otherwise defined.
 For environments with action spaces with different bounds, up(down)-scale the action after sampling it.
+
+### License
+Hydra is licensed under [MIT License](LICENSE).
+
+## Citing RL-lib
+
+If you use RL-lib in your research please use the following BibTeX entry:
+```text
+@Misc{Curi2019RLLib,
+  author =       {Sebastian Curi},
+  title =        {RL-Lib - A pytorch-based library for Reinforcement Learning research.},
+  howpublished = {Github},
+  year =         {2020},
+  url =          {https://github.com/sebascuri/rllib}
+}
+```
