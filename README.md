@@ -1,4 +1,4 @@
-# rllib (Under Development!)
+# rllib-torch (Under Development!)
 
 [![CircleCI](https://img.shields.io/circleci/build/github/sebascuri/rllib/master?label=master%20build%20and%20test&token=25c056fd6b7e322c55dd48fd0c6052b1f8800919)](https://app.circleci.com/pipelines/github/sebascuri/rllib)
 [![CircleCI](https://img.shields.io/circleci/build/github/sebascuri/rllib/dev?label=dev%20build%20and%20test&token=25c056fd6b7e322c55dd48fd0c6052b1f8800919)](https://app.circleci.com/pipelines/github/sebascuri/rllib)
@@ -6,6 +6,13 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://pypi.org/project/hug/)
 
+RL-Lib torch is an RL library based in pytorch.
+It's meant to support my research but I welcome other researchers to use it.
+
+The two main components are environments and agents, which interact with each other.
+The main logic of each agent is implemented in the algorithms folder.
+For example, a SAC agent has the training logic implemented in the Agent, but the training
+losses are implemented in the sac algorithm.
 
 To install create a conda environment:
 ```bash
@@ -69,7 +76,7 @@ Continuous Policies are "bounded" between [-1, 1] via a tanh transform unless ot
 For environments with action spaces with different bounds, up(down)-scale the action after sampling it.
 
 ### License
-Hydra is licensed under [MIT License](LICENSE).
+RL-Lib is licensed under [MIT License](LICENSE).
 
 ## Citing RL-lib
 
