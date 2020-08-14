@@ -7,8 +7,6 @@ from rllib.util.neural_networks import deep_copy_module, update_parameters
 
 from .abstract_algorithm import AbstractAlgorithm, TDLoss
 
-# from rllib.util.utilities import tensor_to_distribution
-
 
 class QLearning(AbstractAlgorithm):
     r"""Implementation of Q-Learning algorithm.
@@ -57,7 +55,6 @@ class QLearning(AbstractAlgorithm):
 
     def get_q_target(self, observation):
         """Get q function target."""
-        # next_a = tensor_to_distribution(self.policy(observation.next_state)).sample()
         next_v = self.q_function(observation.next_state).max(dim=-1)[0]
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
@@ -97,7 +94,7 @@ class GradientQLearning(QLearning):
     Q-learning. Machine learning.
     """
 
-    def get_q_target(self, reward, next_state, done):
+    def get_q_target(self, observation):
         """Get q function target."""
         with torch.enable_grad():  # Require gradient after it's been disabled.
-            return super().get_q_target(reward, next_state, done)
+            return super().get_q_target(observation)

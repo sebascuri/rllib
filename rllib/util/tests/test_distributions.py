@@ -29,7 +29,7 @@ class TestDelta(object):
         assert dist.entropy().shape == torch.Size([32])
         assert dist.variance.shape == torch.Size([32, 4])
 
-        dist = Delta(torch.randn(32, 4))  # event_dim = 0
+        dist = Delta(torch.randn(32, 4))
         assert dist.batch_shape == torch.Size([32, 4])
         assert dist.event_shape == torch.Size([])
         assert dist.entropy().shape == torch.Size([32, 4])
@@ -41,7 +41,7 @@ class TestDelta(object):
         assert dist.entropy().shape == torch.Size([])
         assert dist.variance.shape == torch.Size([16])
 
-        dist = Delta(torch.randn(16))  # event_dim = 0
+        dist = Delta(torch.randn(16))
         assert dist.batch_shape == torch.Size([16])
         assert dist.event_shape == torch.Size([])
         assert dist.entropy().shape == torch.Size([16])

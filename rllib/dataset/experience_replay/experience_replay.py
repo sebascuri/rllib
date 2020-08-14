@@ -1,4 +1,5 @@
 """Implementation of an Experience Replay Buffer."""
+import warnings
 
 import numpy as np
 import torch
@@ -182,11 +183,11 @@ class ExperienceReplay(data.Dataset):
     def append_invalid(self):
         """Append an invalid transition."""
         if self.zero_observation is None:
-            RuntimeWarning("Buffer not initialized.")
-            return
-        self.memory[self.ptr] = self.zero_observation
-        self.valid[self.ptr] = 0
-        self.data_count += 1
+            warnings.warn("Buffer not initialized.", RuntimeWarning)
+        else:
+            self.memory[self.ptr] = self.zero_observation
+            self.valid[self.ptr] = 0
+            self.data_count += 1
 
     def append(self, observation):
         """Append new observation to the dataset.

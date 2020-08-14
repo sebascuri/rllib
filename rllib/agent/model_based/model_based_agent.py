@@ -22,7 +22,7 @@ from rllib.dataset.utilities import average_named_tuple, stack_list_of_tuples
 from rllib.model import ExactGPModel, TransformedModel
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.util.gaussian_processes import SparseGP
-from rllib.util.neural_networks.utilities import disable_gradient
+from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.rollout import rollout_model
 from rllib.util.training import train_model
 from rllib.util.utilities import tensor_to_distribution
@@ -394,7 +394,7 @@ class ModelBasedAgent(AbstractAgent):
         print(colorize("Optimizing Policy with Model Data", "yellow"))
         self.dynamical_model.eval()
         self.sim_dataset.reset()  # Erase simulation data set before starting.
-        with disable_gradient(self.dynamical_model), gpytorch.settings.fast_pred_var():
+        with DisableGradient(self.dynamical_model), gpytorch.settings.fast_pred_var():
             for i in tqdm(range(self.policy_opt_num_iter)):
                 # Step 1: Compute the state distribution
                 with torch.no_grad():
@@ -464,17 +464,17 @@ class ModelBasedAgent(AbstractAgent):
         for _ in range(self.policy_opt_gradient_steps):
             states = self.sim_dataset.get_batch(self.policy_opt_batch_size)
 
-            def closure():
+            def closure(state=states):
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses_ = self.algorithm(states)
+                losses_ = self.algorithm(state)
                 losses_.loss.mean().backward()
                 return losses_
 
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:
-                cm = disable_gradient(self.plan_policy)
+                cm = DisableGradient(self.plan_policy)
 
             with cm:
                 losses = self.optimizer.step(closure=closure)

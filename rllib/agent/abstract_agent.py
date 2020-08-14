@@ -210,7 +210,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         params = {}
         for key, value in self.__dict__.items():
             if isinstance(value, Logger) or key == "pi":
-                pass
+                continue
             elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
                 params[key] = value.state_dict()
             else:
@@ -231,7 +231,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         for key, value in self.__dict__.items():
             if isinstance(value, Logger) or key == "pi":
-                pass
+                continue
             elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
                 value.load_state_dict(agent_dict[key])
             else:

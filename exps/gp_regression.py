@@ -11,19 +11,17 @@ torch.manual_seed(0)
 np.random.seed(0)
 
 
-def f(x):
+def func_sinc(x):
     """Get function value."""
     return torch.sin(2 * x) / x
 
 
 num_training = 50
+noise_std = 1e-4
 train_x = torch.randn(num_training) * 4
-train_y = f(train_x) + torch.randn(len(train_x)) * 1e-4
-train_y = train_y
+train_y = func_sinc(train_x) + torch.randn(len(train_x)) * noise_std
 idx = np.random.choice(num_training, 25, replace=False)
 inducing_points = train_x[idx].unsqueeze(-1)
-# train_x, train_y = inducing_points, train_y[idx]
-# inducing_points = 5 * torch.randn(200, 1)
 plt.show()
 
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -93,7 +91,7 @@ for name, model in {
         plt.plot(train_x.numpy(), train_y.numpy(), "k*")
         # Plot predictive means as blue line
         plt.plot(test_x.numpy(), out.mean.numpy(), "b")
-        plt.plot(test_x.numpy(), f(test_x).numpy(), "k-")
+        plt.plot(test_x.numpy(), func_sinc(test_x).numpy(), "k-")
         # Shade between the lower and upper confidence bounds
         plt.fill_between(test_x.numpy(), lower.numpy(), upper.numpy(), alpha=0.5)
 

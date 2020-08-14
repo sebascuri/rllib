@@ -41,7 +41,7 @@ def model_class(request):
     return request.param
 
 
-def test_GPUCB(reward, model_class):
+def test_gpucb(reward, model_class):
     torch.manual_seed(SEED)
     x = torch.linspace(-1, 6, NUM_POINTS)
     x0 = x[x > 0.2][[0]].unsqueeze(-1)

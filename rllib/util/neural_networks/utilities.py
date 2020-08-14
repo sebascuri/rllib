@@ -512,7 +512,7 @@ def resume_learning(module):
         param.grad = torch.zeros_like(param.data)
 
 
-class disable_gradient(object):
+class DisableGradient(object):
     """Context manager to disable gradients temporarily.
 
     Gradients terms will be zero-ed, momentum terms will continue.
@@ -537,7 +537,7 @@ class disable_gradient(object):
             unfreeze_parameters(module)
 
 
-class disable_optimizer(object):
+class DisableOptimizer(object):
     """Context manager to disable optimization steps temporarily.
 
     Gradients and momentum terms will be zero-ed.

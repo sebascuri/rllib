@@ -230,10 +230,6 @@ class TestOneHotEncode(object):
         out_tensor = one_hot_encode(tensor, num_classes)
         assert out_tensor.dim() == 2 if batch_size else 1
 
-        # tensor = torch.randint(4, torch.Size([batch_size, 1] if batch_size else [1]))
-        # out_tensor = one_hot_encode(tensor, num_classes)
-        # assert out_tensor.dim() == 2 if batch_size else 1
-
     def test_double_batch(self):
         num_classes = 4
         tensor = torch.randint(num_classes, torch.Size([32, 5]))
@@ -265,10 +261,7 @@ class TestOneHotEncode(object):
         num_classes = 4
         tensor = torch.randint(4, torch.Size([batch_size] if batch_size else [1]))
         out_tensor = one_hot_encode(tensor, num_classes)
-        if batch_size:
-            indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long().squeeze(-1)
-        else:
-            indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long().squeeze(-1)
+        indexes = out_tensor.gather(-1, tensor.unsqueeze(-1)).long().squeeze(-1)
         torch.testing.assert_allclose(indexes, torch.ones_like(tensor))
 
 

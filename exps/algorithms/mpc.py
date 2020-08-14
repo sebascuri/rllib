@@ -23,14 +23,13 @@ class EnvironmentTermination(nn.Module):
     def forward(self, state, action, next_state=None):
         """Compute termination condition."""
         self.environment.state = state
-        next_state, reward, done, _ = self.environment.step(action)
+        _, _, done, _ = self.environment.step(action)
         return done
 
 
 SEED = 0
 MAX_STEPS = 200
-# ENVIRONMENT = 'VPendulum-v0'
-ENVIRONMENT = "VContinuous-CartPole-v0"
+ENVIRONMENT = ["VPendulum-v0", "VContinuous-CartPole-v0"][1]
 
 env = GymEnvironment(ENVIRONMENT, SEED)
 env_model = copy.deepcopy(env)
@@ -51,9 +50,7 @@ warm_start = True
 num_cpu = 2
 
 memory = ExperienceReplay(max_len=2000, num_steps=1)
-
-value_function = None  # NNValueFunction(env.dim_state, layers=[64, 64])
-# optimizer = optim.Adam(value_function.parameters(), lr=1e-4)
+value_function = None
 
 if solver == "random_shooting":
     mpc_solver = RandomShooting(

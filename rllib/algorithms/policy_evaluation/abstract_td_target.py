@@ -115,7 +115,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                 if self.policy is not None:
                     next_pi = tensor_to_distribution(self.policy(next_state[:, t]))
                     next_v = integrate(
-                        lambda a: self.critic(next_state[:, t], a),
+                        lambda a, time=t: self.critic(next_state[:, time], a),
                         next_pi,
                         num_samples=self.num_samples,
                     ) * (1.0 - done[:, t])

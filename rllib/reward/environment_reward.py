@@ -15,5 +15,5 @@ class EnvironmentReward(AbstractReward):
     def forward(self, state, action, next_state):
         """Get Reward distribution."""
         self.environment.state = state
-        next_state, reward, done, _ = self.environment.step(action)
+        _, reward, _, _ = self.environment.step(action)
         return reward, torch.zeros(1)

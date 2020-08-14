@@ -21,7 +21,7 @@ class EnvironmentTermination(nn.Module):
 
     def forward(self, state, action, next_state=None):
         self.environment.state = state
-        next_state, reward, done, _ = self.environment.step(action)
+        _, _, done, _ = self.environment.step(action)
         return done
 
 

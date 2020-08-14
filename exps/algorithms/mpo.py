@@ -13,21 +13,17 @@ from rllib.util.neural_networks import zero_bias  # noqa: F401
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
-# ENVIRONMENT = 'Taxi-v2'
-# ENVIRONMENT = 'CartPole-v0'
-ENVIRONMENT = "Pendulum-v0"
+ENVIRONMENT = ["Taxi-v3", "CartPole-v0", "Pendulum-v0"][2]
 
 EPSILON = 0.1
 EPSILON_MEAN = 0.1
 EPSILON_VAR = 1e-4
 NUM_EPISODES = 500
 BATCH_SIZE = 100
-# MAX_STEPS = 2000
 MAX_STEPS = 1000
+FELIX_NET = True
 
 LR = 5e-4
-# NUM_ITER = 20
-# NUM_ROLLOUTS = 1
 NUM_ITER = 500
 NUM_ROLLOUTS = 2
 NUM_ACTION_SAMPLES = 15
@@ -38,22 +34,28 @@ SEED = 0
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 env = GymEnvironment(ENVIRONMENT, SEED)
-# policy = NNPolicy(
-#     env.dim_state,
-#     env.dim_action,
-#     env.num_states,
-#     env.num_actions,
-#     squashed_output=True,
-#     layers=[64, 64],
-#     tau=0.02,
-#     action_scale=env.action_scale,
-#     biased_head=False,
-# )
-# zero_bias(policy)
 
-policy = FelixPolicy(
-    env.dim_state, env.dim_action, deterministic=False, action_scale=env.action_scale
-)
+if FELIX_NET:
+    policy = FelixPolicy(
+        env.dim_state,
+        env.dim_action,
+        deterministic=False,
+        action_scale=env.action_scale,
+    )
+else:
+    policy = NNPolicy(
+        env.dim_state,
+        env.dim_action,
+        env.num_states,
+        env.num_actions,
+        squashed_output=True,
+        layers=[64, 64],
+        tau=0.02,
+        action_scale=env.action_scale,
+        biased_head=False,
+    )
+    zero_bias(policy)
+
 
 q_function = NNQFunction(
     env.dim_state, env.dim_action, env.num_states, env.num_actions, layers=[200, 200]

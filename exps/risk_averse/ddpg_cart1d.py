@@ -77,8 +77,7 @@ q_function = NNQFunction(
 )
 memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
-# policy = torch.jit.script(policy)
-# q_function = torch.jit.script(q_function)
+q_function = torch.jit.script(q_function)
 
 optimizer = torch.optim.Adam(
     chain(policy.parameters(), q_function.parameters()),

@@ -26,7 +26,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
 
     """
     transitions = []
-    for i in range(num_samples):
+    for _ in range(num_samples):
         state = state_dist.sample()
         if isinstance(policy, AbstractPolicy):
             action_dist = tensor_to_distribution(policy(state))

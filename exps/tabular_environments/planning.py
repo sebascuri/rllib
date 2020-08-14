@@ -19,12 +19,12 @@ policy = RandomPolicy(
     num_actions=environment.num_actions,
 )  # type: AbstractPolicy
 
-print("Policy Evaluation:")
+print("Iterative Policy Evaluation:")
 value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)
 print(value_function.table)
 print()
 
-print("Policy Evaluation:")
+print("Linear System Policy Evaluation:")
 value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
 print(value_function.table)
 print()
@@ -41,7 +41,7 @@ print(policy.table.argmax(dim=0))
 print(value_function.table)
 print()
 
-print("Policy Evaluation:")
+print("Iterative Policy Evaluation from Value Iteration:")
 value_function = iterative_policy_evaluation(
     policy, environment, GAMMA, eps=EPS, value_function=value_function
 )
@@ -49,7 +49,7 @@ print(value_function.table)
 print()
 
 
-print("Policy Evaluation:")
+print("Linear System Policy Evaluation from Value Iteration:")
 value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
 print(value_function.table)
 print()

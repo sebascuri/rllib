@@ -60,7 +60,7 @@ def test_sequential_update():
     torch.testing.assert_allclose(transformer.mean, torch.mean(array, 0))
     torch.testing.assert_allclose(transformer.variance, torch.var(array, 0))
 
-    for i in range(10):
+    for _ in range(10):
         new_array = torch.randn(torch.randint(1, 32, (1,)), 4)
         transformer.update(new_array)
 

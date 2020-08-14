@@ -3,8 +3,8 @@
 import torch
 
 from rllib.util.neural_networks.utilities import (
+    DisableGradient,
     deep_copy_module,
-    disable_gradient,
     update_parameters,
 )
 from rllib.util.utilities import tensor_to_distribution
@@ -58,7 +58,7 @@ class DPG(AbstractAlgorithm):
     def actor_loss(self, state):
         """Get Actor Loss."""
         action = tensor_to_distribution(self.policy(state)).mean.clamp(-1, 1)
-        with disable_gradient(self.q_function):
+        with DisableGradient(self.q_function):
             q = self.q_function(state, action)
             if isinstance(self.q_function, NNEnsembleQFunction):
                 q = q[..., 0]

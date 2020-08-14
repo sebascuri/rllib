@@ -19,7 +19,7 @@ def q_function():
 
 def test_discrete(t_start, q_function):
     policy = SoftMax(q_function, t_start)
-    for t in range(100):
+    for _ in range(100):
         state = torch.randint(4, ())
         logits = q_function(state)
         probs = torch.softmax(logits / t_start, dim=0)

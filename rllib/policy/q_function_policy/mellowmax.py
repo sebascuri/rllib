@@ -40,12 +40,12 @@ class MellowMax(AbstractQFunctionPolicy):
 
         for i in range(len(mm)):
 
-            def f(beta_):
+            def zero_beta(beta_, idx=i):
                 """Solve for beta."""
-                return (torch.exp(beta_ * adv[i]) * adv[i]).sum().detach().numpy()
+                return (torch.exp(beta_ * adv[idx]) * adv[idx]).sum().detach().numpy()
 
             try:
-                beta[i] = torch.tensor(scipy.optimize.brentq(f, a=-100, b=100))
+                beta[i] = torch.tensor(scipy.optimize.brentq(zero_beta, a=-100, b=100))
             except ValueError:
                 pass
 

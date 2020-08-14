@@ -419,11 +419,7 @@ class FelixNet(FeedForwardNN):
 
         torch.nn.init.zeros_(self.hidden_layers[0].bias)
         torch.nn.init.zeros_(self.hidden_layers[2].bias)
-        # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
-
         self._scale = nn.Linear(64, out_dim[0], bias=False)
-        # torch.nn.init.uniform_(self.head.weight, -0.1, 0.1)
-        # torch.nn.init.uniform_(self._covariance.weight, -0.01, 0.01)
 
     def forward(self, x):
         """Execute forward computation of FelixNet.

@@ -95,12 +95,6 @@ class TestIntegrateValueFunction(object):
             q_function=self.q_function, policy=self.policy, num_samples=num_samples
         )
 
-    # def test_compile(
-    #     self, discrete_state, discrete_action, dim_state, dim_action, num_heads
-    # ):
-    #     self.init(discrete_state, discrete_action, dim_state, dim_action, num_heads)
-    #     torch.jit.script(self.value_function)
-
     def test_property_values(
         self, discrete_state, discrete_action, dim_state, dim_action, num_heads
     ):

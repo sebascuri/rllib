@@ -32,9 +32,9 @@ def create_er_from_episodes(discrete, max_len, num_steps, num_episodes, episode_
         max_len, transformations=transformations, num_steps=num_steps
     )
 
-    for episode in range(num_episodes):
+    for _ in range(num_episodes):
         state = env.reset()
-        for step in range(episode_length):
+        for _ in range(episode_length):
             action = env.action_space.sample()  # sample a random action.
             observation, state, done, info = step_env(env, state, action)
             memory.append(observation)
@@ -55,7 +55,7 @@ def create_er_from_transitions(
         dim_state, dim_action = (dim_state,), (dim_action,)
 
     memory = ExperienceReplay(max_len, num_steps=num_steps)
-    for step in range(num_transitions):
+    for _ in range(num_transitions):
         observation = RawObservation.random_example(
             dim_state=dim_state,
             dim_action=dim_action,

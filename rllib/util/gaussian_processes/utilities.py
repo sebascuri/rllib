@@ -13,7 +13,8 @@ def add_data_to_gp(gp_model, new_inputs, new_targets):
     inputs = torch.cat((gp_model.train_inputs[0], new_inputs), dim=0)
     targets = torch.cat((gp_model.train_targets, new_targets), dim=-1)
     gp_model.set_train_data(inputs, targets, strict=False)
-    # return gp_model.get_fantasy_model(inputs, targets)
+
+    # TODO: return gp_model.get_fantasy_model(inputs, targets)
 
 
 def summarize_gp(gp_model, max_num_points=None, weight_function=None):

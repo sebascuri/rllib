@@ -50,14 +50,15 @@ class ExpectedActorCritic(ActorCritic):
             if self.policy.discrete_action:
                 action = action.long()
 
-            def iq(a):
-                return self.critic(state, a) - integrate(
-                    lambda a_: self.critic(state, a_), pi, num_samples=self.num_samples
+            def int_q(a, s=state, pi_=pi):
+                """Integrate the critic w.r.t. the action."""
+                return self.critic(s, a) - integrate(
+                    lambda a_: self.critic(s, a_), pi_, num_samples=self.num_samples
                 )
 
             actor_loss += discount_sum(
                 integrate(
-                    lambda a: -pi.log_prob(a) * iq(a).detach(),
+                    lambda a, pi_=pi, iq=int_q: -pi_.log_prob(a) * iq(a).detach(),
                     pi,
                     num_samples=self.num_samples,
                 ).sum(),

@@ -74,7 +74,7 @@ def test_shuffle(dataset):
     dataset.shuffle()
 
 
-def test_append_error(dataset):
+def test_append_error():
     dataset = TrajectoryDataset(sequence_length=10)
     trajectory = [
         RawObservation(

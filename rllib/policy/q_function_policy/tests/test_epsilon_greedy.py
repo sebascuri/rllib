@@ -36,7 +36,7 @@ def test_epsilon(eps_start, q_function):
 
 def test_discrete(eps_start, q_function):
     policy = EpsGreedy(q_function, eps_start)
-    for t in range(100):
+    for _ in range(100):
         state = torch.randint(4, ())
         action = q_function(state).argmax(dim=-1)
         probs = eps_start / 2 * torch.ones(2)

@@ -285,9 +285,8 @@ class TestEnsembleNN(object):
     def deterministic(self, request):
         return request.param
 
-    def test_num_heads(self, net, num_heads, deterministic):
+    def test_num_heads(self, num_heads, deterministic):
         net = Ensemble((4,), (2,), num_heads=num_heads, deterministic=deterministic)
-        # net = torch.jit.script(net)
         assert net.num_heads == num_heads
 
     def test_output_shape(self, out_dim, batch_size, num_heads, deterministic):
@@ -295,7 +294,6 @@ class TestEnsembleNN(object):
         net = Ensemble(
             in_dim, out_dim, num_heads=num_heads, deterministic=deterministic
         )
-        # net = torch.jit.script(net)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -311,7 +309,6 @@ class TestEnsembleNN(object):
             in_dim, out_dim, num_heads=num_heads, deterministic=deterministic
         )
 
-        # net = torch.jit.script(net)
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
@@ -343,7 +340,6 @@ class TestEnsembleNN(object):
         in_dim = (4,)
         net = Ensemble(in_dim, out_dim, layers=layers, num_heads=num_heads)
 
-        # net = torch.jit.script(net)
         layers = layers or list()
 
         # Check nn.parameters (+1: head)
@@ -444,7 +440,7 @@ class TestFelixNet(object):
             (batch_size, 2) if batch_size is not None else ()
         )
 
-    def test_layers(self, net, in_dim, out_dim, layers):
+    def test_layers(self, net, in_dim, out_dim):
         net = torch.jit.script(net(in_dim, out_dim))
         layers = [64, 64]
 

@@ -72,8 +72,8 @@ def plot(agent, step, objective, axes):
         axis.set_ylim(-2.1, 2.1)
         axis.set_xticks([])
         axis.set_yticks([])
-        # axis.set_xlabel('Inputs')
-        # axis.set_ylabel('Objective')
+        axis.set_xlabel("Inputs")
+        axis.set_ylabel("Objective")
 
 
 if __name__ == "__main__":
@@ -125,7 +125,9 @@ if __name__ == "__main__":
             num_episodes=STEPS,
             max_steps=1,
             plot_frequency=1,
-            plot_callbacks=[lambda a, step: plot(a, step, objective, axes)],
+            plot_callbacks=[
+                lambda a, step, ax=axes: plot(a, step, objective, ax)  # type: ignore
+            ],
         )
 
         fig.suptitle(key, y=1)

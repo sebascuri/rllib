@@ -45,14 +45,14 @@ class TestBairdStar(MDPTest):
 
     def test_initial_state(self, gym_env, num_states):
         env = self.get_env(gym_env=gym_env, num_states=num_states)
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state in range(env.num_states)
 
     def test_interaction(self, gym_env, num_states):
         env = self.get_env(gym_env=gym_env, num_states=num_states)
         env.reset()
-        for i in range(100):
+        for _ in range(100):
             action = env.action_space.sample()
             next_state, reward, done, info = env.step(action)
             if action == 0:  # Transit to state 0 when action 0 is applied.
@@ -80,7 +80,7 @@ class TestBoyanChain(MDPTest):
     def test_initial_state(self, gym_env):
         env = self.get_env(gym_env=gym_env)
 
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state == 0
 
@@ -88,7 +88,7 @@ class TestBoyanChain(MDPTest):
         env = self.get_env(gym_env=False, num_states=num_states)
         for _ in range(20):
             state = env.reset()
-            for i in range(env.num_states):
+            for _ in range(env.num_states):
                 action = env.action_space.sample()
                 next_state, reward, done, info = env.step(action)
 
@@ -123,7 +123,7 @@ class TestDoubleChainProblem(MDPTest):
 
     def test_initial_state(self, gym_env):
         env = self.get_env(gym_env=gym_env)
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state == 0
 
@@ -186,7 +186,7 @@ class TestEasyGridWorld(MDPTest):
 
     def test_initial_state(self):
         env = self.get_env(gym_env=False)
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state in range(env.num_states)
 
@@ -230,7 +230,7 @@ class TestSingleChainProblem(MDPTest):
 
     def test_initial_state(self, gym_env):
         env = self.get_env(gym_env=gym_env)
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state == 0
 
@@ -283,7 +283,7 @@ class TestRandomMDP(MDPTest):
     def test_initial_state(self, gym_env):
         env = self.get_env(gym_env=gym_env)
 
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state in range(env.num_states)
 
@@ -308,7 +308,7 @@ class TestTwoStateProblem(MDPTest):
 
     def test_initial_state(self, gym_env):
         env = self.get_env(gym_env=gym_env)
-        for i in range(10):
+        for _ in range(10):
             state = env.reset()
             assert state in [0, 1]
 

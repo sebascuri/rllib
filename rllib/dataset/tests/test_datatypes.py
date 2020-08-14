@@ -70,7 +70,7 @@ class TestObservation(object):
             )
         else:
             with pytest.raises(ValueError):
-                o = RawObservation.get_example(
+                RawObservation.get_example(
                     dim_state=dim_state,
                     dim_action=dim_action,
                     num_states=num_states,

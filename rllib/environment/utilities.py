@@ -36,7 +36,7 @@ def gym2mdp(environment):
     """
     num_states = environment.num_states
     num_actions = environment.num_actions
-    # transitions = environment.env.P
+
     transitions = defaultdict(list)
     terminal_states = [num_states - 1]
     for state, action_transition_dict in environment.env.P.items():
@@ -148,15 +148,13 @@ def mujoco_observation_to_state(observation, environment):
         q_pos[:1] = observation[:1]
         q_pos[1:3] = np.arctan2(observation[1:3], observation[3:5])
         q_vel = observation[5 : 5 + nv]
-    elif environment.name in ["InvertedPendulumEnv"]:
-        pass
     elif environment.name in ["PusherEnv"]:
         q_pos[-2:] = observation[-2:]  # goal position.
 
     elif environment.name in ["ReacherEnv", "StrikerEnv", "ThrowerEnv", "PusherEnv"]:
         raise NotImplementedError(f"{environment.name} not implemented.")
 
-    else:
+    elif environment.name not in ["InvertedPendulumEnv"]:
         raise NotImplementedError(f"{environment.name} not implemented.")
 
     return q_pos, q_vel

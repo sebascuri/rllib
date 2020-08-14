@@ -11,6 +11,7 @@ from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
 ENVIRONMENT = "NChain-v0"
+ALGORITHM = "SARSA"
 
 NUM_EPISODES = 500
 MAX_STEPS = 200
@@ -42,16 +43,19 @@ policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.MSELoss
 
-# agent = SARSAAgent(
-#     q_function,
-#     policy,
-#     criterion,
-#     optimizer,
-#     target_update_frequency=TARGET_UPDATE_FREQUENCY,
-#     gamma=GAMMA,
-#     batch_size=BATCH_SIZE,
-# )
 
-agent = ExpectedSARSAAgent.default(environment)
+if ALGORITHM == "SARSA":
+    agent = SARSAAgent(
+        q_function,
+        policy,
+        criterion,
+        optimizer,
+        target_update_frequency=TARGET_UPDATE_FREQUENCY,
+        gamma=GAMMA,
+        batch_size=BATCH_SIZE,
+    )
+else:
+    agent = ExpectedSARSAAgent.default(environment)
+
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

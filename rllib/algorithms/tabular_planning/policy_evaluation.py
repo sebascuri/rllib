@@ -77,7 +77,6 @@ def iterative_policy_evaluation(
 
     for _ in range(max_iter):
         max_error = 0
-        avg_error = 0
         for state in range(model.num_states):
             if state in model.terminal_states:
                 continue
@@ -99,7 +98,6 @@ def iterative_policy_evaluation(
             value = value_function(state)
             error = torch.abs(value_estimate - value).item()
             max_error = max(max_error, error)
-            avg_error += error
             value_function.set_value(state, value_estimate)
 
         if max_error < eps:

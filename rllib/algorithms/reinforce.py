@@ -72,7 +72,7 @@ class REINFORCE(AbstractAlgorithm):
                 action = action.long()
             with torch.no_grad():
                 returns = self.returns(trajectory)
-                (returns - returns.mean()) / (returns.std() + self.eps)
+                returns = (returns - returns.mean()) / (returns.std() + self.eps)
 
             actor_loss += (-pi.log_prob(action) * returns.detach()).sum()
 

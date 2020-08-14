@@ -9,8 +9,7 @@ from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
-# ENVIRONMENT = 'NChain-v0'
-ENVIRONMENT = "CartPole-v0"
+ENVIRONMENT = ["NChain-v0", "CartPole-v0"][1]
 
 NUM_EPISODES = 50
 MAX_STEPS = 200

@@ -27,10 +27,8 @@ class Logger(object):
         self.statistics = list()
         self.current = dict()
         current_time = datetime.now().strftime("%b%d_%H-%M-%S")
-        self.writer = SummaryWriter(
-            f"runs/{name}/"
-            f"{comment + '_' + current_time if len(comment) else current_time}"
-        )
+        comment = comment + "_" + current_time if len(comment) else current_time
+        self.writer = SummaryWriter(f"runs/{name}/{comment}")
         self._tensorboard = tensorboard
 
         self.episode = 0
@@ -120,11 +118,10 @@ class Logger(object):
 
         for key, value in data.items():
             self.keys.add(key)
-            if isinstance(value, float) or isinstance(value, int):
-                if self._tensorboard:
-                    self.writer.add_scalar(
-                        f"average/{key}", value, global_step=self.episode
-                    )
+            if isinstance(value, float) or isinstance(value, int) and self._tensorboard:
+                self.writer.add_scalar(
+                    f"average/{key}", value, global_step=self.episode
+                )
 
         self.statistics.append(data)
         self.current = dict()

@@ -3,8 +3,8 @@
 import torch
 
 from rllib.util.neural_networks import (
+    DisableGradient,
     deep_copy_module,
-    disable_gradient,
     update_parameters,
 )
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
@@ -51,7 +51,7 @@ class SoftActorCritic(AbstractAlgorithm):
         pi = tensor_to_distribution(self.policy(state), tanh=True)
         action = pi.rsample()  # re-parametrization trick.
 
-        with disable_gradient(self.q_target):
+        with DisableGradient(self.q_target):
             q_val = self.q_target(state, action)
             if isinstance(self.q_function, NNEnsembleQFunction):
                 q_val = q_val[..., 0]

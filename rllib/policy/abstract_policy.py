@@ -91,7 +91,6 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
         """
         if self.discrete_action:  # Categorical
-            # distribution = Categorical(torch.ones(self.num_actions))
             if batch_size is None:
                 return torch.ones(self.num_actions)
             else:
@@ -122,4 +121,5 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     @torch.jit.export
     def set_goal(self, goal=None):
         """Set policy goal."""
-        self.goal = goal
+        if goal is not None:
+            self.goal = goal

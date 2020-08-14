@@ -16,7 +16,6 @@ try:
 
     from rllib.environment.dm_environment import DMSuiteEnvironment
 except Exception:  # dm_control not installed.
-    # DMSuiteEnvironment = GymEnvironment
     BENCHMARKING = []
 
 gym_envs = list(registry.env_specs.keys())

@@ -70,7 +70,6 @@ class GAACAgent(ActorCriticAgent):
             input_transform=None,
         )
 
-        # optimizer = Adam(chain(policy.parameters(), critic.parameters()), 3e-4)
         optimizer = Adam(
             [
                 {"params": policy.parameters(), "lr": 1e-4},

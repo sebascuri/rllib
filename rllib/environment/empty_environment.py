@@ -67,6 +67,8 @@ class EmptyEnvironment(AbstractEnvironment):
 
     @state.setter
     def state(self, value):
+        """Set a place holder."""
+        # This method has to be empty because there is no state.
         pass
 
     @property

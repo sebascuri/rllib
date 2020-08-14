@@ -241,14 +241,19 @@ class MPO(AbstractAlgorithm):
 
     def get_q_target(self, observation):
         """Get value target."""
-        # next_pi = tensor_to_distribution(self.old_policy(next_state))
-        # next_action = next_pi.sample()
+        if self.trace is None:
+            next_pi = tensor_to_distribution(self.old_policy(observation.next_state))
+            next_action = next_pi.sample()
 
-        # next_values = self.q_target(next_state, next_action) * (1.0 - done)
-        # value_target = self.reward_transformer(reward) + self.gamma * next_values
-        # return value_target
+            next_values = self.q_target(observation.next_state, next_action)
+            next_values = next_values * (1.0 - observation.done)
 
-        return self.trace(observation).unsqueeze(-1)
+            reward = self.reward_transformer(observation.reward)
+            value_target = reward + self.gamma * next_values
+
+        else:
+            value_target = self.trace(observation).unsqueeze(-1)
+        return value_target
 
     def forward(self, observation):
         """Compute the losses for one step of MPO.

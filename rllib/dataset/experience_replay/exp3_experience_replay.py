@@ -91,6 +91,6 @@ class EXP3ExperienceReplay(PrioritizedExperienceReplay):
         num = len(self)
         probs = torch.exp(self._priorities[:num] - self.max_priority)
         probs = (1 - self.beta()) * probs / torch.sum(probs) + self.beta() / num
-        # assert torch.all(probs * num > self.beta() - 1e-4)
+
         weights = 1.0 / (probs * num)
         self.weights[:num] = weights

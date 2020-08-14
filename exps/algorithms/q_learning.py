@@ -15,8 +15,7 @@ from rllib.util.parameter_decay import ExponentialDecay, LinearGrowth  # noqa: F
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
-# ENVIRONMENT = 'NChain-v0'
-ENVIRONMENT = "CartPole-v0"
+ENVIRONMENT = ["NChain-v0", "CartPole-v0"][1]
 
 NUM_EPISODES = 50
 MAX_STEPS = 200
@@ -33,6 +32,7 @@ EPS_END = 0.01
 EPS_DECAY = 500
 LAYERS = [64, 64]
 SEED = 1
+MEMORY = "ER"
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -54,19 +54,23 @@ init_head_weight(q_function)
 policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
 q_function = torch.jit.script(q_function)
-# policy = torch.jit.script(policy)
 
 
 optimizer = torch.optim.Adam(
     q_function.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
 )
 criterion = torch.nn.MSELoss
-# memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE,
-#                                      beta=LinearGrowth(0.8, 1., 0.001))
 
-# memory = PrioritizedExperienceReplay(max_len=MEMORY_MAX_SIZE)
-# memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, alpha=0.001, beta=0.1)
-memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, num_steps=1)
+if MEMORY == "PER":
+    memory = PrioritizedExperienceReplay(
+        max_len=MEMORY_MAX_SIZE, beta=LinearGrowth(0.8, 1.0, 0.001)
+    )
+elif MEMORY == "EXP3":
+    memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, alpha=0.001, beta=0.1)
+elif MEMORY == "ER":
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, num_steps=0)
+else:
+    raise NotImplementedError(f"{MEMORY} not implemented.")
 
 agent = DQNAgent(
     q_function,

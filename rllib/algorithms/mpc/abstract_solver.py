@@ -185,7 +185,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             action_.share_memory_()
             return_.share_memory_()
 
-        for i in range(self.num_iter):
+        for _ in range(self.num_iter):
             modify_parallel(
                 self.get_action_sequence_and_returns,
                 [

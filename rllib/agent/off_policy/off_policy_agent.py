@@ -3,7 +3,7 @@ import contextlib
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.utilities import average_named_tuple
-from rllib.util.neural_networks.utilities import disable_gradient
+from rllib.util.neural_networks.utilities import DisableGradient
 
 
 class OffPolicyAgent(AbstractAgent):
@@ -67,11 +67,11 @@ class OffPolicyAgent(AbstractAgent):
         for _ in range(self.num_iter):
             observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
-            def closure():
+            def closure(obs=observation, w=weight):
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses_ = self.algorithm(observation)
-                loss = (losses_.loss * weight.detach()).mean()
+                losses_ = self.algorithm(obs)
+                loss = (losses_.loss * w.detach()).mean()
                 loss.backward()
                 #
                 # torch.nn.utils.clip_grad_norm_(
@@ -82,7 +82,7 @@ class OffPolicyAgent(AbstractAgent):
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:
-                cm = disable_gradient(self.policy)
+                cm = DisableGradient(self.policy)
 
             with cm:
                 losses = self.optimizer.step(closure=closure)

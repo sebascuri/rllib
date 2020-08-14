@@ -62,9 +62,8 @@ class REPSAgent(OffPolicyAgent):
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        if (self.total_episodes + 1) % self.num_rollouts == 0:
-            if self._training:
-                self.learn()
+        if (self.total_episodes + 1) % self.num_rollouts == 0 and self._training:
+            self.learn()
 
         super().end_episode()
 
@@ -89,13 +88,13 @@ class REPSAgent(OffPolicyAgent):
 
     def _optimize_loss(self, num_iter, loss_name="dual"):
         """Optimize the loss performing `num_iter' gradient steps."""
-        for i in range(num_iter):
+        for _ in range(num_iter):
             observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
-            def closure():
+            def closure(obs=observation):
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses_ = self.algorithm(observation)
+                losses_ = self.algorithm(obs)
                 self.optimizer.zero_grad()
                 loss_ = getattr(losses_, loss_name)
                 loss_.backward()
