@@ -46,4 +46,6 @@ class DQNAgent(QLearningAgent):
             *args,
             **kwargs,
         )
-        self.algorithm = DQN(q_function, criterion(reduction="none"), self.gamma)
+        self.algorithm = DQN(
+            critic=q_function, criterion=criterion(reduction="none"), gamma=self.gamma
+        )

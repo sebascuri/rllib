@@ -163,6 +163,18 @@ def separated_kl(p, q):
     return kl_mean, kl_var
 
 
+def get_entropy_and_logp(pi, action):
+    """Get the entropy and the log-probability of a policy and an action."""
+    log_p = pi.log_prob(action)
+
+    try:
+        entropy = pi.entropy().mean()
+    except NotImplementedError:
+        entropy = -log_p.mean()  # Approximate with the sampled action (biased).
+
+    return entropy, log_p
+
+
 def sample_mean_and_cov(sample, diag=False):
     """Compute mean and covariance of a sample of vectors.
 

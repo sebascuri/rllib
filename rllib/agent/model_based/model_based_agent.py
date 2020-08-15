@@ -6,6 +6,7 @@ A model based agent has three behaviors:
 - It plans with the model and policies (as guiding sampler).
 """
 import contextlib
+from dataclasses import asdict
 
 import gpytorch
 import torch
@@ -18,7 +19,7 @@ from rllib.dataset.experience_replay import (
     BootstrapExperienceReplay,
     StateExperienceReplay,
 )
-from rllib.dataset.utilities import average_named_tuple, stack_list_of_tuples
+from rllib.dataset.utilities import average_dataclass, stack_list_of_tuples
 from rllib.model import ExactGPModel, TransformedModel
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.util.gaussian_processes import SparseGP
@@ -479,7 +480,7 @@ class ModelBasedAgent(AbstractAgent):
             with cm:
                 losses = self.optimizer.step(closure=closure)
 
-            self.logger.update(**average_named_tuple(losses)._asdict())
+            self.logger.update(**asdict(average_dataclass(losses)))
             self.logger.update(**self.algorithm.info())
 
             self.counters["train_steps"] += 1

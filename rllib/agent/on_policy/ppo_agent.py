@@ -38,10 +38,10 @@ class PPOAgent(OnPolicyAgent):
     ):
         super().__init__(optimizer=optimizer, *args, **kwargs)
         self.algorithm = PPO(
-            value_function=value_function,
+            critic=value_function,
             policy=policy,
             epsilon=epsilon,
-            criterion=criterion,
+            criterion=criterion(reduction="none"),
             weight_value_function=weight_value_function,
             weight_entropy=weight_entropy,
             monte_carlo_target=monte_carlo_target,
@@ -107,8 +107,7 @@ class PPOAgent(OnPolicyAgent):
             epsilon=0.2,
             lambda_=0.95,
             target_kl=0.005,
-            weight_value_function=0.5,
-            weight_entropy=0.01,
+            entropy_regularization=0.01,
             monte_carlo_target=False,
             clamp_value=True,
             num_iter=80,

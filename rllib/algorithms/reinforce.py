@@ -1,16 +1,8 @@
 """REINFORCE Algorithm."""
-
-import torch
-
-from rllib.algorithms.policy_evaluation.gae import GAE
-from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.neural_networks import deep_copy_module, update_parameters
-from rllib.util.utilities import tensor_to_distribution
-
-from .abstract_algorithm import AbstractAlgorithm, PGLoss
+from .gaac import GAAC
 
 
-class REINFORCE(AbstractAlgorithm):
+class REINFORCE(GAAC):
     r"""Implementation of REINFORCE algorithm.
 
     REINFORCE is an on-policy model-free control algorithm.
@@ -39,67 +31,5 @@ class REINFORCE(AbstractAlgorithm):
     learning. Machine learning.
     """
 
-    def __init__(self, baseline, criterion, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Actor
-        self.baseline = baseline
-        self.baseline_target = deep_copy_module(baseline)
-        self.criterion = criterion
-
-        self.gae = GAE(1, self.gamma, self.baseline)
-
-    def returns(self, trajectory):
-        """Estimate the returns of a trajectory."""
-        return self.gae(trajectory)  # GAE returns.
-
-    def get_q_target(self, observation):
-        """Get baseline target."""
-        next_v = self.baseline_target(observation.next_state)
-        next_v = next_v * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
-
-    def forward_slow(self, trajectories):
-        """Compute the losses."""
-        actor_loss = torch.tensor(0.0)
-        baseline_loss = torch.tensor(0.0)
-
-        for trajectory in trajectories:
-            state, action, reward, next_state, done, *r = trajectory
-
-            # ACTOR LOSS
-            pi = tensor_to_distribution(self.policy(state))
-            if self.policy.discrete_action:
-                action = action.long()
-            with torch.no_grad():
-                returns = self.returns(trajectory)
-                returns = (returns - returns.mean()) / (returns.std() + self.eps)
-
-            actor_loss += (-pi.log_prob(action) * returns.detach()).sum()
-
-            # BASELINE LOSS
-            if self.baseline is not None:
-                with torch.no_grad():
-                    target_v = self.get_q_target(trajectory)
-
-                baseline_loss += self.criterion(self.baseline(state), target_v)
-
-        num_trajectories = len(trajectories)
-        return PGLoss(
-            loss=actor_loss + baseline_loss,
-            policy_loss=actor_loss,
-            baseline_loss=baseline_loss / num_trajectories,
-        )
-
-    def forward(self, trajectories):
-        """Compute the losses of a trajectory."""
-        if len(trajectories) > 1:
-            try:  # When possible, paralelize the trajectories.
-                trajectories = [stack_list_of_tuples(trajectories)]
-            except RuntimeError:
-                pass
-        return self.forward_slow(trajectories)
-
-    def update(self):
-        """Update the baseline network."""
-        if self.baseline is not None:
-            update_parameters(self.baseline_target, self.baseline, self.baseline.tau)
+    def __init__(self, baseline, *args, **kwargs):
+        super().__init__(critic=baseline, lambda_=1, *args, **kwargs)

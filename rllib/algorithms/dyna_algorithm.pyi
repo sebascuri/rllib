@@ -4,12 +4,10 @@ from torch import Tensor
 
 from rllib.dataset.datatypes import Observation, Termination
 from rllib.model import AbstractModel
-from rllib.policy import AbstractPolicy
 from rllib.reward import AbstractReward
-from rllib.util.utilities import RewardTransformer
 from rllib.value_function import AbstractValueFunction
 
-from .abstract_algorithm import AbstractAlgorithm
+from .abstract_algorithm import AbstractAlgorithm, Loss
 
 class DynaAlgorithm(AbstractAlgorithm):
     base_algorithm: AbstractAlgorithm
@@ -31,4 +29,4 @@ class DynaAlgorithm(AbstractAlgorithm):
         termination: Optional[Termination] = ...,
     ) -> None: ...
     def simulate(self, state: Tensor) -> Observation: ...
-    def forward(self, observation: Tensor, **kwargs: Any) -> Observation: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Loss: ...

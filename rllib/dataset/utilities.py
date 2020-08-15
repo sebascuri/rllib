@@ -29,6 +29,15 @@ def average_named_tuple(named_tuple_):
     return type(named_tuple_)(*map(lambda x: x.mean().item(), named_tuple_))
 
 
+def average_dataclass(dataclass_):
+    """Return an averaged data-class."""
+    d = dict()
+    for key, val in dataclass_.__dict__.items():
+        d[key] = val.mean().item()
+
+    return type(dataclass_)(**d)
+
+
 def stack_list_of_tuples(iter_, dim=None):
     """Convert a list of observation tuples to a list of numpy arrays.
 

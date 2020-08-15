@@ -58,7 +58,7 @@ class DPGAgent(OffPolicyAgent):
 
         assert policy.deterministic, "Policy must be deterministic."
         self.algorithm = DPG(
-            q_function=q_function,
+            critic=q_function,
             policy=policy,
             criterion=criterion(reduction="none"),
             gamma=self.gamma,

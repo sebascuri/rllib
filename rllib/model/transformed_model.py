@@ -89,3 +89,28 @@ class TransformedModel(AbstractModel):
         for transformation in self.reverse_transformations:
             obs = transformation.inverse(obs)
         return obs.next_state, obs.next_state_scale_tril
+
+    @torch.jit.export
+    def set_head(self, head_ptr: int):
+        """Set ensemble head."""
+        self.base_model.set_head(head_ptr)
+
+    @torch.jit.export
+    def get_head(self) -> int:
+        """Get ensemble head."""
+        return self.base_model.get_head()
+
+    @torch.jit.export
+    def set_head_idx(self, head_ptr):
+        """Set ensemble head for particles."""
+        self.base_model.set_head_idx(head_ptr)
+
+    @torch.jit.export
+    def get_head_idx(self):
+        """Get ensemble head index."""
+        return self.base_model.get_head_idx()
+
+    @torch.jit.export
+    def get_prediction_strategy(self) -> str:
+        """Get ensemble head."""
+        return self.base_model.get_prediction_strategy()

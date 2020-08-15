@@ -22,7 +22,7 @@ class SoftQLearning(QLearning):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
+    critic: AbstractQFunction
         Q_function to optimize.
     criterion: _Loss
         Criterion to optimize.
@@ -46,16 +46,17 @@ class SoftQLearning(QLearning):
 
     def __init__(self, temperature, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # TODO: Directly pass it as an argument?
 
-        self.policy = SoftMax(self.q_function, temperature)
-        self.policy_target = SoftMax(self.q_target, temperature)
+        self.policy = SoftMax(self.critic, temperature)
+        self.policy_target = SoftMax(self.critic_target, temperature)
         self.policy_target.param = self.policy.param
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
         tau = self.policy.param()
         next_v = tau * torch.logsumexp(
-            self.q_target(observation.next_state) / tau, dim=-1
+            self.critic_target(observation.next_state) / tau, dim=-1
         )
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v

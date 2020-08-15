@@ -36,7 +36,7 @@ class MPOAgent(OffPolicyAgent):
             policy=policy,
             critic=q_function,
             num_action_samples=num_action_samples,
-            criterion=criterion,
+            criterion=criterion(reduction="none"),
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,

@@ -133,8 +133,11 @@ def mc_return(
         is_terminal = trajectory[-1].done
         final_value = value_function(final_state)
         if final_value.ndim > value.ndim:
-            final_value = final_value.min(dim=-1)[0]
-        value += discount * final_value * (1.0 - is_terminal)
+            num_heads = final_value.shape[-1]
+            value = value.unsqueeze(-1).repeat_interleave(num_heads, -1)
+            value += discount * final_value * (1.0 - is_terminal.unsqueeze(-1))
+        else:
+            value += discount * final_value * (1.0 - is_terminal)
     return value
 
 

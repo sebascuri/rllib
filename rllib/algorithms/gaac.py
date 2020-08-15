@@ -35,7 +35,7 @@ class GAAC(ActorCritic):
 
     def __init__(self, lambda_, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gae = GAE(lambda_, self.gamma, self.critic)
+        self.gae = GAE(lambda_, self.gamma, self.critic_target)
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""

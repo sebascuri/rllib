@@ -29,7 +29,7 @@ class REINFORCEAgent(OnPolicyAgent):
         self.algorithm = REINFORCE(
             policy=policy,
             baseline=baseline,
-            criterion=criterion(reduction="mean"),
+            criterion=criterion(reduction="none"),
             gamma=self.gamma,
         )
         self.policy = self.algorithm.policy

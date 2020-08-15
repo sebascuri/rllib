@@ -29,7 +29,9 @@ class DynaAlgorithm(AbstractAlgorithm):
         if "gamma" not in kwargs:
             kwargs["gamma"] = base_algorithm.gamma
         super().__init__(
+            critic=base_algorithm.critic,
             policy=base_algorithm.policy,
+            criterion=base_algorithm.criterion,
             reward_transformer=base_algorithm.reward_transformer,
             *args,
             **kwargs,
@@ -50,11 +52,6 @@ class DynaAlgorithm(AbstractAlgorithm):
             )
         else:
             self.value_function = None
-
-        if hasattr(self.base_algorithm, "criterion"):
-            self.base_algorithm.criterion = type(self.base_algorithm.criterion)(
-                reduction="mean"
-            )
 
     def simulate(self, state):
         """Simulate trajectories starting from a state."""

@@ -49,4 +49,6 @@ class DDQNAgent(QLearningAgent):
             *args,
             **kwargs,
         )
-        self.algorithm = DDQN(q_function, criterion(reduction="none"), self.gamma)
+        self.algorithm = DDQN(
+            critic=q_function, criterion=criterion(reduction="none"), gamma=self.gamma
+        )

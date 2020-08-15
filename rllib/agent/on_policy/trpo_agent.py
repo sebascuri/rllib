@@ -35,12 +35,12 @@ class TRPOAgent(OnPolicyAgent):
         super().__init__(optimizer=optimizer, *args, **kwargs)
 
         self.algorithm = TRPO(
-            value_function=value_function,
+            critic=value_function,
             policy=policy,
             regularization=regularization,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
-            criterion=criterion,
+            criterion=criterion(reduction="mean"),
             lambda_=lambda_,
             gamma=self.gamma,
         )

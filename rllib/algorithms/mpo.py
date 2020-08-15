@@ -1,7 +1,5 @@
 """Maximum a Posterior Policy Optimization algorithm."""
 
-from collections import namedtuple
-
 import torch
 import torch.distributions
 import torch.nn as nn
@@ -10,15 +8,12 @@ from rllib.util.neural_networks import (
     deep_copy_module,
     freeze_parameters,
     repeat_along_dimension,
-    update_parameters,
 )
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import separated_kl, tensor_to_distribution
 
-from .abstract_algorithm import AbstractAlgorithm, MPOLoss
+from .abstract_algorithm import AbstractAlgorithm, Loss
 from .policy_evaluation.retrace import ReTrace
-
-MPOLosses = namedtuple("MPOLosses", ["primal_loss", "dual_loss"])
 
 
 class MPOWorker(nn.Module):
@@ -128,7 +123,7 @@ class MPOWorker(nn.Module):
 
         dual_loss = dual_loss + eta_mean_loss + eta_var_loss
 
-        return MPOLosses(primal_loss, dual_loss)
+        return Loss(loss=primal_loss, policy_loss=primal_loss, dual_loss=dual_loss)
 
 
 class MPO(AbstractAlgorithm):
@@ -166,13 +161,10 @@ class MPO(AbstractAlgorithm):
     Abdolmaleki, et al. (2018)
     Maximum a Posteriori Policy Optimisation. ICLR.
 
-    TODO: Add Retrace for policy evaluation.
     """
 
     def __init__(
         self,
-        critic,
-        criterion,
         num_action_samples=15,
         epsilon=0.1,
         epsilon_mean=0.0,
@@ -186,12 +178,10 @@ class MPO(AbstractAlgorithm):
         freeze_parameters(old_policy)
 
         self.old_policy = old_policy
-        self.critic = critic
-        self.critic_target = deep_copy_module(critic)
+        self.critic_target = deep_copy_module(self.critic)
         self.num_action_samples = num_action_samples
 
         self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
-        self.value_loss = criterion(reduction="mean")
         self.trace = ReTrace(
             policy=self.old_policy,
             critic=self.critic_target,
@@ -239,13 +229,13 @@ class MPO(AbstractAlgorithm):
 
         return kl_mean, kl_var, pi_dist
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get value target."""
         if self.trace is None:
             next_pi = tensor_to_distribution(self.old_policy(observation.next_state))
             next_action = next_pi.sample()
 
-            next_values = self.q_target(observation.next_state, next_action)
+            next_values = self.critic_target(observation.next_state, next_action)
             next_values = next_values * (1.0 - observation.done)
 
             reward = self.reward_transformer(observation.reward)
@@ -255,7 +245,7 @@ class MPO(AbstractAlgorithm):
             value_target = self.trace(observation).unsqueeze(-1)
         return value_target
 
-    def forward(self, observation):
+    def forward_slow(self, observation):
         """Compute the losses for one step of MPO.
 
         Parameters
@@ -278,7 +268,6 @@ class MPO(AbstractAlgorithm):
         """
         state, action, reward, next_state, done, *r = observation
 
-        value_pred = self.critic(state, action / self.policy.action_scale)
         state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
 
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
@@ -293,15 +282,12 @@ class MPO(AbstractAlgorithm):
             kl_var=kl_var,
         )
 
-        with torch.no_grad():
-            value_target = self.get_q_target(observation)
-
-        value_loss = self.value_loss(value_pred, value_target)
-        td_error = value_pred - value_target
+        # Critic loss.
+        critic_loss = self.critic_loss(observation)
 
         dual_loss = losses.dual_loss.mean()
-        policy_loss = losses.primal_loss.mean()
-        combined_loss = value_loss + dual_loss + policy_loss
+        policy_loss = losses.policy_loss.mean()
+        combined_loss = critic_loss.critic_loss + dual_loss + policy_loss
 
         self._info = {
             "kl_div": kl_mean + kl_var,
@@ -312,19 +298,15 @@ class MPO(AbstractAlgorithm):
             "eta_var": self.mpo_loss.eta_var(),
         }
 
-        return MPOLoss(
+        return Loss(
             loss=combined_loss,
-            dual=dual_loss,
+            dual_loss=dual_loss,
             policy_loss=policy_loss,
-            critic_loss=value_loss,
-            td_error=td_error,
+            critic_loss=critic_loss.critic_loss,
+            td_error=critic_loss.td_error,
         )
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
-
-    def update(self):
-        """Update target networks."""
-        update_parameters(self.critic_target, self.critic, tau=self.critic.tau)

@@ -1,12 +1,15 @@
 from abc import ABCMeta
-from typing import Any, NamedTuple
+from dataclasses import dataclass
+from typing import Any, List, NamedTuple, Union
 
 import torch.nn as nn
 from torch import Tensor
+from torch.nn.modules.loss import _Loss
 
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.util.utilities import RewardTransformer
+from rllib.value_function.abstract_value_function import AbstractQFunction
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
@@ -15,11 +18,15 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     _info: dict
     gamma: float
     reward_transformer: RewardTransformer
+    critic: AbstractQFunction
     policy: AbstractPolicy
+    criterion: _Loss
     def __init__(
         self,
         gamma: float,
         policy: AbstractPolicy,
+        critic: AbstractQFunction,
+        criterion: _Loss = ...,
         reward_transformer: RewardTransformer = ...,
         *args: Any,
         **kwargs: Any,
@@ -27,51 +34,22 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def update(self) -> None: ...
     def reset(self) -> None: ...
     def info(self) -> dict: ...
-    def get_q_target(self, observation: Observation) -> Tensor: ...
+    def get_value_target(self, observation: Observation) -> Tensor: ...
+    def process_value_prediction(
+        self, value_prediction: Tensor, observation: Observation
+    ) -> Tensor: ...
+    def actor_loss(self, observation: Observation) -> Loss: ...
+    def critic_loss(self, observation: Observation) -> Loss: ...
+    def forward_slow(
+        self, observation: Union[Observation, List[Observation]]
+    ) -> Loss: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Loss: ...
 
-class TDLoss(NamedTuple):
+@dataclass
+class Loss:
     loss: Tensor
-    td_error: Tensor
-
-class ACLoss(NamedTuple):
-    loss: Tensor
-    policy_loss: Tensor
-    critic_loss: Tensor
-    td_error: Tensor
-
-class PGLoss(NamedTuple):
-    loss: Tensor
-    policy_loss: Tensor
-    baseline_loss: Tensor
-
-class LPLoss(NamedTuple):
-    loss: Tensor
-    dual: Tensor
-    policy_loss: Tensor
-
-class MPOLoss(NamedTuple):
-    loss: Tensor
-    dual: Tensor
-    policy_loss: Tensor
-    critic_loss: Tensor
-    td_error: Tensor
-
-class SACLoss(NamedTuple):
-    loss: Tensor
-    policy_loss: Tensor
-    critic_loss: Tensor
-    eta_loss: Tensor
-    td_error: Tensor
-
-class PPOLoss(NamedTuple):
-    loss: Tensor
-    surrogate_loss: Tensor
-    critic_loss: Tensor
-    entropy: Tensor
-
-class TRPOLoss(NamedTuple):
-    loss: Tensor
-    surrogate_loss: Tensor
-    critic_loss: Tensor
-    dual_loss: Tensor
-    kl_loss: Tensor
+    td_error: Tensor = ...
+    policy_loss: Tensor = ...
+    critic_loss: Tensor = ...
+    regularization_loss: Tensor = ...
+    dual_loss: Tensor = ...

@@ -1,30 +1,25 @@
-"""Actor-Critic Algorithm."""
-from typing import Any, List
+from typing import Any, Tuple
 
 import torch.nn as nn
 from torch import Tensor
-from torch.nn.modules.loss import _Loss
 
 from rllib.dataset.datatypes import Observation
-from rllib.policy import AbstractPolicy
-from rllib.value_function import AbstractQFunction
 
-from .abstract_algorithm import AbstractAlgorithm, ACLoss
+from .abstract_algorithm import AbstractAlgorithm
 
 class ActorCritic(AbstractAlgorithm):
-    policy_target: AbstractPolicy
-    critic: AbstractQFunction
-    critic_target: AbstractQFunction
-    criterion: _Loss
     num_samples: int
+    entropy_regularization: float
+    standardize_returns: bool
     def __init__(
         self,
-        critic: AbstractQFunction,
-        criterion: _Loss,
         num_samples: int = ...,
+        entropy_regularization: float = ...,
+        standardize_returns: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
     def returns(self, trajectory: Observation) -> Tensor: ...
-    def forward_slow(self, trajectories: List[Observation]) -> ACLoss: ...
-    def forward(self, trajectories: List[Observation], **kwargs: Any) -> ACLoss: ...
+    def get_log_p_kl_entropy(
+        self, state: Tensor, action: Tensor
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...

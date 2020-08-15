@@ -5,12 +5,13 @@ import torch.distributions
 
 from rllib.util.neural_networks import resume_learning
 from rllib.util.parameter_decay import Constant, ParameterDecay
+from rllib.util.value_estimation import discount_cumsum
 
-from .abstract_algorithm import TRPOLoss
-from .trpo import TRPO
+from .abstract_algorithm import Loss
+from .gaac import GAAC
 
 
-class PPO(TRPO):
+class PPO(GAAC):
     """Proximal Policy Optimization algorithm..
 
     The PPO algorithm returns a loss that is a combination of three losses.
@@ -50,24 +51,20 @@ class PPO(TRPO):
     """
 
     def __init__(
-        self,
-        epsilon=0.2,
-        weight_value_function=1.0,
-        weight_entropy=0.01,
-        clamp_value=False,
-        *args,
-        **kwargs,
+        self, epsilon=0.2, clamp_value=False, monte_carlo_target=False, *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            standardize_returns=kwargs.pop("standardize_returns", True), *args, **kwargs
+        )
 
         if not isinstance(epsilon, ParameterDecay):
             epsilon = Constant(epsilon)
         self.epsilon = epsilon
 
-        self.weight_value_function = weight_value_function
-        self.weight_entropy = weight_entropy
-
         self.clamp_value = clamp_value
+        self.monte_carlo_target = monte_carlo_target
+
+        self.monte_carlo_target = monte_carlo_target
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
@@ -75,62 +72,55 @@ class PPO(TRPO):
         # Resume learning after early stopping.
         resume_learning(self.policy)
 
-    def forward_slow(self, trajectories):
-        """Compute losses slowly, iterating through the trajectories."""
-        surrogate_loss = torch.tensor(0.0)
-        value_loss = torch.tensor(0.0)
-        entropy_bonus = torch.tensor(0.0)
-        kl_div = torch.tensor(0.0)
+    def actor_loss(self, trajectory):
+        """Get actor loss."""
+        state, action, reward, next_state, done, *r = trajectory
+        log_p, log_p_old, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
+            state, action
+        )
+        kl_div = (kl_mean + kl_var).mean()
 
-        for trajectory in trajectories:
-            state, action, reward, next_state, done, *r = trajectory
-            with torch.no_grad():
-                adv = self.returns(trajectory)
-                if self.monte_carlo_target:
-                    value_target = self.get_q_target(trajectory)
-                else:
-                    value_target = adv + self.value_function_target(state)
+        with torch.no_grad():
+            adv = self.returns(trajectory)
+            if self.standardize_returns:
+                adv = (adv - adv.mean()) / (adv.std() + self.eps)
 
-            log_p, log_p_old, kl_mean_, kl_var_, entropy = self.get_log_p_kl_entropy(
-                state, action
+        # Compute surrogate loss.
+        ratio = torch.exp(log_p - log_p_old)
+        clip_adv = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
+        surrogate_loss = -torch.min(ratio * adv, clip_adv).mean()
+
+        self._info.update(kl_div=self._info["kl_div"] + kl_div)
+
+        return Loss(
+            loss=surrogate_loss,
+            policy_loss=surrogate_loss,
+            regularization_loss=-entropy,
+        )
+
+    def get_value_target(self, observation):
+        """Get the Q-Target."""
+        if self.monte_carlo_target:
+            final_state = observation.next_state[-1:]
+            reward_to_go = self.critic_target(final_state) * (
+                1.0 - observation.done[-1:]
             )
-            kl_div_ = (kl_mean_ + kl_var_).mean()
+            value_target = discount_cumsum(
+                torch.cat((observation.reward, reward_to_go)), gamma=self.gamma
+            )[:-1]
+            return (value_target - value_target.mean()) / (
+                value_target.std() + self.eps
+            )
+        else:
+            adv = self.returns(observation)
+            return adv + self.critic_target(observation.state)
 
-            # Compute Value loss.
-            value_pred = self.value_function(state)
-            if self.clamp_value:
-                old_value_pred = self.value_function_target(state).detach()
-                value_pred = torch.max(
-                    torch.min(value_pred, old_value_pred + self.epsilon()),
-                    old_value_pred - self.epsilon(),
-                )
-
-            value_loss += self.value_loss_criterion(value_pred, value_target)
-
-            # Compute surrogate loss.
-            ratio = torch.exp(log_p - log_p_old)
-            clip_adv = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
-            surrogate_loss -= torch.min(ratio * adv, clip_adv).mean()
-
-            # Compute entropy bonus.
-            entropy_bonus += entropy
-
-            # Compute exact and approximate KL divergence
-            kl_div += kl_div_
-
-        num_trajectories = len(trajectories)
-        combined_loss = (
-            surrogate_loss
-            + self.weight_value_function * value_loss
-            - self.weight_entropy * entropy_bonus
-        )
-
-        self._info = {"kl_div": kl_div / num_trajectories}
-
-        return TRPOLoss(
-            loss=combined_loss / num_trajectories,
-            critic_loss=value_loss / num_trajectories,
-            surrogate_loss=surrogate_loss / num_trajectories,
-            kl_loss=entropy_bonus / num_trajectories,
-            dual_loss=torch.tensor(0.0),
-        )
+    def process_value_prediction(self, value_prediction, observation):
+        """Clamp predicted value."""
+        if self.clamp_value:
+            old_value_pred = self.critic_target(observation.state).detach()
+            value_prediction = torch.max(
+                torch.min(value_prediction, old_value_pred + self.epsilon()),
+                old_value_pred - self.epsilon(),
+            )
+        return value_prediction

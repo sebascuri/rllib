@@ -21,10 +21,10 @@ class DDQN(QLearning):
     Deep reinforcement learning with double q-learning. AAAI.
     """
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
-        next_action = self.q_function(observation.next_state).argmax(dim=-1)
-        next_v = self.q_target(observation.next_state, next_action)
+        next_action = self.critic(observation.next_state).argmax(dim=-1)
+        next_v = self.critic_target(observation.next_state, next_action)
         next_v = next_v * (1.0 - observation.done)
 
         return self.reward_transformer(observation.reward) + self.gamma * next_v

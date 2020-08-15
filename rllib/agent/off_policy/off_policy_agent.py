@@ -1,8 +1,9 @@
 """Off Policy Agent."""
 import contextlib
+from dataclasses import asdict
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset.utilities import average_named_tuple
+from rllib.dataset.utilities import average_dataclass
 from rllib.util.neural_networks.utilities import DisableGradient
 
 
@@ -71,7 +72,7 @@ class OffPolicyAgent(AbstractAgent):
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
                 losses_ = self.algorithm(obs)
-                loss = (losses_.loss * w.detach()).mean()
+                loss = (losses_.loss.squeeze(-1) * w.detach()).mean()
                 loss.backward()
                 #
                 # torch.nn.utils.clip_grad_norm_(
@@ -91,7 +92,7 @@ class OffPolicyAgent(AbstractAgent):
             self.memory.update(idx, losses.td_error.abs().detach())
 
             # Update logs
-            self.logger.update(**average_named_tuple(losses)._asdict())
+            self.logger.update(**asdict(average_dataclass(losses)))
             self.logger.update(**self.algorithm.info())
 
             self.counters["train_steps"] += 1

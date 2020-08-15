@@ -58,7 +58,7 @@ class SACAgent(OffPolicyAgent):
         )
         self.algorithm = SoftActorCritic(
             policy=policy,
-            q_function=q_function,
+            critic=q_function,
             criterion=criterion(reduction="none"),
             gamma=self.gamma,
             eta=eta,

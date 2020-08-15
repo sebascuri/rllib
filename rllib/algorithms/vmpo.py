@@ -3,7 +3,7 @@
 import torch
 import torch.distributions
 
-from .abstract_algorithm import MPOLoss
+from .abstract_algorithm import Loss
 from .mpo import MPO
 from .policy_evaluation.vtrace import VTrace
 
@@ -61,7 +61,7 @@ class VMPO(MPO):
             lambda_=1.0,
         )
 
-    def forward(self, observation):
+    def forward_slow(self, observation):
         """Compute the losses for one step of MPO.
 
         Parameters
@@ -84,12 +84,11 @@ class VMPO(MPO):
         """
         state, action, *r = observation
 
+        kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
         value_prediction = self.critic(state)
 
-        kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
-
         with torch.no_grad():
-            value_target = self.get_q_target(observation)
+            value_target = self.get_value_target(observation)
 
         advantage = value_target - value_prediction
         action_log_probs = pi_dist.log_prob(action / self.policy.action_scale)
@@ -107,12 +106,11 @@ class VMPO(MPO):
             kl_var=kl_var,
         )
 
-        value_loss = self.value_loss(value_prediction, value_target)
-        td_error = value_prediction - value_target
+        critic_loss = self.critic_loss(observation)
 
         dual_loss = losses.dual_loss.mean()
-        policy_loss = losses.primal_loss.mean()
-        combined_loss = value_loss + dual_loss + policy_loss
+        policy_loss = losses.policy_loss.mean()
+        combined_loss = critic_loss.critic_loss + dual_loss + policy_loss
 
         self._info = {
             "kl_div": kl_mean + kl_var,
@@ -123,10 +121,10 @@ class VMPO(MPO):
             "eta_var": self.mpo_loss.eta_var(),
         }
 
-        return MPOLoss(
+        return Loss(
             loss=combined_loss,
-            dual=dual_loss,
+            dual_loss=dual_loss,
             policy_loss=policy_loss,
-            critic_loss=value_loss,
-            td_error=td_error,
+            critic_loss=critic_loss.critic_loss,
+            td_error=critic_loss.td_error,
         )

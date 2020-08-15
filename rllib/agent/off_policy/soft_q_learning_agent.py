@@ -62,7 +62,7 @@ class SoftQLearningAgent(QLearningAgent):
             **kwargs,
         )
         self.algorithm = SoftQLearning(
-            q_function=q_function,
+            critic=q_function,
             criterion=criterion(reduction="none"),
             temperature=temperature,
             gamma=self.gamma,

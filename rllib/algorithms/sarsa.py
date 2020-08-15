@@ -1,12 +1,10 @@
 """SARSA Algorithm."""
-import copy
 
 import torch
 
 from rllib.policy import EpsGreedy
-from rllib.util.neural_networks import update_parameters
 
-from .abstract_algorithm import AbstractAlgorithm, TDLoss
+from .abstract_algorithm import AbstractAlgorithm, Loss
 
 
 class SARSA(AbstractAlgorithm):
@@ -24,7 +22,7 @@ class SARSA(AbstractAlgorithm):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
+    critic: AbstractQFunction
         Q_function to optimize.
     criterion: _Loss
         Criterion to optimize.
@@ -45,37 +43,35 @@ class SARSA(AbstractAlgorithm):
     Machine learning
     """
 
-    def __init__(self, q_function, criterion, *args, **kwargs):
-        super().__init__(policy=EpsGreedy(q_function, 0), *args, **kwargs)
-        self.q_function = q_function
-        self.q_target = copy.deepcopy(q_function)
-        self.criterion = criterion
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            policy=kwargs.pop("policy", EpsGreedy(kwargs.get("critic"), 0)),
+            *args,
+            **kwargs,
+        )
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
-        next_v = self.q_target(observation.next_state, observation.next_action)
+        next_v = self.critic_target(observation.next_state, observation.next_action)
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
-    def forward(self, trajectories):
-        """Compute the loss and the td-error."""
-        trajectory = trajectories[0]
-        state, action = trajectory.state, trajectory.action
+    def forward_slow(self, trajectories):
+        """Compute the losses iterating through the trajectories."""
+        critic_loss = torch.tensor(0.0)
+        td_error = torch.tensor(0.0)
 
-        pred_q = self.q_function(state, action)
-        with torch.no_grad():
-            target_q = self.get_q_target(trajectory)
+        for trajectory in trajectories:
+            critic_loss_ = self.critic_loss(trajectory)
+            critic_loss += critic_loss_.critic_loss.mean()
+            td_error += critic_loss_.td_error.mean()
 
-        return self._build_return(pred_q, target_q)
-
-    def _build_return(self, pred_q, target_q):
-        return TDLoss(
-            loss=self.criterion(pred_q, target_q), td_error=(pred_q - target_q).detach()
+        num_trajectories = len(trajectories)
+        return Loss(
+            loss=critic_loss / num_trajectories,
+            critic_loss=critic_loss / num_trajectories,
+            td_error=td_error / num_trajectories,
         )
-
-    def update(self):
-        """Update the target network."""
-        update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
 
 
 class GradientSARSA(SARSA):
@@ -90,7 +86,7 @@ class GradientSARSA(SARSA):
     TODO: find
     """
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
         with torch.enable_grad():  # Require gradient after it's been disabled.
-            return super().get_q_target(observation)
+            return super().get_value_target(observation)

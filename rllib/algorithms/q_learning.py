@@ -3,9 +3,8 @@
 import torch
 
 from rllib.policy import EpsGreedy
-from rllib.util.neural_networks import deep_copy_module, update_parameters
 
-from .abstract_algorithm import AbstractAlgorithm, TDLoss
+from .abstract_algorithm import AbstractAlgorithm
 
 
 class QLearning(AbstractAlgorithm):
@@ -22,7 +21,7 @@ class QLearning(AbstractAlgorithm):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
+    critic: AbstractQFunction
         Q_function to optimize.
     criterion: _Loss
         Criterion to optimize.
@@ -47,37 +46,20 @@ class QLearning(AbstractAlgorithm):
     Playing atari with deep reinforcement learning. NIPS.
     """
 
-    def __init__(self, q_function, criterion, *args, **kwargs):
-        super().__init__(policy=EpsGreedy(q_function, param=0), *args, **kwargs)
-        self.q_function = q_function
-        self.q_target = deep_copy_module(q_function)
-        self.criterion = criterion
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            policy=EpsGreedy(kwargs.get("critic"), param=0), *args, **kwargs
+        )
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
-        next_v = self.q_function(observation.next_state).max(dim=-1)[0]
+        next_v = self.critic(observation.next_state).max(dim=-1)[0]
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
-    def forward(self, observation):
+    def forward_slow(self, observation):
         """Compute the loss and the td-error."""
-        state, action, reward, next_state, done, *r = observation
-
-        pred_q = self.q_function(state, action)
-        with torch.no_grad():
-            target_q = self.get_q_target(observation)
-
-        return self._build_return(pred_q, target_q)
-
-    def _build_return(self, pred_q, target_q):
-        return TDLoss(
-            loss=self.criterion(pred_q, target_q).squeeze(-1),
-            td_error=(pred_q - target_q).detach().squeeze(-1),
-        )
-
-    def update(self):
-        """Update the target network."""
-        update_parameters(self.q_target, self.q_function, tau=self.q_function.tau)
+        return self.critic_loss(observation)
 
 
 class GradientQLearning(QLearning):
@@ -94,7 +76,7 @@ class GradientQLearning(QLearning):
     Q-learning. Machine learning.
     """
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
         with torch.enable_grad():  # Require gradient after it's been disabled.
-            return super().get_q_target(observation)
+            return super().get_value_target(observation)

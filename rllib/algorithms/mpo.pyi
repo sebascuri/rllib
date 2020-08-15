@@ -1,20 +1,13 @@
-from typing import Any, NamedTuple, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
-from torch.nn.modules.loss import _Loss
 
-from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
-from rllib.value_function import AbstractQFunction
 
-from .abstract_algorithm import AbstractAlgorithm, MPOLoss
-
-class MPOLosses(NamedTuple):
-    primal_loss: Tensor
-    dual_loss: Tensor
+from .abstract_algorithm import AbstractAlgorithm, Loss
 
 class MPOWorker(nn.Module):
     eta: ParameterDecay
@@ -31,21 +24,14 @@ class MPOWorker(nn.Module):
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         regularization: bool = ...,
     ) -> None: ...
-    def forward(self, *args: Tensor, **kwargs: Any) -> MPOLosses: ...
+    def forward(self, *args: Tensor, **kwargs: Any) -> Loss: ...
 
 class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
-    critic: AbstractQFunction
-    critic_target: AbstractQFunction
-
     num_action_samples: int
-
     mpo_loss: MPOWorker
-    value_loss: _Loss
     def __init__(
         self,
-        critic: AbstractQFunction,
-        criterion: _Loss,
         num_action_samples: int = ...,
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
@@ -56,4 +42,3 @@ class MPO(AbstractAlgorithm):
     ) -> None: ...
     def get_kl_and_pi(self, state: Tensor) -> Tuple[Tensor, Tensor, Distribution]: ...
     def reset(self) -> None: ...
-    def forward(self, observation: Observation, **kwargs: Any) -> MPOLoss: ...

@@ -2,6 +2,7 @@
 
 from abc import ABCMeta
 
+import torch
 import torch.nn as nn
 
 
@@ -82,3 +83,23 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def set_prediction_strategy(self, val: str):
         """Set prediction strategy of model."""
         raise NotImplementedError
+
+    def set_head(self, head_ptr: int):
+        """Set ensemble head."""
+        pass
+
+    def get_head(self) -> int:
+        """Get ensemble head."""
+        return -1
+
+    def set_head_idx(self, head_ptr):
+        """Set ensemble head for particles."""
+        pass
+
+    def get_head_idx(self):
+        """Get ensemble head index."""
+        return torch.tensor(-1)
+
+    def get_prediction_strategy(self) -> str:
+        """Get ensemble head."""
+        return ""

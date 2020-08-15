@@ -18,8 +18,8 @@ class DQN(QLearning):
     Nature 518.7540 (2015): 529-533.
     """
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get q function target."""
-        next_v = self.q_target(observation.next_state).max(dim=-1)[0]
+        next_v = self.critic_target(observation.next_state).max(dim=-1)[0]
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v

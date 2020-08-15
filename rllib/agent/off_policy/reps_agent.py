@@ -38,7 +38,7 @@ class REPSAgent(OffPolicyAgent):
 
         self.algorithm = REPS(
             policy=policy,
-            value_function=value_function,
+            critic=value_function,
             epsilon=epsilon,
             regularization=regularization,
             gamma=self.gamma,
@@ -80,13 +80,13 @@ class REPSAgent(OffPolicyAgent):
 
     def _optimizer_dual(self):
         """Optimize the dual function."""
-        self._optimize_loss(self.num_iter, loss_name="dual")
+        self._optimize_loss(self.num_iter, loss_name="dual_loss")
 
     def _fit_policy(self):
         """Fit the policy optimizing the weighted negative log-likelihood."""
         self._optimize_loss(self.num_iter, loss_name="policy_loss")
 
-    def _optimize_loss(self, num_iter, loss_name="dual"):
+    def _optimize_loss(self, num_iter, loss_name="dual_loss"):
         """Optimize the loss performing `num_iter' gradient steps."""
         for _ in range(num_iter):
             observation, idx, weight = self.memory.sample_batch(self.batch_size)

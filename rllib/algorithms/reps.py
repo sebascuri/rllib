@@ -6,7 +6,7 @@ import torch.distributions
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 
-from .abstract_algorithm import AbstractAlgorithm, LPLoss
+from .abstract_algorithm import AbstractAlgorithm, Loss
 
 
 class REPS(AbstractAlgorithm):
@@ -50,7 +50,7 @@ class REPS(AbstractAlgorithm):
     A survey on policy search for robotics. Foundations and Trends® in Robotics.
     """
 
-    def __init__(self, value_function, epsilon, regularization=False, *args, **kwargs):
+    def __init__(self, epsilon, regularization=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if regularization:
@@ -63,16 +63,10 @@ class REPS(AbstractAlgorithm):
             self.eta = Learnable(1.0)
             self.epsilon = torch.tensor(epsilon)
 
-        self.value_function = value_function
-
     def _project_eta(self):
         """Project the etas to be positive inplace."""
         # Since we divide by eta, make sure it doesn't go to zero.
         self.eta.start.data.clamp_(min=1e-5)
-
-    def update(self):
-        """Update regularization parameter."""
-        self.eta.update()
 
     def _policy_weighted_nll(self, state, action, weights):
         """Return weighted policy negative log-likelihood."""
@@ -83,22 +77,22 @@ class REPS(AbstractAlgorithm):
         log_likelihood = torch.mean(weighted_log_prob.clamp_max(1e-3))
         return -log_likelihood
 
-    def get_q_target(self, observation):
+    def get_value_target(self, observation):
         """Get value-function target."""
-        next_v = self.value_function(observation.next_state) * (1 - observation.done)
+        next_v = self.critic(observation.next_state) * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
-    def forward(self, observation):
+    def forward_slow(self, observation):
         """Return primal and dual loss terms from REPS."""
         state, action, reward, next_state, done, *r = observation
         # Make sure the lagrange multipliers stay positive.
         self._project_eta()
 
         # Compute Scaled TD-Errors
-        value = self.value_function(state)
+        value = self.critic(state)
 
         # For dual function we need the full gradient, not the semi gradient!
-        target = self.get_q_target(observation)
+        target = self.get_value_target(observation)
         td = target - value
 
         weights = td / self.eta()
@@ -107,6 +101,11 @@ class REPS(AbstractAlgorithm):
 
         nll = self._policy_weighted_nll(state, action, weights)
 
-        self._info = {"td": td, "advantage": td}
+        return Loss(
+            loss=dual.mean() + nll, dual_loss=dual.mean(), policy_loss=nll, td_error=td
+        )
 
-        return LPLoss(loss=dual.mean() + nll, dual=dual.mean(), policy_loss=nll)
+    def update(self):
+        """Update regularization parameter."""
+        super().update()
+        self.eta.update()

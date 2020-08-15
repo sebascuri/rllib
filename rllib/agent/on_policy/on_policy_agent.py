@@ -1,7 +1,8 @@
 """On Policy Agent."""
+from dataclasses import asdict
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset.utilities import average_named_tuple, stack_list_of_tuples
+from rllib.dataset.utilities import average_dataclass, stack_list_of_tuples
 
 
 class OnPolicyAgent(AbstractAgent):
@@ -73,7 +74,7 @@ class OnPolicyAgent(AbstractAgent):
 
             losses = self.optimizer.step(closure=closure)
             # Update logs
-            self.logger.update(**average_named_tuple(losses)._asdict())
+            self.logger.update(**asdict(average_dataclass(losses)))
             self.logger.update(**self.algorithm.info())
 
             self.counters["train_steps"] += 1
