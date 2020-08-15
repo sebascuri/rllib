@@ -41,14 +41,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
         train_frequency=1,
         num_rollouts=0,
         policy_update_frequency=1,
-        clip_gradient_val=0,
+        clip_gradient_val=float("Inf"),
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
         tensorboard=False,
         comment="",
-        *args,
-        **kwargs,
     ):
         self.logger = Logger(self.name, tensorboard=tensorboard, comment=comment)
         self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}

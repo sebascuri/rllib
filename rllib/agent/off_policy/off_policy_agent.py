@@ -82,7 +82,6 @@ class OffPolicyAgent(AbstractAgent):
 
                 return losses_
 
-            self.clip_gradient_val = 10
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:

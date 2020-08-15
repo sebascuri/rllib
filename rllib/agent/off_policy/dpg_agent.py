@@ -137,6 +137,7 @@ class DPGAgent(OffPolicyAgent):
             noise_clip=0.5,
             train_frequency=1,
             num_rollouts=0,
+            clip_gradient_val=10,
             comment=environment.name,
             *args,
             **kwargs,
