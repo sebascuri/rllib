@@ -51,7 +51,7 @@ class ActorCritic(AbstractAlgorithm):
         self,
         num_samples=15,
         entropy_regularization=0.0,
-        standarize_returns=False,
+        standarize_returns=True,
         *args,
         **kwargs,
     ):
@@ -172,8 +172,8 @@ class ActorCritic(AbstractAlgorithm):
         for trajectory in trajectories:
             # ACTOR LOSS
             actor_loss = self.actor_loss(trajectory)
-            policy_loss += actor_loss.policy_loss
-            entropy_loss += actor_loss.regularization_loss
+            policy_loss += actor_loss.policy_loss.mean()
+            entropy_loss += actor_loss.regularization_loss.mean()
 
             # CRITIC LOSS
             critic_loss_ = self.critic_loss(trajectory)

@@ -42,10 +42,10 @@ def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
     if bk is torch and not rewards.requires_grad:
         rewards = rewards.numpy()
     if type(rewards) is np.ndarray:
-        # The copy is for future transforms to pytorch
-        returns = scipy.signal.lfilter([1], [1, -gamma], rewards[::-1])[::-1].copy()
+        returns = scipy.signal.lfilter([1], [1, -gamma], rewards[..., ::-1])[..., ::-1]
         if bk is torch:
-            return torch.tensor(returns, dtype=torch.get_default_dtype())
+            # The copy is for future transforms to pytorch
+            return torch.tensor(returns.copy(), dtype=torch.get_default_dtype())
         else:
             return returns
 
@@ -85,9 +85,9 @@ def discount_sum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
             torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards
         ).sum()
     else:
-        steps = rewards.shape[0]
+        steps = rewards.shape[1]
         return torch.einsum(
-            "i,i...->...",
+            "i,ki...->k...",
             torch.pow(gamma * torch.ones(steps), torch.arange(steps)),
             rewards,
         )

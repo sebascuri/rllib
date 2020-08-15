@@ -104,7 +104,8 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
                 self.action_scale * action_sequence,  # scale actions.
                 state,
                 self.termination,
-            )
+            ),
+            dim=-2,
         )
 
         returns = discount_sum(trajectory.reward, self.gamma)
