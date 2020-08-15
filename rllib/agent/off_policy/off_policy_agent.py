@@ -2,6 +2,8 @@
 import contextlib
 from dataclasses import asdict
 
+import torch
+
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.utilities import average_dataclass
 from rllib.util.neural_networks.utilities import DisableGradient
@@ -74,12 +76,13 @@ class OffPolicyAgent(AbstractAgent):
                 losses_ = self.algorithm(obs)
                 loss = (losses_.loss.squeeze(-1) * w.detach()).mean()
                 loss.backward()
-                #
-                # torch.nn.utils.clip_grad_norm_(
-                #     self.optimizer.param_groups[0]["params"], self.max_grad_norm
-                # )
+                torch.nn.utils.clip_grad_norm_(
+                    self.algorithm.parameters(), self.clip_gradient_val
+                )
+
                 return losses_
 
+            self.clip_gradient_val = 10
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:

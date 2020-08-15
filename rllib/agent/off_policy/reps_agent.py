@@ -1,5 +1,6 @@
 """Implementation of REPS Agent."""
 
+import torch
 from torch.optim import Adam
 
 from rllib.algorithms.reps import REPS
@@ -98,6 +99,10 @@ class REPSAgent(OffPolicyAgent):
                 self.optimizer.zero_grad()
                 loss_ = getattr(losses_, loss_name)
                 loss_.backward()
+                torch.nn.utils.clip_grad_norm_(
+                    self.algorithm.parameters(), self.clip_gradient_val
+                )
+
                 return loss_
 
             losses = self.optimizer.step(closure=closure).item()

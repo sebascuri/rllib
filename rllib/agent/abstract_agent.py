@@ -41,6 +41,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         train_frequency=1,
         num_rollouts=0,
         policy_update_frequency=1,
+        clip_gradient_val=0,
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
@@ -59,6 +60,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.train_frequency = train_frequency
         self.num_rollouts = num_rollouts
         self.policy_update_frequency = policy_update_frequency
+        self.clip_gradient_val = clip_gradient_val
 
         self._training = True
 

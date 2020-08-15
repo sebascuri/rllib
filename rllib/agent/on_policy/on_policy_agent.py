@@ -1,6 +1,8 @@
 """On Policy Agent."""
 from dataclasses import asdict
 
+import torch
+
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.dataset.utilities import average_dataclass, stack_list_of_tuples
 
@@ -70,6 +72,11 @@ class OnPolicyAgent(AbstractAgent):
                 self.optimizer.zero_grad()
                 losses_ = self.algorithm(trajectories)
                 losses_.loss.backward()
+
+                torch.nn.utils.clip_grad_norm_(
+                    self.algorithm.parameters(), self.clip_gradient_val
+                )
+
                 return losses_
 
             losses = self.optimizer.step(closure=closure)

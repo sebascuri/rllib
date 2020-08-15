@@ -23,6 +23,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
     num_rollouts: int
     train_frequency: int
     policy_update_frequency: int
+    clip_gradient_val: float
+
     _training: bool
     comment: str
     dist_params: dict

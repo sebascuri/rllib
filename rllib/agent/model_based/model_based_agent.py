@@ -470,6 +470,11 @@ class ModelBasedAgent(AbstractAgent):
                 self.optimizer.zero_grad()
                 losses_ = self.algorithm(state)
                 losses_.loss.mean().backward()
+
+                torch.nn.utils.clip_grad_norm_(
+                    self.algorithm.parameters(), self.clip_gradient_val
+                )
+
                 return losses_
 
             if self.train_steps % self.policy_update_frequency == 0:
