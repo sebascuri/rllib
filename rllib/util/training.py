@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from rllib.dataset.datatypes import Observation
 from rllib.model.ensemble_model import EnsembleModel
 from rllib.model.gp_model import ExactGPModel
 from rllib.model.nn_model import NNModel
@@ -103,6 +104,7 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
         logger = Logger(f"{model.name}_training")
     for _ in tqdm(range(max_iter)):
         for observation, idx, mask in train_loader:
+            observation = Observation(**observation)
             if isinstance(model, EnsembleModel):
                 current_head = model.get_head()
                 current_pred = model.get_prediction_strategy()

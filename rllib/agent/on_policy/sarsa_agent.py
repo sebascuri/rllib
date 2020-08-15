@@ -64,10 +64,7 @@ class SARSAAgent(OnPolicyAgent):
         """See `AbstractAgent.act'."""
         action = super().act(state)
         if len(self.trajectories[-1]):
-            last_observation = self.trajectories[-1].pop(-1)
-            self.trajectories[-1].append(
-                last_observation._replace(next_action=torch.tensor(action))
-            )
+            self.trajectories[-1][-1].next_action = torch.tensor(action)
 
         return action
 

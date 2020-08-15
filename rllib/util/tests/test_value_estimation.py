@@ -4,7 +4,7 @@ import scipy
 import torch
 import torch.testing
 
-from rllib.dataset.datatypes import RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.util.value_estimation import discount_cumsum, discount_sum, mc_return
 
 
@@ -84,10 +84,10 @@ class TestMCReturn(object):
 
     def test_correctness(self, gamma, value_function, entropy_reg):
         trajectory = [
-            RawObservation(0, 0, reward=1, done=False, entropy=0.2).to_torch(),
-            RawObservation(0, 0, reward=0.5, done=False, entropy=0.3).to_torch(),
-            RawObservation(0, 0, reward=2, done=False, entropy=0.5).to_torch(),
-            RawObservation(0, 0, reward=-0.2, done=False, entropy=-0.2).to_torch(),
+            Observation(0, 0, reward=1, done=False, entropy=0.2).to_torch(),
+            Observation(0, 0, reward=0.5, done=False, entropy=0.3).to_torch(),
+            Observation(0, 0, reward=2, done=False, entropy=0.5).to_torch(),
+            Observation(0, 0, reward=-0.2, done=False, entropy=-0.2).to_torch(),
         ]
 
         r0 = 1 + entropy_reg * 0.2

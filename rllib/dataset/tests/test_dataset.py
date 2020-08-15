@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from rllib.dataset import TrajectoryDataset
-from rllib.dataset.datatypes import Observation, RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import ActionNormalizer, MeanFunction, StateNormalizer
 
 
@@ -32,7 +32,7 @@ def dataset(request):
         trajectory = []
         for i in range(episode_length):
             trajectory.append(
-                RawObservation(
+                Observation(
                     state=np.random.randn(state_dim),
                     action=np.random.randn(action_dim),
                     reward=np.random.randn(),
@@ -77,7 +77,7 @@ def test_shuffle(dataset):
 def test_append_error():
     dataset = TrajectoryDataset(sequence_length=10)
     trajectory = [
-        RawObservation(
+        Observation(
             np.random.randn(4), np.random.randn(2), 1, np.random.randn(4), True
         ).to_torch()
     ]

@@ -2,7 +2,7 @@ import pytest
 import torch
 import torch.testing
 
-from rllib.dataset.datatypes import RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import (
     ActionClipper,
     ActionNormalizer,
@@ -17,7 +17,7 @@ from rllib.dataset.utilities import stack_list_of_tuples
 
 
 def get_observation(reward=None):
-    return RawObservation(
+    return Observation(
         state=torch.randn(4),
         action=torch.randn(4),
         reward=reward if reward else torch.randn(1),
@@ -43,7 +43,7 @@ class MeanModel(torch.nn.Module):
 
 class TestMeanFunction(object):
     def test_custom_mean(self, trajectory):
-        transformer = torch.jit.script(MeanFunction(torch.jit.script(MeanModel())))
+        transformer = MeanFunction(MeanModel())
         for observation in trajectory:
             transformed_observation = transformer(observation)
             torch.testing.assert_allclose(
@@ -63,7 +63,7 @@ class TestMeanFunction(object):
             )
 
     def test_call(self, trajectory):
-        transformer = torch.jit.script(MeanFunction(torch.jit.script(DeltaState())))
+        transformer = MeanFunction(DeltaState())
         for observation in trajectory:
             transformed_observation = transformer(observation)
             torch.testing.assert_allclose(
@@ -83,7 +83,7 @@ class TestMeanFunction(object):
             )
 
     def test_inverse(self, trajectory):
-        transformer = torch.jit.script(MeanFunction(DeltaState()))
+        transformer = MeanFunction(DeltaState())
         for observation in trajectory:
             inverse_observation = transformer.inverse(transformer(observation))
             for x, y in zip(observation, inverse_observation):
@@ -101,7 +101,7 @@ class TestRewardClipper(object):
         return request.param
 
     def test_call(self, trajectory):
-        transformer = torch.jit.script(RewardClipper(min_reward=0.0, max_reward=1.0))
+        transformer = RewardClipper(min_reward=0.0, max_reward=1.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             assert transformed_observation.reward >= 0.0
@@ -125,7 +125,7 @@ class TestRewardClipper(object):
                 assert transformed_observation.reward == 1.0
 
     def test_inverse(self, trajectory):
-        transformer = torch.jit.script(RewardClipper(min_reward=0.0, max_reward=1.0))
+        transformer = RewardClipper(min_reward=0.0, max_reward=1.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             inverse_observation = transformer.inverse(transformed_observation)
@@ -154,12 +154,8 @@ class TestActionClipper(object):
     def maximum(self, request):
         return request.param
 
-    def test_compile(self, trajectory):
-        transformer = ActionClipper(min_action=0.0, max_action=1.0)
-        torch.jit.script(transformer)
-
     def test_call(self, trajectory):
-        transformer = torch.jit.script(ActionClipper(min_action=0.0, max_action=1.0))
+        transformer = ActionClipper(min_action=0.0, max_action=1.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             assert (transformed_observation.action >= 0.0).all()
@@ -176,9 +172,8 @@ class TestActionClipper(object):
             assert transformed_observation.done == observation.done
 
     def test_inverse(self, trajectory):
-        transformer = torch.jit.script(
-            ActionClipper(min_action=-1000.0, max_action=1000.0)
-        )
+        transformer = ActionClipper(min_action=-1000.0, max_action=1000.0)
+
         for observation in trajectory:
             transformed_observation = transformer(observation)
             inverse_observation = transformer.inverse(transformed_observation)
@@ -200,7 +195,7 @@ class TestActionClipper(object):
 
 class TestRewardScaler(object):
     def test_call(self, trajectory):
-        transformer = torch.jit.script(RewardScaler(scale=5.0))
+        transformer = RewardScaler(scale=5.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             torch.testing.assert_allclose(
@@ -218,7 +213,7 @@ class TestRewardScaler(object):
             )
 
     def test_inverse(self, trajectory):
-        transformer = torch.jit.script(RewardScaler(scale=5.0))
+        transformer = RewardScaler(scale=5.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             inverse_observation = transformer.inverse(transformed_observation)
@@ -240,7 +235,7 @@ class TestRewardScaler(object):
 
 class TestActionScaler(object):
     def test_call(self, trajectory):
-        transformer = torch.jit.script(ActionScaler(scale=5.0))
+        transformer = ActionScaler(scale=5.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             torch.testing.assert_allclose(
@@ -258,7 +253,7 @@ class TestActionScaler(object):
             )
 
     def test_inverse(self, trajectory):
-        transformer = torch.jit.script(RewardScaler(scale=5.0))
+        transformer = RewardScaler(scale=5.0)
         for observation in trajectory:
             transformed_observation = transformer(observation)
             inverse_observation = transformer.inverse(transformed_observation)
@@ -284,7 +279,7 @@ class TestActionNormalize(object):
         return request.param
 
     def test_update(self, trajectory, preserve_origin):
-        transformer = torch.jit.script(ActionNormalizer(preserve_origin))
+        transformer = ActionNormalizer(preserve_origin)
 
         trajectory = stack_list_of_tuples(trajectory)
 
@@ -296,7 +291,7 @@ class TestActionNormalize(object):
         torch.testing.assert_allclose(transformer._normalizer.variance, var)
 
     def test_call(self, trajectory, preserve_origin):
-        transformer = torch.jit.script(ActionNormalizer(preserve_origin))
+        transformer = ActionNormalizer(preserve_origin)
 
         trajectory = stack_list_of_tuples(trajectory)
         transformer.update(trajectory)
@@ -321,7 +316,7 @@ class TestActionNormalize(object):
         assert transformed.done == observation.done
 
     def test_inverse(self, trajectory, preserve_origin):
-        transformer = torch.jit.script(ActionNormalizer(preserve_origin))
+        transformer = ActionNormalizer(preserve_origin)
         trajectory = stack_list_of_tuples(trajectory)
         transformer.update(trajectory)
 
@@ -339,7 +334,7 @@ class TestStateNormalize(object):
         return request.param
 
     def test_update(self, trajectory, preserve_origin):
-        transformer = torch.jit.script(StateNormalizer(preserve_origin))
+        transformer = StateNormalizer(preserve_origin)
 
         trajectory = stack_list_of_tuples(trajectory)
 
@@ -351,7 +346,7 @@ class TestStateNormalize(object):
         torch.testing.assert_allclose(transformer._normalizer.variance, var)
 
     def test_call(self, trajectory, preserve_origin):
-        transformer = torch.jit.script(StateNormalizer(preserve_origin))
+        transformer = StateNormalizer(preserve_origin)
         trajectory = stack_list_of_tuples(trajectory)
 
         transformer.update(trajectory)
@@ -378,7 +373,7 @@ class TestStateNormalize(object):
         assert transformed.done == observation.done
 
     def test_inverse(self, trajectory, preserve_origin):
-        transformer = torch.jit.script(StateNormalizer(preserve_origin))
+        transformer = StateNormalizer(preserve_origin)
 
         trajectory = stack_list_of_tuples(trajectory)
 

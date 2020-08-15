@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from rllib.dataset import ExperienceReplay
-from rllib.dataset.datatypes import RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import (
     ActionNormalizer,
     MeanFunction,
@@ -56,7 +56,7 @@ def create_er_from_transitions(
 
     memory = ExperienceReplay(max_len, num_steps=num_steps)
     for _ in range(num_transitions):
-        observation = RawObservation.random_example(
+        observation = Observation.random_example(
             dim_state=dim_state,
             dim_action=dim_action,
             num_states=num_states,
@@ -174,7 +174,7 @@ class TestExperienceReplay(object):
         else:
             num_states, num_actions = -1, -1
             dim_state, dim_action = (dim_state,), (dim_action,)
-        observation = RawObservation.random_example(
+        observation = Observation.random_example(
             dim_state=dim_state,
             dim_action=dim_action,
             num_states=num_states,
@@ -215,14 +215,14 @@ class TestExperienceReplay(object):
         memory.end_episode()
 
         observation, idx, weight = memory[0]
-        for attribute in observation:
+        for attribute in Observation(**observation):
             assert attribute.shape[0] == max(1, num_steps)
             assert idx == 0
             assert weight == 1.0
 
         for i in range(len(memory)):
             observation, idx, weight = memory[i]
-            for attribute in observation:
+            for attribute in Observation(**observation):
                 assert attribute.shape[0] == max(1, num_steps)
                 if memory.valid[i]:
                     assert idx == i
@@ -232,7 +232,7 @@ class TestExperienceReplay(object):
 
         i = np.random.choice(memory.valid_indexes)
         observation, idx, weight = memory[i]
-        for attribute in observation:
+        for attribute in Observation(**observation):
             assert attribute.shape[0] == max(1, num_steps)
             assert idx == i
             assert weight == 1.0
@@ -323,5 +323,5 @@ class TestExperienceReplay(object):
                 assert idx != idx_
 
             assert weight == 1.0
-            for attribute in observation:
+            for attribute in Observation(**observation):
                 assert attribute.shape[0] == max(1, num_steps)

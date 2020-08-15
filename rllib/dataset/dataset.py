@@ -1,4 +1,6 @@
 """Implementation of a Trajectory Dataset."""
+from dataclasses import asdict
+
 import numpy as np
 import torch
 from torch.utils import data
@@ -64,7 +66,7 @@ class TrajectoryDataset(data.Dataset):
             trajectory = self._trajectories[trajectory_idx]
 
             observation = Observation(
-                **{key: val[start:end] for key, val in trajectory._asdict().items()}
+                **{key: val[start:end] for key, val in asdict(trajectory).items()}
             )
 
         for transform in self.transformations:

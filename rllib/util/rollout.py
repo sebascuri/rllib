@@ -4,7 +4,7 @@ import torch
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
-from rllib.dataset.datatypes import RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -29,7 +29,7 @@ def step_env(environment, state, action, action_scale=1, pi=None, render=False):
         entropy = 0.0
         log_prob_action = 1.0
 
-    observation = RawObservation(
+    observation = Observation(
         state=state,
         action=action,
         reward=reward,
@@ -94,7 +94,7 @@ def step_model(
         entropy = 0.0
         log_prob_action = 1.0
 
-    observation = RawObservation(
+    observation = Observation(
         state=state,
         action=action,
         reward=reward,

@@ -1,6 +1,6 @@
 """Project Data-types."""
-from collections import namedtuple
-from typing import Callable, List, NamedTuple, Tuple, Union
+from dataclasses import dataclass
+from typing import Callable, List, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch
@@ -22,24 +22,11 @@ TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 Termination = Union[nn.Module, Callable[[State, Action, State], Done]]
 NaN = float("nan")
 
-Observation = namedtuple(
-    "Observation",
-    [
-        "state",
-        "action",
-        "reward",
-        "next_state",
-        "done",
-        "next_action",
-        "log_prob_action",
-        "entropy",
-        "state_scale_tril",
-        "next_state_scale_tril",
-    ],
-)
+T = TypeVar("T", bound="Observation")
 
 
-class RawObservation(NamedTuple):
+@dataclass
+class Observation:
     """Observation datatype."""
 
     state: State
@@ -53,6 +40,11 @@ class RawObservation(NamedTuple):
     state_scale_tril: Tensor = torch.tensor(NaN)
     next_state_scale_tril: Tensor = torch.tensor(NaN)
 
+    def __iter__(self):
+        """Iterate the properties of the class."""
+        for key, value in self.__dict__.items():
+            yield value
+
     @staticmethod
     def _is_equal_nan(x, y):
         x, y = np.array(x), np.array(y)
@@ -63,14 +55,15 @@ class RawObservation(NamedTuple):
         else:
             return True
 
-    @staticmethod
+    @classmethod
     def get_example(
+        cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
         kind: str = "zero",
-    ) -> Observation:
+    ) -> T:
         """Get example observation.
 
         Parameters
@@ -123,7 +116,7 @@ class RawObservation(NamedTuple):
         elif kind != "random":
             raise NotImplementedError(f"{kind} not implemented.")
 
-        return Observation(
+        return cls(
             state=state,
             action=action,
             reward=reward,
@@ -136,15 +129,16 @@ class RawObservation(NamedTuple):
             next_state_scale_tril=torch.tensor(NaN),
         )
 
-    @staticmethod
+    @classmethod
     def nan_example(
+        cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
-    ) -> Observation:
+    ) -> T:
         """Return a NaN Example."""
-        return RawObservation.get_example(
+        return cls.get_example(
             dim_state=dim_state,
             dim_action=dim_action,
             num_states=num_states,
@@ -152,15 +146,16 @@ class RawObservation(NamedTuple):
             kind="nan",
         )
 
-    @staticmethod
+    @classmethod
     def zero_example(
+        cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
-    ) -> Observation:
+    ) -> T:
         """Return a Zero Example."""
-        return RawObservation.get_example(
+        return cls.get_example(
             dim_state=dim_state,
             dim_action=dim_action,
             num_states=num_states,
@@ -168,15 +163,16 @@ class RawObservation(NamedTuple):
             kind="zero",
         )
 
-    @staticmethod
+    @classmethod
     def random_example(
+        cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
-    ) -> Observation:
+    ) -> T:
         """Return a Random Example."""
-        return RawObservation.get_example(
+        return cls.get_example(
             dim_state=dim_state,
             dim_action=dim_action,
             num_states=num_states,
@@ -214,3 +210,4 @@ class RawObservation(NamedTuple):
 
 
 Trajectory = List[Observation]
+RawObservation = Observation

@@ -3,7 +3,7 @@ import pytest
 import torch
 import torch.testing
 
-from rllib.dataset.datatypes import RawObservation
+from rllib.dataset.datatypes import Observation
 
 
 class TestObservation(object):
@@ -33,12 +33,12 @@ class TestObservation(object):
 
     def test_equality(self):
         state, action, reward, next_state, done = self.init()
-        o = RawObservation(state, action, reward, next_state, done).to_torch()
+        o = Observation(state, action, reward, next_state, done).to_torch()
         for x, y in zip(
-            o, RawObservation(state, action, reward, next_state, done).to_torch()
+            o, Observation(state, action, reward, next_state, done).to_torch()
         ):
             torch.testing.assert_allclose(x, y)
-        assert o is not RawObservation(state, action, reward, next_state, done)
+        assert o is not Observation(state, action, reward, next_state, done)
 
     def test_example(self, discrete, dim_state, dim_action, kind):
         if discrete:
@@ -48,21 +48,21 @@ class TestObservation(object):
             num_states, num_actions = -1, -1
 
         if kind == "nan":
-            o = RawObservation.nan_example(
+            o = Observation.nan_example(
                 dim_state=dim_state,
                 dim_action=dim_action,
                 num_states=num_states,
                 num_actions=num_actions,
             )
         elif kind == "zero":
-            o = RawObservation.zero_example(
+            o = Observation.zero_example(
                 dim_state=dim_state,
                 dim_action=dim_action,
                 num_states=num_states,
                 num_actions=num_actions,
             )
         elif kind == "random":
-            o = RawObservation.random_example(
+            o = Observation.random_example(
                 dim_state=dim_state,
                 dim_action=dim_action,
                 num_states=num_states,
@@ -70,7 +70,7 @@ class TestObservation(object):
             )
         else:
             with pytest.raises(ValueError):
-                RawObservation.get_example(
+                Observation.get_example(
                     dim_state=dim_state,
                     dim_action=dim_action,
                     num_states=num_states,

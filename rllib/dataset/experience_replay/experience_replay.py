@@ -1,12 +1,13 @@
 """Implementation of an Experience Replay Buffer."""
 import warnings
+from dataclasses import asdict
 
 import numpy as np
 import torch
 from torch.utils import data
 from torch.utils.data._utils.collate import default_collate
 
-from rllib.dataset.datatypes import Observation, RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
@@ -116,7 +117,7 @@ class ExperienceReplay(data.Dataset):
         if self.valid[idx] == 0:  # when a non-valid index is sampled.
             idx = np.random.choice(self.valid_indexes)
 
-        return self._get_observation(idx), idx, self.weights[idx]
+        return asdict(self._get_observation(idx)), idx, self.weights[idx]
 
     def _init_observation(self, observation):
         if observation.state.ndim == 0:
@@ -129,7 +130,7 @@ class ExperienceReplay(data.Dataset):
         else:
             dim_action, num_actions = observation.action.shape[-1], -1
 
-        self.zero_observation = RawObservation.zero_example(
+        self.zero_observation = Observation.zero_example(
             dim_state=dim_state,
             dim_action=dim_action,
             num_states=num_states,
@@ -224,7 +225,8 @@ class ExperienceReplay(data.Dataset):
     def sample_batch(self, batch_size):
         """Sample a batch of observations."""
         indices = np.random.choice(self.valid_indexes, batch_size)
-        return default_collate([self[i] for i in indices])
+        obs, idx, weight = default_collate([self[i] for i in indices])
+        return Observation(**obs), idx, weight
 
     @property
     def is_full(self):

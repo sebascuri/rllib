@@ -17,10 +17,10 @@ from rllib.value_function import NNQFunction
 
 ENVIRONMENT = ["NChain-v0", "CartPole-v0"][1]
 
-NUM_EPISODES = 50
+NUM_EPISODES = 100
 MAX_STEPS = 200
 TARGET_UPDATE_FREQUENCY = 4
-TARGET_UPDATE_TAU = 0.01
+TARGET_UPDATE_TAU = 0
 MEMORY_MAX_SIZE = 5000
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-2
@@ -53,8 +53,6 @@ init_head_weight(q_function)
 # init_head_bias(q_function, offset=(1 - GAMMA ** 200) / (1 - GAMMA))
 policy = EpsGreedy(q_function, ExponentialDecay(EPS_START, EPS_END, EPS_DECAY))
 
-q_function = torch.jit.script(q_function)
-
 
 optimizer = torch.optim.Adam(
     q_function.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
@@ -72,7 +70,7 @@ elif MEMORY == "ER":
 else:
     raise NotImplementedError(f"{MEMORY} not implemented.")
 
-agent = DQNAgent(
+agent = DDQNAgent(
     q_function,
     policy,
     criterion=criterion,
@@ -83,6 +81,7 @@ agent = DQNAgent(
     batch_size=BATCH_SIZE,
     target_update_frequency=TARGET_UPDATE_FREQUENCY,
     gamma=GAMMA,
+    clip_gradient_val=1.0,
 )
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)

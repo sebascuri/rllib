@@ -1,6 +1,6 @@
 """Utilities to collect data."""
 
-from rllib.dataset.datatypes import RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.util.utilities import tensor_to_distribution
 
@@ -38,7 +38,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
         action = action.numpy()
         environment.state = state
         next_state, reward, done, _ = environment.step(action)
-        transitions.append(RawObservation(state, action, reward, next_state).to_torch())
+        transitions.append(Observation(state, action, reward, next_state).to_torch())
 
     return transitions
 
@@ -81,6 +81,6 @@ def collect_model_transitions(
     transitions = []
     for state_, action_, reward_, next_state_ in zip(state, action, reward, next_state):
         transitions.append(
-            RawObservation(state_, action_, reward_, next_state_).to_torch()
+            Observation(state_, action_, reward_, next_state_).to_torch()
         )
     return transitions

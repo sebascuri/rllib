@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from rllib.dataset.datatypes import Observation, RawObservation
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 
 
@@ -9,7 +9,7 @@ def get_trajectory():
     t = []
     for reward in [3.0, -2.0, 0.5]:
         t.append(
-            RawObservation(
+            Observation(
                 state=torch.randn(4),
                 action=torch.randn(2),
                 reward=reward,
