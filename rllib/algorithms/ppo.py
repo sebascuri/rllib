@@ -113,6 +113,9 @@ class PPO(GAAC):
             )
         else:
             adv = self.returns(observation)
+            if self.standardize_returns:
+                adv = (adv - adv.mean()) / (adv.std() + self.eps)
+
             return adv + self.critic_target(observation.state)
 
     def process_value_prediction(self, value_prediction, observation):
