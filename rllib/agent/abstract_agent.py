@@ -47,6 +47,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
         exploration_episodes=0,
         tensorboard=False,
         comment="",
+        *args,
+        **kwargs,
     ):
         self.logger = Logger(self.name, tensorboard=tensorboard, comment=comment)
         self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}

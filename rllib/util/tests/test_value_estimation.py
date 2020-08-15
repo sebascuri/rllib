@@ -37,6 +37,21 @@ class TestDiscountedCumSum(object):
             cum_rewards[0], discount_sum(torch.tensor(rewards), gamma)
         )
 
+        rewards = np.tile(np.array(rewards), (5, 1))
+        cum_rewards = np.tile(np.array(cum_rewards), (5, 1))
+
+        assert scipy.allclose(cum_rewards, discount_cumsum(np.array(rewards), gamma))
+
+        torch.testing.assert_allclose(
+            torch.tensor(cum_rewards).float(),
+            discount_cumsum(torch.tensor(rewards), gamma).float(),
+        )
+
+        torch.testing.assert_allclose(
+            torch.tensor(cum_rewards[..., 0]).float(),
+            discount_sum(torch.tensor(rewards, dtype=torch.get_default_dtype()), gamma),
+        )
+
     def test_shape_and_type(self, rewards, gamma):
         np_returns = discount_cumsum(np.array(rewards), gamma)
         assert np_returns.shape == (len(rewards),)

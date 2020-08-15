@@ -1,7 +1,8 @@
+Make raw observation a Dataclass.
+
 Creator of Model-Based Agents.
 Add Path derivative of MB Agents.
-Multi-step returns?
+Multi-step returns
 
 Add model tests.
-Add gradient clipping.
 Make experience replay agnostic to input.
