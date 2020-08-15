@@ -61,7 +61,7 @@ class Learnable(ParameterDecay):
     def forward(self):
         """See `ParameterDecay.__call__'."""
         if self.positive:
-            return torch.nn.functional.softplus(self.start) + 1e-6
+            return torch.nn.functional.softplus(self.start) + 1e-4
         else:
             return self.start
 

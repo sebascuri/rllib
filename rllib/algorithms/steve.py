@@ -43,18 +43,18 @@ def steve_expand(
             self.termination = termination
 
             if not hasattr(self, "value_target") and hasattr(self, "critic_target"):
-                self.critic_target = IntegrateQValueFunction(
-                    self.critic_target, self.policy, num_samples=self.num_samples
+                self.value_target = IntegrateQValueFunction(
+                    self.value_target, self.policy, num_samples=self.num_samples
                 )
 
         def get_value_target(self, observation):
             """Rollout model and call base algorithm with transitions."""
             num_models = self.dynamical_model.base_model.num_heads
 
-            if isinstance(self.critic_target, IntegrateQValueFunction):
-                num_q = self.critic_target.q_function.num_heads
+            if isinstance(self.value_target, IntegrateQValueFunction):
+                num_q = self.value_target.q_function.num_heads
             else:
-                num_q = self.critic_target.num_heads
+                num_q = self.value_target.num_heads
 
             critic_target = torch.zeros(
                 observation.state.shape[: -len(self.dynamical_model.dim_state)]
@@ -93,7 +93,7 @@ def steve_expand(
                             mc_return(
                                 trajectory[: (horizon + 1)],
                                 gamma=self.gamma,
-                                value_function=self.critic_target,
+                                value_function=self.value_target,
                                 reward_transformer=self.reward_transformer,
                             )
                             .mean(0)

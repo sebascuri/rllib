@@ -43,9 +43,10 @@ def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
         rewards = rewards.numpy()
     if type(rewards) is np.ndarray:
         returns = scipy.signal.lfilter([1], [1, -gamma], rewards[..., ::-1])[..., ::-1]
+        returns = returns.copy()  # The copy is for future transforms to pytorch
+
         if bk is torch:
-            # The copy is for future transforms to pytorch
-            return torch.tensor(returns.copy(), dtype=torch.get_default_dtype())
+            return torch.tensor(returns, dtype=torch.get_default_dtype())
         else:
             return returns
 
