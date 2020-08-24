@@ -70,15 +70,18 @@ class OffPolicyAgent(AbstractAgent):
         for _ in range(self.num_iter):
             observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
-            def closure(obs=observation, w=weight):
+            def closure():
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
-                losses_ = self.algorithm(obs)
-                loss = (losses_.loss.squeeze(-1) * w.detach()).mean()
+                losses_ = self.algorithm(observation)
+                loss = (losses_.combined_loss.squeeze(-1) * weight.detach()).mean()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     self.algorithm.parameters(), self.clip_gradient_val
                 )
+
+                # Update memory
+                self.memory.update(idx, losses_.td_error.abs().detach())
 
                 return losses_
 
@@ -89,9 +92,6 @@ class OffPolicyAgent(AbstractAgent):
 
             with cm:
                 losses = self.optimizer.step(closure=closure)
-
-            # Update memory
-            self.memory.update(idx, losses.td_error.abs().detach())
 
             # Update logs
             self.logger.update(**asdict(average_dataclass(losses)))

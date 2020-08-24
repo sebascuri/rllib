@@ -69,7 +69,7 @@ class DynaAlgorithm(AbstractAlgorithm):
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
         with torch.no_grad():
-            trajectory = self.simulate(observation)
+            trajectory = self.simulate(observation.state)
             observation = stack_list_of_tuples(trajectory, dim=-2)
         try:
             return self.base_algorithm(observation)

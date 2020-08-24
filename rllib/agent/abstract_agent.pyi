@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from torch import Tensor
 
+from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Action, Distribution, Observation, State
 from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy

@@ -30,7 +30,7 @@ class Observation:
     """Observation datatype."""
 
     state: State
-    action: Action
+    action: Action = torch.tensor(NaN)
     reward: Reward = torch.tensor(NaN)
     next_state: State = torch.tensor(NaN)
     done: Done = False
@@ -214,7 +214,7 @@ class Loss:
 
     Other Parameters
     ----------------
-    loss: Tensor.
+    losses: Tensor.
         Combined loss to optimize.
     td_error: Tensor.
         TD-Error of critic.
@@ -226,7 +226,7 @@ class Loss:
         Loss of dual minimization problem.
     """
 
-    loss: torch.Tensor = field(init=False)
+    combined_loss: torch.Tensor = field(init=False)
     td_error: torch.Tensor = torch.tensor(0.0)
     policy_loss: torch.Tensor = torch.tensor(0.0)
     critic_loss: torch.Tensor = torch.tensor(0.0)
@@ -238,7 +238,7 @@ class Loss:
 
         Fill in the attribute `loss' by adding all other losses.
         """
-        self.loss = (
+        self.combined_loss = (
             self.policy_loss
             + self.critic_loss
             + self.regularization_loss
@@ -250,15 +250,15 @@ class Loss:
         return Loss(*map(lambda x: x[0] + x[1], zip(self, other)))
 
     def __mul__(self, other):
-        """Multiply a loss by a scalar."""
+        """Multiply losses by a scalar."""
         return Loss(*map(lambda x: x[0] * other, self))
 
     def __rmul__(self, other):
-        """Multiply a loss by a scalar."""
+        """Multiply losses by a scalar."""
         return self * other
 
     def __truediv__(self, other):
-        """Divide a loss by a scalar."""
+        """Divide losses by a scalar."""
         return Loss(*map(lambda x: x / other, self))
 
     def __iter__(self):
@@ -270,11 +270,10 @@ class Loss:
         It is useful to create new losses.
         """
         for key, value in self.__dict__.items():
-            if key == "loss":
+            if key == "combined_loss":
                 continue
             else:
                 yield value
 
 
 Trajectory = List[Observation]
-RawObservation = Observation

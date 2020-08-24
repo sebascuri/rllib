@@ -71,7 +71,7 @@ class OnPolicyAgent(AbstractAgent):
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
                 losses_ = self.algorithm(trajectories)
-                losses_.loss.backward()
+                losses_.combined_loss.backward()
 
                 torch.nn.utils.clip_grad_norm_(
                     self.algorithm.parameters(), self.clip_gradient_val
@@ -80,6 +80,7 @@ class OnPolicyAgent(AbstractAgent):
                 return losses_
 
             losses = self.optimizer.step(closure=closure)
+
             # Update logs
             self.logger.update(**asdict(average_dataclass(losses)))
             self.logger.update(**self.algorithm.info())

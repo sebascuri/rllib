@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import (
     BootstrapExperienceReplay,
     StateExperienceReplay,
@@ -463,13 +464,15 @@ class ModelBasedAgent(AbstractAgent):
         # Iterate over state batches in the state distribution
         self.algorithm.reset()
         for _ in range(self.policy_opt_gradient_steps):
-            states = self.sim_dataset.get_batch(self.policy_opt_batch_size)
+            states = Observation(
+                state=self.sim_dataset.get_batch(self.policy_opt_batch_size)
+            )
 
             def closure(state=states):
                 """Gradient calculation."""
                 self.optimizer.zero_grad()
                 losses_ = self.algorithm(state)
-                losses_.loss.mean().backward()
+                losses_.combined_loss.mean().backward()
 
                 torch.nn.utils.clip_grad_norm_(
                     self.algorithm.parameters(), self.clip_gradient_val
