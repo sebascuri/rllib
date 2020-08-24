@@ -1,5 +1,5 @@
 """Project Data-types."""
-from dataclasses import astuple, dataclass, field
+from dataclasses import dataclass, field
 from typing import Callable, List, Tuple, Type, TypeVar, Union
 
 import numpy as np
@@ -42,7 +42,7 @@ class Observation:
 
     def __iter__(self):
         """Iterate the properties of the observation."""
-        yield from astuple(self)
+        yield from self.__dict__.values()
 
     @staticmethod
     def _is_equal_nan(x, y):

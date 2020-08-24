@@ -236,7 +236,7 @@ class MPO(AbstractAlgorithm):
             kl_div=self._info["kl_div"] + (kl_mean + kl_var) / num_t,
             kl_mean=self._info["kl_mean"] + kl_mean / num_t,
             kl_var=self._info["kl_var"] + kl_var / num_t,
-            entropy=self._info["entropy"] + pi_dist.entropy() / num_t,
+            entropy=self._info["entropy"] + pi_dist.entropy().mean() / num_t,
         )
 
         return kl_mean, kl_var, pi_dist
