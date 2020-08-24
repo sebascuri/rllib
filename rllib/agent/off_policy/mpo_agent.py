@@ -19,8 +19,6 @@ class MPOAgent(OffPolicyAgent):
         self,
         policy,
         q_function,
-        optimizer,
-        memory,
         criterion,
         num_action_samples=15,
         epsilon=0.1,
@@ -30,7 +28,7 @@ class MPOAgent(OffPolicyAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(memory=memory, optimizer=optimizer, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.algorithm = MPO(
             policy=policy,
@@ -44,13 +42,13 @@ class MPOAgent(OffPolicyAgent):
             gamma=self.gamma,
         )
         # Over-write optimizer.
-        self.optimizer = type(optimizer)(
+        self.optimizer = type(self.optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if "target" not in name
             ],
-            **optimizer.defaults,
+            **self.optimizer.defaults,
         )
         self.policy = self.algorithm.policy
 
@@ -97,11 +95,11 @@ class MPOAgent(OffPolicyAgent):
             epsilon_var = 1e-4
 
         return cls(
-            policy,
-            q_function,
-            optimizer,
-            memory,
-            criterion,
+            policy=policy,
+            q_function=q_function,
+            optimizer=optimizer,
+            memory=memory,
+            criterion=criterion,
             num_action_samples=15,
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,

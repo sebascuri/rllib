@@ -2,7 +2,6 @@ from typing import Any, Optional, Type, Union
 
 import torch.nn.modules.loss as loss
 from torch.nn.modules.loss import _Loss
-from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.trpo import TRPO
 from rllib.policy import AbstractPolicy
@@ -18,7 +17,6 @@ class TRPOAgent(OnPolicyAgent):
         self,
         policy: AbstractPolicy,
         value_function: AbstractValueFunction,
-        optimizer: Optimizer,
         criterion: Type[_Loss],
         regularization: bool = ...,
         epsilon_mean: Union[float, ParameterDecay] = ...,

@@ -1,7 +1,6 @@
 from typing import Any, Type
 
 from torch.nn.modules.loss import _Loss
-from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.esarsa import ESARSA
 from rllib.policy import AbstractQFunctionPolicy
@@ -17,7 +16,6 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         q_function: AbstractQFunction,
         policy: AbstractQFunctionPolicy,
         criterion: Type[_Loss],
-        optimizer: Optimizer,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

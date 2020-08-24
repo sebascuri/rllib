@@ -1,29 +1,17 @@
 """On Policy Agent."""
-from dataclasses import asdict
-
 import torch
 
 from rllib.agent.abstract_agent import AbstractAgent
-from rllib.dataset.utilities import average_dataclass, stack_list_of_tuples
+from rllib.dataset.utilities import stack_list_of_tuples
 
 
 class OnPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(
-        self,
-        optimizer,
-        batch_size=1,
-        target_update_frequency=1,
-        num_iter=1,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, batch_size=1, num_iter=1, *args, **kwargs):
         super().__init__(num_rollouts=kwargs.pop("num_rollouts", 1), *args, **kwargs)
         self.trajectories = []
         self.batch_size = batch_size
-        self.target_update_frequency = target_update_frequency
-        self.optimizer = optimizer
         self.num_iter = num_iter
 
     def observe(self, observation):
@@ -65,33 +53,17 @@ class OnPolicyAgent(AbstractAgent):
     def learn(self):
         """Train Policy Gradient Agent."""
         trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
-        for _ in range(self.num_iter):
 
-            def closure():
-                """Gradient calculation."""
-                self.optimizer.zero_grad()
-                losses_ = self.algorithm(trajectories)
-                losses_.combined_loss.backward()
+        def closure():
+            """Gradient calculation."""
+            self.optimizer.zero_grad()
+            losses = self.algorithm(trajectories)
+            losses.combined_loss.backward()
 
-                torch.nn.utils.clip_grad_norm_(
-                    self.algorithm.parameters(), self.clip_gradient_val
-                )
+            torch.nn.utils.clip_grad_norm_(
+                self.algorithm.parameters(), self.clip_gradient_val
+            )
 
-                return losses_
+            return losses
 
-            losses = self.optimizer.step(closure=closure)
-
-            # Update logs
-            self.logger.update(**asdict(average_dataclass(losses)))
-            self.logger.update(**self.algorithm.info())
-
-            self.counters["train_steps"] += 1
-            if self.train_steps % self.target_update_frequency == 0:
-                self.algorithm.update()
-                for param in self.params.values():
-                    param.update()
-
-            if self.early_stop(losses, **self.algorithm.info()):
-                break
-
-        self.algorithm.reset()
+        self._learn_steps(closure, num_iter=self.num_iter)

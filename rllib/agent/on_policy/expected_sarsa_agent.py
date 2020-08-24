@@ -25,27 +25,14 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         Q-function derived policy.
     criterion: nn.Module
         Criterion to minimize the TD-error.
-    batch_size: int
-        Number of trajectory batches before performing a TD-pdate.
-    optimizer: nn.optim
-        Optimization algorithm for q_function.
-    target_update_frequency: int
-        How often to update the q_function target.
-    gamma: float, optional
-        Discount factor.
-    exploration_steps: int, optional
-        Number of random exploration steps.
-    exploration_episodes: int, optional
-        Number of random exploration steps.
 
     References
     ----------
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(self, q_function, policy, criterion, optimizer, *args, **kwargs):
+    def __init__(self, q_function, policy, criterion, *args, **kwargs):
         super().__init__(
-            optimizer=optimizer,
             num_rollouts=kwargs.pop("num_rollouts", 0),
             train_frequency=kwargs.pop("train_frequency", 1),
             *args,

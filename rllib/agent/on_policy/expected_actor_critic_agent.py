@@ -16,14 +16,9 @@ class ExpectedActorCriticAgent(ActorCriticAgent):
     Expected policy gradients. AAAI.
     """
 
-    def __init__(self, policy, critic, optimizer, criterion, *args, **kwargs):
+    def __init__(self, policy, critic, criterion, *args, **kwargs):
         super().__init__(
-            policy=policy,
-            critic=critic,
-            optimizer=optimizer,
-            criterion=criterion,
-            *args,
-            **kwargs,
+            policy=policy, critic=critic, criterion=criterion, *args, **kwargs
         )
         self.algorithm = ExpectedActorCritic(
             policy=policy,

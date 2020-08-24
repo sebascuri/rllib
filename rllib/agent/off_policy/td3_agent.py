@@ -34,19 +34,12 @@ class TD3Agent(DPGAgent):
     """
 
     def __init__(
-        self,
-        q_function,
-        policy,
-        criterion,
-        optimizer,
-        memory,
-        exploration_noise,
-        *args,
-        **kwargs,
+        self, q_function, policy, criterion, exploration_noise, *args, **kwargs
     ):
         q_function = NNEnsembleQFunction.from_q_function(
             q_function=q_function, num_heads=2
         )
+        optimizer = kwargs.pop("optimizer")
         optimizer = type(optimizer)(
             chain(policy.parameters(), q_function.parameters()), **optimizer.defaults
         )
@@ -56,7 +49,6 @@ class TD3Agent(DPGAgent):
             exploration_noise=exploration_noise,
             criterion=criterion,
             optimizer=optimizer,
-            memory=memory,
             *args,
             **kwargs,
         )

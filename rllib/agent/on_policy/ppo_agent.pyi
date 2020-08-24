@@ -1,7 +1,6 @@
 from typing import Any, Type
 
 from torch.nn.modules.loss import _Loss
-from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.ppo import PPO
 from rllib.policy import AbstractPolicy
@@ -17,7 +16,6 @@ class PPOAgent(OnPolicyAgent):
         self,
         policy: AbstractPolicy,
         value_function: AbstractValueFunction,
-        optimizer: Optimizer,
         criterion: Type[_Loss],
         epsilon: float = ...,
         lambda_: float = ...,

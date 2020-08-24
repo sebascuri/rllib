@@ -23,7 +23,6 @@ class TRPOAgent(OnPolicyAgent):
         self,
         policy,
         value_function,
-        optimizer,
         criterion,
         regularization=False,
         epsilon_mean=0.05,
@@ -32,7 +31,7 @@ class TRPOAgent(OnPolicyAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(optimizer=optimizer, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.algorithm = TRPO(
             critic=value_function,
@@ -45,13 +44,13 @@ class TRPOAgent(OnPolicyAgent):
             gamma=self.gamma,
         )
         # Over-write optimizer.
-        self.optimizer = type(optimizer)(
+        self.optimizer = type(self.optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if "target" not in name
             ],
-            **optimizer.defaults,
+            **self.optimizer.defaults,
         )
 
         self.policy = self.algorithm.policy

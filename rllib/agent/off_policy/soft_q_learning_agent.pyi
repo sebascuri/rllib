@@ -1,7 +1,6 @@
 from typing import Any, Type, Union
 
 from torch.nn.modules.loss import _Loss
-from torch.optim.optimizer import Optimizer
 
 from rllib.agent import QLearningAgent
 from rllib.algorithms.soft_q_learning import SoftQLearning
@@ -17,8 +16,6 @@ class SoftQLearningAgent(QLearningAgent):
         self,
         q_function: AbstractQFunction,
         criterion: Type[_Loss],
-        optimizer: Optimizer,
-        memory: ExperienceReplay,
         temperature: Union[float, ParameterDecay],
         *args: Any,
         **kwargs: Any,

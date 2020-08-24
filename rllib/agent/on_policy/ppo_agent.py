@@ -24,7 +24,6 @@ class PPOAgent(OnPolicyAgent):
         self,
         policy,
         value_function,
-        optimizer,
         criterion,
         epsilon=0.2,
         lambda_=0.97,
@@ -36,7 +35,7 @@ class PPOAgent(OnPolicyAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(optimizer=optimizer, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.algorithm = PPO(
             critic=value_function,
             policy=policy,

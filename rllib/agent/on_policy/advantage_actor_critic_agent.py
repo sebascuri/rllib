@@ -16,14 +16,9 @@ class A2CAgent(ActorCriticAgent):
     Asynchronous methods for deep reinforcement learning. ICML.
     """
 
-    def __init__(self, policy, critic, optimizer, criterion, *args, **kwargs):
+    def __init__(self, policy, critic, criterion, *args, **kwargs):
         super().__init__(
-            policy=policy,
-            optimizer=optimizer,
-            critic=critic,
-            criterion=criterion,
-            *args,
-            **kwargs,
+            policy=policy, critic=critic, criterion=criterion, *args, **kwargs
         )
 
         self.algorithm = A2C(

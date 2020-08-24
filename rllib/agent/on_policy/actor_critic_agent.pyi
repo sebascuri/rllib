@@ -29,7 +29,6 @@ class ActorCriticAgent(OnPolicyAgent):
         self,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
-        optimizer: Optimizer,
         criterion: Type[_Loss],
         *args: Any,
         **kwargs: Any,

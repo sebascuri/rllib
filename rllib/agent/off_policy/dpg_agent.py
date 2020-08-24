@@ -20,7 +20,6 @@ class DPGAgent(OffPolicyAgent):
     the computation of the TD-Error, which leads to different algorithms.
 
     TODO: build compatible q-function approximation.
-    TODO: Add policy update frequency.
 
     Parameters
     ----------
@@ -29,10 +28,6 @@ class DPGAgent(OffPolicyAgent):
     policy: AbstractPolicy
         policy that is learned.
     criterion: nn.Module
-    optimizer: nn.Optimizer
-        q_function optimizer.
-    memory: ExperienceReplay
-        memory where to store the observations.
 
     References
     ----------
@@ -46,15 +41,13 @@ class DPGAgent(OffPolicyAgent):
         q_function,
         policy,
         criterion,
-        optimizer,
-        memory,
         exploration_noise,
         policy_noise=0.2,
         noise_clip=0.5,
         *args,
         **kwargs,
     ):
-        super().__init__(optimizer=optimizer, memory=memory, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         assert policy.deterministic, "Policy must be deterministic."
         self.algorithm = DPG(

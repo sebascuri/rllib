@@ -19,8 +19,6 @@ class VMPOAgent(OffPolicyAgent):
         self,
         policy,
         value_function,
-        optimizer,
-        memory,
         criterion,
         epsilon=0.1,
         epsilon_mean=0.1,
@@ -30,7 +28,7 @@ class VMPOAgent(OffPolicyAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(memory=memory, optimizer=optimizer, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.algorithm = VMPO(
             policy=policy,
@@ -45,13 +43,13 @@ class VMPOAgent(OffPolicyAgent):
         )
 
         self.policy = self.algorithm.policy
-        self.optimizer = type(optimizer)(
+        self.optimizer = type(self.optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if "target" not in name
             ],
-            **optimizer.defaults,
+            **self.optimizer.defaults,
         )
 
     @classmethod
@@ -99,9 +97,9 @@ class VMPOAgent(OffPolicyAgent):
         return cls(
             policy,
             value_function,
-            optimizer,
-            memory,
-            criterion,
+            criterion=criterion,
+            optimizer=optimizer,
+            memory=memory,
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,

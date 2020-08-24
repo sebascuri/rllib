@@ -21,16 +21,9 @@ class GAACAgent(ActorCriticAgent):
     High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
-    def __init__(
-        self, policy, critic, optimizer, criterion, lambda_=0.97, *args, **kwargs
-    ):
+    def __init__(self, policy, critic, criterion, lambda_=0.97, *args, **kwargs):
         super().__init__(
-            policy=policy,
-            critic=critic,
-            optimizer=optimizer,
-            criterion=criterion,
-            *args,
-            **kwargs,
+            policy=policy, critic=critic, criterion=criterion, *args, **kwargs
         )
         self.algorithm = GAAC(
             policy=policy,

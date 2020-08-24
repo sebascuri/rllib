@@ -44,9 +44,8 @@ class SARSAAgent(OnPolicyAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(self, q_function, policy, criterion, optimizer, *args, **kwargs):
+    def __init__(self, q_function, policy, criterion, *args, **kwargs):
         super().__init__(
-            optimizer=optimizer,
             batch_size=kwargs.pop("batch_size", 1) + 1,
             num_rollouts=kwargs.pop("num_rollouts", 0),
             train_frequency=kwargs.pop("train_frequency", 1),

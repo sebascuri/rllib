@@ -32,14 +32,11 @@ class ModelBasedAgent(AbstractAgent):
     plan_samples: int
     plan_elites: int
 
-    algorithm: AbstractAlgorithm
     policy: DerivedPolicy
     plan_policy: AbstractPolicy
     policy_opt_num_iter: int
     policy_opt_batch_size: int
     policy_opt_gradient_steps: int
-    policy_opt_target_update_frequency: int
-    optimizer: Optional[Optimizer]
 
     sim_num_steps: int
     sim_initial_states_num_trajectories: int

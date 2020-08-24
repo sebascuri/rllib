@@ -1,10 +1,11 @@
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
 
 from torch import Tensor
+from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
-from rllib.dataset.datatypes import Action, Distribution, Observation, State
+from rllib.dataset.datatypes import Action, Distribution, Loss, Observation, State
 from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
@@ -14,6 +15,8 @@ T = TypeVar("T", bound="AbstractAgent")
 
 class AbstractAgent(object, metaclass=ABCMeta):
     policy: AbstractPolicy
+    algorithm: AbstractAlgorithm
+    optimizer: Optimizer
     pi: Distribution
     counters: Dict[str, int]
     episode_steps: List[int]
@@ -24,6 +27,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     num_rollouts: int
     train_frequency: int
     policy_update_frequency: int
+    target_update_frequency: int
     clip_gradient_val: float
 
     _training: bool
@@ -33,9 +37,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
     last_trajectory: List[Observation]
     def __init__(
         self,
+        optimizer: Optional[Optimizer] = ...,
         train_frequency: int = ...,
         num_rollouts: int = ...,
         policy_update_frequency: int = ...,
+        target_update_frequency: int = ...,
         gamma: float = ...,
         exploration_steps: int = ...,
         exploration_episodes: int = ...,
@@ -58,6 +64,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def early_stop(self, *args: Any, **kwargs: Any) -> bool: ...
     def train(self, val: bool = True) -> None: ...
     def eval(self, val: bool = True) -> None: ...
+    def _learn_steps(self, closure: Callable, num_iter: int = ...) -> Loss: ...
     @property
     def total_episodes(self) -> int: ...
     @property

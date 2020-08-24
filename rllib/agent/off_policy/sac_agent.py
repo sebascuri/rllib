@@ -21,16 +21,6 @@ class SACAgent(OffPolicyAgent):
         q_function that is learned.
     criterion: nn.Module
         Criterion to minimize the TD-error.
-    memory: ExperienceReplay
-        Memory where to store the observations.
-    target_update_frequency: int
-        How often to update the q_function target.
-    gamma: float, optional
-        Discount factor.
-    exploration_steps: int, optional
-        Number of random exploration steps.
-    exploration_episodes: int, optional
-        Number of random exploration steps.
 
     References
     ----------
@@ -41,18 +31,9 @@ class SACAgent(OffPolicyAgent):
     """
 
     def __init__(
-        self,
-        q_function,
-        policy,
-        criterion,
-        optimizer,
-        memory,
-        eta,
-        regularization=False,
-        *args,
-        **kwargs,
+        self, q_function, policy, criterion, eta, regularization=False, *args, **kwargs
     ):
-        super().__init__(optimizer=optimizer, memory=memory, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         q_function = NNEnsembleQFunction.from_q_function(
             q_function=q_function, num_heads=2
         )
@@ -65,13 +46,13 @@ class SACAgent(OffPolicyAgent):
             regularization=regularization,
         )
 
-        self.optimizer = type(optimizer)(
+        self.optimizer = type(self.optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if "target" not in name
             ],
-            **optimizer.defaults,
+            **self.optimizer.defaults,
         )
         self.policy = self.algorithm.policy
         self.dist_params.update(tanh=True)

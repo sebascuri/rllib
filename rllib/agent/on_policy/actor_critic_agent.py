@@ -28,8 +28,8 @@ class ActorCriticAgent(OnPolicyAgent):
 
     eps = 1e-12
 
-    def __init__(self, policy, critic, optimizer, criterion, *args, **kwargs):
-        super().__init__(optimizer=optimizer, *args, **kwargs)
+    def __init__(self, policy, critic, criterion, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.algorithm = ActorCritic(
             policy=policy,
             critic=critic,

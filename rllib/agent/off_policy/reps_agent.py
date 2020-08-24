@@ -25,17 +25,9 @@ class REPSAgent(OffPolicyAgent):
     """
 
     def __init__(
-        self,
-        policy,
-        value_function,
-        optimizer,
-        memory,
-        epsilon,
-        regularization=False,
-        *args,
-        **kwargs,
+        self, policy, value_function, epsilon, regularization=False, *args, **kwargs
     ):
-        super().__init__(memory=memory, optimizer=optimizer, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.algorithm = REPS(
             policy=policy,
@@ -45,13 +37,13 @@ class REPSAgent(OffPolicyAgent):
             gamma=self.gamma,
         )
         # Over-write optimizer.
-        self.optimizer = type(optimizer)(
+        self.optimizer = type(self.optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if "target" not in name
             ],
-            **optimizer.defaults,
+            **self.optimizer.defaults,
         )
 
         self.policy = self.algorithm.policy
@@ -77,7 +69,6 @@ class REPSAgent(OffPolicyAgent):
         self._fit_policy()
 
         self.memory.reset()  # Erase memory.
-        self.algorithm.update()  # Step the etas in REPS.
 
     def _optimizer_dual(self):
         """Optimize the dual function."""
@@ -89,28 +80,24 @@ class REPSAgent(OffPolicyAgent):
 
     def _optimize_loss(self, num_iter, loss_name="dual_loss"):
         """Optimize the loss performing `num_iter' gradient steps."""
-        for _ in range(num_iter):
+        #
+
+        def closure():
+            """Gradient calculation."""
             observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
-            def closure(obs=observation):
-                """Gradient calculation."""
-                self.optimizer.zero_grad()
-                losses_ = self.algorithm(obs)
-                self.optimizer.zero_grad()
-                loss_ = getattr(losses_, loss_name)
-                loss_.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    self.algorithm.parameters(), self.clip_gradient_val
-                )
+            self.optimizer.zero_grad()
+            losses = self.algorithm(observation)
+            self.optimizer.zero_grad()
+            loss = getattr(losses, loss_name)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                self.algorithm.parameters(), self.clip_gradient_val
+            )
 
-                return loss_
+            return losses
 
-            losses = self.optimizer.step(closure=closure).item()
-            self.logger.update(**{loss_name: losses})
-
-            self.counters["train_steps"] += 1
-            if self.early_stop(losses, **self.algorithm.info()):
-                break
+        self._learn_steps(closure, num_iter=num_iter)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

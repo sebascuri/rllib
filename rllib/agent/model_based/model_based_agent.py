@@ -5,8 +5,6 @@ A model based agent has three behaviors:
 - It optimizes policies with simulated data from the models.
 - It plans with the model and policies (as guiding sampler).
 """
-import contextlib
-from dataclasses import asdict
 
 import gpytorch
 import torch
@@ -20,7 +18,7 @@ from rllib.dataset.experience_replay import (
     BootstrapExperienceReplay,
     StateExperienceReplay,
 )
-from rllib.dataset.utilities import average_dataclass, stack_list_of_tuples
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model import ExactGPModel, TransformedModel
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.util.gaussian_processes import SparseGP
@@ -114,7 +112,6 @@ class ModelBasedAgent(AbstractAgent):
         policy_opt_batch_size=None,
         policy_opt_gradient_steps=0,
         policy_opt_target_update_frequency=1,
-        optimizer=None,
         sim_num_steps=20,
         sim_initial_states_num_trajectories=8,
         sim_initial_dist_num_trajectories=0,
@@ -127,7 +124,13 @@ class ModelBasedAgent(AbstractAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(train_frequency=0, num_rollouts=0, *args, **kwargs)
+        super().__init__(
+            train_frequency=0,
+            num_rollouts=0,
+            target_update_frequency=policy_opt_target_update_frequency,
+            *args,
+            **kwargs,
+        )
         if not isinstance(dynamical_model, TransformedModel):
             dynamical_model = TransformedModel(dynamical_model, [])
         self.dynamical_model = dynamical_model
@@ -169,8 +172,6 @@ class ModelBasedAgent(AbstractAgent):
             policy_opt_batch_size = self.model_learn_batch_size
         self.policy_opt_batch_size = policy_opt_batch_size
         self.policy_opt_gradient_steps = policy_opt_gradient_steps
-        self.policy_opt_target_update_frequency = policy_opt_target_update_frequency
-        self.optimizer = optimizer
 
         self.sim_trajectory = None
 
@@ -461,43 +462,21 @@ class ModelBasedAgent(AbstractAgent):
 
     def learn_policy(self):
         """Optimize the policy."""
-        # Iterate over state batches in the state distribution
-        self.algorithm.reset()
-        for _ in range(self.policy_opt_gradient_steps):
-            states = Observation(
+        #
+
+        def closure():
+            """Gradient calculation."""
+            state = Observation(
                 state=self.sim_dataset.get_batch(self.policy_opt_batch_size)
             )
+            self.optimizer.zero_grad()
+            losses_ = self.algorithm(state)
+            losses_.combined_loss.mean().backward()
 
-            def closure(state=states):
-                """Gradient calculation."""
-                self.optimizer.zero_grad()
-                losses_ = self.algorithm(state)
-                losses_.combined_loss.mean().backward()
+            torch.nn.utils.clip_grad_norm_(
+                self.algorithm.parameters(), self.clip_gradient_val
+            )
 
-                torch.nn.utils.clip_grad_norm_(
-                    self.algorithm.parameters(), self.clip_gradient_val
-                )
+            return losses_
 
-                return losses_
-
-            if self.train_steps % self.policy_update_frequency == 0:
-                cm = contextlib.nullcontext()
-            else:
-                cm = DisableGradient(self.plan_policy)
-
-            with cm:
-                losses = self.optimizer.step(closure=closure)
-
-            self.logger.update(**asdict(average_dataclass(losses)))
-            self.logger.update(**self.algorithm.info())
-
-            self.counters["train_steps"] += 1
-            if self.train_steps % self.policy_opt_target_update_frequency == 0:
-                self.algorithm.update()
-                for param in self.params.values():
-                    param.update()
-
-            if self.early_stop(losses, **self.algorithm.info()):
-                break
-
-        self.algorithm.reset()
+        self._learn_steps(closure, num_iter=self.policy_opt_gradient_steps)

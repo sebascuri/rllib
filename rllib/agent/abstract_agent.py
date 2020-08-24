@@ -1,12 +1,15 @@
 """Interface for agents."""
-
+import contextlib
 from abc import ABCMeta
+from dataclasses import asdict
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
+from torch.optim.optimizer import Optimizer
 
+from rllib.dataset.utilities import average_dataclass
 from rllib.util.logger import Logger
+from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -38,9 +41,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def __init__(
         self,
+        optimizer=None,
         train_frequency=1,
         num_rollouts=0,
         policy_update_frequency=1,
+        target_update_frequency=1,
         clip_gradient_val=float("Inf"),
         gamma=0.99,
         exploration_steps=0,
@@ -60,7 +65,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.train_frequency = train_frequency
         self.num_rollouts = num_rollouts
         self.policy_update_frequency = policy_update_frequency
+        self.target_update_frequency = target_update_frequency
         self.clip_gradient_val = clip_gradient_val
+        self.optimizer = optimizer
 
         self._training = True
 
@@ -170,6 +177,33 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """Set the agent in evaluation mode."""
         self.train(not val)
 
+    def _learn_steps(self, closure, num_iter=1):
+        """Apply `num_iter' learn steps to closure function."""
+        for _ in range(num_iter):
+            if self.train_steps % self.policy_update_frequency == 0:
+                cm = contextlib.nullcontext()
+            else:
+                if hasattr(self, "plan_policy"):
+                    cm = DisableGradient(self.plan_policy)
+                else:
+                    cm = DisableGradient(self.policy)
+
+            with cm:
+                losses = self.optimizer.step(closure=closure)
+
+            self.logger.update(**asdict(average_dataclass(losses)))
+            self.logger.update(**self.algorithm.info())
+
+            self.counters["train_steps"] += 1
+            if self.train_steps % self.target_update_frequency == 0:
+                self.algorithm.update()
+                for param in self.params.values():
+                    param.update()
+
+            if self.early_stop(losses, **self.algorithm.info()):
+                break
+        self.algorithm.reset()
+
     @property
     def total_episodes(self):
         """Return number of steps in current episode."""
@@ -213,7 +247,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         for key, value in self.__dict__.items():
             if isinstance(value, Logger) or key == "pi":
                 continue
-            elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
+            elif isinstance(value, nn.Module) or isinstance(value, Optimizer):
                 params[key] = value.state_dict()
             else:
                 params[key] = value
@@ -234,7 +268,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         for key, value in self.__dict__.items():
             if isinstance(value, Logger) or key == "pi":
                 continue
-            elif isinstance(value, nn.Module) or isinstance(value, optim.Optimizer):
+            elif isinstance(value, nn.Module) or isinstance(value, Optimizer):
                 value.load_state_dict(agent_dict[key])
             else:
                 self.__dict__[key] = agent_dict[key]

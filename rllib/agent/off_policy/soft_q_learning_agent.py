@@ -18,20 +18,8 @@ class SoftQLearningAgent(QLearningAgent):
         q_function that is learned.
     criterion: nn.Module
         Criterion to minimize the TD-error.
-    optimizer: nn.optim
-        Optimization algorithm for q_function.
-    memory: ExperienceReplay
-        Memory where to store the observations.
     temperature: ParameterDecay.
         Temperature of Soft Q function.
-    target_update_frequency: int
-        How often to update the q_function target.
-    gamma: float, optional
-        Discount factor.
-    exploration_steps: int, optional
-        Number of random exploration steps.
-    exploration_episodes: int, optional
-        Number of random exploration steps.
 
     References
     ----------
@@ -48,16 +36,12 @@ class SoftQLearningAgent(QLearningAgent):
     Combining policy gradient and Q-learning. ICLR.
     """
 
-    def __init__(
-        self, q_function, criterion, optimizer, memory, temperature, *args, **kwargs
-    ):
+    def __init__(self, q_function, criterion, temperature, *args, **kwargs):
 
         super().__init__(
             q_function=q_function,
             policy=None,  # type: ignore
             criterion=criterion,
-            optimizer=optimizer,
-            memory=memory,
             *args,
             **kwargs,
         )
