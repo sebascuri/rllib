@@ -2,12 +2,12 @@ from typing import Any, Optional
 
 from torch import Tensor
 
-from rllib.dataset.datatypes import Observation, Termination
+from rllib.dataset.datatypes import Loss, Observation, Termination
 from rllib.model import AbstractModel
 from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 class DynaAlgorithm(AbstractAlgorithm):
     base_algorithm: AbstractAlgorithm

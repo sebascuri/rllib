@@ -4,7 +4,7 @@ import torch
 
 from rllib.policy import EpsGreedy
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 
 class SARSA(AbstractAlgorithm):
@@ -55,23 +55,6 @@ class SARSA(AbstractAlgorithm):
         next_v = self.critic_target(observation.next_state, observation.next_action)
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
-
-    def forward_slow(self, trajectories):
-        """Compute the losses iterating through the trajectories."""
-        critic_loss = torch.tensor(0.0)
-        td_error = torch.tensor(0.0)
-
-        for trajectory in trajectories:
-            critic_loss_ = self.critic_loss(trajectory)
-            critic_loss += critic_loss_.critic_loss.mean()
-            td_error += critic_loss_.td_error.mean()
-
-        num_trajectories = len(trajectories)
-        return Loss(
-            loss=critic_loss / num_trajectories,
-            critic_loss=critic_loss / num_trajectories,
-            td_error=td_error / num_trajectories,
-        )
 
 
 class GradientSARSA(SARSA):

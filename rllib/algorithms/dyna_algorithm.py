@@ -89,3 +89,7 @@ class DynaAlgorithm(AbstractAlgorithm):
     def info(self):
         """Return info parameters for logging."""
         return self.base_algorithm.info()
+
+    def reset_info(self, *args, **kwargs):
+        """Call reset info in base algorithm."""
+        self.base_algorithm.reset_info(*args, **kwargs)

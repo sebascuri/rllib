@@ -3,10 +3,11 @@
 import torch
 import torch.distributions
 
+from rllib.dataset.datatypes import Loss
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 
 class REPS(AbstractAlgorithm):
@@ -82,7 +83,7 @@ class REPS(AbstractAlgorithm):
         next_v = self.critic(observation.next_state) * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
-    def forward_slow(self, observation):
+    def actor_loss(self, observation):
         """Return primal and dual loss terms from REPS."""
         state, action, reward, next_state, done, *r = observation
         # Make sure the lagrange multipliers stay positive.
@@ -101,9 +102,7 @@ class REPS(AbstractAlgorithm):
 
         nll = self._policy_weighted_nll(state, action, weights)
 
-        return Loss(
-            loss=dual.mean() + nll, dual_loss=dual.mean(), policy_loss=nll, td_error=td
-        )
+        return Loss(dual_loss=dual.mean(), policy_loss=nll, td_error=td)
 
     def update(self):
         """Update regularization parameter."""

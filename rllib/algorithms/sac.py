@@ -2,12 +2,13 @@
 
 import torch
 
+from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import DisableGradient
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 
 class SoftActorCritic(AbstractAlgorithm):
@@ -56,9 +57,9 @@ class SoftActorCritic(AbstractAlgorithm):
         elif self.criterion.reduction == "sum":
             eta_loss, actor_loss = eta_loss.sum(), actor_loss.sum()
 
-        return Loss(
-            loss=actor_loss, policy_loss=actor_loss, regularization_loss=eta_loss
-        )
+        self._info.update(eta=self.eta().detach().item())
+
+        return Loss(policy_loss=actor_loss, regularization_loss=eta_loss)
 
     def get_value_target(self, observation):
         """Get the target of the q function."""
@@ -73,24 +74,3 @@ class SoftActorCritic(AbstractAlgorithm):
         next_v = next_q - self.eta().detach() * log_prob
         next_v = next_v * (1.0 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
-
-    def forward_slow(self, observation):
-        """Compute the losses."""
-        # Critic Loss
-        critic_loss = self.critic_loss(observation)
-
-        # Actor loss
-        actor_loss = self.actor_loss(observation)
-        self._info = {"eta": self.eta().detach().item()}
-        loss = (
-            actor_loss.policy_loss
-            + critic_loss.critic_loss
-            + actor_loss.regularization_loss
-        )
-        return Loss(
-            loss=loss,
-            policy_loss=actor_loss.policy_loss,
-            critic_loss=critic_loss.critic_loss,
-            regularization_loss=actor_loss.regularization_loss,
-            td_error=critic_loss.td_error,
-        )

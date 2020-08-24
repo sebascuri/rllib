@@ -28,7 +28,7 @@ class ExpectedActorCriticAgent(ActorCriticAgent):
         self.algorithm = ExpectedActorCritic(
             policy=policy,
             critic=critic,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             gamma=self.gamma,
         )
         self.policy = self.algorithm.policy

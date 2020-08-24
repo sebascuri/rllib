@@ -3,11 +3,11 @@
 import torch
 import torch.distributions
 
+from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import resume_learning
 from rllib.util.parameter_decay import Constant, ParameterDecay
 from rllib.util.value_estimation import discount_cumsum
 
-from .abstract_algorithm import Loss
 from .gaac import GAAC
 
 
@@ -78,7 +78,6 @@ class PPO(GAAC):
         log_p, log_p_old, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
             state, action
         )
-        kl_div = (kl_mean + kl_var).mean()
 
         with torch.no_grad():
             adv = self.returns(trajectory)
@@ -90,12 +89,9 @@ class PPO(GAAC):
         clip_adv = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
         surrogate_loss = -torch.min(ratio * adv, clip_adv).mean()
 
-        self._info.update(kl_div=self._info["kl_div"] + kl_div)
-
         return Loss(
-            loss=surrogate_loss,
             policy_loss=surrogate_loss,
-            regularization_loss=-entropy,
+            regularization_loss=-self.entropy_regularization * entropy,
         )
 
     def get_value_target(self, observation):

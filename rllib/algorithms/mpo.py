@@ -4,6 +4,7 @@ import torch
 import torch.distributions
 import torch.nn as nn
 
+from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import (
     deep_copy_module,
     freeze_parameters,
@@ -12,7 +13,7 @@ from rllib.util.neural_networks import (
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import separated_kl, tensor_to_distribution
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 from .policy_evaluation.retrace import ReTrace
 
 
@@ -116,14 +117,17 @@ class MPOWorker(nn.Module):
         log_likelihood = torch.mean(weighted_log_prob)
 
         kl_loss = self.eta_mean().detach() * kl_mean + self.eta_var().detach() * kl_var
-        primal_loss = -log_likelihood + kl_loss
 
         eta_mean_loss = self.eta_mean() * (self.epsilon_mean - kl_mean.detach())
         eta_var_loss = self.eta_var() * (self.epsilon_var - kl_var.detach())
 
         dual_loss = dual_loss + eta_mean_loss + eta_var_loss
 
-        return Loss(loss=primal_loss, policy_loss=primal_loss, dual_loss=dual_loss)
+        return Loss(
+            policy_loss=-log_likelihood,
+            regularization_loss=kl_loss,
+            dual_loss=dual_loss,
+        )
 
 
 class MPO(AbstractAlgorithm):
@@ -227,6 +231,14 @@ class MPO(AbstractAlgorithm):
             kl_mean = torch.distributions.kl_divergence(p=pi_dist_old, q=pi_dist).mean()
             kl_var = torch.zeros_like(kl_mean)
 
+        num_t = self._info["num_trajectories"]
+        self._info.update(
+            kl_div=self._info["kl_div"] + (kl_mean + kl_var) / num_t,
+            kl_mean=self._info["kl_mean"] + kl_mean / num_t,
+            kl_var=self._info["kl_var"] + kl_var / num_t,
+            entropy=self._info["entropy"] + pi_dist.entropy() / num_t,
+        )
+
         return kl_mean, kl_var, pi_dist
 
     def get_value_target(self, observation):
@@ -245,27 +257,8 @@ class MPO(AbstractAlgorithm):
             value_target = self.trace(observation).unsqueeze(-1)
         return value_target
 
-    def forward_slow(self, observation):
-        """Compute the losses for one step of MPO.
-
-        Parameters
-        ----------
-        observation: Observation
-            Observation batch.
-
-        Returns
-        -------
-        loss: torch.Tensor
-            The combined loss
-        value_loss: torch.Tensor
-            The loss of the value function approximation.
-        policy_loss: torch.Tensor
-            The kl-regularized fitting loss for the policy.
-        eta_loss: torch.Tensor
-            The loss for the lagrange multipliers.
-        kl_div: torch.Tensor
-            The average KL divergence of the policy.
-        """
+    def actor_loss(self, observation):
+        """Compute actor loss."""
         state, action, reward, next_state, done, *r = observation
 
         state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
@@ -275,38 +268,32 @@ class MPO(AbstractAlgorithm):
         sampled_action = pi_dist.sample()
         action_log_probs = pi_dist.log_prob(sampled_action)
 
-        losses = self.mpo_loss(
+        mpo_loss = self.mpo_loss(
             q_values=self.critic_target(state, sampled_action),
             action_log_probs=action_log_probs,
             kl_mean=kl_mean,
             kl_var=kl_var,
         )
 
-        # Critic loss.
-        critic_loss = self.critic_loss(observation)
-
-        dual_loss = losses.dual_loss.mean()
-        policy_loss = losses.policy_loss.mean()
-        combined_loss = critic_loss.critic_loss + dual_loss + policy_loss
-
-        self._info = {
-            "kl_div": kl_mean + kl_var,
-            "kl_mean": kl_mean,
-            "kl_var": kl_var,
-            "eta": self.mpo_loss.eta(),
-            "eta_mean": self.mpo_loss.eta_mean(),
-            "eta_var": self.mpo_loss.eta_var(),
-        }
-
-        return Loss(
-            loss=combined_loss,
-            dual_loss=dual_loss,
-            policy_loss=policy_loss,
-            critic_loss=critic_loss.critic_loss,
-            td_error=critic_loss.td_error,
+        self._info.update(
+            eta=self.mpo_loss.eta(),
+            eta_mean=self.mpo_loss.eta_mean(),
+            eta_var=self.mpo_loss.eta_var(),
         )
+
+        return mpo_loss
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
         self.old_policy.load_state_dict(self.policy.state_dict())
+
+    def reset_info(self, *args, **kwargs):
+        """Reset MPO info."""
+        super().reset_info(*args, **kwargs)
+        self._info.update(
+            kl_div=torch.tensor(0.0),
+            kl_mean=torch.tensor(0.0),
+            kl_var=torch.tensor(0.0),
+            entropy=torch.tensor(0.0),
+        )

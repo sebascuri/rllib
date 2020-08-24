@@ -3,9 +3,9 @@
 import torch
 import torch.distributions
 
+from rllib.dataset.datatypes import Loss
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 
-from .abstract_algorithm import Loss
 from .ppo import PPO
 
 
@@ -90,81 +90,8 @@ class TRPO(PPO):
         eta_var_loss = self.eta_var() * (self.epsilon_var - kl_var.detach())
         dual_loss = eta_mean_loss + eta_var_loss
 
-        self._info.update(
-            kl_mean=self._info["kl_mean"] + kl_mean,
-            kl_var=self._info["kl_var"] + kl_var,
-            entropy=self._info["entropy"] + entropy,
-        )
+        self._info.update(eta_mean=self.eta_mean(), eta_var=self.eta_var())
 
         return Loss(
-            loss=surrogate_loss,
-            policy_loss=surrogate_loss,
-            regularization_loss=kl_loss,
-            dual_loss=dual_loss,
-        )
-
-    def forward_slow(self, trajectories):
-        """Compute the losses a trajectory.
-
-        Parameters
-        ----------
-        trajectories: torch.Tensor
-
-        Returns
-        -------
-        loss: torch.Tensor
-            The combined loss
-        value_loss: torch.Tensor
-            The loss of the value function approximation.
-        policy_loss: torch.Tensor
-            The kl-regularized fitting loss for the policy.
-        eta_loss: torch.Tensor
-            The loss for the lagrange multipliers.
-        kl_div: torch.Tensor
-            The average KL divergence of the policy.
-        """
-        surrogate_loss = torch.tensor(0.0)
-        value_loss = torch.tensor(0.0)
-        td_error = torch.tensor(0.0)
-        dual_loss = torch.tensor(0.0)
-        kl_loss = torch.tensor(0.0)
-
-        self._info.update(
-            kl_mean=torch.tensor(0.0),
-            kl_var=torch.tensor(0.0),
-            entropy=torch.tensor(0.0),
-        )
-
-        for trajectory in trajectories:
-            # Critic Loss.
-            critic_loss = self.critic_loss(trajectory)
-            value_loss += critic_loss.critic_loss.mean()
-            td_error += critic_loss.td_error.mean()
-
-            # Actor Loss.
-            actor_loss = self.actor_loss(trajectory)
-            surrogate_loss += actor_loss.policy_loss
-            kl_loss += actor_loss.regularization_loss
-            dual_loss += actor_loss.dual_loss
-
-        combined_loss = surrogate_loss + kl_loss + dual_loss + value_loss
-
-        num_trajectories = len(trajectories)
-
-        self._info.update(
-            kl_div=(self._info["kl_mean"] + self._info["kl_var"]) / num_trajectories,
-            kl_mean=self._info["kl_mean"] / num_trajectories,
-            kl_var=self._info["kl_var"] / num_trajectories,
-            eta_mean=self.eta_mean(),
-            eta_var=self.eta_var(),
-            entropy=self._info["entropy"] / num_trajectories,
-        )
-
-        return Loss(
-            loss=combined_loss / num_trajectories,
-            critic_loss=value_loss / num_trajectories,
-            policy_loss=surrogate_loss / num_trajectories,
-            regularization_loss=kl_loss / num_trajectories,
-            dual_loss=dual_loss / num_trajectories,
-            td_error=td_error / num_trajectories,
+            policy_loss=surrogate_loss, regularization_loss=kl_loss, dual_loss=dual_loss
         )

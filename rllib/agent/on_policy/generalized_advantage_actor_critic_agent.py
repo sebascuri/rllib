@@ -35,7 +35,7 @@ class GAACAgent(ActorCriticAgent):
         self.algorithm = GAAC(
             policy=policy,
             critic=critic,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             lambda_=lambda_,
             gamma=self.gamma,
         )

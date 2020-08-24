@@ -1,6 +1,7 @@
 """Actor-Critic Algorithm."""
 import torch
 
+from rllib.dataset.datatypes import Loss
 from rllib.util import (
     discount_sum,
     get_entropy_and_logp,
@@ -11,7 +12,7 @@ from rllib.util import (
 from rllib.util.neural_networks import deep_copy_module, freeze_parameters
 from rllib.value_function import AbstractQFunction, AbstractValueFunction
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 
 class ActorCritic(AbstractAlgorithm):
@@ -110,6 +111,14 @@ class ActorCritic(AbstractAlgorithm):
                 kl_mean = (log_p_old - log_p).mean()  # Approximate the KL with samples.
             kl_var = torch.zeros_like(kl_mean)
 
+        num_t = self._info["num_trajectories"]
+        self._info.update(
+            kl_div=self._info["kl_div"] + (kl_mean + kl_var) / num_t,
+            kl_mean=self._info["kl_mean"] + kl_mean / num_t,
+            kl_var=self._info["kl_var"] + kl_var / num_t,
+            entropy=self._info["entropy"] + entropy / num_t,
+        )
+
         return log_p, log_p_old, kl_mean, kl_var, entropy
 
     def reset(self):
@@ -156,37 +165,18 @@ class ActorCritic(AbstractAlgorithm):
             if self.standardize_returns:
                 returns = (returns - returns.mean()) / (returns.std() + self.eps)
 
-        actor_loss = discount_sum(-log_p * returns, self.gamma)
+        policy_loss = discount_sum(-log_p * returns, self.gamma)
         return Loss(
-            loss=actor_loss, policy_loss=actor_loss, regularization_loss=-entropy
+            policy_loss=policy_loss.mean(),
+            regularization_loss=-self.entropy_regularization * entropy,
         )
 
-    def forward_slow(self, trajectories):
-        """Compute the losses iterating through the trajectories."""
-        policy_loss = torch.tensor(0.0)
-        entropy_loss = torch.tensor(0.0)
-        critic_loss = torch.tensor(0.0)
-        td_error = torch.tensor(0.0)
-        self._info.update(kl_div=torch.tensor(0.0))
-
-        for trajectory in trajectories:
-            # ACTOR LOSS
-            actor_loss = self.actor_loss(trajectory)
-            policy_loss += actor_loss.policy_loss.mean()
-            entropy_loss += actor_loss.regularization_loss.mean()
-
-            # CRITIC LOSS
-            critic_loss_ = self.critic_loss(trajectory)
-            critic_loss += critic_loss_.critic_loss.mean()
-            td_error += critic_loss_.td_error.mean()
-
-        num_trajectories = len(trajectories)
-        self._info.update(kl_div=self._info["kl_div"] / num_trajectories)
-        loss = policy_loss + critic_loss + self.entropy_regularization * entropy_loss
-        return Loss(
-            loss=loss / num_trajectories,
-            policy_loss=policy_loss / num_trajectories,
-            critic_loss=critic_loss / num_trajectories,
-            regularization_loss=entropy_loss / num_trajectories,
-            td_error=td_error / num_trajectories,
+    def reset_info(self, *args, **kwargs):
+        """Reset AC info."""
+        super().reset_info(*args, **kwargs)
+        self._info.update(
+            kl_div=torch.tensor(0.0),
+            kl_mean=torch.tensor(0.0),
+            kl_var=torch.tensor(0.0),
+            entropy=torch.tensor(0.0),
         )

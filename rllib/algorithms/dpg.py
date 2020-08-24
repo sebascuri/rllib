@@ -2,11 +2,12 @@
 
 import torch
 
+from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 
 class DPG(AbstractAlgorithm):
@@ -49,7 +50,7 @@ class DPG(AbstractAlgorithm):
             q = self.critic(state, action)
             if isinstance(self.critic, NNEnsembleQFunction):
                 q = q[..., 0]
-        return Loss(loss=-q, policy_loss=-q)
+        return Loss(policy_loss=-q)
 
     def get_value_target(self, observation):
         """Get q function target."""
@@ -64,18 +65,3 @@ class DPG(AbstractAlgorithm):
             next_v = torch.min(next_v, dim=-1)[0]
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
-
-    def forward_slow(self, observation):
-        """Compute the losses and the td-error."""
-        # Critic Loss
-        critic_loss = self.critic_loss(observation)
-
-        # Actor loss
-        actor_loss = self.actor_loss(observation)
-
-        return Loss(
-            loss=actor_loss.policy_loss + critic_loss.critic_loss,
-            policy_loss=actor_loss.policy_loss,
-            critic_loss=critic_loss.critic_loss,
-            td_error=critic_loss.td_error,
-        )

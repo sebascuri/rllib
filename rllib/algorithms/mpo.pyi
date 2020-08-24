@@ -4,10 +4,11 @@ import torch.nn as nn
 from torch import Tensor
 from torch.distributions import Distribution
 
+from rllib.dataset.datatypes import Loss
 from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 
-from .abstract_algorithm import AbstractAlgorithm, Loss
+from .abstract_algorithm import AbstractAlgorithm
 
 class MPOWorker(nn.Module):
     eta: ParameterDecay

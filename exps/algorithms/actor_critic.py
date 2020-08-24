@@ -10,7 +10,7 @@ from rllib.policy import NNPolicy
 from rllib.util.training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
-ENVIRONMENT = "CartPole-v0"
+ENVIRONMENT = "NChain-v0"
 MAX_STEPS = 200
 NUM_ROLLOUTS = 1
 NUM_EPISODES = 1000
@@ -35,7 +35,7 @@ policy = NNPolicy(
 )
 critic = NNQFunction(
     environment.dim_state,
-    environment.num_actions,
+    environment.dim_action,
     num_states=environment.num_states,
     num_actions=environment.num_actions,
     layers=LAYERS,
@@ -57,6 +57,7 @@ agent = A2CAgent(
     num_rollouts=NUM_ROLLOUTS,
     gamma=GAMMA,
 )
+agent = A2CAgent.default(environment, gamma=GAMMA)
 
 train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
 evaluate_agent(agent, environment, 1, MAX_STEPS)

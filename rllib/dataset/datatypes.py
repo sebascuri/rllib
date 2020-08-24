@@ -1,5 +1,5 @@
 """Project Data-types."""
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass, field
 from typing import Callable, List, Tuple, Type, TypeVar, Union
 
 import numpy as np
@@ -41,9 +41,8 @@ class Observation:
     next_state_scale_tril: Tensor = torch.tensor(NaN)
 
     def __iter__(self):
-        """Iterate the properties of the class."""
-        for key, value in self.__dict__.items():
-            yield value
+        """Iterate the properties of the observation."""
+        yield from astuple(self)
 
     @staticmethod
     def _is_equal_nan(x, y):
@@ -207,6 +206,74 @@ class Observation:
                 self,
             )
         )
+
+
+@dataclass
+class Loss:
+    """Basic Loss class.
+
+    Other Parameters
+    ----------------
+    loss: Tensor.
+        Combined loss to optimize.
+    td_error: Tensor.
+        TD-Error of critic.
+    policy_loss: Tensor.
+        Loss of policy optimization.
+    regularization_loss: Tensor.
+        Either KL-divergence or entropy bonus.
+    dual_loss: Tensor.
+        Loss of dual minimization problem.
+    """
+
+    loss: torch.Tensor = field(init=False)
+    td_error: torch.Tensor = torch.tensor(0.0)
+    policy_loss: torch.Tensor = torch.tensor(0.0)
+    critic_loss: torch.Tensor = torch.tensor(0.0)
+    regularization_loss: torch.Tensor = torch.tensor(0.0)
+    dual_loss: torch.Tensor = torch.tensor(0.0)
+
+    def __post_init__(self):
+        """Post-initialize Loss dataclass.
+
+        Fill in the attribute `loss' by adding all other losses.
+        """
+        self.loss = (
+            self.policy_loss
+            + self.critic_loss
+            + self.regularization_loss
+            + self.dual_loss
+        )
+
+    def __add__(self, other):
+        """Add two losses."""
+        return Loss(*map(lambda x: x[0] + x[1], zip(self, other)))
+
+    def __mul__(self, other):
+        """Multiply a loss by a scalar."""
+        return Loss(*map(lambda x: x[0] * other, self))
+
+    def __rmul__(self, other):
+        """Multiply a loss by a scalar."""
+        return self * other
+
+    def __truediv__(self, other):
+        """Divide a loss by a scalar."""
+        return Loss(*map(lambda x: x / other, self))
+
+    def __iter__(self):
+        """Iterate through the losses and yield all the separated losses.
+
+        Notes
+        -----
+        It does not return the loss entry.
+        It is useful to create new losses.
+        """
+        for key, value in self.__dict__.items():
+            if key == "loss":
+                continue
+            else:
+                yield value
 
 
 Trajectory = List[Observation]

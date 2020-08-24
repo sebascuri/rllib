@@ -41,7 +41,7 @@ class PPOAgent(OnPolicyAgent):
             critic=value_function,
             policy=policy,
             epsilon=epsilon,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             weight_value_function=weight_value_function,
             weight_entropy=weight_entropy,
             monte_carlo_target=monte_carlo_target,

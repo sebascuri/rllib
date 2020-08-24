@@ -1,5 +1,6 @@
 """Expected Actor-Critic Algorithm."""
 
+from rllib.dataset.datatypes import Loss
 from rllib.util import (
     discount_sum,
     get_entropy_and_logp,
@@ -7,7 +8,6 @@ from rllib.util import (
     tensor_to_distribution,
 )
 
-from .abstract_algorithm import Loss
 from .ac import ActorCritic
 
 
@@ -54,5 +54,6 @@ class ExpectedActorCritic(ActorCritic):
         )
 
         return Loss(
-            loss=policy_loss, policy_loss=policy_loss, regularization_loss=-entropy
+            policy_loss=policy_loss,
+            regularization_loss=-self.entropy_regularization * entropy,
         )

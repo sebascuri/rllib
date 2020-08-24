@@ -57,10 +57,6 @@ class QLearning(AbstractAlgorithm):
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
-    def forward_slow(self, observation):
-        """Compute the loss and the td-error."""
-        return self.critic_loss(observation)
-
 
 class GradientQLearning(QLearning):
     r"""Implementation of Gradient Q Learning algorithm.

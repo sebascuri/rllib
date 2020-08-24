@@ -53,7 +53,7 @@ class ExpectedSARSAAgent(OnPolicyAgent):
         )
         self.algorithm = ESARSA(
             critic=q_function,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             policy=policy,
             gamma=self.gamma,
         )

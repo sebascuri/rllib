@@ -29,7 +29,7 @@ class A2CAgent(ActorCriticAgent):
         self.algorithm = A2C(
             policy=policy,
             critic=critic,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             gamma=self.gamma,
         )
         self.policy = self.algorithm.policy
