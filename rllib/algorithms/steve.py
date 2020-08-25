@@ -4,7 +4,11 @@ import torch
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
 from rllib.util.value_estimation import mc_return
-from rllib.value_function.integrate_q_value_function import IntegrateQValueFunction
+from rllib.value_function import (
+    AbstractQFunction,
+    AbstractValueFunction,
+    IntegrateQValueFunction,
+)
 
 
 def steve_expand(
@@ -33,8 +37,10 @@ def steve_expand(
         expansion. NeuRIPS.
         """
 
-        def __init__(self, base_alg):
-            super().__init__(**{**base_alg.__dict__, **dict(base_alg.named_modules())})
+        def __init__(self):
+            super().__init__(
+                **{**base_algorithm.__dict__, **dict(base_algorithm.named_modules())}
+            )
             self.dynamical_model = dynamical_model
 
             self.reward_model = reward_model
@@ -42,10 +48,14 @@ def steve_expand(
             self.num_samples = num_samples
             self.termination = termination
 
-            if not hasattr(self, "value_target") and hasattr(self, "critic_target"):
+            if isinstance(self.critic_target, AbstractQFunction):
                 self.value_target = IntegrateQValueFunction(
-                    self.value_target, self.policy, num_samples=self.num_samples
+                    self.critic_target, self.policy, num_samples=self.num_samples
                 )
+            elif isinstance(self.critic_target, AbstractValueFunction):
+                self.value_target = self.critic_target
+            else:
+                self.value_target = None
 
         def get_value_target(self, observation):
             """Rollout model and call base algorithm with transitions."""
@@ -59,9 +69,9 @@ def steve_expand(
             critic_target = torch.zeros(
                 observation.state.shape[: -len(self.dynamical_model.dim_state)]
                 + (self.num_steps + 1, num_models, num_q)
-            )
+            )  # Critic target shape B x (H + 1) x M x Q
 
-            td_target = super().get_value_target(observation)  # B x 1
+            td_target = super().get_value_target(observation)  # TD-Target B x 1.
             critic_target[..., 0, :, :] = (
                 td_target.unsqueeze(-1)
                 .unsqueeze(-1)
@@ -114,4 +124,4 @@ def steve_expand(
 
             return critic_target
 
-    return STEVE(base_algorithm)
+    return STEVE()

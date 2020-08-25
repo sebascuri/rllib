@@ -17,51 +17,25 @@ class DynaAgent(ModelBasedAgent):
     """
 
     def __init__(
-        self,
-        base_algorithm,
-        dynamical_model,
-        reward_model,
-        model_optimizer,
-        optimizer,
-        dyna_num_steps,
-        dyna_num_samples,
-        termination=None,
-        policy=None,
-        *args,
-        **kwargs,
+        self, base_algorithm, dyna_num_samples=15, dyna_num_steps=1, *args, **kwargs
     ):
+        super().__init__(*args, **kwargs)
         self.algorithm = DynaAlgorithm(
             base_algorithm=base_algorithm,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            termination=termination,
+            dynamical_model=self.dynamical_model,
+            reward_model=self.reward_model,
+            termination=self.termination,
             num_steps=dyna_num_steps,
             num_samples=dyna_num_samples,
         )
 
-        if hasattr(self.algorithm, "policy"):
-            policy = self.algorithm.policy
-
-        optimizer = type(optimizer)(
+        self.optimizer = type(self.optimizer)(
             [
                 p
                 for name, p in self.algorithm.named_parameters()
                 if ("model" not in name and "target" not in name and p.requires_grad)
             ],
-            **optimizer.defaults,
-        )
-        self.dist_params = {"tanh": True, "action_scale": policy.action_scale}
-
-        super().__init__(
-            policy=policy,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            model_optimizer=model_optimizer,
-            termination=termination,
-            value_function=self.algorithm.value_function,
-            optimizer=optimizer,
-            *args,
-            **kwargs,
+            **self.optimizer.defaults,
         )
 
     @classmethod
@@ -102,6 +76,7 @@ class DynaAgent(ModelBasedAgent):
             model_optimizer=model_optimizer,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
+            policy=base_agent.policy,
             optimizer=base_agent.optimizer,
             termination=None,
             initial_distribution=None,

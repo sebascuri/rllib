@@ -83,7 +83,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
     def get_value_target(self, observation):
         """Get Q target from the observation."""
-        return observation.reward + self.gamma * self.critic(observation.next_state)
+        next_v = self.critic(observation.next_state)
+        next_v = next_v * (1 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def process_value_prediction(self, predicted_value, observation):
         """Return processed value prediction (e.g. clamped)."""

@@ -16,8 +16,8 @@ class MVE(AbstractAlgorithm):
     value_target: Optional[AbstractValueFunction]
     num_steps: int
     num_samples: int
+    td_k: ...
     def __init__(self, base_alg: AbstractAlgorithm) -> None: ...
-    def get_value_target(self, observation: Observation) -> Tensor: ...
 
 def mve_expand(
     base_algorithm: AbstractAlgorithm,
@@ -26,4 +26,5 @@ def mve_expand(
     num_steps: int = ...,
     num_samples: int = ...,
     termination: Optional[Termination] = ...,
+    td_k: bool = ...,
 ) -> MVE: ...
