@@ -2,14 +2,9 @@
 import torch
 
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.neural_networks.utilities import repeat_along_dimension
-from rllib.util.rollout import rollout_model
 from rllib.util.value_estimation import discount_cumsum, mc_return
-from rllib.value_function import (
-    AbstractQFunction,
-    AbstractValueFunction,
-    IntegrateQValueFunction,
-)
+
+from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
 def mve_expand(
@@ -20,6 +15,8 @@ def mve_expand(
     num_samples=15,
     termination=None,
     td_k=True,
+    *args,
+    **kwargs,
 ):
     """Expand a MVE-Expanded algorithm.
 
@@ -27,7 +24,7 @@ def mve_expand(
     """
     #
 
-    class MVE(type(base_algorithm)):
+    class MVE(type(base_algorithm), AbstractMBAlgorithm):
         """Derived Algorithm using MVE to calculate targets.
 
         References
@@ -41,45 +38,24 @@ def mve_expand(
             super().__init__(
                 **{**base_algorithm.__dict__, **dict(base_algorithm.named_modules())}
             )
-            self.dynamical_model = dynamical_model
-            self.reward_model = reward_model
-            self.num_steps = num_steps
-            self.num_samples = num_samples
-            self.termination = termination
-
-            if isinstance(self.critic_target, AbstractQFunction):
-                self.value_target = IntegrateQValueFunction(
-                    self.critic_target, self.policy, num_samples=self.num_samples
-                )
-            elif isinstance(self.critic_target, AbstractValueFunction):
-                self.value_target = self.critic_target
-            else:
-                self.value_target = None
+            AbstractMBAlgorithm.__init__(
+                self,
+                dynamical_model,
+                reward_model,
+                num_steps=num_steps,
+                num_samples=num_samples,
+                termination=termination,
+            )
 
             self.criterion = type(self.criterion)(reduction="mean")
             self.td_k = td_k
-
-        def simulate(self, observation):
-            """Simulate starting from an observation."""
-            state = repeat_along_dimension(
-                observation.state[..., 0, :], number=self.num_samples, dim=0
-            )
-            trajectory = rollout_model(
-                self.dynamical_model,
-                self.reward_model,
-                self.policy,
-                state,
-                max_steps=self.num_steps,
-                termination=self.termination,
-            )
-
-            return trajectory
 
         def critic_loss(self, observation):
             """Get critic-loss by rolling out a model."""
             if self.td_k:
                 with torch.no_grad():
-                    trajectory = self.simulate(observation)
+                    state = observation.state[..., 0, :]
+                    trajectory = self.simulate(state, self.policy)
                 observation = stack_list_of_tuples(trajectory, dim=2)
 
             return super().critic_loss(observation)
@@ -108,7 +84,8 @@ def mve_expand(
 
             else:
                 with torch.no_grad():
-                    trajectory = self.simulate(observation)
+                    state = observation.state[..., 0, :]
+                    trajectory = self.simulate(state, self.policy)
                     target_q = (
                         mc_return(
                             trajectory,

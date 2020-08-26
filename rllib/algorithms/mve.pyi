@@ -1,23 +1,15 @@
-from typing import Optional
+from typing import Any, Optional
 
-from torch import Tensor
-
-from rllib.dataset.datatypes import Observation, Termination
+from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
 from rllib.reward import AbstractReward
-from rllib.value_function import AbstractValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm
+from .abstract_mb_algorithm import AbstractMBAlgorithm
 
-class MVE(AbstractAlgorithm):
-    dynamical_model: AbstractModel
-    reward_model: AbstractReward
-    termination: Optional[Termination]
-    value_target: Optional[AbstractValueFunction]
-    num_steps: int
-    num_samples: int
+class MVE(AbstractAlgorithm, AbstractMBAlgorithm):
     td_k: bool
-    def __init__(self, base_alg: AbstractAlgorithm) -> None: ...
+    def __init__(self) -> None: ...
 
 def mve_expand(
     base_algorithm: AbstractAlgorithm,
@@ -27,4 +19,6 @@ def mve_expand(
     num_samples: int = ...,
     termination: Optional[Termination] = ...,
     td_k: bool = ...,
+    *args: Any,
+    **kwargs: Any,
 ) -> MVE: ...

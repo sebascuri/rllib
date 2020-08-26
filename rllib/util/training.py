@@ -7,9 +7,9 @@ import torch
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
-from rllib.model.ensemble_model import EnsembleModel
-from rllib.model.gp_model import ExactGPModel
-from rllib.model.nn_model import NNModel
+from rllib.model import AbstractModel, EnsembleModel, ExactGPModel, NNModel
+from rllib.model.utilities import PredictionStrategy
+from rllib.reward import AbstractReward
 from rllib.util.gaussian_processes.mlls import exact_mll
 
 from .logger import Logger
@@ -45,9 +45,15 @@ def train_nn_step(model, observation, optimizer):
     """Train a Neural Network Model."""
     model.train()
     optimizer.zero_grad()
-    loss = _model_loss(
-        model, observation.state, observation.action, observation.next_state
-    ).mean()
+
+    if isinstance(model, AbstractReward):
+        target = observation.next_state
+    elif isinstance(model, AbstractModel):
+        target = observation.reward
+    else:
+        raise NotImplementedError
+
+    loss = _model_loss(model, observation.state, observation.action, target).mean()
     loss.backward()
     optimizer.step()
 
@@ -58,19 +64,23 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
     """Train a model ensemble."""
     model.train()
     ensemble_loss = 0
+    if isinstance(model, AbstractReward):
+        target = observation.next_state
+    elif isinstance(model, AbstractModel):
+        target = observation.reward
+    else:
+        raise NotImplementedError
+
     for i in range(model.num_heads):
         optimizer.zero_grad()
         model.set_head(i)
-        model.set_prediction_strategy("set_head")
         loss = (
             mask[:, i]
-            * _model_loss(
-                model, observation.state, observation.action, observation.next_state
-            )
+            * _model_loss(model, observation.state, observation.action, target)
         ).mean()
         with torch.no_grad():
             mse = _model_mse(
-                model, observation.state, observation.action, observation.next_state
+                model, observation.state, observation.action, target
             ).mean()
         loss.backward()
         optimizer.step()
@@ -106,14 +116,10 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
         for observation, idx, mask in train_loader:
             observation = Observation(**observation)
             if isinstance(model, EnsembleModel):
-                current_head = model.get_head()
-                current_pred = model.get_prediction_strategy()
-
-                model_loss = train_ensemble_step(
-                    model, observation, mask, optimizer, logger
-                )
-                model.set_head(current_head)
-                model.set_prediction_strategy(current_pred)
+                with PredictionStrategy(model, prediction_strategy="set_head"):
+                    model_loss = train_ensemble_step(
+                        model, observation, mask, optimizer, logger
+                    )
 
             elif isinstance(model, NNModel):
                 model_loss = train_nn_step(model, observation, optimizer)
