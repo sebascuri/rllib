@@ -44,6 +44,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
         optimizer=None,
         train_frequency=1,
         num_rollouts=0,
+        num_iter=0,
+        batch_size=1,
         policy_update_frequency=1,
         target_update_frequency=1,
         clip_gradient_val=float("Inf"),
@@ -64,6 +66,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.exploration_steps = exploration_steps
         self.train_frequency = train_frequency
         self.num_rollouts = num_rollouts
+        self.num_iter = num_iter
+        self.batch_size = batch_size
+
         self.policy_update_frequency = policy_update_frequency
         self.target_update_frequency = target_update_frequency
         self.clip_gradient_val = clip_gradient_val
@@ -177,9 +182,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """Set the agent in evaluation mode."""
         self.train(not val)
 
-    def _learn_steps(self, closure, num_iter=1):
+    def _learn_steps(self, closure):
         """Apply `num_iter' learn steps to closure function."""
-        for _ in range(num_iter):
+        for _ in range(self.num_iter):
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:

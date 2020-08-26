@@ -72,13 +72,13 @@ class REPSAgent(OffPolicyAgent):
 
     def _optimizer_dual(self):
         """Optimize the dual function."""
-        self._optimize_loss(self.num_iter, loss_name="dual_loss")
+        self._optimize_loss(loss_name="dual_loss")
 
     def _fit_policy(self):
         """Fit the policy optimizing the weighted negative log-likelihood."""
-        self._optimize_loss(self.num_iter, loss_name="policy_loss")
+        self._optimize_loss(loss_name="policy_loss")
 
-    def _optimize_loss(self, num_iter, loss_name="dual_loss"):
+    def _optimize_loss(self, loss_name="dual_loss"):
         """Optimize the loss performing `num_iter' gradient steps."""
         #
 
@@ -97,7 +97,7 @@ class REPSAgent(OffPolicyAgent):
 
             return losses
 
-        self._learn_steps(closure, num_iter=num_iter)
+        self._learn_steps(closure)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

@@ -9,8 +9,6 @@ class OffPolicyAgent(AbstractAgent):
 
     algorithm: AbstractAlgorithm
     memory: ExperienceReplay
-    batch_size: int
-    num_iter: int
     def __init__(
         self,
         memory: ExperienceReplay,

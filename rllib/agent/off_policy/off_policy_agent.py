@@ -8,24 +8,15 @@ from rllib.agent.abstract_agent import AbstractAgent
 class OffPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(
-        self,
-        memory,
-        num_iter=1,
-        batch_size=64,
-        target_update_frequency=1,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, memory, *args, **kwargs):
         super().__init__(
-            train_frequency=kwargs.pop("train_frequency", 1), *args, **kwargs
+            train_frequency=kwargs.pop("train_frequency", 1),
+            batch_size=kwargs.pop("batch_size", 64),
+            *args,
+            **kwargs,
         )
 
-        self.batch_size = batch_size
         self.memory = memory
-
-        self.target_update_frequency = target_update_frequency
-        self.num_iter = num_iter
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -79,4 +70,4 @@ class OffPolicyAgent(AbstractAgent):
 
             return losses_
 
-        self._learn_steps(closure, num_iter=self.num_iter)
+        self._learn_steps(closure)

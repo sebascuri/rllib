@@ -10,7 +10,6 @@ class RandomAgent(AbstractAgent):
     """Agent that interacts randomly in an environment."""
 
     policy: RandomPolicy
-    trajectory: List[Observation]
     dataset: TrajectoryDataset
     def __init__(
         self,

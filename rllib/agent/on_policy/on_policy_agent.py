@@ -8,11 +8,15 @@ from rllib.dataset.utilities import stack_list_of_tuples
 class OnPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(self, batch_size=1, num_iter=1, *args, **kwargs):
-        super().__init__(num_rollouts=kwargs.pop("num_rollouts", 1), *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            batch_size=kwargs.pop("batch_size", 64),
+            num_rollouts=kwargs.pop("num_rollouts", 1),
+            *args,
+            **kwargs,
+        )
+
         self.trajectories = []
-        self.batch_size = batch_size
-        self.num_iter = num_iter
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
@@ -66,4 +70,4 @@ class OnPolicyAgent(AbstractAgent):
 
             return losses
 
-        self._learn_steps(closure, num_iter=self.num_iter)
+        self._learn_steps(closure)

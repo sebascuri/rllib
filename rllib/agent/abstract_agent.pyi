@@ -25,6 +25,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
     exploration_steps: int
     exploration_episodes: int
     num_rollouts: int
+    num_iter: int
+    batch_size: int
     train_frequency: int
     policy_update_frequency: int
     target_update_frequency: int
@@ -40,6 +42,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
         optimizer: Optional[Optimizer] = ...,
         train_frequency: int = ...,
         num_rollouts: int = ...,
+        num_iter: int = ...,
+        batch_size: int = ...,
         policy_update_frequency: int = ...,
         target_update_frequency: int = ...,
         gamma: float = ...,
@@ -64,7 +68,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def early_stop(self, *args: Any, **kwargs: Any) -> bool: ...
     def train(self, val: bool = True) -> None: ...
     def eval(self, val: bool = True) -> None: ...
-    def _learn_steps(self, closure: Callable, num_iter: int = ...) -> Loss: ...
+    def _learn_steps(self, closure: Callable) -> Loss: ...
     @property
     def total_episodes(self) -> int: ...
     @property
