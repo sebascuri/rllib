@@ -18,7 +18,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     gamma: float
     reward_transformer: RewardTransformer
     critic: AbstractQFunction
+    critic_target: AbstractQFunction
     policy: AbstractPolicy
+    policy_target: AbstractPolicy
     criterion: _Loss
     def __init__(
         self,

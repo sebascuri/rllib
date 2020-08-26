@@ -7,7 +7,26 @@ from rllib.util.rollout import rollout_model
 class AbstractMBAlgorithm(object):
     """Model Based Algorithm.
 
-    A model based algorithm simulates trajectories with a model.
+    A model based algorithm has a dynamical_model and a reward_model and, it has a
+    simulate method that simulates trajectories following a policy.
+
+    Parameters
+    ----------
+    dynamical_model: AbstractModel.
+        Dynamical model to simulate.
+    reward_model: AbstractReward.
+        Reward model to simulate.
+    num_steps: int.
+        Number of steps to simulate.
+    num_samples: int.
+        Number of parallel samples to simulate.
+    termination: Termination, optional.
+        Termination condition to evaluate while simulating.
+
+    Methods
+    -------
+    simulate(self, state: State, policy: AbstractPolicy) -> Trajectory:
+        Simulate a set of particles starting from `state' and following `policy'.
     """
 
     def __init__(
@@ -30,7 +49,7 @@ class AbstractMBAlgorithm(object):
         self.termination = termination
 
     def simulate(self, state, policy):
-        """Simulate trajectories starting from a state."""
+        """Simulate a set of particles starting from `state' and following `policy'."""
         if self.num_samples > 0:
             state = repeat_along_dimension(state, number=self.num_samples, dim=0)
         state = state.reshape(-1, *self.dynamical_model.dim_state)

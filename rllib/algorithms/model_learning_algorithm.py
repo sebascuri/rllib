@@ -15,11 +15,36 @@ from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
 class ModelLearningAlgorithm(AbstractMBAlgorithm):
-    """Base class for model learning algorithm."""
+    """An algorithm for model learning.
+
+    Parameters
+    ----------
+    model_optimizer: Optimizer, optional.
+        Optimizer to learn parameters of model.
+    num_epochs: int.
+        Number of epochs to iterate through the dataset.
+    batch_size: int.
+        Batch size of optimization algorithm.
+    bootstrap: bool.
+        Flag that indicates whether or not to add bootstrapping to dataset.
+    max_memory: int.
+        Maximum size of dataset.
+
+    Other Parameters
+    ----------------
+    See AbstractMBAlgorithm.
+
+    Methods
+    -------
+    update_model_posterior(self, last_trajectory: Trajectory, logger: Logger) -> None:
+        Update model posterior of GP models.
+    learn(self, last_trajectory: Trajectory, logger: Logger) -> None: ...
+        Learn using stochastic gradient descent on marginal maximum likelihood.
+    """
 
     def __init__(
         self,
-        model_optimizer,
+        model_optimizer=None,
         num_epochs=1,
         batch_size=64,
         bootstrap=True,
@@ -47,6 +72,8 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
 
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+        if self.num_epochs > 0:
+            assert self.model_optimizer is not None
 
     def update_model_posterior(self, last_trajectory, logger):
         """Update model posterior of GP-models with new data."""
@@ -71,7 +98,9 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         print(colorize("Training Model", "yellow"))
 
     def learn(self, last_trajectory, logger):
-        """Learn model with the last trajectory.
+        """Learn using stochastic gradient descent on marginal maximum likelihood.
+
+        The last trajectory is added to the data set.
 
         Step 1: Train dynamical model.
         Step 2: TODO Train the reward model.

@@ -22,7 +22,24 @@ from rllib.util.utilities import tensor_to_distribution
 
 
 class ModelBasedAgent(AbstractAgent):
-    """Implementation of a Model Based RL Agent."""
+    """Implementation of a Model Based RL Agent.
+
+    Parameters
+    ----------
+    policy_learning_algorithm: PolicyLearningAlgorithm.
+    model_learning_algorithm: ModelLearningAlgorithm
+    planning_algorithm: MPCSolver.
+    simulation_algorithm: SimulationAlgorithm.
+    num_simulation_iterations: int.
+    learn_from_real: bool.
+        Flag that indicates whether or not to learn from real transitions.
+    thompson_sampling: bool.
+        Flag that indicates whether or not to use posterior sampling for the model.
+
+    Other Parameters
+    ----------------
+    See AbstractAgent.
+    """
 
     def __init__(
         self,
@@ -31,8 +48,8 @@ class ModelBasedAgent(AbstractAgent):
         planning_algorithm=None,
         simulation_algorithm=None,
         num_simulation_iterations=0,
-        thompson_sampling=False,
         learn_from_real=False,
+        thompson_sampling=False,
         *args,
         **kwargs,
     ):

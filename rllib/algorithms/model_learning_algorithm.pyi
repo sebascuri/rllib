@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from torch.optim.optimizer import Optimizer
 
@@ -12,14 +12,14 @@ from rllib.util.logger import Logger
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class ModelLearningAlgorithm(AbstractMBAlgorithm):
-    model_optimizer: Optimizer
+    model_optimizer: Optional[Optimizer]
     num_epochs: int = ...
     batch_size: int = ...
     dataset: BootstrapExperienceReplay
     initial_states_dataset = StateExperienceReplay
     def __init__(
         self,
-        model_optimizer: Optimizer,
+        model_optimizer: Optional[Optimizer] = ...,
         num_epochs: int = ...,
         batch_size: int = ...,
         bootstrap: bool = ...,
