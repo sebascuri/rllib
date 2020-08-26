@@ -15,6 +15,10 @@ class PolicyShooting(RandomShooting):
     ----------
     policy: AbstractPolicy.
 
+    Other Parameters
+    ----------------
+    See Also: RandomShooting.
+
     References
     ----------
     Hong, Z. W., Pajarinen, J., & Peters, J. (2019).
@@ -41,6 +45,7 @@ class PolicyShooting(RandomShooting):
             termination=self.termination,
         )
         actions = stack_list_of_tuples(trajectory).action
-        idx = torch.topk(value, k=self.plan_elites, largest=True)[1]
+        idx = torch.topk(value, k=self.num_elites, largest=True)[1]
+
         # Return first action and the mean over the elite samples.
         return actions[0, idx].mean(0)

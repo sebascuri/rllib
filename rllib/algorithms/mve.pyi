@@ -16,7 +16,7 @@ class MVE(AbstractAlgorithm):
     value_target: Optional[AbstractValueFunction]
     num_steps: int
     num_samples: int
-    td_k: ...
+    td_k: bool
     def __init__(self, base_alg: AbstractAlgorithm) -> None: ...
 
 def mve_expand(

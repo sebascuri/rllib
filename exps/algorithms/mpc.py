@@ -8,7 +8,6 @@ from rllib.algorithms.mpc import CEMShooting, MPCSolver, MPPIShooting, RandomSho
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.model.environment_model import EnvironmentModel
-from rllib.policy.mpc_policy import MPCPolicy
 from rllib.reward.environment_reward import EnvironmentReward
 from rllib.util.training import evaluate_agent
 
@@ -47,7 +46,7 @@ solver = "cem_shooting"
 kappa = 1.0
 betas = [0.2, 0.8, 0]
 warm_start = True
-num_cpu = 2
+num_cpu = 1
 
 memory = ExperienceReplay(max_len=2000, num_steps=1)
 value_function = None
@@ -100,7 +99,5 @@ elif solver == "mppi_shooting":
 else:
     raise NotImplementedError
 
-policy = MPCPolicy(mpc_solver)
-
-agent = MPCAgent(mpc_policy=policy)
+agent = MPCAgent(mpc_solver=mpc_solver)
 evaluate_agent(agent, environment=env, num_episodes=1, max_steps=MAX_STEPS, render=True)

@@ -1,32 +1,17 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
-from torch import Tensor
-
-from rllib.dataset.datatypes import Loss, Observation, Termination
-from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
+from rllib.dataset.datatypes import Loss, Observation
 from rllib.value_function import AbstractValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm
+from .abstract_mb_algorithm import AbstractMBAlgorithm
 
-class DynaAlgorithm(AbstractAlgorithm):
+class DynaAlgorithm(AbstractAlgorithm, AbstractMBAlgorithm):
     base_algorithm: AbstractAlgorithm
-
-    dynamical_model: AbstractModel
-    reward_model: AbstractReward
-    termination: Optional[Termination]
     value_function: Optional[AbstractValueFunction]
-
-    num_steps: int
-    num_samples: int
     def __init__(
-        self,
-        base_algorithm: AbstractAlgorithm,
-        dynamical_model: AbstractModel,
-        reward_model: AbstractReward,
-        num_steps: int = ...,
-        num_samples: int = ...,
-        termination: Optional[Termination] = ...,
+        self, base_algorithm: AbstractAlgorithm, *args: Any, **kwargs: Any
     ) -> None: ...
-    def simulate(self, state: Tensor) -> List[Observation]: ...
-    def forward(self, *args: Tensor, **kwargs: Any) -> Loss: ...
+    def forward(
+        self, observation: Union[Observation, List[Observation]], **kwargs: Any
+    ) -> Loss: ...

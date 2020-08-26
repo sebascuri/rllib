@@ -3,9 +3,9 @@
 import torch
 from torch.optim import Adam
 
+from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc import CEMShooting
 from rllib.model import EnsembleModel, TransformedModel
-from rllib.policy.mpc_policy import MPCPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
 
 from .model_based_agent import ModelBasedAgent
@@ -14,17 +14,8 @@ from .model_based_agent import ModelBasedAgent
 class MPCAgent(ModelBasedAgent):
     """Implementation of an agent that runs an MPC policy."""
 
-    def __init__(self, mpc_policy, *args, **kwargs):
-        super().__init__(
-            dynamical_model=mpc_policy.solver.dynamical_model,
-            reward_model=mpc_policy.solver.reward_model,
-            policy=mpc_policy,
-            value_function=mpc_policy.solver.terminal_reward,
-            termination=mpc_policy.solver.termination,
-            model_optimizer=kwargs.pop("model_optimizer", None),
-            *args,
-            **kwargs,
-        )
+    def __init__(self, mpc_solver, *args, **kwargs):
+        super().__init__(planning_algorithm=mpc_solver, *args, **kwargs)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -65,15 +56,17 @@ class MPCAgent(ModelBasedAgent):
             default_action="zero",
             num_cpu=1,
         )
-        policy = MPCPolicy(mpc_solver)
-
-        return cls(
-            policy,
-            model_learn_num_iter=4 if kwargs.get("test", False) else 30,
-            model_learn_batch_size=64,
+        model_learning_algorithm = ModelLearningAlgorithm(
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            num_epochs=4 if kwargs.get("test", False) else 30,
+            batch_size=64,
             bootstrap=True,
             model_optimizer=model_optimizer,
-            sim_num_steps=0,
+        )
+        return cls(
+            mpc_solver=mpc_solver,
+            model_learning_algorithm=model_learning_algorithm,
             comment=environment.name,
             *args,
             **kwargs,
