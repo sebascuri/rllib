@@ -19,6 +19,8 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
         num_states: int = ...,
         num_actions: int = ...,
         tau: float = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
 

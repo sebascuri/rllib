@@ -24,36 +24,14 @@ class NNEnsembleValueFunction(NNValueFunction):
 
     """
 
-    def __init__(
-        self,
-        dim_state,
-        num_heads,
-        num_states=-1,
-        layers=None,
-        biased_head=True,
-        non_linearity="Tanh",
-        tau=0.0,
-        input_transform=None,
-    ):
+    def __init__(self, num_heads, *args, **kwargs):
         assert num_heads > 0
         self.num_heads = num_heads
 
-        super().__init__(dim_state, num_states)
+        super().__init__(*args, **kwargs)
         self.nn = nn.ModuleList(
-            [
-                NNValueFunction(
-                    dim_state=dim_state,
-                    num_states=num_states,
-                    layers=layers,
-                    biased_head=biased_head,
-                    non_linearity=non_linearity,
-                    tau=tau,
-                    input_transform=input_transform,
-                )
-                for _ in range(num_heads)
-            ]
+            [NNValueFunction(*args, **kwargs) for _ in range(num_heads)]
         )
-        self.tau = tau
 
     @classmethod
     def from_value_function(cls, value_function, num_heads: int):
@@ -109,42 +87,14 @@ class NNEnsembleQFunction(NNQFunction):
         flag that indicates if head of NN has a bias term or not.
     """
 
-    def __init__(
-        self,
-        dim_state,
-        dim_action,
-        num_heads,
-        num_states=-1,
-        num_actions=-1,
-        layers=None,
-        biased_head=True,
-        non_linearity="Tanh",
-        tau=0.0,
-        input_transform=None,
-    ):
+    def __init__(self, num_heads, *args, **kwargs):
         self.num_heads = num_heads
         assert num_heads > 0
-        # Initialize from q-function.
-
-        super().__init__(dim_state, dim_action, num_states, num_actions)
+        super().__init__(*args, **kwargs)
 
         self.nn = nn.ModuleList(
-            [
-                NNQFunction(
-                    dim_state=dim_state,
-                    dim_action=dim_action,
-                    num_states=num_states,
-                    num_actions=num_actions,
-                    layers=layers,
-                    biased_head=biased_head,
-                    non_linearity=non_linearity,
-                    tau=tau,
-                    input_transform=input_transform,
-                )
-                for _ in range(self.num_heads)
-            ]
+            [NNQFunction(*args, **kwargs) for _ in range(self.num_heads)]
         )
-        self.tau = tau
 
     @classmethod
     def from_q_function(cls, q_function, num_heads: int):

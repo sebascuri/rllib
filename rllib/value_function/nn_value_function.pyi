@@ -13,13 +13,12 @@ class NNValueFunction(AbstractValueFunction):
     nn: torch.nn.Module
     def __init__(
         self,
-        dim_state: Tuple,
-        num_states: int = -1,
         layers: Optional[List[int]] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
-        tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...

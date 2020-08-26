@@ -59,7 +59,7 @@ class NNModel(AbstractModel):
         if hasattr(input_transform, "extra_dim"):
             in_dim = (in_dim[0] + getattr(input_transform, "extra_dim"),)
 
-        if self.discrete_action:
+        if self.discrete_state:
             self.nn = CategoricalNN(
                 in_dim,
                 out_dim,

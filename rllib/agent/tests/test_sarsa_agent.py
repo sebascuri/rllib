@@ -47,8 +47,8 @@ def test_policies(environment, policy, batch_size):
     environment = GymEnvironment(environment, SEED)
 
     q_function = NNQFunction(
-        environment.dim_observation,
-        environment.dim_action,
+        dim_state=environment.dim_observation,
+        dim_action=environment.dim_action,
         num_states=environment.num_states,
         num_actions=environment.num_actions,
         layers=LAYERS,

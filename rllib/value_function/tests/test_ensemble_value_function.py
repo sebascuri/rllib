@@ -229,8 +229,8 @@ class TestNNEnsembleQFunction(object):
 
     def test_input_transform(self, num_heads, batch_size):
         q_function = NNEnsembleQFunction(
-            (2,),
-            (1,),
+            dim_state=(2,),
+            dim_action=(1,),
             num_heads=num_heads,
             layers=[64, 64],
             non_linearity="Tanh",

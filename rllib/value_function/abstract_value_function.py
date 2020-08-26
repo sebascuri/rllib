@@ -28,7 +28,16 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, dim_state, dim_action, num_states=-1, num_actions=-1, tau=0.0):
+    def __init__(
+        self,
+        dim_state,
+        dim_action,
+        num_states=-1,
+        num_actions=-1,
+        tau=0.0,
+        *args,
+        **kwargs,
+    ):
         super().__init__()
         self.dim_action = dim_action
         self.num_actions = num_actions if num_actions is not None else -1

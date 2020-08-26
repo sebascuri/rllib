@@ -21,7 +21,9 @@ class IntegrateQValueFunction(AbstractValueFunction):
 
     def __init__(self, q_function, policy, num_samples=15, dist_params=None):
         super().__init__(
-            q_function.dim_state, num_states=q_function.num_states, tau=q_function.tau
+            dim_state=q_function.dim_state,
+            num_states=q_function.num_states,
+            tau=q_function.tau,
         )
         self.q_function = q_function
         self.policy = policy

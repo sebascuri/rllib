@@ -95,10 +95,10 @@ class TestMLPPolicy(object):
         )
 
         self.policy = NNPolicy(
-            self.dim_state,
-            self.dim_action,
-            self.num_states,
-            self.num_actions,
+            dim_state=self.dim_state,
+            dim_action=self.dim_action,
+            num_states=self.num_states,
+            num_actions=self.num_actions,
             layers=[32, 32],
             deterministic=deterministic,
         )
@@ -188,7 +188,12 @@ class TestMLPPolicy(object):
         assert embeddings.dtype is torch.get_default_dtype()
 
     def test_input_transform(self, batch_size):
-        policy = NNPolicy((2,), (4,), layers=[64, 64], input_transform=StateTransform())
+        policy = NNPolicy(
+            dim_state=(2,),
+            dim_action=(4,),
+            layers=[64, 64],
+            input_transform=StateTransform(),
+        )
         out = tensor_to_distribution(policy(random_tensor(False, 2, batch_size)))
         action = out.sample()
         assert action.shape == torch.Size([batch_size, 4] if batch_size else [4])
@@ -196,7 +201,7 @@ class TestMLPPolicy(object):
 
     def test_goal(self, batch_size):
         goal = random_tensor(False, 3, None)
-        policy = NNPolicy((4,), (2,), layers=[32, 32], goal=goal)
+        policy = NNPolicy(dim_state=(4,), dim_action=(2,), layers=[32, 32], goal=goal)
         state = random_tensor(False, 4, batch_size)
         pi = tensor_to_distribution(policy(state))
         action = pi.sample()
@@ -243,7 +248,7 @@ class TestMLPPolicy(object):
 
 class TestFelixNet(object):
     def init(self, dim_state, dim_action):
-        self.policy = FelixPolicy((dim_state,), (dim_action,))
+        self.policy = FelixPolicy(dim_state=(dim_state,), dim_action=(dim_action,))
 
     def test_num_states_actions(self, dim_state, dim_action):
         self.init(dim_state, dim_action)

@@ -28,15 +28,14 @@ class NNValueFunction(AbstractValueFunction):
 
     def __init__(
         self,
-        dim_state,
-        num_states=-1,
         layers=None,
         biased_head=True,
         non_linearity="Tanh",
-        tau=0.0,
         input_transform=None,
+        *args,
+        **kwargs,
     ):
-        super().__init__(dim_state, num_states, tau=tau)
+        super().__init__(*args, **kwargs)
 
         if self.discrete_state:
             num_inputs = (self.num_states,)
@@ -122,17 +121,14 @@ class NNQFunction(AbstractQFunction):
 
     def __init__(
         self,
-        dim_state,
-        dim_action,
-        num_states=-1,
-        num_actions=-1,
         layers=None,
         biased_head=True,
         non_linearity="Tanh",
-        tau=0.0,
         input_transform=None,
+        *args,
+        **kwargs,
     ):
-        super().__init__(dim_state, dim_action, num_states, num_actions, tau=tau)
+        super().__init__(*args, **kwargs)
 
         if not self.discrete_state and not self.discrete_action:
             num_inputs = (self.dim_state[0] + self.dim_action[0],)

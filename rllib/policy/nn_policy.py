@@ -33,7 +33,7 @@ class NNPolicy(AbstractPolicy):
         initial_scale=0.5,
         input_transform=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.input_transform = input_transform
@@ -171,30 +171,12 @@ class FelixPolicy(NNPolicy):
 
     """
 
-    def __init__(
-        self,
-        dim_state,
-        dim_action,
-        tau=0.0,
-        initial_scale=0.5,
-        deterministic=False,
-        action_scale=1,
-        input_transform=None,
-    ):
-        super().__init__(
-            dim_state,
-            dim_action,
-            -1,
-            -1,
-            tau=tau,
-            deterministic=deterministic,
-            input_transform=input_transform,
-            action_scale=action_scale,
-        )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.nn = FelixNet(
             self.nn.kwargs["in_dim"],
             self.nn.kwargs["out_dim"],
-            initial_scale=initial_scale,
+            initial_scale=self.nn.kwargs["initial_scale"],
         )
         if self.discrete_state or self.discrete_action:
             raise ValueError("num_states and num_actions have to be set to -1.")

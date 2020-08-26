@@ -79,7 +79,9 @@ class TestNNValueFunction(object):
             self.dim_state = (dim_state,)
 
         layers = [32, 32]
-        self.value_function = NNValueFunction(self.dim_state, self.num_states, layers)
+        self.value_function = NNValueFunction(
+            dim_state=self.dim_state, num_states=self.num_states, layers=layers
+        )
 
     def test_compile(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
@@ -111,8 +113,8 @@ class TestNNValueFunction(object):
 
     def test_input_transform(self, batch_size):
         value_function = NNValueFunction(
-            (2,),
-            -1,
+            dim_state=(2,),
+            num_states=-1,
             layers=[64, 64],
             non_linearity="Tanh",
             input_transform=StateTransform(),
@@ -169,7 +171,11 @@ class TestNNQFunction(object):
 
         layers = [32, 32]
         self.q_function = NNQFunction(
-            self.dim_state, self.dim_action, self.num_states, self.num_actions, layers
+            dim_state=self.dim_state,
+            dim_action=self.dim_action,
+            num_states=self.num_states,
+            num_actions=self.num_actions,
+            layers=layers,
         )
 
     def test_compile(self, discrete_state, discrete_action, dim_state, dim_action):
@@ -185,8 +191,8 @@ class TestNNQFunction(object):
 
     def test_input_transform(self, batch_size):
         q_function = NNQFunction(
-            (2,),
-            (1,),
+            dim_state=(2,),
+            dim_action=(1,),
             layers=[64, 64],
             non_linearity="Tanh",
             input_transform=StateTransform(),

@@ -1,13 +1,11 @@
-from typing import Union
+from typing import Any, Union
 
 from torch import Tensor
 
 from .nn_value_function import NNQFunction, NNValueFunction
 
 class TabularValueFunction(NNValueFunction):
-    def __init__(
-        self, num_states: int, tau: float = ..., biased_head: bool = ...
-    ) -> None: ...
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
     @property
     def table(self) -> Tensor: ...
     def set_value(
@@ -15,13 +13,7 @@ class TabularValueFunction(NNValueFunction):
     ) -> None: ...
 
 class TabularQFunction(NNQFunction):
-    def __init__(
-        self,
-        num_states: int,
-        num_actions: int,
-        tau: float = ...,
-        biased_head: bool = ...,
-    ) -> None: ...
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
     @property
     def table(self) -> Tensor: ...
     def set_value(
