@@ -92,7 +92,3 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             optimizer=self.model_optimizer,
             logger=logger,
         )
-
-    def forward(self, *args, **kwargs):
-        """Pass."""
-        pass

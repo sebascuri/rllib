@@ -81,7 +81,3 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
             self.dataset.reset()
         self._idx += 1
         return trajectory
-
-    def forward(self, *args, **kwargs):
-        """Pass."""
-        pass
