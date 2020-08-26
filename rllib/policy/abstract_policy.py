@@ -50,6 +50,8 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         deterministic=False,
         action_scale=1,
         goal=None,
+        *args,
+        **kwargs
     ):
         super().__init__()
         self.dim_state = dim_state

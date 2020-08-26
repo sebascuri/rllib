@@ -27,6 +27,8 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         deterministic: bool = ...,
         action_scale: Action = ...,
         goal: Optional[Tensor] = ...,
+        *args: Any,
+        **kwargs: Any
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     def random(

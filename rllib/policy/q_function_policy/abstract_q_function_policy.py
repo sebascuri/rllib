@@ -21,8 +21,8 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
         if not q_function.discrete_action:
             raise NotImplementedError
         super().__init__(
-            q_function.dim_state,
-            q_function.dim_action,
+            dim_state=q_function.dim_state,
+            dim_action=q_function.dim_action,
             num_states=q_function.num_states,
             num_actions=q_function.num_actions,
         )

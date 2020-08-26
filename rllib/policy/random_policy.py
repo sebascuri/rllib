@@ -12,23 +12,8 @@ class RandomPolicy(AbstractPolicy):
 
     """
 
-    def __init__(
-        self,
-        dim_state,
-        dim_action,
-        num_states=-1,
-        num_actions=-1,
-        action_scale=1,
-        goal=None,
-    ):
-        super().__init__(
-            dim_state,
-            dim_action,
-            num_states,
-            num_actions,
-            action_scale=action_scale,
-            goal=goal,
-        )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def forward(self, state):
         """Get distribution over actions."""

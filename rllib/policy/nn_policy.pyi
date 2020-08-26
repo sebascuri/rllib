@@ -14,20 +14,14 @@ class NNPolicy(AbstractPolicy):
     nn: torch.nn.Module
     def __init__(
         self,
-        dim_state: Tuple,
-        dim_action: Tuple,
-        num_states: int = ...,
-        num_actions: int = ...,
         layers: Optional[List[int]] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
         squashed_output: bool = ...,
-        tau: float = ...,
         initial_scale: float = ...,
-        deterministic: bool = ...,
-        action_scale: Action = ...,
-        goal: Optional[Tensor] = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        *args: Any,
+        **kwargs: Any
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...

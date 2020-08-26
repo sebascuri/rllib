@@ -18,49 +18,24 @@ class NNPolicy(AbstractPolicy):
 
     Parameters
     ----------
-    dim_state: Tuple
-        dimension of state.
-    dim_action: Tuple
-        dimension of action.
-    num_states: int, optional
-        number of discrete states (None if state is continuous).
-    num_actions: int, optional
-        number of discrete actions (None if action is continuous).
     layers: list, optional
         width of layers, each layer is connected with a non-linearity.
     biased_head: bool, optional
         flag that indicates if head of NN has a bias term or not.
-    action_scale: float, optional.
-        Magnitude of action scale.
     """
 
     def __init__(
         self,
-        dim_state,
-        dim_action,
-        num_states=-1,
-        num_actions=-1,
         layers=None,
         biased_head=True,
         non_linearity="Tanh",
         squashed_output=True,
-        action_scale=1,
-        tau=0.0,
         initial_scale=0.5,
-        deterministic=False,
-        goal=None,
         input_transform=None,
+        *args,
+        **kwargs
     ):
-        super().__init__(
-            dim_state,
-            dim_action,
-            num_states,
-            num_actions,
-            tau,
-            deterministic,
-            action_scale=action_scale,
-            goal=goal,
-        )
+        super().__init__(*args, **kwargs)
         self.input_transform = input_transform
         in_dim = self._preprocess_input_dim()
 
