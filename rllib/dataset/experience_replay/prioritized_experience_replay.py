@@ -105,7 +105,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
         num = len(self)
         return self._priorities[:num] / torch.sum(self._priorities[:num])
 
-    def get_batch(self, batch_size):
+    def sample_batch(self, batch_size):
         """Get a batch of data."""
         probs = self.probabilities.numpy()
         indices = np.random.choice(len(self), batch_size, p=probs / np.sum(probs))

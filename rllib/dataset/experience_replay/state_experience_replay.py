@@ -27,7 +27,7 @@ class StateExperienceReplay(data.Dataset):
         update experience replay sampling distribution with td_error feedback.
     all_data:
         Get all the transformed data.
-    get_batch(batch_size):
+    sample_batch(batch_size):
         Get a batch of data.
     reset():
         Reset the memory to zero.
@@ -108,7 +108,7 @@ class StateExperienceReplay(data.Dataset):
             self.memory[:delta] = state[:delta]
             self._ptr = delta
 
-    def get_batch(self, batch_size):
+    def sample_batch(self, batch_size):
         """Get a batch of data."""
         indices = np.random.choice(len(self), batch_size)
         return default_collate([self[i] for i in indices])
