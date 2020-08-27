@@ -32,4 +32,8 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
                 value_function=self.value_target,
                 reward_transformer=self.reward_transformer,
             )
-        return Loss(policy_loss=-v.sum())
+        entropy = sum(o.entropy.mean() for o in trajectory)
+        return Loss(
+            policy_loss=-v.sum(),
+            regularization_loss=-self.entropy_regularization * entropy,
+        )

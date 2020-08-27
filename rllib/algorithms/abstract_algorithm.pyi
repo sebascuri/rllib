@@ -22,11 +22,13 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     policy: AbstractPolicy
     policy_target: AbstractPolicy
     criterion: _Loss
+    entropy_regularization: float
     def __init__(
         self,
         gamma: float,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
+        entropy_regularization: float = ...,
         criterion: _Loss = ...,
         reward_transformer: RewardTransformer = ...,
         *args: Any,

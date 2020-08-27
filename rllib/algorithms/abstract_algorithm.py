@@ -66,6 +66,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         gamma,
         policy,
         critic,
+        entropy_regularization=0.0,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
         *args,
@@ -80,6 +81,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.critic_target = deep_copy_module(self.critic)
         self.criterion = criterion
         self.reward_transformer = reward_transformer
+        self.entropy_regularization = entropy_regularization
 
     def get_value_target(self, observation):
         """Get Q target from the observation."""

@@ -9,12 +9,10 @@ from .abstract_algorithm import AbstractAlgorithm
 
 class ActorCritic(AbstractAlgorithm):
     num_samples: int
-    entropy_regularization: float
     standardize_returns: bool
     def __init__(
         self,
         num_samples: int = ...,
-        entropy_regularization: float = ...,
         standardize_returns: bool = ...,
         *args: Any,
         **kwargs: Any,

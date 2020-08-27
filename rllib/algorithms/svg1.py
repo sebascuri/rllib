@@ -3,7 +3,7 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import get_entropy_and_logp, tensor_to_distribution
 from rllib.value_function import NNEnsembleValueFunction
 
 from .bptt import BPTT
@@ -28,10 +28,14 @@ class SVG1(BPTT):
         with torch.no_grad():
             eta = torch.inverse(action_chol) @ ((action - action_mean).unsqueeze(-1))
 
-        # Compute off-policy weight.
+        # Compute entropy and log_probability.
         pi = tensor_to_distribution((action_mean, action_chol))
+        entropy, log_p = get_entropy_and_logp(
+            pi=pi, action=observation.action[..., 0, :]
+        )
+
+        # Compute off-policy weight.
         with torch.no_grad():
-            log_p = pi.log_prob(action)
             weight = torch.exp(log_p - observation.log_prob_action[..., 0])
 
         with DisableGradient(self.dynamical_model, self.reward_model, self.critic):
@@ -42,6 +46,7 @@ class SVG1(BPTT):
             ns_mean, ns_chol = self.dynamical_model(state, action)
             with torch.no_grad():
                 xi = torch.inverse(ns_chol) @ ((next_state - ns_mean).unsqueeze(-1))
+
             # Compute re-parameterized next-state sample.
             ns = ns_mean + (ns_chol @ xi).squeeze(-1)
 
@@ -54,4 +59,7 @@ class SVG1(BPTT):
 
             v = r + self.gamma * next_v
 
-        return Loss(policy_loss=-(weight * v).sum())
+        return Loss(
+            policy_loss=-(weight * v).sum(),
+            regularization_loss=-self.entropy_regularization * entropy,
+        )

@@ -3,7 +3,7 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import get_entropy_and_logp, tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
 from .dpg import DPG
@@ -23,10 +23,14 @@ class SVG0(DPG):
             delta = observation.action[..., 0, :] - action_mean
             eta = torch.inverse(action_chol) @ delta.unsqueeze(-1)
 
-        # Compute off-policy weight.
+        # Compute entropy and log_probability.
         pi = tensor_to_distribution((action_mean, action_chol))
+        entropy, log_p = get_entropy_and_logp(
+            pi=pi, action=observation.action[..., 0, :]
+        )
+
+        # Compute off-policy weight.
         with torch.no_grad():
-            log_p = pi.log_prob(observation.action[..., 0, :])
             weight = torch.exp(log_p - observation.log_prob_action[..., 0])
 
         # Compute re-parameterized policy sample.
@@ -37,4 +41,8 @@ class SVG0(DPG):
             q = self.critic(observation.state[..., 0, :], action)
             if isinstance(self.critic, NNEnsembleQFunction):
                 q = q[..., 0]
-        return Loss(policy_loss=-weight * q)
+
+        return Loss(
+            policy_loss=-weight * q,
+            regularization_loss=-self.entropy_regularization * entropy,
+        )

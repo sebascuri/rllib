@@ -48,21 +48,13 @@ class ActorCritic(AbstractAlgorithm):
     Actor-critic algorithms. NIPS.
     """
 
-    def __init__(
-        self,
-        num_samples=15,
-        entropy_regularization=0.0,
-        standarize_returns=True,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, num_samples=15, standarize_returns=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
         self.old_policy = old_policy
 
         self.num_samples = num_samples
-        self.entropy_regularization = entropy_regularization
         self.standardize_returns = standarize_returns
 
     def get_log_p_kl_entropy(self, state, action):
