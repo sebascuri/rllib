@@ -1,6 +1,6 @@
 """Model-Based DYNA Agent."""
 
-from rllib.algorithms.dyna_algorithm import dyna_expand
+from rllib.algorithms.dyna import dyna_expand
 
 from .derived_model_based_agent import DerivedMBAgent
 

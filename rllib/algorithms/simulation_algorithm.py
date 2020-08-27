@@ -85,7 +85,7 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
     def get_initial_states(self, initial_states_dataset, real_dataset):
         """Get initial states to sample from."""
         # Samples from empirical initial state distribution.
-        initial_states = initial_states_dataset.get_batch(
+        initial_states = initial_states_dataset.sample_batch(
             self.num_initial_state_samples
         )
 
@@ -109,8 +109,11 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
 
     def simulate(self, state, policy):
         """Simulate from initial_states."""
-        self.dynamical_model.eval()
+        if self.refresh_interval > 0 and (self._idx + 1) % self.refresh_interval == 0:
+            self.dataset.reset()
+        self._idx += 1
 
+        self.dynamical_model.eval()
         with DisableGradient(
             self.dynamical_model, self.reward_model
         ), gpytorch.settings.fast_pred_var():
@@ -120,7 +123,4 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         states = sim_trajectory.state.reshape(-1, *self.dynamical_model.dim_state)
         self.dataset.append(states[:: self.num_subsample])
 
-        if self.refresh_interval > 0 and (self._idx + 1) % self.refresh_interval == 0:
-            self.dataset.reset()
-        self._idx += 1
         return trajectory

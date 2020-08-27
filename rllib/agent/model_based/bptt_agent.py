@@ -1,47 +1,49 @@
-"""Derived Agent."""
+"""Model-Based BPTT Agent."""
+from itertools import chain
 
 import torch
+import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
+from rllib.algorithms.bptt import BPTT
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.algorithms.mpc.policy_shooting import PolicyShooting
-from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
 from rllib.model import EnsembleModel, TransformedModel
+from rllib.policy import NNPolicy
 from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.value_function import NNValueFunction
 
 from .model_based_agent import ModelBasedAgent
 
 
-class DerivedMBAgent(ModelBasedAgent):
-    """Implementation of a Derived Agent.
-
-    A Derived Agent gets a model-free algorithm and uses the model to derive an
-    algorithm.
-    """
+class BPTTAgent(ModelBasedAgent):
+    """Implementation of a Back-Propagation Through Time Agent."""
 
     def __init__(
         self,
-        base_algorithm,
-        derived_algorithm_,
+        policy,
+        critic,
         dynamical_model,
         reward_model,
-        num_samples=15,
-        num_steps=1,
+        bptt_algorithm_,
+        criterion,
         termination=None,
+        num_steps=1,
+        num_samples=15,
         *args,
         **kwargs,
     ):
-        algorithm = derived_algorithm_(
-            base_algorithm=base_algorithm,
+        algorithm = bptt_algorithm_(
+            policy=policy,
+            critic=critic,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             termination=termination,
+            criterion=criterion(reduction="mean"),
             num_steps=num_steps,
             num_samples=num_samples,
             *args,
             **kwargs,
         )
-        algorithm.criterion = type(algorithm.criterion)(reduction="mean")
 
         super().__init__(policy_learning_algorithm=algorithm, *args, **kwargs)
 
@@ -55,16 +57,35 @@ class DerivedMBAgent(ModelBasedAgent):
         )
 
     @classmethod
-    def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
+    def default(cls, environment, bptt_algorithm_=BPTT, *args, **kwargs):
         """See `AbstractAgent.default'."""
         test = kwargs.get("test", False)
 
-        from importlib import import_module
-
-        base_agent = getattr(
-            import_module("rllib.agent"), f"{base_agent_name}Agent"
-        ).default(environment, *args, **kwargs)
-        base_algorithm = base_agent.algorithm
+        q_function = NNValueFunction(
+            dim_state=environment.dim_state,
+            num_states=environment.num_states,
+            layers=[256, 256],
+            biased_head=True,
+            non_linearity="ReLU",
+            tau=5e-3,
+            input_transform=None,
+        )
+        policy = NNPolicy(
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
+            num_states=environment.num_states,
+            num_actions=environment.num_actions,
+            action_scale=environment.action_scale,
+            goal=environment.goal,
+            layers=[256, 256],
+            biased_head=True,
+            non_linearity="ReLU",
+            tau=5e-3,
+            input_transform=None,
+            deterministic=False,
+        )
+        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
+        criterion = loss.MSELoss
 
         model = EnsembleModel(
             dim_state=environment.dim_state,
@@ -91,53 +112,30 @@ class DerivedMBAgent(ModelBasedAgent):
         model_learning_algorithm = ModelLearningAlgorithm(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            num_epochs=4 if kwargs.get("test", False) else 30,
+            num_epochs=2 if kwargs.get("test", False) else 30,
             batch_size=64,
             bootstrap=True,
             model_optimizer=model_optimizer,
         )
-        simulation_algorithm = SimulationAlgorithm(
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            initial_distribution=None,
-            max_memory=100000,
-            num_subsample=2,
-            num_steps=4 if test else 200,
-            num_initial_state_samples=8,
-            num_initial_distribution_samples=0,
-            num_memory_samples=4,
-            refresh_interval=2,
-        )
-        planning_algorithm = PolicyShooting(
-            policy=base_agent.policy,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            horizon=1,
-            gamma=base_agent.gamma,
-            num_iter=1,
-            num_samples=8,
-            num_elites=1,
-            action_scale=base_agent.policy.action_scale,
-            num_cpu=1,
-        )
 
         return cls(
-            base_algorithm=base_algorithm,
+            policy=policy,
+            critic=q_function,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            model_learning_algorithm=model_learning_algorithm,
-            simulation_algorithm=simulation_algorithm,
-            planning_algorithm=planning_algorithm,
-            optimizer=base_agent.optimizer,
-            num_iter=5 if test else base_agent.num_iter,
-            batch_size=base_agent.batch_size,
+            bptt_algorithm_=bptt_algorithm_,
+            criterion=criterion,
+            termination=None,
+            num_steps=4,
             num_samples=15,
-            num_steps=kwargs.pop("num_steps", 1),
-            num_simulation_iterations=0,
+            learn_from_real=True,
+            model_learning_algorithm=model_learning_algorithm,
+            optimizer=optimizer,
+            num_iter=5 if test else 50,
+            batch_size=64,
             thompson_sampling=False,
             comment=environment.name,
-            learn_from_real=True,
-            gamma=base_algorithm.gamma,
+            gamma=0.99,
             *args,
             **kwargs,
         )

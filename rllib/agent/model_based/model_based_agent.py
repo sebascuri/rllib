@@ -54,7 +54,7 @@ class ModelBasedAgent(AbstractAgent):
         **kwargs,
     ):
         super().__init__(train_frequency=0, num_rollouts=0, *args, **kwargs)
-        self.policy_learning_algorithm = policy_learning_algorithm
+        self.algorithm = policy_learning_algorithm
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
         self.simulation_algorithm = simulation_algorithm
@@ -83,6 +83,7 @@ class ModelBasedAgent(AbstractAgent):
         self.policy = DerivedPolicy(policy, self.dynamical_model.base_model.dim_action)
         self.num_simulation_iterations = num_simulation_iterations
         self.learn_from_real = learn_from_real
+        self.learn_from_sim = self.num_simulation_iterations > 0
         self.thompson_sampling = thompson_sampling
 
         if self.thompson_sampling:
@@ -154,10 +155,13 @@ class ModelBasedAgent(AbstractAgent):
             return
 
         # Step 2: Optimize policy with simulated data.
-        self.simulate_and_learn_policy()
+        if self.learn_from_sim:
+            print(colorize("Optimizing Policy with Simulated Data", "yellow"))
+            self.simulate_and_learn_policy()
 
         # Step 3: Optimize policy with real data.
         if self.learn_from_real:
+            print(colorize("Optimizing Policy with Real Data", "yellow"))
             self.learn_policy_from_real_data()
 
     def simulate_and_learn_policy(self):
@@ -169,7 +173,6 @@ class ModelBasedAgent(AbstractAgent):
             Step 2: Implement a model free RL method that optimizes the policy.
                 Calls self.learn_policy(). To be implemented by a Base Class.
         """
-        print(colorize("Optimizing Policy with Model Data", "yellow"))
         self.dynamical_model.eval()
         # self.simulation_algorithm.dataset.reset()
 
@@ -199,15 +202,14 @@ class ModelBasedAgent(AbstractAgent):
 
         def closure():
             """Gradient calculation."""
-            observation = Observation(
-                state=self.simulation_algorithm.dataset.get_batch(self.batch_size)
-            )
+            state = self.simulation_algorithm.dataset.sample_batch(self.batch_size)
+            observation = Observation(state=state.unsqueeze(-2))
             self.optimizer.zero_grad()
-            losses_ = self.policy_learning_algorithm(observation)
+            losses_ = self.algorithm(observation)
             losses_.combined_loss.mean().backward()
 
             torch.nn.utils.clip_grad_norm_(
-                self.policy_learning_algorithm.parameters(), self.clip_gradient_val
+                self.algorithm.parameters(), self.clip_gradient_val
             )
 
             return losses_
@@ -220,15 +222,15 @@ class ModelBasedAgent(AbstractAgent):
 
         def closure():
             """Gradient calculation."""
-            observation = self.model_learning_algorithm.dataset.get_batch(
+            observation, *_ = self.model_learning_algorithm.dataset.sample_batch(
                 self.batch_size
             )
             self.optimizer.zero_grad()
-            losses_ = self.policy_learning_algorithm(observation)
+            losses_ = self.algorithm(observation)
             losses_.combined_loss.mean().backward()
 
             torch.nn.utils.clip_grad_norm_(
-                self.policy_learning_algorithm.parameters(), self.clip_gradient_val
+                self.algorithm.parameters(), self.clip_gradient_val
             )
 
             return losses_

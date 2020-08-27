@@ -59,7 +59,7 @@ class AbstractMBAlgorithm(object):
             elif isinstance(self.critic_target, AbstractQFunction):
                 if hasattr(self, "policy"):
                     self.value_target = IntegrateQValueFunction(
-                        self.critic_target, self.policy, self.num_samples
+                        self.critic_target, self.policy, num_samples=1
                     )
                 else:
                     self.value_target = None

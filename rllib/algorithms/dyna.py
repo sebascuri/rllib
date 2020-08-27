@@ -41,11 +41,12 @@ def dyna_expand(
         def forward(self, observation, **kwargs_):
             """Rollout model and call base algorithm with transitions."""
             with torch.no_grad():
-                trajectory = self.simulate(observation.state, self.policy)
+                state = observation.state[..., 0, :]
+                trajectory = self.simulate(state, self.policy)
                 observation = stack_list_of_tuples(trajectory, dim=-2)
             try:
-                return self.base_algorithm(observation)
+                return super().forward(observation)
             except RuntimeError:
-                return self.base_algorithm(trajectory)
+                return super().forward(trajectory)
 
     return Dyna()

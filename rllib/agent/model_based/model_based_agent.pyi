@@ -13,7 +13,7 @@ from rllib.reward import AbstractReward
 
 class ModelBasedAgent(AbstractAgent):
     policy: DerivedPolicy
-    policy_learning_algorithm: AbstractAlgorithm
+    algorithm: AbstractAlgorithm
     model_learning_algorithm: ModelLearningAlgorithm
     planning_algorithm: Optional[MPCSolver]
     simulation_algorithm: Optional[SimulationAlgorithm]
@@ -21,6 +21,7 @@ class ModelBasedAgent(AbstractAgent):
     reward_model: AbstractReward
     num_simulation_iterations: int
     learn_from_real: bool
+    learn_from_sim: bool
     thompson_sampling: bool
     def __init__(
         self,

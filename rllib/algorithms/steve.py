@@ -85,7 +85,7 @@ def steve_expand(
                             gamma=self.gamma,
                             value_function=self.value_target,
                             reward_transformer=self.reward_transformer,
-                        )
+                        ).reshape(self.num_samples, -1, self.num_q)
                         value = value.mean(0).unsqueeze(1)
                         critic_target[..., horizon + 1, model_idx, :] = value
 

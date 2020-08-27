@@ -1,6 +1,14 @@
 from .abstract_agent import AbstractAgent
 from .bandit import GPUCBAgent
-from .model_based import DynaAgent, MPCAgent
+from .model_based import (
+    BPTTAgent,
+    DynaAgent,
+    ModelBasedAgent,
+    MPCAgent,
+    MVEAgent,
+    STEVEAgent,
+    SVG1Agent,
+)
 from .off_policy import (
     DDQNAgent,
     DPGAgent,
@@ -10,6 +18,7 @@ from .off_policy import (
     REPSAgent,
     SACAgent,
     SoftQLearningAgent,
+    SVG0Agent,
     TD3Agent,
     VMPOAgent,
 )
@@ -27,26 +36,32 @@ from .on_policy import (
 from .random_agent import RandomAgent
 
 AGENTS = [
-    "GPUCB",
-    "MPC",
+    "A2C",
+    "ActorCritic",
+    "BPTT",
     "DDQN",
     "DPG",
     "DQN",
-    "MPO",
-    "QLearning",
-    "REPS",
-    "SAC",
-    "SoftQLearning",
-    "TD3",
-    "A2C",
-    "ActorCritic",
+    "Dyna",
     "ExpectedActorCritic",
     "ExpectedSARSA",
     "GAAC",
-    "REINFORCE",
-    "SARSA",
+    "GPUCB",
+    "MPC",
+    "MPO",
+    "MVE",
     "PPO",
-    "TRPO",
+    "QLearning",
+    "REINFORCE",
+    "REPS",
     "Random",
+    "SAC",
+    "SARSA",
+    "STEVE",
+    "SVG0",
+    "SVG1",
+    "SoftQLearning",
+    "TD3",
+    "TRPO",
     "VMPO",
 ]

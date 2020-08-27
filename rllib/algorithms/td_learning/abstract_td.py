@@ -83,7 +83,9 @@ class AbstractTDLearning(object, metaclass=ABCMeta):
 
         for _ in range(epochs):
             for _ in range(len(self.sampler) // self.sampler.batch_size):
-                observation, idx, weight = self.sampler.get_batch()
+                observation, idx, weight = self.sampler.sample_batch(
+                    self.sampler.batch_size
+                )
 
                 state, next_state, reward, done = self.simulate(observation)
 

@@ -56,7 +56,7 @@ def mve_expand(
                 with torch.no_grad():
                     state = observation.state[..., 0, :]
                     trajectory = self.simulate(state, self.policy)
-                observation = stack_list_of_tuples(trajectory, dim=2)
+                observation = stack_list_of_tuples(trajectory, dim=-2)
 
             return super().critic_loss(observation)
 
