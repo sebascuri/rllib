@@ -49,18 +49,7 @@ class ExpectedSARSAAgent(OnPolicyAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        q_function = NNQFunction(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            layers=[200, 200],
-            biased_head=True,
-            non_linearity="Tanh",
-            tau=0,
-            input_transform=None,
-        )
-
+        q_function = NNQFunction.default(environment, tau=0)
         policy = EpsGreedy(q_function, ExponentialDecay(start=1.0, end=0.01, decay=500))
         optimizer = Adam(q_function.parameters(), lr=3e-4)
         criterion = loss.MSELoss

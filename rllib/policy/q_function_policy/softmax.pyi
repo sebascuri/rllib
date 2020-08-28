@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from torch import Tensor
 
@@ -15,6 +15,8 @@ class SoftMax(AbstractQFunctionPolicy):
         q_function: AbstractQFunction,
         param: Union[ParameterDecay, float],
         prior: Optional[AbstractPolicy] = None,
+        *args: Any,
+        **kwargs: Any,
     ): ...
     @property
     def temperature(self) -> Tensor: ...

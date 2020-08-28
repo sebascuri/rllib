@@ -31,13 +31,13 @@ class EpsGreedy(AbstractQFunctionPolicy):
 
         # Epsilon part.
         eps = torch.true_divide(self.epsilon, self.num_actions)
-        probs = eps * torch.ones(*aux_size, self.num_actions)
+        probabilities = eps * torch.ones(*aux_size, self.num_actions)
         greedy = (1 - self.epsilon) * torch.ones(*aux_size, self.num_actions)
 
         # Greedy part.
         a = torch.argmax(self.q_function(state), dim=-1)
-        probs.scatter_add_(dim=-1, index=a.unsqueeze(-1), src=greedy)
+        probabilities.scatter_add_(dim=-1, index=a.unsqueeze(-1), src=greedy)
 
         if not batch_size:
-            probs = probs.squeeze(0)
-        return torch.log(probs)
+            probabilities = probabilities.squeeze(0)
+        return torch.log(probabilities)

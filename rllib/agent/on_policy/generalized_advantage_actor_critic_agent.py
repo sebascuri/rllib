@@ -37,31 +37,8 @@ class GAACAgent(ActorCriticAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        policy = NNPolicy(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            layers=[200, 200],
-            biased_head=True,
-            non_linearity="Tanh",
-            squashed_output=True,
-            action_scale=environment.action_scale,
-            tau=5e-3,
-            initial_scale=0.5,
-            deterministic=False,
-            goal=environment.goal,
-            input_transform=None,
-        )
-        critic = NNValueFunction(
-            dim_state=environment.dim_state,
-            num_states=environment.num_states,
-            layers=[200, 200],
-            biased_head=True,
-            non_linearity="Tanh",
-            tau=5e-3,
-            input_transform=None,
-        )
+        policy = NNPolicy.default(environment)
+        critic = NNValueFunction.default(environment)
 
         optimizer = Adam(
             [

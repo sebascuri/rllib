@@ -65,6 +65,11 @@ class NNEnsembleValueFunction(NNValueFunction):
             [value_function.embeddings(state) for value_function in self.nn], dim=-1
         )
 
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractValueFunction.default."""
+        return super().default(environment, num_heads=2)
+
 
 class NNEnsembleQFunction(NNQFunction):
     """Implementation of a Q-Function implemented with a Neural Network.
@@ -122,3 +127,8 @@ class NNEnsembleQFunction(NNQFunction):
         return torch.stack(
             [q_function(state, action) for q_function in self.nn], dim=-1
         )
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractQFunction.default."""
+        return super().default(environment, num_heads=2)

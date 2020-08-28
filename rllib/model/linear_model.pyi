@@ -12,6 +12,11 @@ class LinearModel(AbstractModel):
     b: Tensor
     noise: Optional[MultivariateNormal]
     def __init__(
-        self, a: Tensor, b: Tensor, noise: Optional[MultivariateNormal] = ...
+        self,
+        a: Tensor,
+        b: Tensor,
+        noise: Optional[MultivariateNormal] = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

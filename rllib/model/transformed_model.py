@@ -5,12 +5,13 @@ import torch.nn as nn
 from rllib.dataset.datatypes import Observation
 
 from .abstract_model import AbstractModel
+from .ensemble_model import EnsembleModel
 
 
 class TransformedModel(AbstractModel):
     """Transformed Model computes the next state distribution."""
 
-    def __init__(self, base_model, transformations):
+    def __init__(self, base_model, transformations, *args, **kwargs):
         super().__init__(
             dim_state=base_model.dim_state,
             dim_action=base_model.dim_action,
@@ -20,6 +21,18 @@ class TransformedModel(AbstractModel):
         self.base_model = base_model
         self.forward_transformations = nn.ModuleList(transformations)
         self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        base_model = EnsembleModel.default(environment)
+        return super().default(
+            environment,
+            base_model=base_model,
+            transformations=kwargs.pop("transfromations", []),
+            *args,
+            **kwargs,
+        )
 
     def sample_posterior(self):
         """Sample a posterior from the base model."""

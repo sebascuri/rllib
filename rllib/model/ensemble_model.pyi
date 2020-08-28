@@ -12,21 +12,8 @@ from .nn_model import NNModel
 class EnsembleModel(NNModel):
     num_heads: int
     nn: Ensemble
-    deterministic: bool
     def __init__(
-        self,
-        dim_state: Tuple,
-        dim_action: Tuple,
-        num_heads: int,
-        num_states: int = ...,
-        num_actions: int = ...,
-        initial_scale: float = ...,
-        prediction_strategy: str = ...,
-        layers: Optional[List[int]] = ...,
-        biased_head: bool = ...,
-        non_linearity: str = ...,
-        input_transform: Optional[List[torch.nn.Module]] = ...,
-        deterministic: bool = ...,
+        self, num_heads: int, prediction_strategy: str = ..., *args: Any, **kwargs: Any
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     def sample_posterior(self) -> None: ...

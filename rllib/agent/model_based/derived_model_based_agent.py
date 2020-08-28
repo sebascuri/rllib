@@ -66,17 +66,9 @@ class DerivedMBAgent(ModelBasedAgent):
         ).default(environment, *args, **kwargs)
         base_algorithm = base_agent.algorithm
 
-        model = EnsembleModel(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_heads=5,
-            layers=[200, 200],
-            biased_head=False,
-            non_linearity="ReLU",
-            input_transform=None,
-            deterministic=False,
-        )
+        model = EnsembleModel.default(environment)
         dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
+
         reward_model = kwargs.get(
             "reward_model",
             QuadraticReward(

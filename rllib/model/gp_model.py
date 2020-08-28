@@ -22,7 +22,15 @@ class ExactGPModel(AbstractModel):
         kernel=None,
         input_transform=None,
         max_num_points=None,
+        *args,
+        **kwargs,
     ):
+        self._state = state
+        self._action = action
+        self._next_state = next_state
+        self._mean = mean
+        self._kernel = kernel
+
         dim_state = (state.shape[-1],)
         dim_action = (action.shape[-1],)
         self.max_num_points = max_num_points
@@ -41,6 +49,23 @@ class ExactGPModel(AbstractModel):
 
         self.likelihood = torch.nn.ModuleList(likelihoods)
         self.gp = torch.nn.ModuleList(gps)
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        dim_state, dim_action = environment.dim_state[0], environment.dim_action[0]
+        return super().default(
+            environment,
+            state=kwargs.pop("state", torch.zeros(dim_state)),
+            action=kwargs.pop("action", torch.zeros(dim_action)),
+            next_state=kwargs.pop("next_state", torch.zeros(dim_state)),
+            mean=kwargs.pop("mean=", None),
+            kernel=kwargs.pop("kernel", None),
+            input_transform=kwargs.pop("input_transform", None),
+            max_num_points=kwargs.pop("max_num_points", None),
+            *args,
+            **kwargs,
+        )
 
     def forward(self, state, action):
         """Get next state distribution."""
@@ -180,23 +205,12 @@ class ExactGPModel(AbstractModel):
 class RandomFeatureGPModel(ExactGPModel):
     """GP Model approximated by Random Fourier Features."""
 
-    def __init__(
-        self,
-        state,
-        action,
-        next_state,
-        num_features,
-        approximation="RFF",
-        mean=None,
-        kernel=None,
-        input_transform=None,
-        max_num_points=None,
-    ):
-        super().__init__(
-            state, action, next_state, mean, kernel, input_transform, max_num_points
-        )
+    def __init__(self, num_features, approximation="RFF", *args, **kwargs):
+        super().__init__(*args, **kwargs)
         gps = []
-        train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
+        train_x, train_y = self.state_actions_to_train_data(
+            self._state, self._action, self._next_state
+        )
         for train_y_i, likelihood in zip(train_y, self.likelihood):
             gp = RandomFeatureGP(
                 train_x,
@@ -204,12 +218,23 @@ class RandomFeatureGPModel(ExactGPModel):
                 likelihood,
                 num_features=num_features,
                 approximation=approximation,
-                mean=mean,
-                kernel=kernel,
+                mean=self._mean,
+                kernel=self._kernel,
             )
             gps.append(gp)
         self.gp = torch.nn.ModuleList(gps)
         self.approximation = approximation
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        return super().default(
+            environment,
+            num_features=kwargs.pop("num_features", 128),
+            approximation=kwargs.pop("approximation", "RFF"),
+            *args,
+            **kwargs,
+        )
 
     @property
     def name(self):
@@ -235,23 +260,13 @@ class SparseGPModel(ExactGPModel):
     """Sparse approximation of Exact GP models."""
 
     def __init__(
-        self,
-        state,
-        action,
-        next_state,
-        inducing_points=None,
-        q_bar=1,
-        approximation="DTC",
-        mean=None,
-        kernel=None,
-        input_transform=None,
-        max_num_points=None,
+        self, inducing_points=None, q_bar=1, approximation="DTC", *args, **kwargs
     ):
-        super().__init__(
-            state, action, next_state, mean, kernel, input_transform, max_num_points
-        )
+        super().__init__(*args, **kwargs)
         gps = []
-        train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
+        train_x, train_y = self.state_actions_to_train_data(
+            self._state, self._action, self._next_state
+        )
         if inducing_points is None:
             inducing_points = train_x
 
@@ -262,13 +277,25 @@ class SparseGPModel(ExactGPModel):
                 likelihood,
                 inducing_points,
                 approximation=approximation,
-                mean=mean,
-                kernel=kernel,
+                mean=self._mean,
+                kernel=self._kernel,
             )
             gps.append(gp)
         self.gp = torch.nn.ModuleList(gps)
         self.approximation = approximation
         self.q_bar = q_bar
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        return super().default(
+            environment,
+            inducing_points=kwargs.pop("inducing_points", None),
+            num_features=kwargs.pop("q_bar", 1.0),
+            approximation=kwargs.pop("approximation", "DTC"),
+            *args,
+            **kwargs,
+        )
 
     @property
     def name(self):

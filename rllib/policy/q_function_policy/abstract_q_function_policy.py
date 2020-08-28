@@ -3,6 +3,7 @@
 from abc import ABCMeta
 
 from rllib.util.parameter_decay import Constant, ParameterDecay
+from rllib.value_function import NNQFunction
 
 from ..abstract_policy import AbstractPolicy
 
@@ -17,7 +18,7 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, q_function, param):
+    def __init__(self, q_function, param, *args, **kwargs):
         if not q_function.discrete_action:
             raise NotImplementedError
         super().__init__(
@@ -34,3 +35,12 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
     def update(self):
         """Update policy parameters."""
         self.param.update()
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractPolicy.default."""
+        return super().default(
+            environment=environment,
+            q_function=NNQFunction.default(environment, *args, **kwargs),
+            param=0.1,
+        )

@@ -14,42 +14,34 @@ class EnsembleModel(NNModel):
     """Ensemble Model."""
 
     def __init__(
-        self,
-        dim_state,
-        dim_action,
-        num_heads,
-        num_states=-1,
-        num_actions=-1,
-        initial_scale=0.5,
-        prediction_strategy="moment_matching",
-        layers=None,
-        biased_head=True,
-        non_linearity="Tanh",
-        input_transform=None,
-        deterministic=False,
+        self, num_heads, prediction_strategy="moment_matching", *args, **kwargs
     ):
-        super().__init__(
-            dim_state,
-            dim_action,
-            num_states,
-            num_actions,
-            input_transform=input_transform,
-        )
+        super().__init__(*args, **kwargs)
         self.num_heads = num_heads
         # if deterministic
         self.nn = Ensemble(
             self.nn.kwargs["in_dim"],
             self.nn.kwargs["out_dim"],
             prediction_strategy=prediction_strategy,
-            layers=layers,
-            biased_head=biased_head,
-            non_linearity=non_linearity,
+            layers=self.nn.kwargs["layers"],
+            biased_head=self.nn.kwargs["biased_head"],
+            non_linearity=self.nn.kwargs["non_linearity"],
             squashed_output=False,
             num_heads=num_heads,
-            deterministic=deterministic,
-            initial_scale=initial_scale,
+            deterministic=self.deterministic,
+            initial_scale=self.nn.kwargs["initial_scale"],
         )
-        self.deterministic = deterministic
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        return super().default(
+            environment,
+            num_heads=kwargs.pop("num_heads", 5),
+            prediction_strategy=kwargs.pop("prediction_strategy", "moment_matching"),
+            *args,
+            **kwargs,
+        )
 
     def forward(self, state, action):
         """Compute next state distribution."""

@@ -28,20 +28,16 @@ class NNModel(AbstractModel):
 
     def __init__(
         self,
-        dim_state,
-        dim_action,
-        num_states=-1,
-        num_actions=-1,
         layers=None,
         biased_head=True,
         non_linearity="Tanh",
         initial_scale=0.5,
         input_transform=None,
         deterministic=False,
+        *args,
+        **kwargs,
     ):
-        super().__init__(
-            dim_state, dim_action, num_states=num_states, num_actions=num_actions
-        )
+        super().__init__(*args, **kwargs)
         self.input_transform = input_transform
 
         if self.discrete_state:
@@ -79,6 +75,21 @@ class NNModel(AbstractModel):
             )
 
         self.deterministic = deterministic
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        return super().default(
+            environment,
+            layers=kwargs.pop("layers", [200, 200, 200]),
+            biased_head=kwargs.pop("biased_head", True),
+            non_linearity=kwargs.pop("non_linearity", "Tanh"),
+            initial_scale=kwargs.pop("initial_scale", 0.5),
+            input_transform=kwargs.pop("input_transform", None),
+            deterministic=kwargs.pop("deterministic", False),
+            *args,
+            **kwargs,
+        )
 
     def forward(self, state, action):
         """Get Next-State distribution."""

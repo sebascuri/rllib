@@ -1,10 +1,13 @@
 from abc import ABCMeta
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Type, TypeVar
 
 import torch.nn as nn
 from torch import Tensor
 
 from rllib.dataset.datatypes import Action, TupleDistribution
+from rllib.environment import AbstractEnvironment
+
+T = TypeVar("T", bound="AbstractPolicy")
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     dim_state: Tuple
@@ -37,3 +40,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     def reset(self) -> None: ...
     def update(self) -> None: ...
     def set_goal(self, goal: Optional[Tensor]) -> None: ...
+    @classmethod
+    def default(
+        cls: Type[T], environment: AbstractEnvironment, *args: Any, **kwargs: Any
+    ) -> T: ...

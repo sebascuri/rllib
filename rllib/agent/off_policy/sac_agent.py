@@ -60,31 +60,8 @@ class SACAgent(OffPolicyAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        q_function = NNQFunction(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            layers=[256, 256],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-        )
-        policy = NNPolicy(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            action_scale=environment.action_scale,
-            goal=environment.goal,
-            layers=[256, 256],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-            deterministic=False,
-        )
+        q_function = NNQFunction.default(environment, non_linearity="ReLU")
+        policy = NNPolicy.default(environment, non_linearity="ReLU")
 
         optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
         criterion = loss.MSELoss

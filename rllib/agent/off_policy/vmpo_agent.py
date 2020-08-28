@@ -55,29 +55,8 @@ class VMPOAgent(OffPolicyAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        value_function = NNValueFunction(
-            dim_state=environment.dim_state,
-            num_states=environment.num_states,
-            layers=[200, 200],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-        )
-        policy = NNPolicy(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            action_scale=environment.action_scale,
-            goal=environment.goal,
-            layers=[100, 100],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-            deterministic=False,
-        )
+        value_function = NNValueFunction.default(environment)
+        policy = NNPolicy.default(environment, layers=[100, 100])
 
         optimizer = Adam(
             chain(policy.parameters(), value_function.parameters()), lr=5e-4

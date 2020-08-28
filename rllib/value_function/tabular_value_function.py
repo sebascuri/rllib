@@ -9,8 +9,13 @@ class TabularValueFunction(NNValueFunction):
     """Implement tabular value function."""
 
     def __init__(self, *args, **kwargs):
+        kwargs.pop("layers", [])
         super().__init__(
-            dim_state=(), biased_head=kwargs.pop("biased_head", False), *args, **kwargs
+            dim_state=kwargs.pop("dim_state", ()),
+            biased_head=kwargs.pop("biased_head", False),
+            layers=[],
+            *args,
+            **kwargs,
         )
         nn.init.zeros_(self.nn.head.weight)
 
@@ -37,10 +42,13 @@ class TabularQFunction(NNQFunction):
     """Implement tabular value function."""
 
     def __init__(self, *args, **kwargs):
+        kwargs.pop("layers", [])
+
         super().__init__(
-            dim_state=(),
-            dim_action=(),
+            dim_state=kwargs.pop("dim_state", ()),
+            dim_action=kwargs.pop("dim_action", ()),
             biased_head=kwargs.pop("biased_head", False),
+            layers=[],
             *args,
             **kwargs,
         )

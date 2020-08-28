@@ -11,13 +11,17 @@ from .nn_policy import NNPolicy
 class TabularPolicy(NNPolicy):
     """Implement tabular policy."""
 
-    def __init__(self, num_states, num_actions):
+    def __init__(self, num_states, num_actions, *args, **kwargs):
+        kwargs.pop("layers", [])
         super().__init__(
-            dim_state=(),
-            dim_action=(),
+            dim_state=kwargs.pop("dim_state", ()),
+            dim_action=kwargs.pop("dim_action", ()),
             num_states=num_states,
             num_actions=num_actions,
-            biased_head=False,
+            biased_head=kwargs.pop("biased_head", False),
+            layers=[],
+            *args,
+            **kwargs,
         )
         nn.init.ones_(self.nn.head.weight)
 

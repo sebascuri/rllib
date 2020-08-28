@@ -59,6 +59,21 @@ class NNPolicy(AbstractPolicy):
             )
 
     @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractPolicy.default()."""
+        return super().default(
+            environment,
+            layers=kwargs.pop("layers", [200, 200]),
+            biased_head=kwargs.pop("biased_head", True),
+            non_linearity=kwargs.pop("non_linearity", "Tanh"),
+            squashed_output=kwargs.pop("squashed_output", True),
+            initial_scale=kwargs.pop("initial_scale", 0.5),
+            input_transform=kwargs.pop("input_transform", None),
+            *args,
+            **kwargs,
+        )
+
+    @classmethod
     def from_other(cls, other, copy=True):
         """Create new NN Policy from another policy."""
         new = cls(
@@ -176,7 +191,7 @@ class FelixPolicy(NNPolicy):
         self.nn = FelixNet(
             self.nn.kwargs["in_dim"],
             self.nn.kwargs["out_dim"],
-            initial_scale=self.nn.kwargs["initial_scale"],
+            initial_scale=kwargs.get("initial_scale", 0.5),
         )
         if self.discrete_state or self.discrete_action:
             raise ValueError("num_states and num_actions have to be set to -1.")

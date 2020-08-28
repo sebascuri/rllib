@@ -13,7 +13,7 @@ class EnvironmentModel(AbstractModel):
 
     """
 
-    def __init__(self, environment):
+    def __init__(self, environment, *args, **kwargs):
         super().__init__(
             environment.dim_state,
             environment.dim_action,
@@ -21,6 +21,11 @@ class EnvironmentModel(AbstractModel):
             num_actions=environment.num_actions,
         )
         self.environment = environment
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
+        return cls(environment)
 
     def forward(self, state, action):
         """Get Next-State distribution."""

@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -16,6 +16,8 @@ class TransformedModel(AbstractModel):
         self,
         base_model: AbstractModel,
         transformations: Union[List[nn.Module], nn.ModuleList],
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def set_prediction_strategy(self, val: str) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...

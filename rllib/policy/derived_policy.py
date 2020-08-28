@@ -1,5 +1,6 @@
 """Policy derived from an optimistic policy.."""
 from .abstract_policy import AbstractPolicy
+from .nn_policy import NNPolicy
 
 
 class DerivedPolicy(AbstractPolicy):
@@ -8,7 +9,7 @@ class DerivedPolicy(AbstractPolicy):
     It gets the first `dim_action' components of the base_policy.
     """
 
-    def __init__(self, base_policy: AbstractPolicy, dim_action):
+    def __init__(self, base_policy: AbstractPolicy, dim_action, *args, **kwargs):
         if base_policy.discrete_action or base_policy.discrete_state:
             raise NotImplementedError
         assert len(dim_action) == 1, "Only n x 1 actions allowed."
@@ -23,6 +24,18 @@ class DerivedPolicy(AbstractPolicy):
             goal=base_policy.goal,
         )
         self.base_policy = base_policy
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractPolicy.default()."""
+        kwargs.pop("dim_action", None)
+        return super().default(
+            environment=environment,
+            base_policy=NNPolicy.default(environment),
+            dim_action=environment.dim_action,
+            *args,
+            **kwargs,
+        )
 
     def forward(self, state, **kwargs):
         """Compute the derived policy."""

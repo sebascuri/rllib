@@ -1,4 +1,2 @@
-Creator of Model-Based Agents.
-Add Path derivative of MB Agents.
-Add model tests.
+Add Learnable Reward Models.
 Make experience replay agnostic to input.

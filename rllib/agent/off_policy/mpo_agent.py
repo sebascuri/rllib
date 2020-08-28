@@ -55,31 +55,8 @@ class MPOAgent(OffPolicyAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        q_function = NNQFunction(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            layers=[200, 200],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-        )
-        policy = NNPolicy(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            action_scale=environment.action_scale,
-            goal=environment.goal,
-            layers=[100, 100],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-            deterministic=False,
-        )
+        q_function = NNQFunction.default(environment)
+        policy = NNPolicy.default(environment, layers=[100, 100])
 
         optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=5e-4)
         criterion = loss.MSELoss

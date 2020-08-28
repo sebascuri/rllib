@@ -17,7 +17,7 @@ class SoftMax(AbstractQFunctionPolicy):
 
     """
 
-    def __init__(self, q_function, param, prior=None):
+    def __init__(self, q_function, param, prior=None, *args, **kwargs):
         super().__init__(q_function, param)
         if prior is None:
             prior = RandomPolicy(

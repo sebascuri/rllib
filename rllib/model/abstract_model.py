@@ -54,6 +54,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         num_states=-1,
         num_actions=-1,
         num_observations=-1,
+        *args,
+        **kwargs,
     ):
         super().__init__()
         self.dim_state = dim_state
@@ -66,6 +68,18 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """Get a default model for the environment."""
+        return cls(
+            dim_state=kwargs.pop("dim_state", environment.dim_state),
+            dim_action=kwargs.pop("dim_action", environment.dim_action),
+            num_states=kwargs.pop("num_states", environment.num_states),
+            num_actions=kwargs.pop("num_actions", environment.num_actions),
+            *args,
+            **kwargs,
+        )
 
     @property
     def name(self):

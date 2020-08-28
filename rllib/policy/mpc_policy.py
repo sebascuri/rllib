@@ -2,13 +2,15 @@
 
 import torch
 
+from rllib.algorithms.mpc.cem_shooting import CEMShooting
+
 from .abstract_policy import AbstractPolicy
 
 
 class MPCPolicy(AbstractPolicy):
     """MPC Policy."""
 
-    def __init__(self, mpc_solver):
+    def __init__(self, mpc_solver, *args, **kwargs):
         super().__init__(
             dim_state=mpc_solver.dynamical_model.dim_state,
             dim_action=mpc_solver.dynamical_model.dim_action,
@@ -17,6 +19,11 @@ class MPCPolicy(AbstractPolicy):
         )
 
         self.solver = mpc_solver
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractPolicy.default()."""
+        return cls(mpc_solver=CEMShooting(), *args, **kwargs)
 
     def forward(self, state, **kwargs):
         """Solve the MPC problem."""

@@ -58,6 +58,19 @@ class NNValueFunction(AbstractValueFunction):
         self.dimension = self.nn.embedding_dim
 
     @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractValueFunction.default."""
+        return super().default(
+            environment,
+            layers=kwargs.pop("layers", [200, 200]),
+            biased_head=kwargs.pop("biased_head", True),
+            non_linearity=kwargs.pop("non_linearity", "Tanh"),
+            input_transform=kwargs.pop("input_transform", None),
+            *args,
+            **kwargs,
+        )
+
+    @classmethod
     def from_other(cls, other, copy=True):
         """Create new Value Function from another Value Function."""
         new = cls(
@@ -154,6 +167,19 @@ class NNQFunction(AbstractQFunction):
             non_linearity=non_linearity,
             biased_head=biased_head,
             squashed_output=False,
+        )
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See AbstractQFunction.default."""
+        return super().default(
+            environment,
+            layers=kwargs.pop("layers", [200, 200]),
+            biased_head=kwargs.pop("biased_head", True),
+            non_linearity=kwargs.pop("non_linearity", "Tanh"),
+            input_transform=kwargs.pop("input_transform", None),
+            *args,
+            **kwargs,
         )
 
     @classmethod

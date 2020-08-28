@@ -61,43 +61,15 @@ class BPTTAgent(ModelBasedAgent):
         """See `AbstractAgent.default'."""
         test = kwargs.get("test", False)
 
-        q_function = NNValueFunction(
-            dim_state=environment.dim_state,
-            num_states=environment.num_states,
-            layers=[256, 256],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-        )
-        policy = NNPolicy(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_states=environment.num_states,
-            num_actions=environment.num_actions,
-            action_scale=environment.action_scale,
-            goal=environment.goal,
-            layers=[256, 256],
-            biased_head=True,
-            non_linearity="ReLU",
-            tau=5e-3,
-            input_transform=None,
-            deterministic=False,
-        )
+        q_function = NNValueFunction.default(environment)
+        policy = NNPolicy.default(environment)
+
         optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
         criterion = loss.MSELoss
 
-        model = EnsembleModel(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_heads=5,
-            layers=[200, 200],
-            biased_head=False,
-            non_linearity="ReLU",
-            input_transform=None,
-            deterministic=False,
-        )
+        model = EnsembleModel.default(environment)
         dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
+
         reward_model = kwargs.get(
             "reward_model",
             QuadraticReward(

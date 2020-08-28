@@ -23,6 +23,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         num_states: int = ...,
         num_actions: int = ...,
         num_observations: int = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     @property

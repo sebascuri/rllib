@@ -14,6 +14,11 @@ class ExactGPModel(AbstractModel):
     input_transform: nn.Module
     likelihood: nn.ModuleList
     gp: nn.ModuleList
+    _state: Tensor
+    _action: Tensor
+    _next_state: Tensor
+    _mean: Optional[Mean] = ...
+    _kernel: Optional[Kernel] = ...
     def __init__(
         self,
         state: Tensor,
@@ -23,6 +28,8 @@ class ExactGPModel(AbstractModel):
         kernel: Optional[Kernel] = ...,
         input_transform: Optional[nn.Module] = ...,
         max_num_points: Optional[int] = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     def add_data(self, state: Tensor, action: Tensor, next_state: Tensor) -> None: ...
@@ -40,16 +47,7 @@ class RandomFeatureGPModel(ExactGPModel):
 
     approximation: str
     def __init__(
-        self,
-        state: Tensor,
-        action: Tensor,
-        next_state: Tensor,
-        num_features: int,
-        approximation: str = ...,
-        mean: Optional[Mean] = ...,
-        kernel: Optional[Kernel] = ...,
-        input_transform: Optional[nn.Module] = ...,
-        max_num_points: Optional[int] = ...,
+        self, num_features: int, approximation: str = ..., *args: Any, **kwargs: Any
     ) -> None: ...
     def sample_posterior(self) -> None: ...
     def set_prediction_strategy(self, val: str) -> None: ...
@@ -59,15 +57,10 @@ class SparseGPModel(ExactGPModel):
     q_bar: float
     def __init__(
         self,
-        state: Tensor,
-        action: Tensor,
-        next_state: Tensor,
         inducing_points: Optional[Tensor] = ...,
         q_bar: float = ...,
         approximation: str = ...,
-        mean: Optional[Mean] = ...,
-        kernel: Optional[Kernel] = ...,
-        input_transform: Optional[nn.Module] = ...,
-        max_num_points: Optional[int] = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def add_data(self, state: Tensor, action: Tensor, next_state: Tensor) -> None: ...
