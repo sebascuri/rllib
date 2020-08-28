@@ -59,7 +59,7 @@ class OffPolicyAgent(AbstractAgent):
 
             self.optimizer.zero_grad()
             losses_ = self.algorithm(observation)
-            loss = (losses_.combined_loss.squeeze(-1) * weight.detach()).mean()
+            loss = (losses_.combined_loss * weight.detach()).mean()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
                 self.algorithm.parameters(), self.clip_gradient_val

@@ -137,6 +137,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         if self.critic is None:
             return Loss()
 
+        # Get pred_q at the current state, action pairs.
         if isinstance(self.critic, AbstractValueFunction):
             pred_q = self.critic(observation.state)
         elif isinstance(self.critic, AbstractQFunction):
@@ -145,26 +146,31 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             raise NotImplementedError
         pred_q = self.process_value_prediction(pred_q, observation)
 
-        with torch.no_grad():  # Use semi-gradients.
-            q_target = self.get_value_target(observation)
-            if pred_q.shape != q_target.shape:  # Reshape in case of ensembles.
+        # Get target_q with semi-gradients.
+        with torch.no_grad():
+            target_q = self.get_value_target(observation)
+            if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
-                q_target = q_target.unsqueeze(-1).repeat_interleave(
+                target_q = target_q.unsqueeze(-1).repeat_interleave(
                     self.critic.num_heads, -1
                 )
 
-            td_error = pred_q - q_target  # no gradients for td-error.
+            td_error = pred_q - target_q  # no gradients for td-error.
             if self.criterion.reduction == "mean":
                 td_error = torch.mean(td_error)
             elif self.criterion.reduction == "sum":
                 td_error = torch.sum(td_error)
 
-        critic_loss = self.criterion(pred_q, q_target)
+        critic_loss = self.criterion(pred_q, target_q)
 
         if isinstance(self.critic, NNEnsembleQFunction):
-            # Ensembles have last dimension as ensemble head.
+            # Ensembles have last dimension as ensemble head; sum all ensembles.
             critic_loss = critic_loss.sum(-1)
             td_error = td_error.sum(-1)
+
+        # Take mean over time coordinate.
+        critic_loss = critic_loss.mean(-1)
+        td_error = td_error.mean(-1)
 
         return Loss(critic_loss=critic_loss, td_error=td_error)
 
