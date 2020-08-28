@@ -10,7 +10,7 @@ class OnPolicyAgent(AbstractAgent):
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            batch_size=kwargs.pop("batch_size", 64),
+            batch_size=kwargs.pop("batch_size", 1),
             num_rollouts=kwargs.pop("num_rollouts", 1),
             *args,
             **kwargs,

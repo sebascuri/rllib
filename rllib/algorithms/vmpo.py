@@ -95,12 +95,13 @@ class VMPO(MPO):
         action_log_probs = pi_dist.log_prob(action / self.policy.action_scale)
 
         k = int(self.top_k_fraction * state.shape[0])
-        advantage_top_k, idx_top_k = torch.topk(advantage, k=k, dim=0, largest=True)
-        action_log_probs_top_k = action_log_probs[idx_top_k.squeeze()]
+        _, idx_top_k = torch.topk(advantage.mean(-1), k=k, dim=0, largest=True)
+        advantage_top_k = advantage[idx_top_k]
+        action_log_probs_top_k = action_log_probs[idx_top_k]
 
         mpo_loss = self.mpo_loss(
-            q_values=advantage_top_k,
-            action_log_probs=action_log_probs_top_k,
+            q_values=advantage_top_k.unsqueeze(0),  # 1-st dim is MPO action samples.
+            action_log_probs=action_log_probs_top_k.unsqueeze(0),
             kl_mean=kl_mean,
             kl_var=kl_var,
         )

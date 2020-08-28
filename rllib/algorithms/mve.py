@@ -63,7 +63,6 @@ def mve_expand(
         def get_value_target(self, observation):
             """Rollout model and call base algorithm with transitions."""
             if self.td_k:
-                assert observation.reward.shape[-1] == self.num_steps
                 if self.critic.discrete_state:
                     final_state = observation.next_state[..., -1]
                 else:
@@ -86,15 +85,18 @@ def mve_expand(
                 with torch.no_grad():
                     state = observation.state[..., 0, :]
                     trajectory = self.simulate(state, self.policy)
+                    target_q = mc_return(
+                        trajectory,
+                        gamma=self.gamma,
+                        value_function=self.value_target,
+                        reward_transformer=self.reward_transformer,
+                    )
                     target_q = (
-                        mc_return(
-                            trajectory,
-                            gamma=self.gamma,
-                            value_function=self.value_target,
-                            reward_transformer=self.reward_transformer,
+                        target_q.reshape(
+                            self.num_samples, *observation.state.shape[:-1], -1
                         )
-                        .unsqueeze(-2)
                         .mean(0)
+                        .squeeze(-1)
                     )
 
             return target_q

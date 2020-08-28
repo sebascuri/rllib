@@ -43,8 +43,8 @@ def dyna_expand(
             with torch.no_grad():
                 state = observation.state[..., 0, :]
                 trajectory = self.simulate(state, self.policy)
-                observation = stack_list_of_tuples(trajectory, dim=-2)
             try:
+                observation = stack_list_of_tuples(trajectory, dim=-2)
                 return super().forward(observation)
             except RuntimeError:
                 return super().forward(trajectory)
