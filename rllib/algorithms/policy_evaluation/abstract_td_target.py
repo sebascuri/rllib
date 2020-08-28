@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from rllib.util import integrate, tensor_to_distribution
+from rllib.util.neural_networks.utilities import reverse_cumsum
 from rllib.value_function.abstract_value_function import AbstractValueFunction
 
 
@@ -85,55 +86,53 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         """Compute the loss and the td-error."""
         state, action, reward, next_state, done, *_ = observation
         log_prob_action = observation.log_prob_action
-
         n_steps = state.shape[1]
 
-        if isinstance(self.critic, AbstractValueFunction):
-            target = self.critic(state[:, 0])
+        # done_t indicates if the current state is done.
+        done_t = torch.cat((torch.zeros(done.shape[0], 1), done), -1)[:, :-1]
+
+        # Compute off-policy correction factor.
+        if self.policy is not None:
+            pi = tensor_to_distribution(self.policy(state))
+            eval_log_prob = pi.log_prob(action)
         else:
-            target = self.critic(state[:, 0], action[:, 0])
+            eval_log_prob = log_prob_action
+        correction = self.correction(eval_log_prob, log_prob_action)
 
-        discount = 1.0
-        factor = 1.0
-        done_t = torch.zeros_like(done[:, 0])  # Early truncation.
+        # Compute Q(state, action) and \E_\pi[Q(next_state, \pi(next_state)].
+        if isinstance(self.critic, AbstractValueFunction):
+            this_v = self.critic(state) * (1.0 - done_t)
+            next_v = self.critic(next_state) * (1.0 - done)
+        else:
+            this_v = self.critic(state, action) * (1.0 - done_t)
 
-        for t in range(n_steps):
             if self.policy is not None:
-                pi = tensor_to_distribution(self.policy(state[:, t]))
-                eval_log_prob = pi.log_prob(action[:, t])
+                next_pi = tensor_to_distribution(self.policy(next_state))
+                next_v = integrate(
+                    lambda a: self.critic(next_state, a),
+                    next_pi,
+                    num_samples=self.num_samples,
+                ) * (1.0 - done)
             else:
-                eval_log_prob = log_prob_action[:, t]
+                next_v = self.critic(next_state[:, : n_steps - 1], action[:, 1:])
+                last_v = torch.zeros(next_v.shape[0], 1)
+                if last_v.ndim < next_v.ndim:
+                    last_v = last_v.unsqueeze(-1).repeat_interleave(
+                        next_v.shape[-1], -1
+                    )
+                next_v = torch.cat((next_v, last_v), -1) * (1.0 - done)
 
-            correction = self.correction(eval_log_prob, log_prob_action[:, t])
+        # Compute td = r + gamma E\pi[Q(next_state, \pi(next_state)] - Q(state, action).
+        td = self.td(this_v, next_v, reward, correction)
 
-            if isinstance(self.critic, AbstractValueFunction):
-                this_v = self.critic(state[:, t]) * (1.0 - done_t)
-                next_v = self.critic(next_state[:, t]) * (1.0 - done[:, t])
-            else:
-                this_v = self.critic(state[:, t], action[:, t]) * (1.0 - done_t)
+        # Compute correction factor_t = \Prod_{i=1,t} c_i.
+        correction_factor = torch.cumprod(correction, dim=-1)
 
-                if self.policy is not None:
-                    next_pi = tensor_to_distribution(self.policy(next_state[:, t]))
-                    next_v = integrate(
-                        lambda a, time=t: self.critic(next_state[:, time], a),
-                        next_pi,
-                        num_samples=self.num_samples,
-                    ) * (1.0 - done[:, t])
-                else:  # Use sampled next action. This allows to compute n-step returns.
-                    if t < n_steps - 1:
-                        next_v = self.critic(next_state[:, t], action[:, t + 1]) * (
-                            1.0 - done[:, t]
-                        )
-                    else:
-                        next_v = torch.zeros_like(target)
+        # Compute discount_t = \gamma ** (t-1)
+        discount = torch.pow(torch.tensor(self.gamma), torch.arange(n_steps))
 
-            target += (
-                discount * factor * self.td(this_v, next_v, reward[:, t], correction)
-            )
-
-            discount *= self.gamma
-            factor *= correction
-            done_t = 1.0 - (1.0 - done_t) * (1.0 - done[:, t])
+        # Compute target = Q(s, a) + \sum_{i=1,t} discount_i factor_i td_i. See RETRACE.
+        target = this_v + reverse_cumsum(td * discount * correction_factor)
 
         return target
 

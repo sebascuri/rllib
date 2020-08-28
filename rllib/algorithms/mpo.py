@@ -254,7 +254,7 @@ class MPO(AbstractAlgorithm):
             value_target = reward + self.gamma * next_values
 
         else:
-            value_target = self.trace(observation).unsqueeze(-1)
+            value_target = self.trace(observation)
         return value_target
 
     def actor_loss(self, observation):
