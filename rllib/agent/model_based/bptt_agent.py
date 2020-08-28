@@ -24,15 +24,15 @@ class BPTTAgent(ModelBasedAgent):
         critic,
         dynamical_model,
         reward_model,
-        bptt_algorithm_,
         criterion,
         termination=None,
         num_steps=1,
         num_samples=15,
+        algorithm=BPTT,
         *args,
         **kwargs,
     ):
-        algorithm = bptt_algorithm_(
+        algorithm = algorithm(
             policy=policy,
             critic=critic,
             dynamical_model=dynamical_model,
@@ -57,7 +57,7 @@ class BPTTAgent(ModelBasedAgent):
         )
 
     @classmethod
-    def default(cls, environment, bptt_algorithm_=BPTT, *args, **kwargs):
+    def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
         test = kwargs.get("test", False)
 
@@ -123,7 +123,6 @@ class BPTTAgent(ModelBasedAgent):
             critic=q_function,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            bptt_algorithm_=bptt_algorithm_,
             criterion=criterion,
             termination=None,
             num_steps=4,
