@@ -407,6 +407,16 @@ def one_hot_encode(tensor, num_classes: int):
         return out.reshape(tensor.shape + (num_classes,))
 
 
+def reverse_cumsum(tensor, dim=-1):
+    """Return reversed cumsum along dimensions."""
+    return torch.flip(torch.cumsum(torch.flip(tensor, (dim,)), dim), (dim,))
+
+
+def reverse_cumprod(tensor, dim=-1):
+    """Return reversed cumprod along dimensions."""
+    return torch.flip(torch.cumprod(torch.flip(tensor, (dim,)), dim), (dim,))
+
+
 def get_batch_size(tensor, base_size):
     """Get the batch size of a tensor if it is a discrete or continuous tensor.
 

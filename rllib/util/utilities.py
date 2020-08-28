@@ -64,8 +64,8 @@ def integrate(function, distribution, out_dim=None, num_samples=15):
             else:
                 action = distribution.sample()
             f_val = function(action)
-            if out_dim is None:
-                f_val = f_val.squeeze()
+            if f_val.ndim > ans.ndim:
+                f_val = f_val.squeeze(-1)
             ans += f_val / num_samples
     return ans
 
