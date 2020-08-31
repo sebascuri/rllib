@@ -2,10 +2,7 @@
 from gym.utils import colorize
 from torch.utils.data import DataLoader
 
-from rllib.dataset.experience_replay import (
-    BootstrapExperienceReplay,
-    StateExperienceReplay,
-)
+from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model import ExactGPModel
 from rllib.util.gaussian_processes import SparseGP
@@ -66,9 +63,6 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
         )
-        self.initial_states_dataset = StateExperienceReplay(
-            max_len=max_memory, dim_state=self.dynamical_model.dim_state
-        )
 
         self.num_epochs = num_epochs
         self.batch_size = batch_size
@@ -104,11 +98,8 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
 
         Step 1: Train dynamical model.
         Step 2: TODO Train the reward model.
-        Step 3: TODO Train the initial distribution model.
 
         """
-        self.initial_states_dataset.append(last_trajectory[0].state.unsqueeze(0))
-
         self.update_model_posterior(last_trajectory, logger)
         for observation in last_trajectory:
             self.dataset.append(observation)

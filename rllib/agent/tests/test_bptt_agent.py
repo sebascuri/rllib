@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from rllib.agent import BPTTAgent, SVG1Agent
+from rllib.agent import BPTTAgent, SVGAgent
 from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
 
@@ -16,7 +16,7 @@ def continuous_environment(request):
     return request.param
 
 
-@pytest.fixture(params=[BPTTAgent, SVG1Agent])
+@pytest.fixture(params=[BPTTAgent, SVGAgent])
 def agent(request):
     return request.param
 

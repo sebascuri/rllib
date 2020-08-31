@@ -9,8 +9,8 @@ class DQNAgent(QLearningAgent):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
-        q_function that is learned.
+    critic: AbstractQFunction
+        critic that is learned.
     policy: QFunctionPolicy.
         Q-function derived policy.
     criterion: nn.Module
@@ -22,10 +22,8 @@ class DQNAgent(QLearningAgent):
     Human-level control through deep reinforcement learning. Nature.
     """
 
-    def __init__(self, q_function, policy, criterion, *args, **kwargs):
-        super().__init__(
-            q_function=q_function, policy=policy, criterion=criterion, *args, **kwargs
-        )
+    def __init__(self, critic, policy, *args, **kwargs):
+        super().__init__(critic=critic, policy=policy, *args, **kwargs)
         self.algorithm = DQN(
-            critic=q_function, criterion=criterion(reduction="none"), gamma=self.gamma
+            critic=critic, criterion=self.algorithm.criterion, gamma=self.gamma
         )

@@ -14,6 +14,7 @@ from tqdm import tqdm
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.dataset.datatypes import Observation
+from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.policy.mpc_policy import MPCPolicy
@@ -50,10 +51,11 @@ class ModelBasedAgent(AbstractAgent):
         num_simulation_iterations=0,
         learn_from_real=False,
         thompson_sampling=False,
+        memory=None,
         *args,
         **kwargs,
     ):
-        super().__init__(train_frequency=0, num_rollouts=0, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.algorithm = policy_learning_algorithm
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
@@ -89,6 +91,13 @@ class ModelBasedAgent(AbstractAgent):
         if self.thompson_sampling:
             self.dynamical_model.set_prediction_strategy("posterior")
 
+        if memory is None:
+            memory = ExperienceReplay(max_len=50000, num_steps=0)
+        self.memory = memory
+        self.initial_states_dataset = StateExperienceReplay(
+            max_len=1000, dim_state=self.dynamical_model.dim_state
+        )
+
     def act(self, state):
         """Ask the agent for an action to interact with the environment.
 
@@ -116,6 +125,7 @@ class ModelBasedAgent(AbstractAgent):
         If the episode is new, add the initial state to the state transitions.
         Add the transition to the data set.
         """
+        self.memory.append(observation)
         super().observe(observation)
 
     def start_episode(self):
@@ -133,6 +143,7 @@ class ModelBasedAgent(AbstractAgent):
 
         Then train the agent.
         """
+        self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
         if self._training:
             self.learn()
         super().end_episode()
@@ -184,8 +195,7 @@ class ModelBasedAgent(AbstractAgent):
                 with torch.no_grad():
                     self.policy.reset()  # TODO: Add goal distribution.
                     initial_states = self.simulation_algorithm.get_initial_states(
-                        self.model_learning_algorithm.initial_states_dataset,
-                        self.model_learning_algorithm.dataset,
+                        self.initial_states_dataset, self.memory
                     )
 
                     trajectory = self.simulation_algorithm.simulate(
@@ -222,9 +232,7 @@ class ModelBasedAgent(AbstractAgent):
 
         def closure():
             """Gradient calculation."""
-            observation, *_ = self.model_learning_algorithm.dataset.sample_batch(
-                self.batch_size
-            )
+            observation, *_ = self.memory.sample_batch(self.batch_size)
             self.optimizer.zero_grad()
             losses_ = self.algorithm(observation)
             losses_.combined_loss.mean().backward()

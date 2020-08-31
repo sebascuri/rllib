@@ -13,7 +13,7 @@ class REINFORCEAgent(OnPolicyAgent):
     def __init__(
         self,
         policy: AbstractPolicy,
-        baseline: Optional[AbstractValueFunction] = ...,
+        critic: Optional[AbstractValueFunction] = ...,
         criterion: Optional[Type[_Loss]] = ...,
         *args: Any,
         **kwargs: Any,

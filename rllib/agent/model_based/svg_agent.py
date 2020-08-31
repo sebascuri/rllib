@@ -1,11 +1,12 @@
 """Model-Based SVG Agent."""
 
-from rllib.algorithms.svg1 import SVG1
+from rllib.algorithms.svg import SVG
+from rllib.dataset.experience_replay import ExperienceReplay
 
 from .bptt_agent import BPTTAgent
 
 
-class SVG1Agent(BPTTAgent):
+class SVGAgent(BPTTAgent):
     """Implementation of a SVG-Agent."""
 
     def __init__(
@@ -21,7 +22,7 @@ class SVG1Agent(BPTTAgent):
         *args,
         **kwargs,
     ):
-
+        memory = ExperienceReplay(max_len=50000, num_steps=num_steps)
         super().__init__(
             policy=policy,
             critic=critic,
@@ -31,7 +32,8 @@ class SVG1Agent(BPTTAgent):
             termination=termination,
             num_steps=num_steps,
             num_samples=num_samples,
-            algorithm=SVG1,
+            memory=memory,
+            algorithm=SVG,
             *args,
             **kwargs,
         )

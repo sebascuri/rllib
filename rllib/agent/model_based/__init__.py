@@ -5,4 +5,4 @@ from .model_based_agent import ModelBasedAgent
 from .mpc_agent import MPCAgent
 from .mve_agent import MVEAgent
 from .steve_agent import STEVEAgent
-from .svg1_agent import SVG1Agent
+from .svg_agent import SVGAgent

@@ -1,7 +1,6 @@
 from typing import Any, Type
 
 from torch.nn.modules.loss import _Loss
-from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.ac import ActorCritic
 from rllib.policy import AbstractPolicy
@@ -29,7 +28,7 @@ class ActorCriticAgent(OnPolicyAgent):
         self,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
-        criterion: Type[_Loss],
+        criterion: Type[_Loss] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

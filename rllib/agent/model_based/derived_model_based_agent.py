@@ -127,7 +127,6 @@ class DerivedMBAgent(ModelBasedAgent):
             num_steps=kwargs.pop("num_steps", 1),
             num_simulation_iterations=0,
             thompson_sampling=False,
-            comment=environment.name,
             learn_from_real=True,
             gamma=base_algorithm.gamma,
             *args,

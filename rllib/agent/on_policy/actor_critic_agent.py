@@ -28,7 +28,7 @@ class ActorCriticAgent(OnPolicyAgent):
 
     eps = 1e-12
 
-    def __init__(self, policy, critic, criterion, *args, **kwargs):
+    def __init__(self, policy, critic, criterion=loss.MSELoss, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.algorithm = ActorCritic(
             policy=policy,
@@ -39,29 +39,25 @@ class ActorCriticAgent(OnPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, num_iter=8, num_rollouts=4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        policy = NNPolicy.default(environment)
-        critic = NNQFunction.default(environment)
+        policy = kwargs.pop("policy", NNPolicy.default(environment))
+        critic = kwargs.pop("critic", NNQFunction.default(environment))
 
         optimizer = Adam(
             [
-                {"params": policy.parameters(), "lr": 1e-4},
+                {"params": policy.parameters(), "lr": 3e-4},
                 {"params": critic.parameters(), "lr": 1e-3},
             ]
         )
-        criterion = loss.MSELoss
 
-        return cls(
+        return super().default(
+            environment=environment,
             policy=policy,
             critic=critic,
             optimizer=optimizer,
-            criterion=criterion,
-            num_iter=8,
-            target_update_frequency=1,
-            train_frequency=0,
-            num_rollouts=8,
-            comment=environment.name,
+            num_iter=num_iter,
+            num_rollouts=num_rollouts,
             *args,
             **kwargs,
         )

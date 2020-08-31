@@ -1,10 +1,5 @@
 """Implementation of DQNAgent Algorithms."""
-import torch.nn.modules.loss as loss
-from torch.optim import Adam
-
 from rllib.algorithms.soft_q_learning import SoftQLearning
-from rllib.dataset.experience_replay import ExperienceReplay
-from rllib.value_function import NNQFunction
 
 from .q_learning_agent import QLearningAgent
 
@@ -14,11 +9,9 @@ class SoftQLearningAgent(QLearningAgent):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
-        q_function that is learned.
-    criterion: nn.Module
-        Criterion to minimize the TD-error.
-    temperature: ParameterDecay.
+    critic: AbstractQFunction
+        critic that is learned.
+    temperature: float or ParameterDecay.
         Temperature of Soft Q function.
 
     References
@@ -36,43 +29,18 @@ class SoftQLearningAgent(QLearningAgent):
     Combining policy gradient and Q-learning. ICLR.
     """
 
-    def __init__(self, q_function, criterion, temperature, *args, **kwargs):
-
+    def __init__(self, critic, temperature=0.2, *args, **kwargs):
+        kwargs.pop("policy")
         super().__init__(
-            q_function=q_function,
+            critic=critic,
             policy=None,  # type: ignore
-            criterion=criterion,
             *args,
             **kwargs,
         )
         self.algorithm = SoftQLearning(
-            critic=q_function,
-            criterion=criterion(reduction="none"),
+            critic=critic,
+            criterion=self.algorithm.criterion,
             temperature=temperature,
             gamma=self.gamma,
         )
         self.policy = self.algorithm.policy
-
-    @classmethod
-    def default(cls, environment, *args, **kwargs):
-        """See `AbstractAgent.default'."""
-        q_function = NNQFunction.default(environment)
-        optimizer = Adam(q_function.parameters(), lr=3e-4)
-        criterion = loss.MSELoss
-        memory = ExperienceReplay(max_len=50000, num_steps=0)
-
-        return cls(
-            q_function=q_function,
-            criterion=criterion,
-            optimizer=optimizer,
-            memory=memory,
-            temperature=0.2,
-            num_iter=1,
-            batch_size=100,
-            target_update_frequency=1,
-            train_frequency=1,
-            num_rollouts=0,
-            comment=environment.name,
-            *args,
-            **kwargs,
-        )

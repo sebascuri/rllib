@@ -6,6 +6,7 @@ from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.abstract_solver import MPCSolver
 from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
 from rllib.dataset.datatypes import Trajectory
+from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.policy.derived_policy import DerivedPolicy
@@ -23,6 +24,8 @@ class ModelBasedAgent(AbstractAgent):
     learn_from_real: bool
     learn_from_sim: bool
     thompson_sampling: bool
+    memory: ExperienceReplay
+    initial_states_dataset: StateExperienceReplay
     def __init__(
         self,
         policy: AbstractPolicy,
@@ -30,6 +33,7 @@ class ModelBasedAgent(AbstractAgent):
         model_learning_algorithm: Optional[ModelLearningAlgorithm] = ...,
         planning_algorithm: Optional[MPCSolver] = ...,
         simulation_algorithm: Optional[SimulationAlgorithm] = ...,
+        memory: Optional[ExperienceReplay] = ...,
         num_simulation_iterations: int = ...,
         learn_from_real: bool = ...,
         thompson_sampling: bool = ...,

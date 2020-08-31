@@ -15,9 +15,9 @@ class SVG0Agent(OffPolicyAgent):
     algorithm: SVG0
     def __init__(
         self,
-        q_function: AbstractQFunction,
+        critic: AbstractQFunction,
         policy: AbstractPolicy,
-        criterion: Type[_Loss],
+        criterion: Type[_Loss] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

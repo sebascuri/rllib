@@ -7,7 +7,7 @@ from .model_based import (
     MPCAgent,
     MVEAgent,
     STEVEAgent,
-    SVG1Agent,
+    SVGAgent,
 )
 from .off_policy import (
     DDQNAgent,

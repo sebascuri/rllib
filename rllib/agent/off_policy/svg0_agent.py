@@ -5,7 +5,6 @@ import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
 from rllib.algorithms.svg0 import SVG0
-from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.policy import NNPolicy
 from rllib.value_function import NNQFunction
 
@@ -17,11 +16,12 @@ class SVG0Agent(OffPolicyAgent):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
-        q_function that is learned.
+    critic: AbstractQFunction
+        critic that is learned.
     policy: AbstractPolicy
         policy that is learned.
-    criterion: nn.Module
+    criterion: nn.Module.
+        criterion of critic.
 
     References
     ----------
@@ -30,12 +30,12 @@ class SVG0Agent(OffPolicyAgent):
 
     """
 
-    def __init__(self, q_function, policy, criterion, *args, **kwargs):
+    def __init__(self, critic, policy, criterion=loss.MSELoss, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         assert not policy.deterministic, "Policy must be stochastic."
         self.algorithm = SVG0(
-            critic=q_function,
+            critic=critic,
             policy=policy,
             criterion=criterion(reduction="none"),
             gamma=self.gamma,
@@ -45,27 +45,18 @@ class SVG0Agent(OffPolicyAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        q_function = NNQFunction.default(environment)
+        critic = NNQFunction.default(environment)
         policy = NNPolicy.default(environment)
 
-        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=3e-4)
-        criterion = loss.MSELoss
-        memory = ExperienceReplay(max_len=100000, num_steps=0)
+        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=3e-4)
 
-        return cls(
-            q_function=q_function,
+        return super().default(
+            environment,
+            critic=critic,
             policy=policy,
-            criterion=criterion,
             optimizer=optimizer,
-            memory=memory,
             policy_update_frequency=2,
-            num_iter=1,
-            batch_size=100,
-            target_update_frequency=1,
-            train_frequency=1,
-            num_rollouts=0,
             clip_gradient_val=10,
-            comment=environment.name,
             *args,
             **kwargs,
         )

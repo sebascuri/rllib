@@ -13,10 +13,10 @@ class DPGAgent(OffPolicyAgent):
     algorithm: DPG
     def __init__(
         self,
-        q_function: AbstractQFunction,
+        critic: AbstractQFunction,
         policy: AbstractPolicy,
-        criterion: Type[_Loss],
         exploration_noise: Union[float, ParameterDecay],
+        criterion: Type[_Loss] = ...,
         policy_noise: float = ...,
         noise_clip: float = ...,
         *args: Any,

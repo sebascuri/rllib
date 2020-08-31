@@ -1,23 +1,21 @@
-from typing import Any, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import torch.nn.modules.loss as loss
-from torch.nn.modules.loss import _Loss
 
 from rllib.algorithms.trpo import TRPO
 from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractValueFunction
 
-from .on_policy_agent import OnPolicyAgent
+from .actor_critic_agent import ActorCriticAgent
 
-class TRPOAgent(OnPolicyAgent):
+class TRPOAgent(ActorCriticAgent):
 
-    algorithm: TRPO
+    algorithm: TRPO  # type: ignore
     def __init__(
         self,
         policy: AbstractPolicy,
-        value_function: AbstractValueFunction,
-        criterion: Type[_Loss],
+        critic: AbstractValueFunction,
         regularization: bool = ...,
         epsilon_mean: Union[float, ParameterDecay] = ...,
         epsilon_var: Optional[Union[float, ParameterDecay]] = ...,

@@ -9,8 +9,8 @@ from rllib.value_function import NNEnsembleValueFunction
 from .bptt import BPTT
 
 
-class SVG1(BPTT):
-    """SVG-ER Algorithm.
+class SVG(BPTT):
+    """Stochastic Value Gradient Algorithm.
 
     References
     ----------
@@ -20,8 +20,8 @@ class SVG1(BPTT):
 
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""
-        state, action = observation.state[..., 0, :], observation.action[..., 0, :]
-        next_state, done = observation.next_state[..., 0, :], observation.done[..., 0]
+        state, action = observation.state, observation.action
+        next_state, done = observation.next_state, observation.done
 
         # Infer eta.
         action_mean, action_chol = self.policy(state)
@@ -30,13 +30,12 @@ class SVG1(BPTT):
 
         # Compute entropy and log_probability.
         pi = tensor_to_distribution((action_mean, action_chol))
-        entropy, log_p = get_entropy_and_logp(
-            pi=pi, action=observation.action[..., 0, :]
-        )
+        entropy, log_p = get_entropy_and_logp(pi=pi, action=observation.action)
 
         # Compute off-policy weight.
         with torch.no_grad():
-            weight = torch.exp(log_p - observation.log_prob_action[..., 0])
+            weight = torch.exp(log_p - observation.log_prob_action)
+            weight = torch.cumprod(weight, dim=1)
 
         with DisableGradient(self.dynamical_model, self.reward_model, self.critic):
             # Compute re-parameterized policy sample.

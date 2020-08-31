@@ -1,6 +1,4 @@
-from typing import Any, Type
-
-from torch.nn.modules.loss import _Loss
+from typing import Any
 
 from rllib.algorithms.gaac import GAAC
 from rllib.policy import AbstractPolicy
@@ -14,7 +12,6 @@ class GAACAgent(ActorCriticAgent):
         self,
         policy: AbstractPolicy,
         critic: AbstractValueFunction,
-        criterion: Type[_Loss],
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

@@ -13,7 +13,7 @@ class ExpectedSARSAAgent(OnPolicyAgent):
     policy: AbstractQFunctionPolicy
     def __init__(
         self,
-        q_function: AbstractQFunction,
+        critic: AbstractQFunction,
         policy: AbstractQFunctionPolicy,
         criterion: Type[_Loss],
         *args: Any,

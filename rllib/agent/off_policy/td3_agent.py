@@ -1,6 +1,4 @@
 """Implementation of TD3 Algorithm."""
-from itertools import chain
-
 from rllib.value_function import NNEnsembleQFunction
 
 from .dpg_agent import DPGAgent
@@ -14,17 +12,12 @@ class TD3Agent(DPGAgent):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
-        q_function that is learned.
+    critic: AbstractQFunction
+        critic that is learned.
     policy: AbstractPolicy
         policy that is learned.
     exploration_noise: ParameterDecay.
         exploration strategy that returns the actions.
-    criterion: nn.Module
-    optimizer: nn.Optimizer
-        q_function optimizer.
-    memory: ExperienceReplay
-        memory where to store the observations.
 
     References
     ----------
@@ -33,22 +26,10 @@ class TD3Agent(DPGAgent):
 
     """
 
-    def __init__(
-        self, q_function, policy, criterion, exploration_noise, *args, **kwargs
-    ):
-        q_function = NNEnsembleQFunction.from_q_function(
-            q_function=q_function, num_heads=2
-        )
-        optimizer = kwargs.pop("optimizer")
-        optimizer = type(optimizer)(
-            chain(policy.parameters(), q_function.parameters()), **optimizer.defaults
-        )
-        super().__init__(
-            q_function=q_function,
-            policy=policy,
-            exploration_noise=exploration_noise,
-            criterion=criterion,
-            optimizer=optimizer,
-            *args,
-            **kwargs,
+    def __init__(self, critic, policy, *args, **kwargs):
+        critic = NNEnsembleQFunction.from_q_function(q_function=critic, num_heads=2)
+        super().__init__(critic=critic, policy=policy, *args, **kwargs)
+        self.optimizer = type(self.optimizer)(
+            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
+            **self.optimizer.defaults,
         )
