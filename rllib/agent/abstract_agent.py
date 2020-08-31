@@ -42,9 +42,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def __init__(
         self,
         optimizer=None,
-        train_frequency=1,
+        train_frequency=0,
         num_rollouts=0,
-        num_iter=0,
+        num_iter=1,
         batch_size=1,
         policy_update_frequency=1,
         target_update_frequency=1,
@@ -84,7 +84,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """Get default agent for a given environment."""
-        raise NotImplementedError
+        return cls(comment=environment.name, *args, **kwargs)
 
     def __str__(self):
         """Generate string to parse the agent."""

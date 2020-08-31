@@ -30,7 +30,7 @@ from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
 
 MAX_STEPS = 25
-NUM_EPISODES = 25
+NUM_EPISODES = 15
 SEED = 0
 
 

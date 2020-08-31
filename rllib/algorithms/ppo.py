@@ -28,10 +28,6 @@ class PPO(GAAC):
         Criterion for value function.
     epsilon: float, optional (default=0.2)
         The clipping parameter.
-    weight_value_function: float, optional. (default=1).
-        Weight of the value function loss relative to the surrogate loss.
-    weight_entropy: float, optional. (default=0).
-        Weight of the entropy bonus relative to the surrogate objective.
     monte_carlo_target: bool, optional. (default=False).
         Whether to calculate the value targets using MC estimation or adv + value.
     clamp_value: bool, optional. (default=False).

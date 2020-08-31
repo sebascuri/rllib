@@ -4,7 +4,6 @@ import torch
 from torch.optim import Adam
 
 from rllib.algorithms.reps import REPS
-from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.policy import NNPolicy
 from rllib.util.neural_networks.utilities import deep_copy_module
 from rllib.value_function import NNValueFunction
@@ -25,24 +24,30 @@ class REPSAgent(OffPolicyAgent):
     """
 
     def __init__(
-        self, policy, value_function, epsilon, regularization=False, *args, **kwargs
+        self,
+        policy,
+        critic,
+        epsilon=1.0,
+        regularization=False,
+        train_frequency=0,
+        num_rollouts=15,
+        *args,
+        **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            train_frequency=train_frequency, num_rollouts=num_rollouts, *args, **kwargs
+        )
 
         self.algorithm = REPS(
             policy=policy,
-            critic=value_function,
+            critic=critic,
             epsilon=epsilon,
             regularization=regularization,
             gamma=self.gamma,
         )
         # Over-write optimizer.
         self.optimizer = type(self.optimizer)(
-            [
-                p
-                for name, p in self.algorithm.named_parameters()
-                if "target" not in name
-            ],
+            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
             **self.optimizer.defaults,
         )
 
@@ -68,7 +73,8 @@ class REPSAgent(OffPolicyAgent):
         self.policy.prior = old_policy
         self._fit_policy()
 
-        self.memory.reset()  # Erase memory.
+        if self.train_frequency == 0:
+            self.memory.reset()  # Erase memory.
 
     def _optimizer_dual(self):
         """Optimize the dual function."""
@@ -102,24 +108,17 @@ class REPSAgent(OffPolicyAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        value_function = NNValueFunction.default(environment)
+        critic = NNValueFunction.default(environment)
         policy = NNPolicy.default(environment)
 
-        optimizer = Adam(value_function.parameters(), lr=3e-4)
-        memory = ExperienceReplay(max_len=50000, num_steps=0)
+        optimizer = Adam(critic.parameters(), lr=3e-4)
 
-        return cls(
+        return super().default(
+            environment,
             policy=policy,
-            value_function=value_function,
+            critic=critic,
             optimizer=optimizer,
-            memory=memory,
-            epsilon=1.0,
-            regularization=False,
             num_iter=5 if kwargs.get("test", False) else 200,
-            batch_size=100,
-            train_frequency=0,
-            num_rollouts=15,
-            comment=environment.name,
             *args,
             **kwargs,
         )

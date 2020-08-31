@@ -1,38 +1,42 @@
 """V-MPO Agent Implementation."""
-from itertools import chain
-
 import torch.nn.modules.loss as loss
-from torch.optim import Adam
 
 from rllib.algorithms.vmpo import VMPO
-from rllib.dataset.experience_replay import ExperienceReplay
-from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
 
-from .off_policy_agent import OffPolicyAgent
+from .mpo_agent import MPOAgent
 
 
-class VMPOAgent(OffPolicyAgent):
+class VMPOAgent(MPOAgent):
     """Implementation of an agent that runs V-MPO."""
 
     def __init__(
         self,
         policy,
-        value_function,
-        criterion,
+        critic,
+        criterion=loss.MSELoss,
         epsilon=0.1,
         epsilon_mean=0.1,
         epsilon_var=0.001,
         regularization=False,
         top_k_fraction=0.5,
+        train_frequency=0,
+        num_rollouts=2,
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            policy=policy,
+            critic=critic,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            *args,
+            **kwargs,
+        )
 
         self.algorithm = VMPO(
             policy=policy,
-            critic=value_function,
+            critic=critic,
             criterion=criterion(reduction="none"),
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,
@@ -44,57 +48,20 @@ class VMPOAgent(OffPolicyAgent):
 
         self.policy = self.algorithm.policy
         self.optimizer = type(self.optimizer)(
-            [
-                p
-                for name, p in self.algorithm.named_parameters()
-                if "target" not in name
-            ],
+            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
             **self.optimizer.defaults,
         )
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        value_function = NNValueFunction.default(environment)
-        policy = NNPolicy.default(environment, layers=[100, 100])
-
-        optimizer = Adam(
-            chain(policy.parameters(), value_function.parameters()), lr=5e-4
-        )
-        criterion = loss.MSELoss
-        memory = ExperienceReplay(max_len=50000, num_steps=0)
-
-        if environment.num_actions > 0:
-            epsilon = 0.1
-            epsilon_mean = 0.5
-            epsilon_var = None
-        else:
-            epsilon = 0.1
-            epsilon_mean = 0.1
-            epsilon_var = 1e-4
-
-        return cls(
-            policy,
-            value_function,
-            criterion=criterion,
-            optimizer=optimizer,
-            memory=memory,
-            epsilon=epsilon,
-            epsilon_mean=epsilon_mean,
-            epsilon_var=epsilon_var,
-            regularization=False,
-            top_k_fraction=0.5,
-            num_iter=5 if kwargs.get("test", False) else 1000,
-            batch_size=100,
-            target_update_frequency=1,
-            train_frequency=0,
-            num_rollouts=2,
-            comment=environment.name,
-            *args,
-            **kwargs,
-        )
+        critic = NNValueFunction.default(environment)
+        return super().default(environment, critic=critic, *args, **kwargs)
 
     def learn(self) -> None:
         """Learn with V-MPO (On-Policy?)."""
         super().learn()
-        self.memory.reset()
+        if self.train_frequency == 0:
+            # If train_frequency == 0, then it is on-policy.
+            # Thus, erase memory after training.
+            self.memory.reset()

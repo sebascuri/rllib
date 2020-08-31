@@ -1,7 +1,7 @@
-from typing import Any, List, Tuple
+from typing import Any
 
 from rllib.dataset import TrajectoryDataset
-from rllib.dataset.datatypes import Observation
+from rllib.environment import AbstractEnvironment
 from rllib.policy import RandomPolicy
 
 from .abstract_agent import AbstractAgent
@@ -12,11 +12,5 @@ class RandomAgent(AbstractAgent):
     policy: RandomPolicy
     dataset: TrajectoryDataset
     def __init__(
-        self,
-        dim_state: Tuple,
-        dim_action: Tuple,
-        num_states: int = ...,
-        num_actions: int = ...,
-        *args: Any,
-        **kwargs: Any,
+        self, environment: AbstractEnvironment, *args: Any, **kwargs: Any,
     ) -> None: ...

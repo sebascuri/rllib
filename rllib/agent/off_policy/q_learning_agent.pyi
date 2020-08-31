@@ -13,9 +13,9 @@ class QLearningAgent(OffPolicyAgent):
     policy: AbstractQFunctionPolicy
     def __init__(
         self,
-        q_function: AbstractQFunction,
+        critic: AbstractQFunction,
         policy: AbstractQFunctionPolicy,
-        criterion: Type[_Loss],
+        criterion: Type[_Loss] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

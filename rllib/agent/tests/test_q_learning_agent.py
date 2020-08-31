@@ -44,7 +44,7 @@ def policy(request):
 def test_policies(environment, policy):
     environment = GymEnvironment(environment, SEED)
 
-    q_function = NNQFunction(
+    critic = NNQFunction(
         dim_state=environment.dim_observation,
         dim_action=environment.dim_action,
         num_states=environment.num_states,
@@ -53,14 +53,14 @@ def test_policies(environment, policy):
         tau=TARGET_UPDATE_TAU,
     )
 
-    policy = policy(q_function, 0.1)
+    policy = policy(critic, 0.1)
 
-    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(critic.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = DDQNAgent(
-        q_function=q_function,
+        critic=critic,
         policy=policy,
         criterion=criterion,
         optimizer=optimizer,
@@ -77,16 +77,16 @@ def test_tabular_interaction(agent, policy):
     LEARNING_RATE = 0.1
     environment = EasyGridWorld()
 
-    q_function = TabularQFunction(
+    critic = TabularQFunction(
         num_states=environment.num_states, num_actions=environment.num_actions
     )
-    policy = policy(q_function, 0.1)
-    optimizer = torch.optim.Adam(q_function.parameters(), lr=LEARNING_RATE)
+    policy = policy(critic, 0.1)
+    optimizer = torch.optim.Adam(critic.parameters(), lr=LEARNING_RATE)
     criterion = torch.nn.MSELoss
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = agent(
-        q_function=q_function,
+        critic=critic,
         policy=policy,
         criterion=criterion,
         optimizer=optimizer,
@@ -100,6 +100,6 @@ def test_tabular_interaction(agent, policy):
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
 
     torch.testing.assert_allclose(
-        q_function.table.shape,
+        critic.table.shape,
         torch.Size([environment.num_actions, environment.num_states]),
     )

@@ -21,12 +21,12 @@ class RandomAgent(AbstractAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        return RandomAgent(
+        return super().default(
+            environment=environment,
             dim_state=environment.dim_state,
             dim_action=environment.dim_action,
             num_states=environment.num_states,
             num_actions=environment.num_actions,
-            comment=environment.name,
             *args,
             **kwargs,
         )

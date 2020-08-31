@@ -1,17 +1,13 @@
 """Implementation of PPO Algorithm."""
 
-import torch.nn.modules.loss as loss
-from torch.optim import Adam
-
 from rllib.algorithms.ppo import PPO
-from rllib.policy import NNPolicy
 from rllib.util.neural_networks.utilities import stop_learning
 from rllib.value_function import NNValueFunction
 
-from .on_policy_agent import OnPolicyAgent
+from .actor_critic_agent import ActorCriticAgent
 
 
-class PPOAgent(OnPolicyAgent):
+class PPOAgent(ActorCriticAgent):
     """Implementation of the PPO Agent.
 
     References
@@ -23,26 +19,23 @@ class PPOAgent(OnPolicyAgent):
     def __init__(
         self,
         policy,
-        value_function,
-        criterion,
+        critic,
         epsilon=0.2,
-        lambda_=0.97,
-        target_kl=0.01,
-        weight_value_function=1.0,
-        weight_entropy=0.01,
+        lambda_=0.95,
+        target_kl=0.005,
+        entropy_regularization=0.01,
         monte_carlo_target=False,
-        clamp_value=False,
+        clamp_value=True,
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(critic=critic, policy=policy, *args, **kwargs)
         self.algorithm = PPO(
-            critic=value_function,
+            critic=critic,
             policy=policy,
             epsilon=epsilon,
-            criterion=criterion(reduction="mean"),
-            weight_value_function=weight_value_function,
-            weight_entropy=weight_entropy,
+            criterion=self.algorithm.criterion,
+            entropy_regularization=entropy_regularization,
             monte_carlo_target=monte_carlo_target,
             clamp_value=clamp_value,
             lambda_=lambda_,
@@ -62,35 +55,12 @@ class PPOAgent(OnPolicyAgent):
         return False
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, num_iter=80, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        policy = NNPolicy.default(environment)
-        value_function = NNValueFunction.default(environment)
-
-        optimizer = Adam(
-            [
-                {"params": policy.parameters(), "lr": 3e-4},
-                {"params": value_function.parameters(), "lr": 1e-3},
-            ]
-        )
-        criterion = loss.MSELoss
-
-        return cls(
-            policy=policy,
-            value_function=value_function,
-            optimizer=optimizer,
-            criterion=criterion,
-            epsilon=0.2,
-            lambda_=0.95,
-            target_kl=0.005,
-            entropy_regularization=0.01,
-            monte_carlo_target=False,
-            clamp_value=True,
-            num_iter=80,
-            target_update_frequency=1,
-            train_frequency=0,
-            num_rollouts=4,
-            comment=environment.name,
+        return super().default(
+            environment,
+            critic=NNValueFunction.default(environment),
+            num_iter=num_iter,
             *args,
             **kwargs,
         )

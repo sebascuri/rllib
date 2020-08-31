@@ -8,13 +8,8 @@ from rllib.dataset.utilities import stack_list_of_tuples
 class OnPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            batch_size=kwargs.pop("batch_size", 1),
-            num_rollouts=kwargs.pop("num_rollouts", 1),
-            *args,
-            **kwargs,
-        )
+    def __init__(self, num_rollouts=1, *args, **kwargs):
+        super().__init__(num_rollouts=num_rollouts, *args, **kwargs)
 
         self.trajectories = []
 

@@ -3,20 +3,24 @@
 import torch
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.dataset.experience_replay import ExperienceReplay
 
 
 class OffPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(self, memory, *args, **kwargs):
+    def __init__(self, memory, train_frequency=1, batch_size=100, *args, **kwargs):
         super().__init__(
-            train_frequency=kwargs.pop("train_frequency", 1),
-            batch_size=kwargs.pop("batch_size", 64),
-            *args,
-            **kwargs,
+            train_frequency=train_frequency, batch_size=batch_size, *args, **kwargs
         )
 
         self.memory = memory
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """See `AbstractAgent.default'."""
+        memory = ExperienceReplay(max_len=50000, num_steps=0)
+        return super().default(environment, memory=memory, *args, **kwargs)
 
     def observe(self, observation):
         """See `AbstractAgent.observe'."""

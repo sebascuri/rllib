@@ -4,7 +4,6 @@ import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
 from rllib.algorithms.q_learning import QLearning
-from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.policy import EpsGreedy
 from rllib.util.parameter_decay import ExponentialDecay
 from rllib.value_function import NNQFunction
@@ -20,8 +19,8 @@ class QLearningAgent(OffPolicyAgent):
 
     Parameters
     ----------
-    q_function: AbstractQFunction
-        q_function that is learned.
+    critic: AbstractQFunction
+        critic that is learned.
     policy: QFunctionPolicy.
         Q-function derived policy.
     criterion: nn.Module
@@ -39,34 +38,25 @@ class QLearningAgent(OffPolicyAgent):
 
     """
 
-    def __init__(self, q_function, policy, criterion, *args, **kwargs):
+    def __init__(self, critic, policy, criterion=loss.MSELoss, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.policy = policy
         self.algorithm = QLearning(
-            critic=q_function, criterion=criterion(reduction="none"), gamma=self.gamma
+            critic=critic, criterion=criterion(reduction="none"), gamma=self.gamma
         )
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        q_function = NNQFunction.default(environment)
-        policy = EpsGreedy(q_function, ExponentialDecay(1.0, 0.01, 500))
-        optimizer = Adam(q_function.parameters(), lr=3e-4)
-        criterion = loss.MSELoss
-        memory = ExperienceReplay(max_len=50000, num_steps=0)
+        critic = NNQFunction.default(environment)
+        policy = EpsGreedy(critic, ExponentialDecay(1.0, 0.01, 500))
+        optimizer = Adam(critic.parameters(), lr=3e-4)
 
-        return cls(
-            q_function=q_function,
+        return super().default(
+            environment,
+            critic=critic,
             policy=policy,
-            criterion=criterion,
             optimizer=optimizer,
-            memory=memory,
-            num_iter=1,
-            batch_size=100,
-            target_update_frequency=1,
-            train_frequency=1,
-            num_rollouts=0,
-            comment=environment.name,
             *args,
             **kwargs,
         )

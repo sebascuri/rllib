@@ -12,8 +12,8 @@ class REPSAgent(OffPolicyAgent):
     def __init__(
         self,
         policy: AbstractPolicy,
-        value_function: AbstractValueFunction,
-        epsilon: Union[float, ParameterDecay],
+        critic: AbstractValueFunction,
+        epsilon: Union[float, ParameterDecay] = ...,
         regularization: bool = ...,
         *args: Any,
         **kwargs: Any,

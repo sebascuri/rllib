@@ -61,10 +61,10 @@ class BPTTAgent(ModelBasedAgent):
         """See `AbstractAgent.default'."""
         test = kwargs.get("test", False)
 
-        q_function = NNValueFunction.default(environment)
+        critic = NNValueFunction.default(environment)
         policy = NNPolicy.default(environment)
 
-        optimizer = Adam(chain(policy.parameters(), q_function.parameters()), lr=1e-3)
+        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
         criterion = loss.MSELoss
 
         model = EnsembleModel.default(environment)
@@ -92,7 +92,7 @@ class BPTTAgent(ModelBasedAgent):
 
         return cls(
             policy=policy,
-            critic=q_function,
+            critic=critic,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             criterion=criterion,
