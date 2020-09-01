@@ -27,7 +27,7 @@ class EnvironmentModel(AbstractModel):
         """See AbstractModel.default()."""
         return cls(environment)
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state=None):
         """Get Next-State distribution."""
         self.environment.state = state
         next_state, reward, done, _ = self.environment.step(action)

@@ -42,7 +42,7 @@ class TransformedModel(AbstractModel):
         """Set prediction strategy."""
         self.base_model.set_prediction_strategy(val)
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state=None):
         """Predict next state distribution."""
         return self.next_state(state, action)
 

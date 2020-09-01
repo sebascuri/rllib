@@ -31,7 +31,7 @@ class LinearModel(AbstractModel):
             **kwargs,
         )
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state=None):
         """Get next state distribution."""
         if not isinstance(state, torch.Tensor):
             state = torch.tensor(state, dtype=torch.get_default_dtype())

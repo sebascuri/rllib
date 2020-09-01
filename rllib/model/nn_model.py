@@ -91,7 +91,7 @@ class NNModel(AbstractModel):
             **kwargs,
         )
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state=None):
         """Get Next-State distribution."""
         if self.discrete_state:
             state = one_hot_encode(state.long(), num_classes=self.num_states)

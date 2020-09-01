@@ -67,7 +67,7 @@ class ExactGPModel(AbstractModel):
             **kwargs,
         )
 
-    def forward(self, state, action):
+    def forward(self, state, action, next_state=None):
         """Get next state distribution."""
         test_x = self.state_actions_to_input_data(state, action)
 
