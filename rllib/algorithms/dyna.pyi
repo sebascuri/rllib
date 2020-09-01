@@ -1,8 +1,7 @@
 from typing import Any, List, Optional, Union
 
-from rllib.dataset.datatypes import Loss, Observation, Termination
+from rllib.dataset.datatypes import Loss, Observation
 from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
 
 from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -16,10 +15,10 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
 def dyna_expand(
     base_algorithm: AbstractAlgorithm,
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     num_steps: int = ...,
     num_samples: int = ...,
-    termination: Optional[Termination] = ...,
+    termination_model: Optional[AbstractModel] = ...,
     td_k: bool = ...,
     *args: Any,
     **kwargs: Any,

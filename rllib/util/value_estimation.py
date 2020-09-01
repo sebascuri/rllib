@@ -153,7 +153,7 @@ def mb_return(
     num_samples=1,
     entropy_reg=0.0,
     reward_transformer=RewardTransformer(),
-    termination=None,
+    termination_model=None,
     **kwargs,
 ):
     r"""Estimate the value of a state by propagating the state with a model for N-steps.
@@ -186,7 +186,7 @@ def mb_return(
         value by MC sampling of the policy, rewards and dynamics (jointly).
     entropy_reg: float, optional. (default=0).
         Entropy regularization parameter.
-    termination: Callable, optional. (default=None).
+    termination_model: AbstractModel, optional. (default=None).
         Callable that returns True if the transition yields a terminal state.
     reward_transformer: RewardTransformer.
 
@@ -218,7 +218,7 @@ def mb_return(
         policy,
         state,
         max_steps=num_steps,
-        termination=termination,
+        termination_model=termination_model,
         **kwargs,
     )
     value = mc_return(

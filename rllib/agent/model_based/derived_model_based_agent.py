@@ -1,13 +1,12 @@
 """Derived Agent."""
+from itertools import chain
 
-import torch
 from torch.optim import Adam
 
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
-from rllib.model import EnsembleModel, TransformedModel
-from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.model import EnsembleModel, NNModel, TransformedModel
 
 from .model_based_agent import ModelBasedAgent
 
@@ -27,7 +26,7 @@ class DerivedMBAgent(ModelBasedAgent):
         reward_model,
         num_samples=15,
         num_steps=1,
-        termination=None,
+        termination_model=None,
         *args,
         **kwargs,
     ):
@@ -35,7 +34,7 @@ class DerivedMBAgent(ModelBasedAgent):
             base_algorithm=base_algorithm,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            termination=termination,
+            termination_model=termination_model,
             num_steps=num_steps,
             num_samples=num_samples,
             *args,
@@ -69,16 +68,13 @@ class DerivedMBAgent(ModelBasedAgent):
         model = EnsembleModel.default(environment)
         dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
 
-        reward_model = kwargs.get(
-            "reward_model",
-            QuadraticReward(
-                torch.eye(environment.dim_state[0]),
-                torch.eye(environment.dim_action[0]),
-                goal=environment.goal,
-            ),
+        reward_model = kwargs.pop(
+            "rewards", NNModel.default(environment, model_kind="rewards")
         )
 
-        model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
+        model_optimizer = Adam(
+            chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
+        )
 
         model_learning_algorithm = ModelLearningAlgorithm(
             dynamical_model=dynamical_model,

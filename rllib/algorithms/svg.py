@@ -42,7 +42,9 @@ class SVG(BPTT):
                 log_p, observation.log_prob_action, full_trajectory=False
             )
 
-        with DisableGradient(self.dynamical_model, self.reward_model, self.critic):
+        with DisableGradient(
+            self.dynamical_model, self.reward_model, self.termination_model, self.critic
+        ):
             # Compute re-parameterized policy sample.
             action = (action_mean + (action_chol @ eta).squeeze(-1)).clamp(-1, 1)
 

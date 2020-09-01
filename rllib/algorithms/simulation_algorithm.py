@@ -115,7 +115,7 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
 
         self.dynamical_model.eval()
         with DisableGradient(
-            self.dynamical_model, self.reward_model
+            self.dynamical_model, self.reward_model, self.termination_model
         ), gpytorch.settings.fast_pred_var():
             trajectory = super().simulate(state, policy)
 

@@ -2,18 +2,22 @@
 
 import torch
 
+from rllib.model.abstract_model import AbstractModel
 from rllib.util.neural_networks import torch_quadratic
 
-from .abstract_reward import AbstractReward
 
-
-class QuadraticReward(AbstractReward):
+class QuadraticReward(AbstractModel):
     """Quadratic Reward Function."""
 
     def __init__(self, q, r, goal=None):
         if goal is None:
             goal = torch.zeros(q.shape[-1])
-        super().__init__(goal=goal)
+        super().__init__(
+            goal=goal,
+            dim_state=(q.shape[-1],),
+            dim_action=(r.shape[-1],),
+            model_kind="rewards",
+        )
 
         self.q = q
         self.r = r

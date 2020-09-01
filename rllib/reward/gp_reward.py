@@ -3,14 +3,14 @@
 import gpytorch
 import torch
 
-from .abstract_reward import AbstractReward
+from rllib.model import AbstractModel
 
 
-class GPBanditReward(AbstractReward):
+class GPBanditReward(AbstractModel):
     """A Reward function that is defined through a GP."""
 
     def __init__(self, model):
-        super().__init__()
+        super().__init__(model_kind="rewards", dim_state=(), dim_action=())
         self.model = model
 
     def forward(self, state, action, next_state):

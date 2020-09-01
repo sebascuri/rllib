@@ -37,9 +37,9 @@ class SVG0(DPG):
         action = (action_mean + (action_chol @ eta).squeeze(-1)).clamp(-1, 1)
 
         # Propagate gradient.
-        with DisableGradient(self.critic):
-            q = self.critic(observation.state[..., 0, :], action)
-            if isinstance(self.critic, NNEnsembleQFunction):
+        with DisableGradient(self.critic_target):
+            q = self.critic_target(observation.state[..., 0, :], action)
+            if isinstance(self.critic_target, NNEnsembleQFunction):
                 q = q[..., 0]
 
         return Loss(

@@ -97,7 +97,6 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         The last trajectory is added to the data set.
 
         Step 1: Train dynamical model.
-        Step 2: TODO Train the reward model.
 
         """
         self.update_model_posterior(last_trajectory, logger)
@@ -112,3 +111,23 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             optimizer=self.model_optimizer,
             logger=logger,
         )
+
+        if any(p.requires_grad for p in self.reward_model.parameters()):
+            train_model(
+                self.reward_model,
+                train_loader=loader,
+                max_iter=self.num_epochs,
+                optimizer=self.model_optimizer,
+                logger=logger,
+            )
+
+        if self.termination_model is not None and any(
+            p.requires_grad for p in self.termination_model.parameters()
+        ):
+            train_model(
+                self.termination_model,
+                train_loader=loader,
+                max_iter=self.num_epochs,
+                optimizer=self.model_optimizer,
+                logger=logger,
+            )

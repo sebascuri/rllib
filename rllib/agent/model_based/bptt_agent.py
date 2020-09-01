@@ -1,7 +1,6 @@
 """Model-Based BPTT Agent."""
 from itertools import chain
 
-import torch
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
@@ -9,7 +8,6 @@ from rllib.algorithms.bptt import BPTT
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy import NNPolicy
-from rllib.reward.quadratic_reward import QuadraticReward
 from rllib.value_function import NNValueFunction
 
 from .model_based_agent import ModelBasedAgent
@@ -25,7 +23,7 @@ class BPTTAgent(ModelBasedAgent):
         dynamical_model,
         reward_model,
         criterion,
-        termination=None,
+        termination_model=None,
         num_steps=1,
         num_samples=15,
         algorithm=BPTT,
@@ -37,7 +35,7 @@ class BPTTAgent(ModelBasedAgent):
             critic=critic,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            termination=termination,
+            termination_model=termination_model,
             criterion=criterion(reduction="mean"),
             num_steps=num_steps,
             num_samples=num_samples,
@@ -70,16 +68,13 @@ class BPTTAgent(ModelBasedAgent):
         model = EnsembleModel.default(environment)
         dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
 
-        reward_model = kwargs.get(
-            "reward_model",
-            QuadraticReward(
-                torch.eye(environment.dim_state[0]),
-                torch.eye(environment.dim_action[0]),
-                goal=environment.goal,
-            ),
+        reward_model = kwargs.pop(
+            "rewards", EnsembleModel.default(environment, model_kind="rewards")
         )
 
-        model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
+        model_optimizer = Adam(
+            chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
+        )
 
         model_learning_algorithm = ModelLearningAlgorithm(
             dynamical_model=dynamical_model,
@@ -96,7 +91,7 @@ class BPTTAgent(ModelBasedAgent):
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             criterion=criterion,
-            termination=None,
+            termination_model=None,
             learn_from_real=True,
             model_learning_algorithm=model_learning_algorithm,
             optimizer=optimizer,

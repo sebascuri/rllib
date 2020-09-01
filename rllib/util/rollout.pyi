@@ -4,18 +4,10 @@ from numpy import ndarray
 from torch import Tensor
 
 from rllib.agent import AbstractAgent
-from rllib.dataset.datatypes import (
-    Action,
-    Distribution,
-    Observation,
-    State,
-    Termination,
-    Trajectory,
-)
+from rllib.dataset.datatypes import Action, Distribution, Observation, State, Trajectory
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.reward import AbstractReward
 
 def step_env(
     environment: AbstractEnvironment,
@@ -27,8 +19,8 @@ def step_env(
 ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
 def step_model(
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
-    termination: Termination,
+    reward_model: AbstractModel,
+    termination_model: AbstractModel,
     state: Tensor,
     action: Tensor,
     done: Tensor,
@@ -63,17 +55,17 @@ def rollout_policy(
 ) -> List[Trajectory]: ...
 def rollout_model(
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     policy: AbstractPolicy,
     initial_state: State,
-    termination: Optional[Termination] = ...,
+    termination_model: Optional[AbstractModel] = ...,
     max_steps: int = ...,
     **kwargs: Any,
 ) -> Trajectory: ...
 def rollout_actions(
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     action_sequence: Action,
     initial_state: State,
-    termination: Optional[Termination] = ...,
+    termination_model: Optional[AbstractModel] = ...,
 ) -> Trajectory: ...

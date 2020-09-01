@@ -15,10 +15,12 @@ class EnvironmentModel(AbstractModel):
 
     def __init__(self, environment, *args, **kwargs):
         super().__init__(
-            environment.dim_state,
-            environment.dim_action,
+            dim_state=environment.dim_state,
+            dim_action=environment.dim_action,
             num_states=environment.num_states,
             num_actions=environment.num_actions,
+            *args,
+            **kwargs,
         )
         self.environment = environment
 
@@ -27,11 +29,20 @@ class EnvironmentModel(AbstractModel):
         """See AbstractModel.default()."""
         return cls(environment)
 
-    def forward(self, state, action, next_state=None):
+    def forward(self, state, action, _=None):
         """Get Next-State distribution."""
         self.environment.state = state
         next_state, reward, done, _ = self.environment.step(action)
-        return next_state, torch.zeros(1)
+        if self.model_kind == "dynamics":
+            return next_state, torch.zeros(1)
+        elif self.model_kind == "rewards":
+            return reward, torch.zeros(1)
+        elif self.model_kind == "termination":
+            return torch.zeros(*done.shape, 2).scatter_(
+                dim=-1, index=(~done).long().unsqueeze(-1), value=-float("inf")
+            )
+        else:
+            raise NotImplementedError(f"{self.model_kind} not implemented")
 
     @property
     def name(self):

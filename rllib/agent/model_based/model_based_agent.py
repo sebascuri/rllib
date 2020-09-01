@@ -6,7 +6,6 @@ A model based agent has three behaviors:
 - It plans with the model and policies (as guiding sampler).
 """
 
-import gpytorch
 import torch
 from gym.utils import colorize
 from tqdm import tqdm
@@ -60,7 +59,6 @@ class ModelBasedAgent(AbstractAgent):
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
         self.simulation_algorithm = simulation_algorithm
-        dynamical_model, reward_model, policy = None, None, None
 
         if policy_learning_algorithm is not None:
             policy = policy_learning_algorithm.policy
@@ -69,6 +67,7 @@ class ModelBasedAgent(AbstractAgent):
         else:
             raise NotImplementedError
 
+        dynamical_model, reward_model, termination_model = None, None, None
         for alg in [
             policy_learning_algorithm,
             planning_algorithm,
@@ -77,10 +76,16 @@ class ModelBasedAgent(AbstractAgent):
         ]:
             if alg is not None:
                 dynamical_model, reward_model = alg.dynamical_model, alg.reward_model
+                termination_model = alg.termination_model
                 break
 
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
+        self.termination_model = termination_model
+        assert self.dynamical_model.model_kind == "dynamics"
+        assert self.reward_model.model_kind == "rewards"
+        if self.termination_model is not None:
+            assert self.termination_model.model_kind == "termination"
 
         self.policy = DerivedPolicy(policy, self.dynamical_model.base_model.dim_action)
         self.num_simulation_iterations = num_simulation_iterations
@@ -188,8 +193,8 @@ class ModelBasedAgent(AbstractAgent):
         # self.simulation_algorithm.dataset.reset()
 
         with DisableGradient(
-            self.dynamical_model, self.reward_model
-        ), gpytorch.settings.fast_pred_var():
+            self.dynamical_model, self.reward_model, self.termination_model
+        ):
             for _ in tqdm(range(self.num_simulation_iterations)):
                 # Step 1: Simulate the state distribution
                 with torch.no_grad():

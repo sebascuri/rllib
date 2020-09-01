@@ -9,6 +9,9 @@ class ExpectedModel(TransformedModel):
 
     def forward(self, state, action, next_state=None):
         """Get Expected Next state."""
-        ns, ns_scale_tril = self.next_state(state, action)
-
-        return ns, torch.zeros_like(ns_scale_tril)  # , ns_scale_tril
+        prediction_tuple = self.predict(state, action)
+        if len(prediction_tuple) == 1:
+            return prediction_tuple
+        else:
+            mean, covariance = prediction_tuple
+            return mean, torch.zeros_like(covariance)

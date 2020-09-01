@@ -10,7 +10,6 @@ from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceRep
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.policy.derived_policy import DerivedPolicy
-from rllib.reward import AbstractReward
 
 class ModelBasedAgent(AbstractAgent):
     policy: DerivedPolicy
@@ -19,7 +18,8 @@ class ModelBasedAgent(AbstractAgent):
     planning_algorithm: Optional[MPCSolver]
     simulation_algorithm: Optional[SimulationAlgorithm]
     dynamical_model: AbstractModel
-    reward_model: AbstractReward
+    reward_model: AbstractModel
+    termination_model: Optional[AbstractModel]
     num_simulation_iterations: int
     learn_from_real: bool
     learn_from_sim: bool

@@ -44,7 +44,7 @@ class TransformedModel(AbstractModel):
 
     def forward(self, state, action, next_state=None):
         """Predict next state distribution."""
-        return self.next_state(state, action)
+        return self.predict(state, action)
 
     def scale(self, state, action):
         """Get epistemic scale of model."""
@@ -74,8 +74,7 @@ class TransformedModel(AbstractModel):
             obs = transformation.inverse(obs)
         return obs.next_state_scale_tril
 
-    # @torch.jit.export
-    def next_state(self, state, action):
+    def predict(self, state, action):
         """Get next_state distribution."""
         none = torch.tensor(0)
         obs = Observation(state, action, none, none, none, none, none, none, none, none)
@@ -83,7 +82,12 @@ class TransformedModel(AbstractModel):
             obs = transformation(obs)
 
         # Predict next-state
-        next_state = self.base_model(obs.state, obs.action)
+        if self.model_kind == "dynamics":
+            next_state = self.base_model(obs.state, obs.action)
+        elif self.model_kind in ["rewards", "termination"]:
+            return self.base_model(obs.state, obs.action)
+        else:
+            raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
 
         # Back-transform
         obs = Observation(

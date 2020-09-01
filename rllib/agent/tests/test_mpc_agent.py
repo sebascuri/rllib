@@ -2,27 +2,13 @@ import copy
 import os
 
 import pytest
-import torch.nn as nn
 
 from rllib.agent import MPCAgent
 from rllib.algorithms.mpc import CEMShooting, MPPIShooting, RandomShooting
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.model.environment_model import EnvironmentModel
-from rllib.reward.environment_reward import EnvironmentReward
 from rllib.util.training import evaluate_agent
-
-
-class EnvironmentTermination(nn.Module):
-    def __init__(self, environment):
-        super().__init__()
-        self.environment = environment
-
-    def forward(self, state, action, next_state=None):
-        self.environment.state = state
-        _, _, done, _ = self.environment.step(action)
-        return done
-
 
 SEED = 0
 MAX_ITER = 5
@@ -31,9 +17,9 @@ ENVIRONMENT = "VContinuous-CartPole-v0"
 env = GymEnvironment(ENVIRONMENT, SEED)
 env_model = copy.deepcopy(env)
 env_model.reset()
-dynamical_model = EnvironmentModel(env_model)
-reward_model = EnvironmentReward(env_model)
-termination = EnvironmentTermination(env_model)
+dynamical_model = EnvironmentModel(env_model, model_kind="dynamics")
+reward_model = EnvironmentModel(env_model, model_kind="rewards")
+termination_model = EnvironmentModel(env_model, model_kind="termination")
 GAMMA = 0.99
 HORIZON = 5
 NUM_ITER = 5
@@ -76,7 +62,7 @@ def get_solver(solver_, warm_start_, num_cpu_, default_action_):
             gamma=1.0,
             num_samples=NUM_SAMPLES,
             num_elites=NUM_ELITES,
-            termination=termination,
+            termination_model=termination_model,
             terminal_reward=value_function,
             warm_start=warm_start_,
             default_action=default_action_,
@@ -91,7 +77,7 @@ def get_solver(solver_, warm_start_, num_cpu_, default_action_):
             num_iter=NUM_ITER,
             num_samples=NUM_SAMPLES,
             num_elites=NUM_ELITES,
-            termination=termination,
+            termination_model=termination_model,
             terminal_reward=value_function,
             warm_start=warm_start_,
             default_action=default_action_,
@@ -107,7 +93,7 @@ def get_solver(solver_, warm_start_, num_cpu_, default_action_):
             kappa=KAPPA,
             filter_coefficients=BETAS,
             num_samples=NUM_SAMPLES,
-            termination=termination,
+            termination_model=termination_model,
             terminal_reward=value_function,
             warm_start=warm_start_,
             default_action=default_action_,

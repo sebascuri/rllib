@@ -40,34 +40,25 @@ class NNModel(AbstractModel):
         super().__init__(*args, **kwargs)
         self.input_transform = input_transform
 
-        if self.discrete_state:
-            out_dim = (self.num_states,)
-        else:
-            out_dim = self.dim_state
-
+        out_dim = self._get_out_dim()
+        in_dim = self._get_in_dim()
         assert len(out_dim) == 1, "No images allowed."
 
-        if self.discrete_action:
-            in_dim = (out_dim[0] + self.num_actions,)
-        else:
-            in_dim = (out_dim[0] + self.dim_action[0],)
-
-        if hasattr(input_transform, "extra_dim"):
-            in_dim = (in_dim[0] + getattr(input_transform, "extra_dim"),)
-
-        if self.discrete_state:
+        if (
+            self.discrete_state and self.model_kind == "dynamics"
+        ) or self.model_kind == "termination":
             self.nn = CategoricalNN(
-                in_dim,
-                out_dim,
-                layers,
+                in_dim=in_dim,
+                out_dim=out_dim,
+                layers=layers,
                 biased_head=biased_head,
                 non_linearity=non_linearity,
             )
         else:
             self.nn = HeteroGaussianNN(
-                in_dim,
-                out_dim,
-                layers,
+                in_dim=in_dim,
+                out_dim=out_dim,
+                layers=layers,
                 biased_head=biased_head,
                 non_linearity=non_linearity,
                 squashed_output=False,
@@ -112,3 +103,29 @@ class NNModel(AbstractModel):
     def name(self):
         """Get Model name."""
         return f"{'Deterministic' if self.deterministic else 'Probabilistic'} Ensemble"
+
+    def _get_out_dim(self):
+        if self.model_kind == "dynamics":
+            if self.discrete_state:
+                out_dim = (self.num_states,)
+            else:
+                out_dim = self.dim_state
+        else:
+            out_dim = (1,)
+        return out_dim
+
+    def _get_in_dim(self):
+        if self.discrete_state:
+            in_dim = self.num_states
+        else:
+            in_dim = self.dim_state[0]
+
+        if self.discrete_action:
+            in_dim += self.num_actions
+        else:
+            in_dim += self.dim_action[0]
+
+        if hasattr(self.input_transform, "extra_dim"):
+            in_dim = in_dim + getattr(self.input_transform, "extra_dim")
+
+        return (in_dim,)

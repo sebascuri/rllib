@@ -47,7 +47,7 @@ def step_env(environment, state, action, action_scale=1, pi=None, render=False):
 def step_model(
     dynamical_model,
     reward_model,
-    termination,
+    termination_model,
     state,
     action,
     done,
@@ -75,14 +75,21 @@ def step_model(
         reward_model(state, action, next_state)
     )
     if reward_distribution.has_rsample:
-        reward = reward_distribution.rsample()
+        reward = reward_distribution.rsample().squeeze(-1)
     else:
-        reward = reward_distribution.sample()
+        reward = reward_distribution.sample().squeeze(-1)
     reward *= (~done).float()
 
     # Check for termination.
-    if termination is not None:
-        done += termination(state, action, next_state)
+    if termination_model is not None:
+        done += (
+            tensor_to_distribution(termination_model(state, action, next_state))
+            .sample()
+            .squeeze(-1)
+            .bool()
+        )
+        if done.any():
+            print("here")
 
     if pi is not None:
         try:
@@ -263,7 +270,7 @@ def rollout_model(
     reward_model,
     policy,
     initial_state,
-    termination=None,
+    termination_model=None,
     max_steps=1000,
     **kwargs,
 ):
@@ -273,13 +280,13 @@ def rollout_model(
     ----------
     dynamical_model: AbstractModel
         Dynamical Model with which the policy interacts.
-    reward_model: AbstractReward, optional.
+    reward_model: AbstractModel.
         Reward Model with which the policy interacts.
     policy: AbstractPolicy
         Policy that interacts with the environment.
     initial_state: State
         Starting states for the interaction.
-    termination: Callable.
+    termination_model: AbstractModel.
         Termination condition to finish the rollout.
     max_steps: int.
         Maximum number of steps per episode.
@@ -312,7 +319,7 @@ def rollout_model(
         observation, next_state, done = step_model(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            termination=termination,
+            termination_model=termination_model,
             state=state,
             action=action,
             done=done,
@@ -329,7 +336,11 @@ def rollout_model(
 
 
 def rollout_actions(
-    dynamical_model, reward_model, action_sequence, initial_state, termination=None
+    dynamical_model,
+    reward_model,
+    action_sequence,
+    initial_state,
+    termination_model=None,
 ):
     """Conduct a rollout of an action sequence interacting with a model.
 
@@ -345,7 +356,7 @@ def rollout_actions(
     initial_state: State
         Starting states for the interaction.
         The dimensions are [1 x num_samples x dim_state].
-    termination: Callable.
+    termination_model: Callable.
         Termination condition to finish the rollout.
 
     Returns
@@ -366,7 +377,7 @@ def rollout_actions(
         observation, next_state, done = step_model(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            termination=termination,
+            termination_model=termination_model,
             state=state,
             action=action,
             done=done,

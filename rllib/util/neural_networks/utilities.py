@@ -539,12 +539,14 @@ class DisableGradient(object):
     def __enter__(self):
         """Freeze the parameters."""
         for module in self.modules:
-            freeze_parameters(module)
+            if module is not None:
+                freeze_parameters(module)
 
     def __exit__(self, *args):
         """Unfreeze the parameters."""
         for module in self.modules:
-            unfreeze_parameters(module)
+            if module is not None:
+                unfreeze_parameters(module)
 
 
 class DisableOptimizer(object):
@@ -564,9 +566,11 @@ class DisableOptimizer(object):
     def __enter__(self):
         """Freeze the parameters."""
         for module in self.modules:
-            stop_learning(module)
+            if module is not None:
+                stop_learning(module)
 
     def __exit__(self, *args):
         """Unfreeze the parameters."""
         for module in self.modules:
-            resume_learning(module)
+            if module is not None:
+                resume_learning(module)

@@ -16,7 +16,7 @@ class ExactGPModel(AbstractModel):
     gp: nn.ModuleList
     _state: Tensor
     _action: Tensor
-    _next_state: Tensor
+    _target: Tensor
     _mean: Optional[Mean] = ...
     _kernel: Optional[Kernel] = ...
     def __init__(

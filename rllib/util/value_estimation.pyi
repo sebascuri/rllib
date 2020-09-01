@@ -2,10 +2,9 @@ from typing import Any, NamedTuple, Optional
 
 from torch import Tensor
 
-from rllib.dataset.datatypes import Array, State, Termination, Trajectory
+from rllib.dataset.datatypes import Array, State, Trajectory
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
 
 from .utilities import RewardTransformer
@@ -30,14 +29,14 @@ def mc_return(
 def mb_return(
     state: State,
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     policy: AbstractPolicy,
     num_steps: int = ...,
     gamma: float = ...,
     num_samples: int = ...,
     value_function: Optional[AbstractValueFunction] = ...,
     entropy_reg: float = ...,
-    termination: Optional[Termination] = ...,
+    termination_model: Optional[AbstractModel] = ...,
     reward_transformer: RewardTransformer = ...,
     **kwargs: Any,
 ) -> MBValueReturn: ...

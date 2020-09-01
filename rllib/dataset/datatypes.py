@@ -1,10 +1,9 @@
 """Project Data-types."""
 from dataclasses import dataclass, field
-from typing import Callable, List, Tuple, Type, TypeVar, Union
+from typing import List, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch
-import torch.nn as nn
 from gpytorch.distributions import Delta
 from torch import Tensor
 from torch.distributions import Categorical, MultivariateNormal, Uniform
@@ -19,7 +18,6 @@ Gaussian = Union[MultivariateNormal, Delta]
 Distribution = Union[MultivariateNormal, Delta, Categorical, Uniform]
 TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
-Termination = Union[nn.Module, Callable[[State, Action, State], Done]]
 NaN = float("nan")
 
 T = TypeVar("T", bound="Observation")

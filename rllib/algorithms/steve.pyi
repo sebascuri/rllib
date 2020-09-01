@@ -2,9 +2,8 @@ from typing import Any, Optional
 
 from torch import Tensor
 
-from rllib.dataset.datatypes import Observation, Termination
+from rllib.dataset.datatypes import Observation
 from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
 
 from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -18,10 +17,10 @@ class STEVE(AbstractAlgorithm, AbstractMBAlgorithm):
 def steve_expand(
     base_algorithm: AbstractAlgorithm,
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     num_steps: int = ...,
     num_samples: int = ...,
-    termination: Optional[Termination] = ...,
+    termination_model: Optional[AbstractModel] = ...,
     *args: Any,
     **kwargs: Any,
 ) -> STEVE: ...

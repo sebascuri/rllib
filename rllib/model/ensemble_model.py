@@ -20,16 +20,10 @@ class EnsembleModel(NNModel):
         self.num_heads = num_heads
         # if deterministic
         self.nn = Ensemble(
-            self.nn.kwargs["in_dim"],
-            self.nn.kwargs["out_dim"],
-            prediction_strategy=prediction_strategy,
-            layers=self.nn.kwargs["layers"],
-            biased_head=self.nn.kwargs["biased_head"],
-            non_linearity=self.nn.kwargs["non_linearity"],
-            squashed_output=False,
             num_heads=num_heads,
+            prediction_strategy=prediction_strategy,
             deterministic=self.deterministic,
-            initial_scale=self.nn.kwargs["initial_scale"],
+            **self.nn.kwargs,
         )
 
     @classmethod

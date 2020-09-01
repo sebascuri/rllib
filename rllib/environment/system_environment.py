@@ -17,12 +17,12 @@ class SystemEnvironment(AbstractEnvironment, Env):
         callable that returns an initial state
     reward: callable, optional
         callable that, given state and action returns a rewards
-    termination: callable, optional
+    termination_model: callable, optional
         callable that checks if interaction should terminate.
 
     """
 
-    def __init__(self, system, initial_state=None, reward=None, termination=None):
+    def __init__(self, system, initial_state=None, reward=None, termination_model=None):
         super().__init__(
             dim_state=system.dim_state,
             dim_action=system.dim_action,
@@ -32,7 +32,7 @@ class SystemEnvironment(AbstractEnvironment, Env):
         )
         self.reward = reward
         self.system = system
-        self.termination = termination
+        self.termination_model = termination_model
         self._time = 0
 
         if initial_state is None:
@@ -53,11 +53,21 @@ class SystemEnvironment(AbstractEnvironment, Env):
         state = self.system.state  # this might be noisy.
         reward = float("nan")
         if self.reward is not None:
-            reward = tensor_to_distribution(self.reward(state, action, None)).sample()
+            reward = (
+                tensor_to_distribution(self.reward(state, action, None))
+                .sample()
+                .squeeze(-1)
+            )
 
         next_state = self.system.step(action)
-        if self.termination is not None:
-            done = self.termination(state, action, next_state)
+        if self.termination_model is not None:
+            done = (
+                tensor_to_distribution(
+                    self.termination_model(state, action, next_state)
+                )
+                .sample()
+                .squeeze(-1)
+            )
         else:
             done = False
 

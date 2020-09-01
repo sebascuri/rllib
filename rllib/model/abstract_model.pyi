@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Tuple
+from typing import Any, List, Optional, Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -15,6 +15,9 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     num_observations: int
     discrete_state: bool
     discrete_action: bool
+    model_kind: str
+    goal: Optional[Tensor]
+    allowed_model_kind: List[str]
     def __init__(
         self,
         dim_state: Tuple,
@@ -23,6 +26,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         num_states: int = ...,
         num_actions: int = ...,
         num_observations: int = ...,
+        model_kind: str = ...,
+        goal: Optional[Tensor] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
@@ -36,3 +41,4 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def get_head(self) -> int: ...
     def get_head_idx(self) -> Tensor: ...
     def get_prediction_strategy(self) -> str: ...
+    def set_goal(self, goal: Optional[Tensor]) -> None: ...

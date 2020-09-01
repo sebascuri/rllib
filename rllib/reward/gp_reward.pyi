@@ -4,9 +4,9 @@ from gpytorch.models import ExactGP
 from torch import Tensor
 
 from rllib.dataset.datatypes import TupleDistribution
-from rllib.reward import AbstractReward
+from rllib.model import AbstractModel
 
-class GPBanditReward(AbstractReward):
+class GPBanditReward(AbstractModel):
     """A Reward function that is defined through a GP."""
 
     model: ExactGP

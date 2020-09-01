@@ -2,26 +2,25 @@ from typing import Any, Optional
 
 from torch import Tensor
 
-from rllib.dataset.datatypes import Termination, Trajectory
+from rllib.dataset.datatypes import Trajectory
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
 
 class AbstractMBAlgorithm(object):
     dynamical_model: AbstractModel
-    reward_model: AbstractReward
-    termination: Optional[Termination]
+    reward_model: AbstractModel
+    termination_model: Optional[AbstractModel]
     value_target: Optional[AbstractValueFunction]
     num_steps: int
     num_samples: int
     def __init__(
         self,
         dynamical_model: AbstractModel,
-        reward_model: AbstractReward,
+        reward_model: AbstractModel,
         num_steps: int = ...,
         num_samples: int = ...,
-        termination: Optional[Termination] = ...,
+        termination_model: Optional[AbstractModel] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

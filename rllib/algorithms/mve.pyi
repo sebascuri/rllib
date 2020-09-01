@@ -1,8 +1,6 @@
 from typing import Any, Optional
 
-from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
 
 from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -14,10 +12,10 @@ class MVE(AbstractAlgorithm, AbstractMBAlgorithm):
 def mve_expand(
     base_algorithm: AbstractAlgorithm,
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     num_steps: int = ...,
     num_samples: int = ...,
-    termination: Optional[Termination] = ...,
+    termination_model: Optional[AbstractModel] = ...,
     td_k: bool = ...,
     *args: Any,
     **kwargs: Any,

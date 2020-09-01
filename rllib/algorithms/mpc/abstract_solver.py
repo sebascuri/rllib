@@ -35,7 +35,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         Number of iterations of solver method.
     num_samples: int, optional.
         Number of samples for shooting method.
-    termination: Callable, optional.
+    termination_model: Callable, optional.
         Termination condition.
     terminal_reward: terminal reward model, optional.
     warm_start: bool, optional.
@@ -54,7 +54,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         gamma=1.0,
         num_iter=1,
         num_samples=None,
-        termination=None,
+        termination_model=None,
         scale=0.3,
         terminal_reward=None,
         warm_start=False,
@@ -69,13 +69,19 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             dynamical_model = TransformedModel(dynamical_model, [])
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
+        self.termination_model = termination_model
+
+        assert self.dynamical_model.model_kind == "dynamics"
+        assert self.reward_model.model_kind == "rewards"
+        if self.termination_model is not None:
+            assert self.termination_model.model_kind == "termination"
+
         self.horizon = horizon
         self.gamma = gamma
 
         self.num_iter = num_iter
         self.num_samples = 10 * horizon if not num_samples else num_samples
         self.num_samples = self.num_samples // num_cpu
-        self.termination = termination
         self.terminal_reward = terminal_reward
         self.warm_start = warm_start
         self.default_action = default_action
@@ -106,7 +112,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
                 self.reward_model,
                 self.action_scale * action_sequence,  # scale actions.
                 state,
-                self.termination,
+                self.termination_model,
             ),
             dim=-2,
         )

@@ -4,12 +4,12 @@ import gpytorch.settings
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
-from rllib.model import AbstractModel, EnsembleModel, ExactGPModel, NNModel
+from rllib.model import EnsembleModel, ExactGPModel, NNModel
 from rllib.model.utilities import PredictionStrategy
-from rllib.reward import AbstractReward
 from rllib.util.gaussian_processes.mlls import exact_mll
 
 from .logger import Logger
@@ -23,14 +23,17 @@ def _model_mse(model, state, action, next_state):
     return ((mean - y) ** 2).sum(-1)
 
 
-def _model_loss(model, state, action, next_state):
-    pred_next_state = model(state, action)
-    mean, scale_tril = pred_next_state[0], pred_next_state[1]
-    y = next_state
+def _model_loss(model, state, action, target):
+    prediction = model(state, action)
+    if len(prediction) == 1:  # Cross entropy loss.
+        return nn.CrossEntropyLoss(reduction="none")(prediction[0], target)
+
+    mean, scale_tril = prediction[0], prediction[1]
+
+    y = target
     if torch.all(scale_tril == 0):  # Deterministic Model
         loss = ((mean - y) ** 2).sum(-1)
     else:  # Probabilistic Model
-
         scale_tril_inv = torch.inverse(scale_tril)
         delta = scale_tril_inv @ ((mean - y).unsqueeze(-1))
         loss = (delta.transpose(-2, -1) @ delta).squeeze()
@@ -46,10 +49,12 @@ def train_nn_step(model, observation, optimizer):
     model.train()
     optimizer.zero_grad()
 
-    if isinstance(model, AbstractReward):
+    if model.model_kind == "dynamics":
         target = observation.next_state
-    elif isinstance(model, AbstractModel):
-        target = observation.reward
+    elif model.model_kind == "rewards":
+        target = observation.reward.unsqueeze(-1)
+    elif model.model_kind == "termination":
+        target = observation.done
     else:
         raise NotImplementedError
 
@@ -64,10 +69,12 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
     """Train a model ensemble."""
     model.train()
     ensemble_loss = 0
-    if isinstance(model, AbstractReward):
+    if model.model_kind == "dynamics":
         target = observation.next_state
-    elif isinstance(model, AbstractModel):
-        target = observation.reward
+    elif model.model_kind == "rewards":
+        target = observation.reward.unsqueeze(-1)
+    elif model.model_kind == "termination":
+        target = observation.done
     else:
         raise NotImplementedError
 
@@ -85,8 +92,8 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
         loss.backward()
         optimizer.step()
         ensemble_loss += loss.item()
-        logger.update(**{f"model-{i}": loss.item()})
-        logger.update(**{f"model-mse-{i}": mse.item()})
+        logger.update(**{f"{model.model_kind} model-{i}": loss.item()})
+        logger.update(**{f"{model.model_kind} model-mse-{i}": mse.item()})
 
     return ensemble_loss
 
@@ -127,7 +134,7 @@ def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
                 model_loss = train_exact_gp_type2mll_step(model, observation, optimizer)
             else:
                 raise TypeError("Only Implemented for Ensembles and GP Models.")
-            logger.update(model_loss=model_loss)
+            logger.update(**{f"{model.model_kind} model-loss": model_loss})
 
 
 def train_agent(

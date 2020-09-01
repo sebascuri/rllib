@@ -1,9 +1,7 @@
 from typing import Any, Callable, Optional
 
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
-from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
 
 from .model_based_agent import ModelBasedAgent
 
@@ -13,10 +11,10 @@ class DerivedMBAgent(ModelBasedAgent):
         base_algorithm: AbstractAlgorithm,
         derived_algorithm_: Callable,
         dynamical_model: AbstractModel,
-        reward_model: AbstractReward,
+        reward_model: AbstractModel,
         num_samples: int = ...,
         num_steps: int = ...,
-        termination: Optional[Termination] = ...,
+        termination_model: Optional[AbstractModel] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

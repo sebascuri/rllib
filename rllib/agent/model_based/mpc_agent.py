@@ -50,7 +50,7 @@ class MPCAgent(ModelBasedAgent):
             num_iter=2 if kwargs.get("test", False) else 5,
             num_samples=20 if kwargs.get("test", False) else 400,
             num_elites=5 if kwargs.get("test", False) else 40,
-            termination=None,
+            termination_model=None,
             terminal_reward=None,
             warm_start=True,
             default_action="zero",

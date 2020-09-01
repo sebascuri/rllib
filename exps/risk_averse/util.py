@@ -6,10 +6,10 @@ import torch.nn as nn
 from torch.distributions import Bernoulli
 
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.reward import AbstractReward
+from rllib.model import AbstractModel
 
 
-class Cart1dReward(AbstractReward):
+class Cart1dReward(AbstractModel):
     """Reward class for Cart-1D experiment."""
 
     def __init__(
@@ -21,7 +21,7 @@ class Cart1dReward(AbstractReward):
         reward_high_v=-10.0,
         prob_reward_high_v=0.0,
     ):
-        super().__init__()
+        super().__init__(model_kind="rewards", dim_state=(2,), dim_action=(1,))
         self.goal_x = goal_x
         dtype = torch.get_default_dtype()
         self.reward_goal = torch.tensor(reward_goal, dtype=dtype)

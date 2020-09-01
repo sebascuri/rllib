@@ -42,7 +42,7 @@ class PolicyShooting(RandomShooting):
             gamma=self.gamma,
             num_samples=self.num_samples,
             value_function=self.terminal_reward,
-            termination=self.termination,
+            termination_model=self.termination_model,
         )
         actions = stack_list_of_tuples(trajectory).action
         idx = torch.topk(value, k=self.num_elites, largest=True)[1]

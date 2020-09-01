@@ -40,7 +40,7 @@ class AbstractMBAlgorithm(object):
         reward_model,
         num_steps=1,
         num_samples=1,
-        termination=None,
+        termination_model=None,
         *args,
         **kwargs,
     ):
@@ -49,9 +49,15 @@ class AbstractMBAlgorithm(object):
             dynamical_model = TransformedModel(dynamical_model, [])
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
+        self.termination_model = termination_model
+
+        assert self.dynamical_model.model_kind == "dynamics"
+        assert self.reward_model.model_kind == "rewards"
+        if self.termination_model is not None:
+            assert self.termination_model.model_kind == "termination"
+
         self.num_steps = num_steps
         self.num_samples = num_samples
-        self.termination = termination
 
         if hasattr(self, "critic_target"):
             if isinstance(self.critic_target, AbstractValueFunction):
@@ -78,5 +84,5 @@ class AbstractMBAlgorithm(object):
             initial_state=state,
             action_scale=policy.action_scale,
             max_steps=self.num_steps,
-            termination=self.termination,
+            termination_model=self.termination_model,
         )

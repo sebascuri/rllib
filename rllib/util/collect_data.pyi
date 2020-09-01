@@ -5,7 +5,6 @@ from rllib.dataset.datatypes import Distribution, Observation
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.reward import AbstractReward
 
 def collect_environment_transitions(
     state_dist: Distribution,
@@ -17,6 +16,6 @@ def collect_model_transitions(
     state_dist: Distribution,
     policy: Union[Distribution, AbstractPolicy],
     dynamical_model: AbstractModel,
-    reward_model: AbstractReward,
+    reward_model: AbstractModel,
     num_samples: int,
 ) -> List[Observation]: ...

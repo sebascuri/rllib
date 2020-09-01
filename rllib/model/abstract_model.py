@@ -28,6 +28,9 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     num_observations: int, optional
         number of discrete observations (None if observation is continuous).
 
+    dynamics_or_rewards: str, optional (default = "dynamics").
+        string that indicates whether the model is for dynamics or for rewards.
+
     Methods
     -------
     __call__(state, action): torch.Distribution
@@ -46,6 +49,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
     """
 
+    allowed_model_kind = ["dynamics", "rewards", "termination"]
+
     def __init__(
         self,
         dim_state,
@@ -54,6 +59,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         num_states=-1,
         num_actions=-1,
         num_observations=-1,
+        goal=None,
+        model_kind="dynamics",
         *args,
         **kwargs,
     ):
@@ -69,6 +76,11 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
 
+        self.model_kind = model_kind
+        if model_kind not in self.allowed_model_kind:
+            raise ValueError(f"{model_kind} not in {self.allowed_model_kind}")
+        self.goal = goal
+
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """Get a default model for the environment."""
@@ -77,6 +89,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
             dim_action=kwargs.pop("dim_action", environment.dim_action),
             num_states=kwargs.pop("num_states", environment.num_states),
             num_actions=kwargs.pop("num_actions", environment.num_actions),
+            goal=environment.goal,
             *args,
             **kwargs,
         )
@@ -117,3 +130,10 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def get_prediction_strategy(self) -> str:
         """Get ensemble head."""
         return ""
+
+    @torch.jit.export
+    def set_goal(self, goal):
+        """Set reward model goal."""
+        if goal is None:
+            return
+        self.goal = goal

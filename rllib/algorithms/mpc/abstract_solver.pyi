@@ -5,19 +5,17 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import Termination
 from rllib.model import AbstractModel
-from rllib.reward import AbstractReward
 from rllib.value_function import AbstractValueFunction
 
 class MPCSolver(nn.Module, metaclass=ABCMeta):
     dynamical_model: AbstractModel
-    reward_model: AbstractReward
+    reward_model: AbstractModel
     horizon: int
     gamma: float
     num_iter: int
     num_samples: int
-    termination: Optional[Termination]
+    termination_model: Optional[AbstractModel]
     terminal_reward: AbstractValueFunction
     warm_start: bool
     default_action: str
@@ -29,13 +27,13 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     def __init__(
         self,
         dynamical_model: AbstractModel,
-        reward_model: AbstractReward,
+        reward_model: AbstractModel,
         horizon: int,
         gamma: float = ...,
         scale: float = ...,
         num_iter: int = ...,
         num_samples: Optional[int] = ...,
-        termination: Optional[Termination] = ...,
+        termination_model: Optional[AbstractModel] = ...,
         terminal_reward: Optional[AbstractValueFunction] = ...,
         warm_start: bool = ...,
         default_action: str = ...,

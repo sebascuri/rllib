@@ -1,30 +1,12 @@
 """Python Script Template."""
 import copy
 
-import torch.nn as nn
-
 from rllib.agent import MPCAgent
 from rllib.algorithms.mpc import CEMShooting, MPCSolver, MPPIShooting, RandomShooting
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.model.environment_model import EnvironmentModel
-from rllib.reward.environment_reward import EnvironmentReward
 from rllib.util.training import evaluate_agent
-
-
-class EnvironmentTermination(nn.Module):
-    """Termination condition of an environment."""
-
-    def __init__(self, environment):
-        super().__init__()
-        self.environment = environment
-
-    def forward(self, state, action, next_state=None):
-        """Compute termination condition."""
-        self.environment.state = state
-        _, _, done, _ = self.environment.step(action)
-        return done
-
 
 SEED = 0
 MAX_STEPS = 200
@@ -33,13 +15,13 @@ ENVIRONMENT = ["VPendulum-v0", "VContinuous-CartPole-v0"][1]
 env = GymEnvironment(ENVIRONMENT, SEED)
 env_model = copy.deepcopy(env)
 env_model.reset()
-dynamical_model = EnvironmentModel(env_model)
-reward_model = EnvironmentReward(env_model)
-termination = EnvironmentTermination(env_model)
+dynamical_model = EnvironmentModel(env_model, model_kind="dynamics")
+reward_model = EnvironmentModel(env_model, model_kind="rewards")
+termination_model = EnvironmentModel(env_model, model_kind="termination")
 GAMMA = 0.99
 horizon = 50
 num_iter = 5
-num_samples = 100
+num_samples = 400
 num_elites = 5
 num_steps = horizon
 solver = "cem_shooting"
@@ -59,7 +41,7 @@ if solver == "random_shooting":
         gamma=GAMMA,
         num_samples=num_samples,
         num_elites=num_elites,
-        termination=termination,
+        termination_model=termination_model,
         terminal_reward=value_function,
         warm_start=warm_start,
         default_action="mean",
@@ -74,7 +56,7 @@ elif solver == "cem_shooting":
         num_iter=num_iter,
         num_samples=num_samples,
         num_elites=num_elites,
-        termination=termination,
+        termination_model=termination_model,
         terminal_reward=value_function,
         warm_start=warm_start,
         default_action="mean",
@@ -90,7 +72,7 @@ elif solver == "mppi_shooting":
         kappa=kappa,
         filter_coefficients=betas,
         num_samples=num_samples,
-        termination=termination,
+        termination_model=termination_model,
         terminal_reward=value_function,
         warm_start=warm_start,
         default_action="mean",

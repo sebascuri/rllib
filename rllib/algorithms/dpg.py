@@ -46,9 +46,9 @@ class DPG(AbstractAlgorithm):
         """Get Actor Loss."""
         state = observation.state
         action = tensor_to_distribution(self.policy(state)).mean.clamp(-1, 1)
-        with DisableGradient(self.critic):
-            q = self.critic(state, action)
-            if isinstance(self.critic, NNEnsembleQFunction):
+        with DisableGradient(self.critic_target):
+            q = self.critic_target(state, action)
+            if isinstance(self.critic_target, NNEnsembleQFunction):
                 q = q[..., 0]
         return Loss(policy_loss=-q)
 

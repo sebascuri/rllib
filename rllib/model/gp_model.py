@@ -17,7 +17,7 @@ class ExactGPModel(AbstractModel):
         self,
         state,
         action,
-        next_state,
+        target,
         mean=None,
         kernel=None,
         input_transform=None,
@@ -27,7 +27,7 @@ class ExactGPModel(AbstractModel):
     ):
         self._state = state
         self._action = action
-        self._next_state = next_state
+        self._target = target
         self._mean = mean
         self._kernel = kernel
 
@@ -37,7 +37,7 @@ class ExactGPModel(AbstractModel):
 
         super().__init__(dim_state, dim_action)
         self.input_transform = input_transform
-        train_x, train_y = self.state_actions_to_train_data(state, action, next_state)
+        train_x, train_y = self.state_actions_to_train_data(state, action, target)
 
         likelihoods = []
         gps = []
@@ -58,7 +58,7 @@ class ExactGPModel(AbstractModel):
             environment,
             state=kwargs.pop("state", torch.zeros(dim_state)),
             action=kwargs.pop("action", torch.zeros(dim_action)),
-            next_state=kwargs.pop("next_state", torch.zeros(dim_state)),
+            target=kwargs.pop("target", torch.zeros(dim_state)),
             mean=kwargs.pop("mean=", None),
             kernel=kwargs.pop("kernel", None),
             input_transform=kwargs.pop("input_transform", None),
@@ -98,9 +98,9 @@ class ExactGPModel(AbstractModel):
             )
             return mean, torch.diag_embed(stddev)
 
-    def add_data(self, state, action, next_state):
+    def add_data(self, state, action, target):
         """Add new data to GP-Model, independently to each GP."""
-        new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
+        new_x, new_y = self.state_actions_to_train_data(state, action, target)
         for i, new_y_i in enumerate(new_y):
             add_data_to_gp(self.gp[i], new_x, new_y_i)
 
@@ -175,7 +175,7 @@ class ExactGPModel(AbstractModel):
         return train_x
 
     # @torch.jit.export
-    def state_actions_to_train_data(self, state, action, next_state):
+    def state_actions_to_train_data(self, state, action, target):
         """Convert transition data to the gpytorch format.
 
         Parameters
@@ -184,7 +184,7 @@ class ExactGPModel(AbstractModel):
             [N x d_x]
         action : torch.Tensor
             [N x d_u]
-        next_state : torch.Tensor
+        target : torch.Tensor
             [N x d_x]
 
         Returns
@@ -194,10 +194,9 @@ class ExactGPModel(AbstractModel):
         train_y : torch.Tensor
             [d_x x N], contiguous array
         """
-        assert next_state.shape[-1] == state.shape[-1]
         train_x = self.state_actions_to_input_data(state, action)
 
-        train_y = next_state.t().contiguous()
+        train_y = target.t().contiguous()
 
         return train_x, train_y
 
@@ -209,7 +208,7 @@ class RandomFeatureGPModel(ExactGPModel):
         super().__init__(*args, **kwargs)
         gps = []
         train_x, train_y = self.state_actions_to_train_data(
-            self._state, self._action, self._next_state
+            self._state, self._action, self._target
         )
         for train_y_i, likelihood in zip(train_y, self.likelihood):
             gp = RandomFeatureGP(
@@ -265,7 +264,7 @@ class SparseGPModel(ExactGPModel):
         super().__init__(*args, **kwargs)
         gps = []
         train_x, train_y = self.state_actions_to_train_data(
-            self._state, self._action, self._next_state
+            self._state, self._action, self._target
         )
         if inducing_points is None:
             inducing_points = train_x
@@ -302,9 +301,9 @@ class SparseGPModel(ExactGPModel):
         """Get Model name."""
         return f"{self.approximation} {super().name}"
 
-    def add_data(self, state, action, next_state):
+    def add_data(self, state, action, target):
         """Add Data to GP and Re-Sparsify."""
-        new_x, new_y = self.state_actions_to_train_data(state, action, next_state)
+        new_x, new_y = self.state_actions_to_train_data(state, action, target)
         for i, new_y_i in enumerate(new_y):
             arm_set = torch.cat((new_x, self.gp[i].train_inputs[0]), dim=0)
             inducing_points = bkb(self.gp[i], arm_set, q_bar=self.q_bar)

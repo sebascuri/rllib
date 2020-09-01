@@ -13,7 +13,7 @@ def steve_expand(
     reward_model,
     num_steps=1,
     num_samples=15,
-    termination=None,
+    termination_model=None,
     *args,
     **kwargs,
 ):
@@ -45,7 +45,7 @@ def steve_expand(
                 reward_model,
                 num_steps=num_steps,
                 num_samples=num_samples,
-                termination=termination,
+                termination_model=termination_model,
             )
 
             try:

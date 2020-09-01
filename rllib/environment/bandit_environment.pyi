@@ -3,16 +3,16 @@ from typing import Optional, Tuple
 import numpy as np
 
 from rllib.dataset.datatypes import Action, Done, Reward, State
-from rllib.reward import AbstractReward
+from rllib.model import AbstractModel
 
 from .abstract_environment import AbstractEnvironment
 
 class BanditEnvironment(AbstractEnvironment):
-    reward: AbstractReward
+    reward: AbstractModel
     t: int
     def __init__(
         self,
-        reward: AbstractReward,
+        reward: AbstractModel,
         num_actions: Optional[int] = ...,
         x_min: Optional[np.ndarray] = ...,
         x_max: Optional[np.ndarray] = ...,
