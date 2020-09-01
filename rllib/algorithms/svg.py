@@ -3,7 +3,11 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.utilities import get_entropy_and_logp, tensor_to_distribution
+from rllib.util.utilities import (
+    get_entropy_and_logp,
+    off_policy_weight,
+    tensor_to_distribution,
+)
 from rllib.value_function import NNEnsembleValueFunction
 
 from .bptt import BPTT
@@ -34,8 +38,9 @@ class SVG(BPTT):
 
         # Compute off-policy weight.
         with torch.no_grad():
-            weight = torch.exp(log_p - observation.log_prob_action)
-            weight = torch.cumprod(weight, dim=1)
+            weight = off_policy_weight(
+                log_p, observation.log_prob_action, full_trajectory=False
+            )
 
         with DisableGradient(self.dynamical_model, self.reward_model, self.critic):
             # Compute re-parameterized policy sample.

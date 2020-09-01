@@ -13,6 +13,7 @@ from .off_policy import (
     DDQNAgent,
     DPGAgent,
     DQNAgent,
+    ISERAgent,
     MPOAgent,
     QLearningAgent,
     REPSAgent,

@@ -60,8 +60,6 @@ class PPO(GAAC):
         self.clamp_value = clamp_value
         self.monte_carlo_target = monte_carlo_target
 
-        self.monte_carlo_target = monte_carlo_target
-
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         super().reset()
@@ -92,7 +90,9 @@ class PPO(GAAC):
 
     def get_value_target(self, observation):
         """Get the Q-Target."""
-        if self.monte_carlo_target:
+        if self.ope is not None:
+            return self.ope(observation)
+        elif self.monte_carlo_target:
             final_state = observation.next_state[-1:]
             reward_to_go = self.critic_target(final_state) * (
                 1.0 - observation.done[-1:]

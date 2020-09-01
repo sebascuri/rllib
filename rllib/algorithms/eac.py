@@ -1,12 +1,7 @@
 """Expected Actor-Critic Algorithm."""
 
 from rllib.dataset.datatypes import Loss
-from rllib.util import (
-    discount_sum,
-    get_entropy_and_logp,
-    integrate,
-    tensor_to_distribution,
-)
+from rllib.util import get_entropy_and_logp, integrate, tensor_to_distribution
 
 from .ac import ActorCritic
 
@@ -44,14 +39,11 @@ class ExpectedActorCritic(ActorCritic):
                 lambda a_: self.critic(s, a_), pi_, num_samples=self.num_samples
             )
 
-        policy_loss = discount_sum(
-            integrate(
-                lambda a, pi_=pi, iq=int_q: -pi_.log_prob(a) * iq(a).detach(),
-                pi,
-                num_samples=self.num_samples,
-            ).sum(),
-            1,
-        )
+        policy_loss = integrate(
+            lambda a, pi_=pi, iq=int_q: -pi_.log_prob(a) * iq(a).detach(),
+            pi,
+            num_samples=self.num_samples,
+        ).sum()
 
         return Loss(
             policy_loss=policy_loss,

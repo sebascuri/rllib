@@ -1,5 +1,5 @@
 """Advantage Actor Critic Algorithm."""
-from rllib.util.utilities import integrate, tensor_to_distribution
+from rllib.util.utilities import integrate, off_policy_weight, tensor_to_distribution
 
 from .ac import ActorCritic
 
@@ -32,4 +32,7 @@ class A2C(ActorCritic):
         returns = pred_q - integrate(
             lambda a: self.critic(state, a), pi, num_samples=self.num_samples
         )
-        return returns
+        weight = off_policy_weight(
+            pi.log_prob(action), trajectory.log_prob_action, full_trajectory=False
+        )
+        return weight * returns

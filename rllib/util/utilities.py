@@ -163,6 +163,31 @@ def separated_kl(p, q):
     return kl_mean, kl_var
 
 
+def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False):
+    """Compute off-policy weight.
+
+    Parameters
+    ----------
+    eval_log_p: torch.tensor.
+        Evaluation log probabilities.
+    behavior_log_p: torch.tensor.
+        Behavior log probabilities.
+    full_trajectory: bool, optional (default=False).
+        Flag that indicates whether the off-policy weight is for a single step or for
+        the full trajectory.
+
+    Returns
+    -------
+    weight: torch.Tensor.
+        Importance sample weights of the trajectory.
+    """
+    weight = torch.exp(eval_log_p - behavior_log_p)
+    if full_trajectory:
+        weight = torch.cumprod(weight, dim=-1)
+
+    return weight
+
+
 def get_entropy_and_logp(pi, action):
     """Get the entropy and the log-probability of a policy and an action."""
     log_p = pi.log_prob(action)

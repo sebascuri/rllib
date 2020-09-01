@@ -1,10 +1,12 @@
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import torch.nn as nn
 from torch import Size, Tensor
 
-def deep_copy_module(module: nn.Module) -> nn.Module: ...
+Module = TypeVar("Module", bound=nn.Module)
+
+def deep_copy_module(module: Module) -> Module: ...
 
 class Swish(nn.Module):
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

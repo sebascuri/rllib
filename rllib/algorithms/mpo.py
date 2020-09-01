@@ -186,7 +186,7 @@ class MPO(AbstractAlgorithm):
         self.num_action_samples = num_action_samples
 
         self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
-        self.trace = ReTrace(
+        self.ope = ReTrace(
             policy=self.old_policy,
             critic=self.critic_target,
             gamma=self.gamma,
@@ -243,18 +243,16 @@ class MPO(AbstractAlgorithm):
 
     def get_value_target(self, observation):
         """Get value target."""
-        if self.trace is None:
-            next_pi = tensor_to_distribution(self.old_policy(observation.next_state))
-            next_action = next_pi.sample()
+        if self.ope is not None:
+            return self.ope(observation)
+        next_pi = tensor_to_distribution(self.old_policy(observation.next_state))
+        next_action = next_pi.sample()
 
-            next_values = self.critic_target(observation.next_state, next_action)
-            next_values = next_values * (1.0 - observation.done)
+        next_values = self.critic_target(observation.next_state, next_action)
+        next_values = next_values * (1.0 - observation.done)
 
-            reward = self.reward_transformer(observation.reward)
-            value_target = reward + self.gamma * next_values
-
-        else:
-            value_target = self.trace(observation)
+        reward = self.reward_transformer(observation.reward)
+        value_target = reward + self.gamma * next_values
         return value_target
 
     def actor_loss(self, observation):

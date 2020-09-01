@@ -9,6 +9,7 @@ from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 
 from .abstract_algorithm import AbstractAlgorithm
+from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class MPOWorker(nn.Module):
     eta: ParameterDecay
@@ -31,6 +32,7 @@ class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
     num_action_samples: int
     mpo_loss: MPOWorker
+    ope: Optional[AbstractTDTarget]
     def __init__(
         self,
         num_action_samples: int = ...,

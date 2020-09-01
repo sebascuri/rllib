@@ -1,5 +1,6 @@
 """Generalized Advantage Actor-Critic Algorithm."""
 from rllib.algorithms.policy_evaluation.gae import GAE
+from rllib.util.utilities import off_policy_weight, tensor_to_distribution
 
 from .ac import ActorCritic
 
@@ -39,4 +40,9 @@ class GAAC(ActorCritic):
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
-        return self.gae(trajectory)  # GAE returns.
+        state, action = trajectory.state, trajectory.action
+        pi = tensor_to_distribution(self.policy(state))
+        weight = off_policy_weight(
+            pi.log_prob(action), trajectory.log_prob_action, full_trajectory=False
+        )
+        return weight * self.gae(trajectory)  # GAE returns.

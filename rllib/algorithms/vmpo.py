@@ -51,7 +51,7 @@ class VMPO(MPO):
                 f"Top-k fraction should be in [0, 1]. Got {top_k_fraction} instead."
             )
 
-        self.trace = VTrace(
+        self.ope = VTrace(
             policy=self.policy,
             critic=self.critic_target,
             num_samples=self.num_action_samples,

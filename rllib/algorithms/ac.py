@@ -6,6 +6,7 @@ from rllib.util import (
     discount_sum,
     get_entropy_and_logp,
     integrate,
+    off_policy_weight,
     separated_kl,
     tensor_to_distribution,
 )
@@ -42,20 +43,28 @@ class ActorCritic(AbstractAlgorithm):
     References
     ----------
     Sutton, R. S., McAllester, D. A., Singh, S. P., & Mansour, Y. (2000).
-    Policy gradient methods for reinforcement learning with function approximation.NIPS.
+    Policy gradient methods for reinforcement learning with function approximation.
+    NeurIPS.
 
     Konda, V. R., & Tsitsiklis, J. N. (2000).
-    Actor-critic algorithms. NIPS.
+    Actor-critic algorithms. NeurIPS.
+
+    Degris, T., White, M., & Sutton, R. S. (2012).
+    Off-policy actor-critic. ICML
     """
 
-    def __init__(self, num_samples=15, standarize_returns=True, *args, **kwargs):
+    def __init__(
+        self, num_samples=15, standardize_returns=True, ope=None, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
         self.old_policy = old_policy
 
         self.num_samples = num_samples
-        self.standardize_returns = standarize_returns
+        self.standardize_returns = standardize_returns
+
+        self.ope = ope
 
     def get_log_p_kl_entropy(self, state, action):
         """Get kl divergence and current policy at a given state.
@@ -121,10 +130,16 @@ class ActorCritic(AbstractAlgorithm):
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
-        return self.critic(state, action)
+        pi = tensor_to_distribution(self.policy(state))
+        weight = off_policy_weight(
+            pi.log_prob(action), trajectory.log_prob_action, full_trajectory=False
+        )
+        return weight * self.critic(state, action)
 
     def get_value_target(self, observation):
         """Get q function target."""
+        if self.ope is not None:
+            return self.ope(observation)
         if isinstance(self.critic_target, AbstractValueFunction):
             next_v = self.critic_target(observation.next_state)
             next_v = next_v * (1 - observation.done)
