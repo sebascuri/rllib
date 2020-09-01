@@ -1,3 +1,3 @@
-Add PCL and SVGinf algorithms.
 Add Learnable Reward Models.
 Make experience replay agnostic to input.
+Add PCL algorithm.

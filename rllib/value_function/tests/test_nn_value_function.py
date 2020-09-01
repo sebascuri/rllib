@@ -1,10 +1,11 @@
+import numpy as np
 import pytest
 import torch
 import torch.nn as nn
 import torch.testing
 
 from rllib.util.neural_networks import DeterministicNN, count_vars, random_tensor
-from rllib.value_function import NNQFunction, NNValueFunction
+from rllib.value_function import DuelingQFunction, NNQFunction, NNValueFunction
 
 
 @pytest.fixture(params=[False, True])
@@ -154,6 +155,8 @@ class TestNNValueFunction(object):
 
 
 class TestNNQFunction(object):
+    base_class = NNQFunction
+
     def init(self, discrete_state, discrete_action, dim_state, dim_action):
         if discrete_state:
             self.num_states = dim_state
@@ -170,7 +173,7 @@ class TestNNQFunction(object):
             self.dim_action = (dim_action,)
 
         layers = [32, 32]
-        self.q_function = NNQFunction(
+        self.q_function = self.base_class(
             dim_state=self.dim_state,
             dim_action=self.dim_action,
             num_states=self.num_states,
@@ -275,3 +278,18 @@ class TestNNQFunction(object):
             value = q_function(state, action)
             assert value.shape == torch.Size([batch_size] if batch_size else [])
             assert value.dtype is torch.get_default_dtype()
+
+
+class TestDuelingQFunction(TestNNQFunction):
+    base_class = DuelingQFunction  # type: ignore
+
+    def init(self, discrete_state, discrete_action, dim_state, dim_action):
+        super().init(discrete_state, discrete_action, dim_state, dim_action)
+        self.q_function.average_or_mean = np.random.choice(["average", "mean"])
+
+    @pytest.fixture(params=[True], scope="class")
+    def discrete_action(self, request):
+        return request.param
+
+    def test_compile(self, discrete_state, discrete_action, dim_state, dim_action):
+        pass

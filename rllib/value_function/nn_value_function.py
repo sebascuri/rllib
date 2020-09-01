@@ -116,20 +116,18 @@ class NNQFunction(AbstractQFunction):
 
     Parameters
     ----------
-    dim_state: Tuple
-        dimension of state.
-    dim_action: Tuple
-        dimension of action.
-    num_states: int, optional
-        number of discrete states (None if state is continuous).
-    num_actions: int, optional
-        number of discrete actions (None if action is continuous).
-    layers: list, optional
+    layers: list, optional (default=No layers).
         width of layers, each layer is connected with a non-linearity.
-    tau: float, optional
-        when a new parameter is set, tau low-passes the new parameter with the old one.
-    biased_head: bool, optional
+    biased_head: bool, optional (default=True).
         flag that indicates if head of NN has a bias term or not.
+    non_linearity: string, optional (default=Tanh).
+        Neural Network non-linearity.
+    input_transform: nn.Module, optional (default=None).
+        Module with which to transform inputs.
+
+    Other Parameters
+    ----------------
+    See AbstractQFunction.
     """
 
     def __init__(
@@ -262,3 +260,62 @@ class NNQFunction(AbstractQFunction):
                 return out.squeeze(0)
             else:
                 return out
+
+
+class DuelingQFunction(NNQFunction):
+    """Dueling Q Function Network.
+
+    Parameters
+    ----------
+    average_or_max: str, optional (default="average").
+        Whether to take the average or the max of the advantage when computing q.
+
+    Other Parameters
+    ----------------
+    See NNQFunction.
+
+    References
+    ----------
+    Wang, Z., Schaul, T., Hessel, M., Hasselt, H., Lanctot, M., & Freitas, N. (2016).
+    Dueling network architectures for deep reinforcement learning. ICML.
+    """
+
+    def __init__(self, average_or_max="average", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.discrete_action:
+            raise NotImplementedError("Only Discrete Actions Allowed.")
+        self.average_or_max = average_or_max
+
+        nn_kwargs = self.nn.kwargs
+        nn_kwargs["out_dim"] = (nn_kwargs["out_dim"][0] + 1,)
+        self.nn = DeterministicNN(**nn_kwargs)
+
+    def forward(self, state, action=torch.tensor(float("nan"))):
+        """See `NNQFunction.forward()'."""
+        q_values = super().forward(state)
+        if torch.isnan(action).all():
+            return q_values[..., 1:]
+        else:
+            value, advantage = q_values[..., 1], q_values[..., 1:]
+
+            if self.discrete_action:
+                action = action.unsqueeze(-1).long()
+
+            if action.dim() < state.dim():
+                resqueeze = True
+                action = action.unsqueeze(0)
+            else:
+                resqueeze = False
+
+            advantage_action = advantage.gather(-1, action).squeeze(-1)
+            if resqueeze:
+                advantage_action = advantage_action.squeeze(0)
+
+            if self.average_or_max == "average":
+                advantage_offset = advantage.mean(dim=-1)
+            elif self.average_or_max == "max":
+                advantage_offset = advantage.max(dim=-1)[0]
+            else:
+                raise NotImplementedError("Only average or mean are implemented.")
+
+        return value + advantage_action - advantage_offset
