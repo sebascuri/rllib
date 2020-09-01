@@ -17,6 +17,7 @@ class TransformedModel(AbstractModel):
             dim_action=base_model.dim_action,
             num_states=base_model.num_states,
             num_actions=base_model.num_actions,
+            model_kind=base_model.model_kind,
         )
         self.base_model = base_model
         self.forward_transformations = nn.ModuleList(transformations)
@@ -44,7 +45,7 @@ class TransformedModel(AbstractModel):
 
     def forward(self, state, action, next_state=None):
         """Predict next state distribution."""
-        return self.predict(state, action)
+        return self.predict(state, action, next_state)
 
     def scale(self, state, action):
         """Get epistemic scale of model."""
@@ -74,18 +75,22 @@ class TransformedModel(AbstractModel):
             obs = transformation.inverse(obs)
         return obs.next_state_scale_tril
 
-    def predict(self, state, action):
+    def predict(self, state, action, next_state=None):
         """Get next_state distribution."""
         none = torch.tensor(0)
-        obs = Observation(state, action, none, none, none, none, none, none, none, none)
+        if next_state is None:
+            next_state = none
+        obs = Observation(
+            state, action, none, next_state, none, none, none, none, none, none
+        )
         for transformation in self.forward_transformations:
             obs = transformation(obs)
 
         # Predict next-state
         if self.model_kind == "dynamics":
-            next_state = self.base_model(obs.state, obs.action)
+            next_state = self.base_model(obs.state, obs.action, obs.next_state)
         elif self.model_kind in ["rewards", "termination"]:
-            return self.base_model(obs.state, obs.action)
+            return self.base_model(obs.state, obs.action, obs.next_state)
         else:
             raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
 
@@ -131,3 +136,7 @@ class TransformedModel(AbstractModel):
     def get_prediction_strategy(self) -> str:
         """Get ensemble head."""
         return self.base_model.get_prediction_strategy()
+
+    def set_goal(self, goal):
+        """Set reward model goal."""
+        self.base_model.set_goal(goal)

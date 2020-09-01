@@ -105,11 +105,11 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
 
     def sample_posterior(self):
         """Sample a model from the (approximate) posterior."""
-        raise NotImplementedError
+        pass
 
     def set_prediction_strategy(self, val: str):
         """Set prediction strategy of model."""
-        raise NotImplementedError
+        pass
 
     def set_head(self, head_ptr: int):
         """Set ensemble head."""

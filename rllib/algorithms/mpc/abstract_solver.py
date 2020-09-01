@@ -67,7 +67,10 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         super().__init__()
         if not isinstance(dynamical_model, TransformedModel):
             dynamical_model = TransformedModel(dynamical_model, [])
+        if not isinstance(reward_model, TransformedModel):
+            reward_model = TransformedModel(reward_model, [])
         self.dynamical_model = dynamical_model
+
         self.reward_model = reward_model
         self.termination_model = termination_model
 

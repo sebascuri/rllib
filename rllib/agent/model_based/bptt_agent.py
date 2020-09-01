@@ -65,13 +65,13 @@ class BPTTAgent(ModelBasedAgent):
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
         criterion = loss.MSELoss
 
-        model = EnsembleModel.default(environment)
-        dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
+        dynamical_model = TransformedModel(
+            EnsembleModel.default(environment), kwargs.get("transformations", list())
+        )
 
         reward_model = kwargs.pop(
             "rewards", EnsembleModel.default(environment, model_kind="rewards")
         )
-
         model_optimizer = Adam(
             chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
         )

@@ -114,7 +114,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
             train_model(
-                self.reward_model,
+                self.reward_model.base_model,
                 train_loader=loader,
                 max_iter=self.num_epochs,
                 optimizer=self.model_optimizer,

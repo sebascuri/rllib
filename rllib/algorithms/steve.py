@@ -28,6 +28,8 @@ def steve_expand(
 
         Overrides get_value_target() method.
 
+        TODO: Add num_reward heads.
+
         References
         ----------
         Buckman, J., Hafner, D., Tucker, G., Brevdo, E., & Lee, H. (2018).
@@ -72,7 +74,7 @@ def steve_expand(
             )
 
             with PredictionStrategy(
-                self.dynamical_model, prediction_strategy="set_head"
+                self.dynamical_model, self.reward_model, prediction_strategy="set_head"
             ), torch.no_grad():
                 state = observation.state[..., 0, :]
 
