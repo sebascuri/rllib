@@ -3,7 +3,7 @@
 from abc import ABCMeta
 
 from rllib.util.parameter_decay import Constant, ParameterDecay
-from rllib.value_function import NNQFunction
+from rllib.value_function.nn_value_function import NNQFunction
 
 from ..abstract_policy import AbstractPolicy
 
