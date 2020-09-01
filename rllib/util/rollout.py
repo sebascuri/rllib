@@ -85,11 +85,8 @@ def step_model(
         done += (
             tensor_to_distribution(termination_model(state, action, next_state))
             .sample()
-            .squeeze(-1)
             .bool()
         )
-        if done.any():
-            print("here")
 
     if pi is not None:
         try:

@@ -38,8 +38,12 @@ class EnvironmentModel(AbstractModel):
         elif self.model_kind == "rewards":
             return reward, torch.zeros(1)
         elif self.model_kind == "termination":
-            return torch.zeros(*done.shape, 2).scatter_(
-                dim=-1, index=(~done).long().unsqueeze(-1), value=-float("inf")
+            return (
+                torch.zeros(*done.shape, 2)
+                .scatter_(
+                    dim=-1, index=(~done).long().unsqueeze(-1), value=-float("inf")
+                )
+                .squeeze(-1)
             )
         else:
             raise NotImplementedError(f"{self.model_kind} not implemented")
