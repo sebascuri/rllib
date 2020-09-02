@@ -6,6 +6,7 @@ from dataclasses import asdict
 import torch
 import torch.nn as nn
 from torch.optim.optimizer import Optimizer
+from tqdm import tqdm
 
 from rllib.dataset.utilities import average_dataclass
 from rllib.util.logger import Logger
@@ -54,6 +55,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         exploration_episodes=0,
         tensorboard=False,
         comment="",
+        training_verbose=False,
         *args,
         **kwargs,
     ):
@@ -75,7 +77,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.optimizer = optimizer
 
         self._training = True
-
+        self._training_verbose = training_verbose
         self.comment = comment
         self.last_trajectory = []
         self.params = {}
@@ -184,7 +186,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def _learn_steps(self, closure):
         """Apply `num_iter' learn steps to closure function."""
-        for _ in range(self.num_iter):
+        for _ in tqdm(range(self.num_iter), disable=not self._training_verbose):
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:

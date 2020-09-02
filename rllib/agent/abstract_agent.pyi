@@ -33,6 +33,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     clip_gradient_val: float
 
     _training: bool
+    _training_verbose: bool
     comment: str
     dist_params: dict
     params: Dict[str, ParameterDecay]
@@ -51,6 +52,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         exploration_episodes: int = ...,
         tensorboard: bool = ...,
         comment: str = ...,
+        training_verbose: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
