@@ -80,6 +80,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         if model_kind not in self.allowed_model_kind:
             raise ValueError(f"{model_kind} not in {self.allowed_model_kind}")
         self.goal = goal
+        self._info = {}
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -98,6 +99,11 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def name(self):
         """Get Model name."""
         return self.__class__.__name__
+
+    @property
+    def info(self):
+        """Get info of model."""
+        return self._info
 
     def scale(self, state, action):
         """Get epistemic variance at a given state, action pair."""

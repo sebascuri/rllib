@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch.nn as nn
 from torch import Tensor
@@ -18,6 +18,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     model_kind: str
     goal: Optional[Tensor]
     allowed_model_kind: List[str]
+    _info: Dict[str, Any]
     def __init__(
         self,
         dim_state: Tuple,
@@ -34,6 +35,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     @property
     def name(self) -> str: ...
+    @property
+    def info(self) -> Dict[str, Any]: ...
     def sample_posterior(self) -> None: ...
     def set_prediction_strategy(self, val: str) -> None: ...
     def scale(self, state: Tensor, action: Tensor) -> Tensor: ...

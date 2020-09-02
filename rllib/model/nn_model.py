@@ -70,11 +70,16 @@ class NNModel(AbstractModel):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractModel.default()."""
+        if environment.num_states > 0:
+            width = 20 * environment.num_states
+        else:
+            width = 20 * environment.dim_state[0]
+        depth = 2
         return super().default(
             environment,
-            layers=kwargs.pop("layers", [200, 200, 200]),
+            layers=kwargs.pop("layers", [width] * depth),
             biased_head=kwargs.pop("biased_head", True),
-            non_linearity=kwargs.pop("non_linearity", "Tanh"),
+            non_linearity=kwargs.pop("non_linearity", "Swish"),
             initial_scale=kwargs.pop("initial_scale", 0.5),
             input_transform=kwargs.pop("input_transform", None),
             deterministic=kwargs.pop("deterministic", False),

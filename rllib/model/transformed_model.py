@@ -35,6 +35,11 @@ class TransformedModel(AbstractModel):
             **kwargs,
         )
 
+    @property
+    def info(self):
+        """Get info of base model."""
+        return self.base_model.info
+
     def sample_posterior(self):
         """Sample a posterior from the base model."""
         self.base_model.sample_posterior()
