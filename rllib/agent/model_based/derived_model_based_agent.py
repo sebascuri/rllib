@@ -6,6 +6,7 @@ from torch.optim import Adam
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
+from rllib.dataset.transforms import DeltaState, MeanFunction
 from rllib.model import EnsembleModel, NNModel, TransformedModel
 
 from .model_based_agent import ModelBasedAgent
@@ -65,8 +66,8 @@ class DerivedMBAgent(ModelBasedAgent):
         ).default(environment, *args, **kwargs)
         base_algorithm = base_agent.algorithm
 
-        model = EnsembleModel.default(environment)
-        dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
+        model = EnsembleModel.default(environment, deterministic=True)
+        dynamical_model = TransformedModel(model, [MeanFunction(DeltaState())])
 
         reward_model = kwargs.pop(
             "rewards", NNModel.default(environment, model_kind="rewards")
@@ -79,8 +80,8 @@ class DerivedMBAgent(ModelBasedAgent):
         model_learning_algorithm = ModelLearningAlgorithm(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            num_epochs=4 if kwargs.get("test", False) else 30,
-            batch_size=64,
+            num_epochs=4 if kwargs.get("test", False) else 10,
+            batch_size=100,
             bootstrap=True,
             model_optimizer=model_optimizer,
         )
@@ -117,7 +118,7 @@ class DerivedMBAgent(ModelBasedAgent):
             simulation_algorithm=simulation_algorithm,
             planning_algorithm=planning_algorithm,
             optimizer=base_agent.optimizer,
-            num_iter=5 if test else base_agent.num_iter,
+            num_iter=5 if test else kwargs.pop("num_iter", base_agent.num_iter),
             batch_size=base_agent.batch_size,
             num_samples=15,
             num_steps=kwargs.pop("num_steps", 1),

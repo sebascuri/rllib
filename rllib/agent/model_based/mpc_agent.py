@@ -1,12 +1,12 @@
 """MPC Agent Implementation."""
+from itertools import chain
 
-import torch
 from torch.optim import Adam
 
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc import CEMShooting
-from rllib.model import EnsembleModel, TransformedModel
-from rllib.reward.quadratic_reward import QuadraticReward
+from rllib.dataset.transforms import DeltaState, MeanFunction
+from rllib.model import EnsembleModel, NNModel, TransformedModel
 
 from .model_based_agent import ModelBasedAgent
 
@@ -20,26 +20,15 @@ class MPCAgent(ModelBasedAgent):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        model = EnsembleModel(
-            dim_state=environment.dim_state,
-            dim_action=environment.dim_action,
-            num_heads=5,
-            layers=[200, 200],
-            biased_head=False,
-            non_linearity="ReLU",
-            input_transform=None,
-            deterministic=False,
-        )
-        dynamical_model = TransformedModel(model, kwargs.get("transformations", list()))
-        model_optimizer = Adam(dynamical_model.parameters(), lr=5e-4)
+        model = EnsembleModel.default(environment, deterministic=True)
+        dynamical_model = TransformedModel(model, [MeanFunction(DeltaState())])
 
-        reward_model = kwargs.get(
-            "reward_model",
-            QuadraticReward(
-                torch.eye(environment.dim_state[0]),
-                torch.eye(environment.dim_action[0]),
-                goal=environment.goal,
-            ),
+        reward_model = kwargs.pop(
+            "rewards", NNModel.default(environment, model_kind="rewards")
+        )
+
+        model_optimizer = Adam(
+            chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
         )
 
         mpc_solver = CEMShooting(

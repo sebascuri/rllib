@@ -6,7 +6,8 @@ from torch.optim import Adam
 
 from rllib.algorithms.bptt import BPTT
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.model import EnsembleModel, TransformedModel
+from rllib.dataset.transforms import DeltaState, MeanFunction
+from rllib.model import EnsembleModel, NNModel, TransformedModel
 from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
 
@@ -65,12 +66,11 @@ class BPTTAgent(ModelBasedAgent):
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
         criterion = loss.MSELoss
 
-        dynamical_model = TransformedModel(
-            EnsembleModel.default(environment), kwargs.get("transformations", list())
-        )
+        model = EnsembleModel.default(environment, deterministic=True)
+        dynamical_model = TransformedModel(model, [MeanFunction(DeltaState())])
 
         reward_model = kwargs.pop(
-            "rewards", EnsembleModel.default(environment, model_kind="rewards")
+            "rewards", NNModel.default(environment, model_kind="rewards")
         )
         model_optimizer = Adam(
             chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
