@@ -3,6 +3,7 @@ import torch
 
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.value_estimation import discount_cumsum, mc_return
+from rllib.value_function import NNEnsembleQFunction
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -98,6 +99,9 @@ def mve_expand(
                         .mean(0)
                         .squeeze(-1)
                     )
+
+            if isinstance(self.critic_target, NNEnsembleQFunction):
+                target_q = torch.min(target_q, dim=-1)[0]
 
             return target_q
 
