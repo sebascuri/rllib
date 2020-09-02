@@ -48,13 +48,20 @@ class ModelBasedAgent(AbstractAgent):
         planning_algorithm=None,
         simulation_algorithm=None,
         num_simulation_iterations=0,
+        num_rollouts=1,
         learn_from_real=False,
         thompson_sampling=False,
         memory=None,
+        training_verbose=True,
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            num_rollouts=num_rollouts,
+            training_verbose=training_verbose,
+            *args,
+            **kwargs,
+        )
         self.algorithm = policy_learning_algorithm
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
@@ -149,7 +156,7 @@ class ModelBasedAgent(AbstractAgent):
         Then train the agent.
         """
         self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
-        if self._training:
+        if self._training:  # training mode.
             self.learn()
         super().end_episode()
 
@@ -165,20 +172,21 @@ class ModelBasedAgent(AbstractAgent):
         # Step 1: Train Model with new data.
         self.model_learning_algorithm.learn(self.last_trajectory, self.logger)
 
-        if self.total_steps < self.exploration_steps or (
-            self.total_episodes < self.exploration_episodes
+        if (
+            self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
+            and self.num_rollouts > 0  # train once the episode ends.
+            and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
         ):
-            return
+            # Step 2: Optimize policy with simulated data.
+            if self.learn_from_sim:
+                print(colorize("Optimizing Policy with Simulated Data", "yellow"))
+                self.simulate_and_learn_policy()
 
-        # Step 2: Optimize policy with simulated data.
-        if self.learn_from_sim:
-            print(colorize("Optimizing Policy with Simulated Data", "yellow"))
-            self.simulate_and_learn_policy()
-
-        # Step 3: Optimize policy with real data.
-        if self.learn_from_real:
-            print(colorize("Optimizing Policy with Real Data", "yellow"))
-            self.learn_policy_from_real_data()
+            # Step 3: Optimize policy with real data.
+            if self.learn_from_real:
+                print(colorize("Optimizing Policy with Real Data", "yellow"))
+                self.learn_policy_from_real_data()
 
     def simulate_and_learn_policy(self):
         """Simulate the model and optimize the policy with the learned data.
@@ -220,14 +228,14 @@ class ModelBasedAgent(AbstractAgent):
             state = self.simulation_algorithm.dataset.sample_batch(self.batch_size)
             observation = Observation(state=state.unsqueeze(-2))
             self.optimizer.zero_grad()
-            losses_ = self.algorithm(observation)
-            losses_.combined_loss.mean().backward()
+            losses = self.algorithm(observation)
+            losses.combined_loss.mean().backward()
 
             torch.nn.utils.clip_grad_norm_(
                 self.algorithm.parameters(), self.clip_gradient_val
             )
 
-            return losses_
+            return losses
 
         self._learn_steps(closure)
 
@@ -239,14 +247,13 @@ class ModelBasedAgent(AbstractAgent):
             """Gradient calculation."""
             observation, *_ = self.memory.sample_batch(self.batch_size)
             self.optimizer.zero_grad()
-            losses_ = self.algorithm(observation)
-            losses_.combined_loss.mean().backward()
+            losses = self.algorithm(observation)
+            losses.combined_loss.mean().backward()
 
             torch.nn.utils.clip_grad_norm_(
                 self.algorithm.parameters(), self.clip_gradient_val
             )
-
-            return losses_
+            return losses
 
         self._learn_steps(closure)
 
@@ -255,32 +262,13 @@ class ModelBasedAgent(AbstractAgent):
         if self.logger is None:
             return
         trajectory = stack_list_of_tuples(trajectory)
-        average_return = trajectory.reward.sum(0).mean().item()
-        average_scale = (
-            torch.diagonal(trajectory.next_state_scale_tril, dim1=-1, dim2=-2)
-            .square()
-            .sum(-1)
-            .sum(0)
-            .mean()
-            .sqrt()
-            .item()
+        scale = torch.diagonal(trajectory.next_state_scale_tril, dim1=-1, dim2=-2)
+        self.logger.update(
+            sim_entropy=trajectory.entropy.mean().item(),
+            sim_return=trajectory.reward.sum(0).mean().item(),
+            sim_scale=scale.square().sum(-1).sum(0).mean().sqrt().item(),
+            sim_max_state=trajectory.state.abs().max().item(),
+            sim_max_action=trajectory.action.abs().max().item(),
         )
-        self.logger.update(sim_entropy=trajectory.entropy.mean().item())
-        self.logger.update(sim_return=average_return)
-        self.logger.update(sim_scale=average_scale)
-        self.logger.update(sim_max_state=trajectory.state.abs().max().item())
-        self.logger.update(sim_max_action=trajectory.action.abs().max().item())
-        try:
-            r_ctrl = self.simulation_algorithm.reward_model.reward_ctrl.mean()
-            r_state = self.simulation_algorithm.reward_model.reward_state.mean()
-            self.logger.update(sim_reward_ctrl=r_ctrl.detach().item())
-            self.logger.update(sim_reward_state=r_state.detach().item())
-        except AttributeError:
-            pass
-        try:
-            r_o = self.simulation_algorithm.reward_model.reward_dist_to_obj
-            r_g = self.simulation_algorithm.reward_model.reward_dist_to_goal
-            self.logger.update(sim_reward_dist_to_obj=r_o.mean().detach().item())
-            self.logger.update(sim_reward_dist_to_goal=r_g.mean().detach().item())
-        except AttributeError:
-            pass
+        for key, value in self.simulation_algorithm.reward_model.info.items():
+            self.logger.update(**{f"sim_{key}": value})

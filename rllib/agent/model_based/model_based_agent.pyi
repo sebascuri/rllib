@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
@@ -34,9 +34,13 @@ class ModelBasedAgent(AbstractAgent):
         planning_algorithm: Optional[MPCSolver] = ...,
         simulation_algorithm: Optional[SimulationAlgorithm] = ...,
         memory: Optional[ExperienceReplay] = ...,
+        num_rollouts: int = ...,
         num_simulation_iterations: int = ...,
         learn_from_real: bool = ...,
         thompson_sampling: bool = ...,
+        training_verbose: bool = ...,
+        *args: Any,
+        **kwargs: Any
     ) -> None: ...
     def learn(self) -> None: ...
     def log_trajectory(self, trajectory: Trajectory) -> None: ...
