@@ -78,7 +78,10 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
     else:
         raise NotImplementedError
 
-    for i in range(model.num_heads):
+    model_list = list(range(model.num_heads))
+    np.random.shuffle(model_list)
+
+    for i in model_list:
         optimizer.zero_grad()
         model.set_head(i)
         loss = (
