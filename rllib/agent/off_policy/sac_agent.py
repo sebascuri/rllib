@@ -70,8 +70,8 @@ class SACAgent(OffPolicyAgent):
             critic=critic,
             policy=policy,
             optimizer=optimizer,
-            num_iter=50,
-            train_frequency=50,
+            num_iter=kwargs.pop("num_iter", 50),
+            train_frequency=kwargs.pop("train_frequency", 50),
             *args,
             **kwargs,
         )
