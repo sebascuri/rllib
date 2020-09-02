@@ -1,6 +1,5 @@
 """Working example of Q-LEARNING."""
 import numpy as np
-import torch.jit
 import torch.optim
 
 from rllib.agent import DDQNAgent, DQNAgent  # noqa: F401
@@ -39,8 +38,8 @@ np.random.seed(SEED)
 
 environment = GymEnvironment(ENVIRONMENT, SEED)
 q_function = NNQFunction(
-    environment.dim_state,
-    environment.dim_action,
+    dim_state=environment.dim_state,
+    dim_action=environment.dim_action,
     num_states=environment.num_states,
     num_actions=environment.num_actions,
     layers=LAYERS,
@@ -71,8 +70,8 @@ else:
     raise NotImplementedError(f"{MEMORY} not implemented.")
 
 agent = DDQNAgent(
-    q_function,
-    policy,
+    critic=q_function,
+    policy=policy,
     criterion=criterion,
     optimizer=optimizer,
     memory=memory,

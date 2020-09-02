@@ -33,16 +33,16 @@ for name, Policy in {"eps_greedy": EpsGreedy, "softmax": SoftMax}.items():
 
     environment = GymEnvironment(ENVIRONMENT, SEED)
     q_function = NNQFunction(
-        environment.dim_observation,
-        environment.dim_action,
+        dim_state=environment.dim_observation,
+        dim_action=environment.dim_action,
         num_states=environment.num_states,
         num_actions=environment.num_actions,
         layers=LAYERS,
     )
     policy = Policy(q_function, ExponentialDecay(start=1.0, end=0.01, decay=500))
     q_target = NNQFunction(
-        environment.dim_observation,
-        environment.dim_action,
+        dim_state=environment.dim_observation,
+        dim_action=environment.dim_action,
         num_states=environment.num_states,
         num_actions=environment.num_actions,
         layers=LAYERS,
@@ -54,11 +54,11 @@ for name, Policy in {"eps_greedy": EpsGreedy, "softmax": SoftMax}.items():
     memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE)
 
     agent = DDQNAgent(
-        q_function,
-        policy,
-        criterion,
-        optimizer,
-        memory,
+        critic=q_function,
+        policy=policy,
+        criterion=criterion,
+        optimizer=optimizer,
+        memory=memory,
         batch_size=BATCH_SIZE,
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
         gamma=GAMMA,

@@ -89,7 +89,9 @@ class DPGAgent(OffPolicyAgent):
             critic=critic,
             policy=policy,
             optimizer=optimizer,
-            exploration_noise=OUNoise(dim=environment.dim_action),
+            exploration_noise=kwargs.pop(
+                "exploration_noise", OUNoise(dim=environment.dim_action)
+            ),
             policy_update_frequency=2,
             clip_gradient_val=10,
             *args,

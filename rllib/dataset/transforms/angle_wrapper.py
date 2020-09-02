@@ -25,7 +25,7 @@ class AngleWrapper(AbstractTransform):
         super().__init__()
         self._indexes = indexes
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         state = observation.state
         angles = state[..., self._indexes]

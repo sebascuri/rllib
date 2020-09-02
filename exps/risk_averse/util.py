@@ -2,7 +2,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torch.nn as nn
 from torch.distributions import Bernoulli
 
 from rllib.dataset.utilities import stack_list_of_tuples
@@ -42,11 +41,11 @@ class Cart1dReward(AbstractModel):
             return reward, torch.zeros(1)
 
 
-class Cart1dTermination(nn.Module):
+class Cart1dTermination(AbstractModel):
     """Termination condition."""
 
     def __init__(self, goal_x=1.0):
-        super().__init__()
+        super().__init__(model_kind="termination", dim_action=(), dim_state=())
         self.goal_x = goal_x
 
     def forward(self, state, action, next_state=None):
