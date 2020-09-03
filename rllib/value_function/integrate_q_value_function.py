@@ -21,9 +21,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
         Number of states in discrete environments.
     """
 
-    def __init__(
-        self, q_function, policy, num_samples=15, dist_params=None, *args, **kwargs
-    ):
+    def __init__(self, q_function, policy, num_samples=15, *args, **kwargs):
         kwargs.pop("dim_state", None)
         kwargs.pop("num_states", None)
         kwargs.pop("tau", None)
@@ -37,7 +35,6 @@ class IntegrateQValueFunction(AbstractValueFunction):
         self.q_function = q_function
         self.policy = policy
         self.num_samples = num_samples
-        self.dist_params = dict() if dist_params is None else dist_params
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -53,7 +50,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
 
     def forward(self, state):
         """Get value of the value-function at a given state."""
-        pi = tensor_to_distribution(self.policy(state), **self.dist_params)
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         if isinstance(self.q_function, NNEnsembleQFunction):
             out_dim = self.q_function.num_heads
         else:

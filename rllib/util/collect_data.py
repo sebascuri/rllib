@@ -29,7 +29,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
     for _ in range(num_samples):
         state = state_dist.sample()
         if isinstance(policy, AbstractPolicy):
-            action_dist = tensor_to_distribution(policy(state))
+            action_dist = tensor_to_distribution(policy(state), **policy.dist_params)
         else:  # random action_distribution
             action_dist = policy
         action = action_dist.sample()
@@ -69,7 +69,7 @@ def collect_model_transitions(
     """
     state = state_dist.sample((num_samples,))
     if isinstance(policy, AbstractPolicy):
-        action_dist = tensor_to_distribution(policy(state))
+        action_dist = tensor_to_distribution(policy(state), **policy.dist_params)
         action = action_dist.sample()
     else:  # action_distribution
         action_dist = policy

@@ -50,6 +50,10 @@ def mve_expand(
 
             self.criterion = type(self.criterion)(reduction="mean")
             self.td_k = td_k
+            self.policy.dist_params.update(**base_algorithm.policy.dist_params)
+            self.policy_target.dist_params.update(
+                **base_algorithm.policy_target.dist_params
+            )
 
         def critic_loss(self, observation):
             """Get critic-loss by rolling out a model."""
@@ -100,8 +104,8 @@ def mve_expand(
                         .squeeze(-1)
                     )
 
-            if isinstance(self.critic_target, NNEnsembleQFunction):
-                target_q = torch.min(target_q, dim=-1)[0]
+                    if isinstance(self.critic_target, NNEnsembleQFunction):
+                        target_q = torch.min(target_q, dim=-1)[0]
 
             return target_q
 

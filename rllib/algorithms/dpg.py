@@ -37,10 +37,11 @@ class DPG(AbstractAlgorithm):
     Continuous Control with Deep Reinforcement Learning. ICLR.
     """
 
-    def __init__(self, policy_noise, noise_clip, *args, **kwargs):
+    def __init__(self, policy_noise=0.0, noise_clip=0.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.policy_noise = policy_noise
-        self.noise_clip = noise_clip
+        self.policy_target.dist_params.update(
+            add_noise=True, policy_noise=policy_noise, noise_clip=noise_clip
+        )
 
     def actor_loss(self, observation):
         """Get Actor Loss."""
@@ -55,10 +56,7 @@ class DPG(AbstractAlgorithm):
     def get_value_target(self, observation):
         """Get q function target."""
         next_action = tensor_to_distribution(
-            self.policy_target(observation.next_state),
-            add_noise=True,
-            policy_noise=self.policy_noise,
-            noise_clip=self.noise_clip,
+            self.policy_target(observation.next_state), **self.policy_target.dist_params
         ).sample()
         next_v = self.critic_target(observation.next_state, next_action)
         if isinstance(self.critic_target, NNEnsembleQFunction):

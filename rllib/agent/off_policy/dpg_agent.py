@@ -63,19 +63,19 @@ class DPGAgent(OffPolicyAgent):
             exploration_noise = Constant(exploration_noise)
 
         self.params["exploration_noise"] = exploration_noise
-        self.dist_params.update(
+        self.policy.dist_params.update(
             add_noise=True, policy_noise=self.params["exploration_noise"]
         )
 
     def train(self, val=True):
         """Set the agent in training mode."""
         super().train(val)
-        self.dist_params.update(add_noise=True)
+        self.policy.dist_params.update(add_noise=True)
 
     def eval(self, val=True):
         """Set the agent in evaluation mode."""
         super().eval(val)
-        self.dist_params.update(add_noise=False)
+        self.policy.dist_params.update(add_noise=False)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

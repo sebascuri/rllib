@@ -211,9 +211,7 @@ def rollout_agent(
     agent.end_interaction()
 
 
-def rollout_policy(
-    environment, policy, num_episodes=1, max_steps=1000, render=False, **kwargs
-):
+def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False):
     """Conduct a rollout of a policy in an environment.
 
     Parameters
@@ -244,7 +242,7 @@ def rollout_policy(
             while not done:
                 pi = tensor_to_distribution(
                     policy(torch.tensor(state, dtype=torch.get_default_dtype())),
-                    **kwargs,
+                    **policy.dist_params,
                 )
                 action = (policy.action_scale * pi.sample()).numpy()
                 obs, state, done, info = step_env(
@@ -269,7 +267,6 @@ def rollout_model(
     initial_state,
     termination_model=None,
     max_steps=1000,
-    **kwargs,
 ):
     """Conduct a rollout of a policy interacting with a model.
 
@@ -306,7 +303,7 @@ def rollout_model(
     assert max_steps > 0
     for _ in range(max_steps):
         # Sample an action
-        pi = tensor_to_distribution(policy(state), **kwargs)
+        pi = tensor_to_distribution(policy(state), **policy.dist_params)
         if pi.has_rsample:
             action = pi.rsample()
         else:

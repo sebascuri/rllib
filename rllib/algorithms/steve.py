@@ -58,6 +58,11 @@ def steve_expand(
             self.num_models = self.dynamical_model.base_model.num_heads
             self.num_q = num_q
 
+            self.policy.dist_params.update(**base_algorithm.policy.dist_params)
+            self.policy_target.dist_params.update(
+                **base_algorithm.policy_target.dist_params
+            )
+
         def get_value_target(self, observation):
             """Rollout model and call base algorithm with transitions."""
             critic_target = torch.zeros(

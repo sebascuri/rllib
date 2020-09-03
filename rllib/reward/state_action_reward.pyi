@@ -2,7 +2,7 @@
 from abc import ABCMeta
 from typing import Optional, Tuple
 
-from rllib.dataset.datatypes import Action, State, Reward
+from rllib.dataset.datatypes import Action, Reward, State
 from rllib.model import AbstractModel
 
 class StateActionReward(AbstractModel, metaclass=ABCMeta):

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 from torch import Tensor
 
@@ -21,12 +21,10 @@ class IntegrateQValueFunction(AbstractValueFunction):
     q_function: AbstractQFunction
     policy: AbstractPolicy
     num_samples: int
-    dist_params: Dict
     def __init__(
         self,
         q_function: AbstractQFunction,
         policy: AbstractPolicy,
         num_samples: int = 15,
-        dist_params: Optional[Dict] = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

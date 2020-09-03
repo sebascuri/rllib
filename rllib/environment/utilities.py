@@ -79,7 +79,7 @@ def mdp2mrp(environment, policy):
             continue
 
         state = torch.tensor(state).long()
-        policy_ = tensor_to_distribution(policy(state))
+        policy_ = tensor_to_distribution(policy(state), **policy.dist_params)
 
         for a, p_action in enumerate(policy_.probs):
             for transition in environment.transitions[(state.item(), a)]:

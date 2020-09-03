@@ -38,6 +38,8 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         flag that indicates if the policy is deterministic.
     action_scale: float, optional.
         Magnitude of output scale.
+    dist_params: dict, optional.
+        Distribution parameters.
     """
 
     def __init__(
@@ -50,6 +52,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         deterministic=False,
         action_scale=1,
         goal=None,
+        dist_params=None,
         *args,
         **kwargs,
     ):
@@ -62,6 +65,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
         self.tau = tau
+        self.dist_params = dict() if dist_params is None else dist_params
 
         if self.discrete_action:
             action_scale = torch.tensor(1)

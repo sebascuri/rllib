@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar
 
 import torch.nn as nn
 from torch import Tensor
@@ -20,6 +20,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     discrete_action: bool
     action_scale: Tensor
     goal: Optional[Tensor]
+    dist_params: Dict[str, Any]
     def __init__(
         self,
         dim_state: Tuple,
@@ -30,6 +31,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         deterministic: bool = ...,
         action_scale: Action = ...,
         goal: Optional[Tensor] = ...,
+        dist_params: Optional[Dict[str, Any]] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

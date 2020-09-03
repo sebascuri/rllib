@@ -81,7 +81,6 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.comment = comment
         self.last_trajectory = []
         self.params = {}
-        self.dist_params = {}
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -112,7 +111,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
             policy = self.policy(state)
 
-        self.pi = tensor_to_distribution(policy, **self.dist_params)
+        self.pi = tensor_to_distribution(policy, **self.policy.dist_params)
         if self._training:
             action = self.pi.sample()
         elif self.pi.has_enumerate_support:

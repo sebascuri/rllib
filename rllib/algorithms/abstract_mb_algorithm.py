@@ -84,7 +84,6 @@ class AbstractMBAlgorithm(object):
             reward_model=self.reward_model,
             policy=policy,
             initial_state=state,
-            action_scale=policy.action_scale,
             max_steps=self.num_steps,
             termination_model=self.termination_model,
         )

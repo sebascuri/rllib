@@ -51,7 +51,6 @@ def rollout_policy(
     num_episodes: int = ...,
     max_steps: int = ...,
     render: bool = ...,
-    **kwargs: Any,
 ) -> List[Trajectory]: ...
 def rollout_model(
     dynamical_model: AbstractModel,
@@ -60,7 +59,6 @@ def rollout_model(
     initial_state: State,
     termination_model: Optional[AbstractModel] = ...,
     max_steps: int = ...,
-    **kwargs: Any,
 ) -> Trajectory: ...
 def rollout_actions(
     dynamical_model: AbstractModel,

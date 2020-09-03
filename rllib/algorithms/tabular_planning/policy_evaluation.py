@@ -83,7 +83,7 @@ def iterative_policy_evaluation(
 
             value_estimate = torch.tensor(0.0)
             state = torch.tensor(state).long()
-            policy_ = tensor_to_distribution(policy(state))
+            policy_ = tensor_to_distribution(policy(state), **policy.dist_params)
             for action in np.where(policy_.probs.detach().numpy())[0]:
                 p_action = policy_.probs[action].item()
                 for transition in model.transitions[(state.item(), action)]:

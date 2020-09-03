@@ -37,6 +37,10 @@ def dyna_expand(
                 num_samples=num_samples,
                 termination_model=termination_model,
             )
+            self.policy.dist_params.update(**base_algorithm.policy.dist_params)
+            self.policy_target.dist_params.update(
+                **base_algorithm.policy_target.dist_params
+            )
 
         def forward(self, observation, **kwargs_):
             """Rollout model and call base algorithm with transitions."""

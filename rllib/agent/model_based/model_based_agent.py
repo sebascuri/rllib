@@ -119,7 +119,9 @@ class ModelBasedAgent(AbstractAgent):
         if isinstance(self.planning_algorithm, PolicyShooting):
             if not isinstance(state, torch.Tensor):
                 state = torch.tensor(state, dtype=torch.get_default_dtype())
-            policy = tensor_to_distribution(self.policy(state), **self.dist_params)
+            policy = tensor_to_distribution(
+                self.policy(state), **self.policy.dist_params
+            )
             self.pi = policy
             action = self.planning_algorithm(state).detach().numpy()
         else:

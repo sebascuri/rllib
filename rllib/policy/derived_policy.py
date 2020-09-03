@@ -22,6 +22,7 @@ class DerivedPolicy(AbstractPolicy):
             tau=base_policy.tau,
             deterministic=base_policy.deterministic,
             goal=base_policy.goal,
+            dist_params=base_policy.dist_params,
         )
         self.base_policy = base_policy
 

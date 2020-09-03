@@ -35,7 +35,6 @@ class AbstractAgent(object, metaclass=ABCMeta):
     _training: bool
     _training_verbose: bool
     comment: str
-    dist_params: dict
     params: Dict[str, ParameterDecay]
     last_trajectory: List[Observation]
     def __init__(

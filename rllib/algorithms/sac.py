@@ -23,6 +23,7 @@ class SoftActorCritic(AbstractAlgorithm):
     def __init__(self, eta, regularization=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Actor
+        self.policy.dist_params.update(tanh=True)
         self.target_entropy = -self.policy.dim_action[0]
         assert (
             len(self.policy.dim_action) == 1
@@ -40,7 +41,7 @@ class SoftActorCritic(AbstractAlgorithm):
     def actor_loss(self, observation):
         """Get Actor Loss."""
         state = observation.state
-        pi = tensor_to_distribution(self.policy(state), tanh=True)
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         action = pi.rsample()  # re-parametrization trick.
 
         with DisableGradient(self.critic_target):
@@ -64,7 +65,9 @@ class SoftActorCritic(AbstractAlgorithm):
     def get_value_target(self, observation):
         """Get the target of the q function."""
         # Target Q-values
-        pi = tensor_to_distribution(self.policy(observation.next_state), tanh=True)
+        pi = tensor_to_distribution(
+            self.policy(observation.next_state), **self.policy.dist_params
+        )
         next_action = pi.sample()
         next_q = self.critic_target(observation.next_state, next_action)
         if isinstance(self.critic_target, NNEnsembleQFunction):

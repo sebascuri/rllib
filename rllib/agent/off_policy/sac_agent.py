@@ -55,7 +55,6 @@ class SACAgent(OffPolicyAgent):
             **self.optimizer.defaults,
         )
         self.policy = self.algorithm.policy
-        self.dist_params.update(tanh=True)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
