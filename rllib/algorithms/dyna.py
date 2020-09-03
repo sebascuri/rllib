@@ -37,6 +37,8 @@ def dyna_expand(
                 num_samples=num_samples,
                 termination_model=termination_model,
             )
+            self.base_algorithm_name = base_algorithm.__class__.__name__
+
             self.policy.dist_params.update(**base_algorithm.policy.dist_params)
             self.policy_target.dist_params.update(
                 **base_algorithm.policy_target.dist_params

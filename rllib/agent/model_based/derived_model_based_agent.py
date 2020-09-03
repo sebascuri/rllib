@@ -54,6 +54,13 @@ class DerivedMBAgent(ModelBasedAgent):
             **self.optimizer.defaults,
         )
 
+    @property
+    def name(self) -> str:
+        """See `AbstractAgent.name'."""
+        derived_name = self.__class__.__name__[:-5]
+        base_name = self.algorithm.base_algorithm_name
+        return f"{derived_name}+{base_name}Agent"
+
     @classmethod
     def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
         """See `AbstractAgent.default'."""
@@ -80,9 +87,7 @@ class DerivedMBAgent(ModelBasedAgent):
         model_learning_algorithm = ModelLearningAlgorithm(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            num_epochs=4 if kwargs.get("test", False) else 10,
-            batch_size=100,
-            bootstrap=True,
+            num_epochs=4 if kwargs.get("test", False) else 50,
             model_optimizer=model_optimizer,
         )
         simulation_algorithm = SimulationAlgorithm(

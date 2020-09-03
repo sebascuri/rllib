@@ -7,6 +7,7 @@ from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
+    base_algorithm_name: str
     def __init__(self) -> None: ...
     def forward(
         self, observation: Union[Observation, List[Observation]], **kwargs: Any

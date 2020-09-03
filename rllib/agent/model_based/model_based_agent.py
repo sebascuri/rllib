@@ -56,13 +56,13 @@ class ModelBasedAgent(AbstractAgent):
         *args,
         **kwargs,
     ):
+        self.algorithm = policy_learning_algorithm
         super().__init__(
             num_rollouts=num_rollouts,
             training_verbose=training_verbose,
             *args,
             **kwargs,
         )
-        self.algorithm = policy_learning_algorithm
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
         self.simulation_algorithm = simulation_algorithm

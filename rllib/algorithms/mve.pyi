@@ -7,6 +7,7 @@ from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class MVE(AbstractAlgorithm, AbstractMBAlgorithm):
     td_k: bool
+    base_algorithm_name: str
     def __init__(self) -> None: ...
 
 def mve_expand(

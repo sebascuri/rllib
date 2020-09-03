@@ -11,6 +11,7 @@ from .abstract_mb_algorithm import AbstractMBAlgorithm
 class STEVE(AbstractAlgorithm, AbstractMBAlgorithm):
     num_models: int
     num_q = int
+    base_algorithm_name: str
     def __init__(self) -> None: ...
     def get_value_target(self, observation: Observation) -> Tensor: ...
 

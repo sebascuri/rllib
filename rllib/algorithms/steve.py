@@ -49,6 +49,7 @@ def steve_expand(
                 num_samples=num_samples,
                 termination_model=termination_model,
             )
+            self.base_algorithm_name = base_algorithm.__class__.__name__
 
             try:
                 num_q = self.critic_target.num_heads
