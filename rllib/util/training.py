@@ -17,19 +17,37 @@ from .rollout import rollout_agent
 from .utilities import tensor_to_distribution
 
 
-def _model_mse(model, state, action, next_state):
+def _get_target(model, observation):
+    if model.model_kind == "dynamics":
+        target = observation.next_state
+    elif model.model_kind == "rewards":
+        target = observation.reward.unsqueeze(-1)
+    elif model.model_kind == "termination":
+        target = observation.done
+    else:
+        raise NotImplementedError
+    return target
+
+
+def _model_mse(model, observation):
+    state, action = observation.state, observation.action
+    target = _get_target(model, observation)
+
     mean = model(state, action)[0]
-    y = next_state
+    y = target
+
     return ((mean - y) ** 2).sum(-1)
 
 
-def _model_loss(model, state, action, target):
+def _model_loss(model, observation):
+    state, action = observation.state, observation.action
+    target = _get_target(model, observation)
+
     prediction = model(state, action)
     if len(prediction) == 1:  # Cross entropy loss.
         return nn.CrossEntropyLoss(reduction="none")(prediction[0], target)
 
     mean, scale_tril = prediction[0], prediction[1]
-
     y = target
     if torch.all(scale_tril == 0):  # Deterministic Model
         loss = ((mean - y) ** 2).sum(-1)
@@ -44,21 +62,10 @@ def _model_loss(model, state, action, target):
     return loss
 
 
-def train_nn_step(model, observation, optimizer):
+def train_nn_step(model, observation, optimizer, weight=1.0):
     """Train a Neural Network Model."""
-    model.train()
     optimizer.zero_grad()
-
-    if model.model_kind == "dynamics":
-        target = observation.next_state
-    elif model.model_kind == "rewards":
-        target = observation.reward.unsqueeze(-1)
-    elif model.model_kind == "termination":
-        target = observation.done
-    else:
-        raise NotImplementedError
-
-    loss = _model_loss(model, observation.state, observation.action, target).mean()
+    loss = (weight * _model_loss(model, observation)).mean()
     loss.backward()
     optimizer.step()
 
@@ -67,36 +74,16 @@ def train_nn_step(model, observation, optimizer):
 
 def train_ensemble_step(model, observation, mask, optimizer, logger):
     """Train a model ensemble."""
-    model.train()
     ensemble_loss = 0
-    if model.model_kind == "dynamics":
-        target = observation.next_state
-    elif model.model_kind == "rewards":
-        target = observation.reward.unsqueeze(-1)
-    elif model.model_kind == "termination":
-        target = observation.done
-    else:
-        raise NotImplementedError
 
     model_list = list(range(model.num_heads))
     np.random.shuffle(model_list)
-
-    for i in model_list:
-        optimizer.zero_grad()
-        model.set_head(i)
-        loss = (
-            mask[:, i]
-            * _model_loss(model, observation.state, observation.action, target)
-        ).mean()
-        with torch.no_grad():
-            mse = _model_mse(
-                model, observation.state, observation.action, target
-            ).mean()
-        loss.backward()
-        optimizer.step()
-        ensemble_loss += loss.item()
-        logger.update(**{f"{model.model_kind} model-{i}": loss.item()})
-        logger.update(**{f"{model.model_kind} model-mse-{i}": mse.item()})
+    with PredictionStrategy(model, prediction_strategy="set_head"):
+        for i in model_list:
+            model.set_head(i)
+            loss = train_nn_step(model, observation, optimizer, weight=mask[:, i])
+            ensemble_loss += loss / model.num_heads
+            logger.update(**{f"{model.model_kind} model-{i}": loss})
 
     return ensemble_loss
 
@@ -104,7 +91,6 @@ def train_ensemble_step(model, observation, mask, optimizer, logger):
 def train_exact_gp_type2mll_step(model, observation, optimizer):
     """Train a GP using type-2 Marginal-Log-Likelihood optimization."""
     optimizer.zero_grad()
-    model.train()
     output = tensor_to_distribution(
         model(observation.state[:, 0], observation.action[:, 0])
     )
@@ -113,31 +99,65 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
         loss = exact_mll(output, val, model.gp)
     loss.backward()
     optimizer.step()
-
     model.eval()
     return loss.item()
 
 
-def train_model(model, train_loader, optimizer, max_iter=100, logger=None):
-    """Train a Dynamical Model."""
+def train_model(model, train_loader, optimizer, max_iter=100, epsilon=0.1, logger=None):
+    """Train a Predictive Model.
+
+    Parameters
+    ----------
+    model: AbstractModel.
+        Predictive model to optimize.
+    train_loader: DataLoader.
+        Loader of data.
+    optimizer: Optimizer.
+        Optimizer to call for the model.
+    max_iter: int (default = 100).
+        Maximum number of epochs.
+    epsilon: float.
+        Early stopping parameter. If epoch loss is > (1 + epsilon) of minimum loss the
+        optimization process stops.
+    logger: Logger, optional.
+        Progress logger.
+    """
     if logger is None:
         logger = Logger(f"{model.name}_training")
+
+    model.train()
+    min_loss, min_mse = float("inf"), float("inf")
+
     for _ in tqdm(range(max_iter)):
+        epoch_loss, epoch_mse, num_steps = 0, 0, 0
         for observation, idx, mask in train_loader:
             observation = Observation(**observation)
             if isinstance(model, EnsembleModel):
-                with PredictionStrategy(model, prediction_strategy="set_head"):
-                    model_loss = train_ensemble_step(
-                        model, observation, mask, optimizer, logger
-                    )
-
+                loss = train_ensemble_step(model, observation, mask, optimizer, logger)
             elif isinstance(model, NNModel):
-                model_loss = train_nn_step(model, observation, optimizer)
+                loss = train_nn_step(model, observation, optimizer)
             elif isinstance(model, ExactGPModel):
-                model_loss = train_exact_gp_type2mll_step(model, observation, optimizer)
+                loss = train_exact_gp_type2mll_step(model, observation, optimizer)
             else:
                 raise TypeError("Only Implemented for Ensembles and GP Models.")
-            logger.update(**{f"{model.model_kind} model-loss": model_loss})
+
+            with torch.no_grad():
+                mse = _model_mse(model, observation).mean()
+
+            logger.update(**{f"{model.model_kind} model-loss": loss})
+            logger.update(**{f"{model.model_kind} model-mse": mse})
+
+            epoch_loss, epoch_mse = epoch_loss + loss, epoch_mse + mse
+            num_steps += 1
+
+        epoch_loss, epoch_mse = epoch_loss / num_steps, epoch_mse / num_steps
+
+        if epoch_loss > (1 + epsilon) * min_loss:
+            return
+        min_loss = epoch_loss
+        if epoch_mse > (1 + epsilon) * min_mse:
+            return
+        min_mse = epoch_mse
 
 
 def train_agent(

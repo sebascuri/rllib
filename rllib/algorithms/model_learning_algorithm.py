@@ -43,7 +43,8 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         self,
         model_optimizer=None,
         num_epochs=1,
-        batch_size=64,
+        batch_size=128,
+        epsilon=0.1,
         bootstrap=True,
         max_memory=10000,
         *args,
@@ -66,6 +67,8 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
 
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+        self.epsilon = epsilon
+
         if self.num_epochs > 0:
             assert self.model_optimizer is not None
 
@@ -110,6 +113,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             max_iter=self.num_epochs,
             optimizer=self.model_optimizer,
             logger=logger,
+            epsilon=self.epsilon,
         )
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
@@ -119,6 +123,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
                 max_iter=self.num_epochs,
                 optimizer=self.model_optimizer,
                 logger=logger,
+                epsilon=self.epsilon,
             )
 
         if self.termination_model is not None and any(
@@ -130,4 +135,5 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
                 max_iter=self.num_epochs,
                 optimizer=self.model_optimizer,
                 logger=logger,
+                epsilon=self.epsilon,
             )

@@ -1,5 +1,5 @@
 """Utility functions for training models."""
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -23,7 +23,10 @@ def _model_loss(
     model: AbstractModel, state: Tensor, action: Tensor, next_state: Tensor
 ) -> Tensor: ...
 def train_nn_step(
-    model: NNModel, observation: Observation, optimizer: Optimizer
+    model: NNModel,
+    observation: Observation,
+    optimizer: Optimizer,
+    weight: Union[Tensor, float] = ...,
 ) -> Tensor: ...
 def train_ensemble_step(
     model: EnsembleModel,
@@ -40,6 +43,7 @@ def train_model(
     train_loader: DataLoader,
     optimizer: Optimizer,
     max_iter: int = ...,
+    epsilon: float = ...,
     logger: Optional[Logger] = ...,
 ) -> None: ...
 def train_agent(
