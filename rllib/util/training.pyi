@@ -27,17 +27,17 @@ def train_nn_step(
     observation: Observation,
     optimizer: Optimizer,
     weight: Union[Tensor, float] = ...,
-) -> Tensor: ...
+) -> float: ...
 def train_ensemble_step(
     model: EnsembleModel,
     observation: Observation,
     mask: Tensor,
     optimizer: Optimizer,
     logger: Logger,
-) -> Tensor: ...
+) -> float: ...
 def train_exact_gp_type2mll_step(
     model: ExactGPModel, observation: Observation, optimizer: Optimizer
-) -> Tensor: ...
+) -> float: ...
 def train_model(
     model: AbstractModel,
     train_loader: DataLoader,

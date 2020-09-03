@@ -125,7 +125,7 @@ class DerivedMBAgent(ModelBasedAgent):
             optimizer=base_agent.optimizer,
             num_iter=5 if test else kwargs.pop("num_iter", base_agent.num_iter),
             batch_size=base_agent.batch_size,
-            num_samples=15,
+            num_samples=kwargs.pop("num_samples", 15),
             num_steps=kwargs.pop("num_steps", 1),
             num_simulation_iterations=0,
             thompson_sampling=False,

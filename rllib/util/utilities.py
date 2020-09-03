@@ -260,6 +260,27 @@ def safe_cholesky(covariance_matrix, jitter=1e-6):
         )
 
 
+class MovingAverage(object):
+    """Calculate moving average."""
+
+    def __init__(self):
+        self._count = 0
+        self._total_value = 0.0
+
+    def update(self, value):
+        """Update moving average."""
+        self._count += 1
+        self._total_value += value
+
+    @property
+    def value(self):
+        """Get current value."""
+        if self._count > 0:
+            return self._total_value / self._count
+        else:
+            return float("inf")
+
+
 def moving_average_filter(x, y, horizon):
     """Apply a moving average filter to data x and y.
 

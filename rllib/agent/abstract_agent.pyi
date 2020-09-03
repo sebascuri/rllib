@@ -8,6 +8,7 @@ from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.dataset.datatypes import Action, Distribution, Loss, Observation, State
 from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy
+from rllib.util.early_stopping import EarlyStopping
 from rllib.util.logger import Logger
 from rllib.util.parameter_decay import ParameterDecay
 
@@ -21,6 +22,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     counters: Dict[str, int]
     episode_steps: List[int]
     logger: Logger
+    early_stopping_algorithm: EarlyStopping
     gamma: float
     exploration_steps: int
     exploration_episodes: int
@@ -46,6 +48,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         batch_size: int = ...,
         policy_update_frequency: int = ...,
         target_update_frequency: int = ...,
+        early_stopping_epsilon: float = ...,
         gamma: float = ...,
         exploration_steps: int = ...,
         exploration_episodes: int = ...,
@@ -66,7 +69,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def end_interaction(self) -> None: ...
     def set_goal(self, goal: Optional[Tensor]) -> None: ...
     def learn(self) -> None: ...
-    def early_stop(self, *args: Any, **kwargs: Any) -> bool: ...
+    def early_stop(self, losses: Loss, **kwargs: Any) -> bool: ...
     def train(self, val: bool = True) -> None: ...
     def eval(self, val: bool = True) -> None: ...
     def _learn_steps(self, closure: Callable) -> Loss: ...

@@ -10,6 +10,7 @@ from tqdm import tqdm
 from rllib.dataset.datatypes import Observation
 from rllib.model import EnsembleModel, ExactGPModel, NNModel
 from rllib.model.utilities import PredictionStrategy
+from rllib.util.early_stopping import EarlyStopping
 from rllib.util.gaussian_processes.mlls import exact_mll
 
 from .logger import Logger
@@ -36,7 +37,7 @@ def _model_mse(model, observation):
     mean = model(state, action)[0]
     y = target
 
-    return ((mean - y) ** 2).sum(-1)
+    return ((mean - y) ** 2).sum(-1).mean().item()
 
 
 def _model_loss(model, observation):
@@ -126,10 +127,9 @@ def train_model(model, train_loader, optimizer, max_iter=100, epsilon=0.1, logge
         logger = Logger(f"{model.name}_training")
 
     model.train()
-    min_loss, min_mse = float("inf"), float("inf")
+    early_stopping = EarlyStopping(epsilon)
 
     for _ in tqdm(range(max_iter)):
-        epoch_loss, epoch_mse, num_steps = 0, 0, 0
         for observation, idx, mask in train_loader:
             observation = Observation(**observation)
             if isinstance(model, EnsembleModel):
@@ -142,22 +142,16 @@ def train_model(model, train_loader, optimizer, max_iter=100, epsilon=0.1, logge
                 raise TypeError("Only Implemented for Ensembles and GP Models.")
 
             with torch.no_grad():
-                mse = _model_mse(model, observation).mean()
+                mse = _model_mse(model, observation)
 
             logger.update(**{f"{model.model_kind} model-loss": loss})
             logger.update(**{f"{model.model_kind} model-mse": mse})
 
-            epoch_loss, epoch_mse = epoch_loss + loss, epoch_mse + mse
-            num_steps += 1
+            early_stopping.update(loss, mse)
 
-        epoch_loss, epoch_mse = epoch_loss / num_steps, epoch_mse / num_steps
-
-        if epoch_loss > (1 + epsilon) * min_loss:
+        if early_stopping.stop:
             return
-        min_loss = epoch_loss
-        if epoch_mse > (1 + epsilon) * min_mse:
-            return
-        min_mse = epoch_mse
+        early_stopping.reset(hard=False)  # reset to zero the moving averages.
 
 
 def train_agent(

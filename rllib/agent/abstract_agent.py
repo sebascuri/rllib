@@ -8,7 +8,9 @@ import torch.nn as nn
 from torch.optim.optimizer import Optimizer
 from tqdm import tqdm
 
+from rllib.dataset.datatypes import Loss
 from rllib.dataset.utilities import average_dataclass
+from rllib.util.early_stopping import EarlyStopping
 from rllib.util.logger import Logger
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import tensor_to_distribution
@@ -50,6 +52,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         policy_update_frequency=1,
         target_update_frequency=1,
         clip_gradient_val=float("Inf"),
+        early_stopping_epsilon=-1,
         gamma=0.99,
         exploration_steps=0,
         exploration_episodes=0,
@@ -60,6 +63,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
         **kwargs,
     ):
         self.logger = Logger(self.name, tensorboard=tensorboard, comment=comment)
+        self.early_stopping_algorithm = EarlyStopping(epsilon=early_stopping_epsilon)
+
         self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}
         self.episode_steps = []
 
@@ -171,9 +176,16 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """Train the agent."""
         pass
 
-    def early_stop(self, *args, **kwargs):
+    def early_stop(self, losses, **kwargs):
         """Early stop the training algorithm."""
-        return False
+        self.early_stopping_algorithm.update(
+            # losses.combined_loss.mean().abs().item(),
+            losses.policy_loss.mean().abs().item(),
+            losses.critic_loss.mean().abs().item(),
+            losses.regularization_loss.mean().abs().item(),
+            losses.dual_loss.mean().abs().item(),
+        )
+        return self.early_stopping_algorithm.stop
 
     def train(self, val=True):
         """Set the agent in training mode."""
@@ -195,7 +207,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
                     cm = DisableGradient(self.policy)
 
             with cm:
-                losses = self.optimizer.step(closure=closure)
+                losses = self.optimizer.step(closure=closure)  # type: Loss
 
             self.logger.update(**asdict(average_dataclass(losses)))
             self.logger.update(**self.algorithm.info())
@@ -209,6 +221,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
             if self.early_stop(losses, **self.algorithm.info()):
                 break
         self.algorithm.reset()
+        self.early_stopping_algorithm.reset()
 
     @property
     def total_episodes(self):

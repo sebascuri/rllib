@@ -1,6 +1,7 @@
 """Implementation of PPO Algorithm."""
 
 from rllib.algorithms.ppo import PPO
+from rllib.util.early_stopping import EarlyStopping
 from rllib.util.neural_networks.utilities import stop_learning
 from rllib.value_function import NNValueFunction
 
@@ -44,14 +45,17 @@ class PPOAgent(ActorCriticAgent):
 
         self.policy = self.algorithm.policy
         self.target_kl = target_kl
+        self._early_stopping = EarlyStopping(epsilon=1.5 * target_kl, relative=False)
 
-    def early_stop(self, *args, **kwargs):
+    def early_stop(self, losses, **kwargs):
         """Early stop the training algorithm."""
-        if (
-            kwargs.get("kl_div", kwargs.get("approx_kl_div", self.target_kl))
-            >= 1.5 * self.target_kl
-        ):
+        kl = kwargs.get("kl_div", kwargs.get("approx_kl_div", self.target_kl))
+        self.early_stopping_algorithm.update(kl)
+
+        if self.early_stopping_algorithm.stop:
             stop_learning(self.policy)
+        self.early_stopping_algorithm.reset()
+
         return False
 
     @classmethod
