@@ -56,7 +56,12 @@ def steve_expand(
             except AttributeError:
                 num_q = 1
 
-            self.num_models = self.dynamical_model.base_model.num_heads
+            try:
+                num_models = self.dynamical_model.base_model.num_heads
+            except AttributeError:
+                num_models = 1
+
+            self.num_models = num_models
             self.num_q = num_q
 
             self.policy.dist_params.update(**base_algorithm.policy.dist_params)
