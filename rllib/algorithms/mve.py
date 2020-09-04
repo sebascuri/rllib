@@ -50,7 +50,6 @@ def mve_expand(
 
             self.base_algorithm_name = base_algorithm.__class__.__name__
 
-            self.criterion = type(self.criterion)(reduction="mean")
             self.td_k = td_k
             self.policy.dist_params.update(**base_algorithm.policy.dist_params)
             self.policy_target.dist_params.update(
