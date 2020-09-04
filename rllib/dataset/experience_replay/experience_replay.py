@@ -93,6 +93,29 @@ class ExperienceReplay(data.Dataset):
 
         return new
 
+    def split(self, ratio=0.8, *args, **kwargs):
+        """Split into two data sets."""
+        idx = np.arange(0, len(self))
+        np.random.shuffle(idx)
+        train_idx = idx[: int(ratio * len(self))]
+        test_idx = idx[int(ratio * len(self)) :]
+
+        train = type(self)(
+            max_len=self.max_len, transformations=self.transformations, *args, **kwargs
+        )
+        test = type(self)(
+            max_len=self.max_len, transformations=self.transformations, *args, **kwargs
+        )
+
+        for dataset, idx in zip([train, test], [train_idx, test_idx]):
+            for i in idx:
+                dataset.memory[i] = self.memory[i]
+                dataset.valid[i] = self.valid[i]
+                dataset.weights[i] = self.weights[i]
+                dataset.data_count += 1
+
+        return train, test
+
     def __len__(self):
         """Return the current size of the buffer."""
         if self.is_full:

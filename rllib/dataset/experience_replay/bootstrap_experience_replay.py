@@ -65,3 +65,13 @@ class BootstrapExperienceReplay(ExperienceReplay):
         else:
             self.weights[self.ptr] = torch.ones(self.mask_distribution.batch_shape)
         super().append(observation)
+
+    def split(self, ratio=0.8, *args, **kwargs):
+        """Split into two data sets."""
+        return super().split(
+            ratio=ratio,
+            num_bootstraps=self.weights.shape[-1],
+            bootstrap=self.bootstrap,
+            *args,
+            **kwargs,
+        )
