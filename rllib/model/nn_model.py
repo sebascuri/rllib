@@ -11,19 +11,16 @@ class NNModel(AbstractModel):
 
     Parameters
     ----------
-    dim_state: Tuple
-        dimension of state.
-    dim_action: Tuple
-        dimension of action.
-    num_states: int, optional
-        number of discrete states (None if state is continuous).
-    num_actions: int, optional
-        number of discrete actions (None if action is continuous).
-    layers: list, optional
+    layers: list, optional (default=No layers).
         width of layers, each layer is connected with a non-linearity.
-    biased_head: bool, optional
+    biased_head: bool, optional (default=True).
         flag that indicates if head of NN has a bias term or not.
-
+    non_linearity: string, optional (default=Tanh).
+        Neural Network non-linearity.
+    input_transform: nn.Module, optional (default=None).
+        Module with which to transform inputs.
+    per_coordinate: bool, optional (default = True).
+        Flag that indicates if there is an independent model per coordinate.
     """
 
     def __init__(
@@ -34,6 +31,7 @@ class NNModel(AbstractModel):
         initial_scale=0.5,
         input_transform=None,
         deterministic=False,
+        per_coordinate=False,
         *args,
         **kwargs,
     ):
@@ -47,22 +45,45 @@ class NNModel(AbstractModel):
         if (
             self.discrete_state and self.model_kind == "dynamics"
         ) or self.model_kind == "termination":
-            self.nn = CategoricalNN(
-                in_dim=in_dim,
-                out_dim=out_dim,
-                layers=layers,
-                biased_head=biased_head,
-                non_linearity=non_linearity,
+            self.nn = torch.nn.ModuleList(
+                [
+                    CategoricalNN(
+                        in_dim=in_dim,
+                        out_dim=out_dim,
+                        layers=layers,
+                        biased_head=biased_head,
+                        non_linearity=non_linearity,
+                    )
+                ]
+            )
+        elif per_coordinate:
+            self.nn = torch.nn.ModuleList(
+                [
+                    HeteroGaussianNN(
+                        in_dim=in_dim,
+                        out_dim=(1,),
+                        layers=layers,
+                        biased_head=biased_head,
+                        non_linearity=non_linearity,
+                        squashed_output=False,
+                        initial_scale=initial_scale,
+                    )
+                    for _ in range(out_dim[0])
+                ]
             )
         else:
-            self.nn = HeteroGaussianNN(
-                in_dim=in_dim,
-                out_dim=out_dim,
-                layers=layers,
-                biased_head=biased_head,
-                non_linearity=non_linearity,
-                squashed_output=False,
-                initial_scale=initial_scale,
+            self.nn = torch.nn.ModuleList(
+                [
+                    HeteroGaussianNN(
+                        in_dim=in_dim,
+                        out_dim=out_dim,
+                        layers=layers,
+                        biased_head=biased_head,
+                        non_linearity=non_linearity,
+                        squashed_output=False,
+                        initial_scale=initial_scale,
+                    )
+                ]
             )
 
         self.deterministic = deterministic
@@ -70,25 +91,12 @@ class NNModel(AbstractModel):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractModel.default()."""
-        if environment.num_states > 0:
-            width = 20 * environment.num_states
-        else:
-            width = 20 * environment.dim_state[0]
-        depth = 2
         return super().default(
-            environment,
-            layers=kwargs.pop("layers", [width] * depth),
-            biased_head=kwargs.pop("biased_head", True),
-            non_linearity=kwargs.pop("non_linearity", "Swish"),
-            initial_scale=kwargs.pop("initial_scale", 0.5),
-            input_transform=kwargs.pop("input_transform", None),
-            deterministic=kwargs.pop("deterministic", False),
-            *args,
-            **kwargs,
+            environment, layers=kwargs.pop("layers", [1024, 1024]), *args, **kwargs
         )
 
-    def forward(self, state, action, next_state=None):
-        """Get Next-State distribution."""
+    def state_actions_to_input_data(self, state, action):
+        """Process state-action pairs."""
         if self.discrete_state:
             state = one_hot_encode(state.long(), num_classes=self.num_states)
         if self.discrete_action:
@@ -98,11 +106,27 @@ class NNModel(AbstractModel):
             state = self.input_transform(state)
 
         state_action = torch.cat((state, action), dim=-1)
-        next_state = self.nn(state_action)
+        return state_action
+
+    def stack_predictions(self, mean_std_dim):
+        """Stack Predictions."""
+        if len(mean_std_dim) == 1:
+            return mean_std_dim[0]
+
+        mean = torch.stack(tuple(mean_std[0][..., 0] for mean_std in mean_std_dim), -1)
+        stddev = torch.diag_embed(
+            torch.stack(tuple(mean_std[1][..., 0, 0] for mean_std in mean_std_dim), -1)
+        )
 
         if self.deterministic:
-            return next_state[0], torch.zeros_like(next_state[1])
-        return next_state
+            return mean, torch.zeros_like(stddev)
+        return mean, stddev
+
+    def forward(self, state, action, next_state=None):
+        """Get Next-State distribution."""
+        state_action = self.state_actions_to_input_data(state, action)
+        mean_std_dim = [nn(state_action) for nn in self.nn]
+        return self.stack_predictions(mean_std_dim)
 
     @property
     def name(self):

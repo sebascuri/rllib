@@ -11,7 +11,7 @@ from .nn_model import NNModel
 
 class EnsembleModel(NNModel):
     num_heads: int
-    nn: Ensemble
+    nn: torch.nn.ModuleList[Ensemble]
     def __init__(
         self, num_heads: int, prediction_strategy: str = ..., *args: Any, **kwargs: Any
     ) -> None: ...

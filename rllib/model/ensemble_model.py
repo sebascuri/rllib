@@ -5,7 +5,6 @@ import torch
 import torch.jit
 
 from rllib.util.neural_networks import Ensemble
-from rllib.util.neural_networks.utilities import one_hot_encode
 
 from .nn_model import NNModel
 
@@ -19,11 +18,17 @@ class EnsembleModel(NNModel):
         super().__init__(*args, **kwargs)
         self.num_heads = num_heads
         # if deterministic
-        self.nn = Ensemble(
-            num_heads=num_heads,
-            prediction_strategy=prediction_strategy,
-            deterministic=self.deterministic,
-            **self.nn.kwargs,
+
+        self.nn = torch.nn.ModuleList(
+            [
+                Ensemble(
+                    num_heads=num_heads,
+                    prediction_strategy=prediction_strategy,
+                    deterministic=self.deterministic,
+                    **model.kwargs,
+                )
+                for model in self.nn
+            ]
         )
 
     @classmethod
@@ -36,19 +41,6 @@ class EnsembleModel(NNModel):
             *args,
             **kwargs,
         )
-
-    def forward(self, state, action, next_state=None):
-        """Compute next state distribution."""
-        if self.discrete_state:
-            state = one_hot_encode(state.long(), num_classes=self.num_states)
-        if self.discrete_action:
-            action = one_hot_encode(action.long(), num_classes=self.num_actions)
-
-        if self.input_transform is not None:
-            state = self.input_transform(state)
-
-        state_action = torch.cat((state, action), dim=-1)
-        return self.nn(state_action)
 
     def sample_posterior(self) -> None:
         """Set an ensemble head."""
@@ -71,32 +63,35 @@ class EnsembleModel(NNModel):
     @torch.jit.export
     def set_head(self, head_ptr: int):
         """Set ensemble head."""
-        self.nn.set_head(head_ptr)
+        for nn in self.nn:
+            nn.set_head(head_ptr)
 
     @torch.jit.export
     def get_head(self) -> int:
         """Get ensemble head."""
-        return self.nn.get_head()
+        return self.nn[0].get_head()
 
     @torch.jit.export
     def set_head_idx(self, head_ptr):
         """Set ensemble head for particles."""
-        self.nn.set_head_idx(head_ptr)
+        for nn in self.nn:
+            nn.set_head_idx(head_ptr)
 
     @torch.jit.export
     def get_head_idx(self):
         """Get ensemble head index."""
-        return self.nn.get_head_idx()
+        return self.nn[0].get_head_idx()
 
     @torch.jit.export
     def set_prediction_strategy(self, prediction: str):
         """Set ensemble prediction strategy."""
-        self.nn.set_prediction_strategy(prediction)
+        for nn in self.nn:
+            nn.set_prediction_strategy(prediction)
 
     @torch.jit.export
     def get_prediction_strategy(self) -> str:
         """Get ensemble head."""
-        return self.nn.get_prediction_strategy()
+        return self.nn[0].get_prediction_strategy()
 
     @property
     def name(self):

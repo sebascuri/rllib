@@ -10,7 +10,7 @@ from .abstract_model import AbstractModel
 
 class NNModel(AbstractModel):
     input_transform: torch.nn.Module
-    nn: torch.nn.Module
+    nn: torch.nn.ModuleList
     deterministic: bool
     def __init__(
         self,
@@ -20,7 +20,10 @@ class NNModel(AbstractModel):
         non_linearity: str = ...,
         input_transform: Optional[torch.nn.Module] = ...,
         deterministic: bool = ...,
+        per_coordinate: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
+    def state_actions_to_input_data(self, state: Tensor, action: Tensor) -> Tensor: ...
+    def stack_predictions(self, prediction_list: List[Tensor]) -> Tensor: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
