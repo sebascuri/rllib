@@ -3,13 +3,12 @@
 import argparse
 import importlib
 
-import numpy as np
-import torch
 from gym.envs import registry
 
 from rllib.agent import AGENTS
 from rllib.environment import GymEnvironment
 from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.utilities import set_random_seed
 
 try:
     from dm_control.suite import BENCHMARKING
@@ -25,8 +24,7 @@ dm_envs = [f"{env}/{task}" for (env, task) in BENCHMARKING]
 def main(args):
     """Run main function with arguments."""
     # %% Set Random seeds.
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    set_random_seed(args.seed)
 
     # %% Initialize environment.
     if args.environment in gym_envs:
