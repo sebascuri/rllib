@@ -23,7 +23,7 @@ class BPTTAgent(ModelBasedAgent):
         critic,
         dynamical_model,
         reward_model,
-        criterion,
+        criterion=loss.MSELoss,
         termination_model=None,
         num_steps=1,
         num_samples=15,
@@ -64,8 +64,6 @@ class BPTTAgent(ModelBasedAgent):
         policy = NNPolicy.default(environment)
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
-        criterion = loss.MSELoss
-
         model = EnsembleModel.default(environment, deterministic=True)
         dynamical_model = TransformedModel(model, [MeanFunction(DeltaState())])
 
@@ -90,13 +88,11 @@ class BPTTAgent(ModelBasedAgent):
             critic=critic,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            criterion=criterion,
-            termination_model=None,
             learn_from_real=True,
             model_learning_algorithm=model_learning_algorithm,
             optimizer=optimizer,
             num_iter=5 if test else 50,
-            batch_size=64,
+            batch_size=100,
             thompson_sampling=False,
             comment=environment.name,
             gamma=0.99,
