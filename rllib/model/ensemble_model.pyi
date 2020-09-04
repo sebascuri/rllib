@@ -1,17 +1,16 @@
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.jit
 from torch import Tensor
 
 from rllib.dataset.datatypes import TupleDistribution
-from rllib.util.neural_networks import Ensemble
 
 from .nn_model import NNModel
 
 class EnsembleModel(NNModel):
     num_heads: int
-    nn: torch.nn.ModuleList[Ensemble]
+    nn: torch.nn.ModuleList
     def __init__(
         self, num_heads: int, prediction_strategy: str = ..., *args: Any, **kwargs: Any
     ) -> None: ...

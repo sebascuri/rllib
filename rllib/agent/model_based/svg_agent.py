@@ -1,4 +1,5 @@
 """Model-Based SVG Agent."""
+import torch.nn.modules.loss as loss
 
 from rllib.algorithms.svg import SVG
 from rllib.dataset.experience_replay import ExperienceReplay
@@ -15,7 +16,7 @@ class SVGAgent(BPTTAgent):
         critic,
         dynamical_model,
         reward_model,
-        criterion,
+        criterion=loss.MSELoss,
         termination_model=None,
         num_steps=1,
         num_samples=15,

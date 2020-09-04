@@ -1,4 +1,5 @@
 from typing import List
+
 from rllib.util.utilities import MovingAverage
 
 class EarlyStopping(object):
