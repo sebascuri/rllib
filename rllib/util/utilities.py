@@ -20,6 +20,12 @@ def get_backend(array):
         raise TypeError
 
 
+def set_random_seed(seed):
+    """Set global random seed."""
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+
 def integrate(function, distribution, out_dim=None, num_samples=15):
     r"""Integrate a function over a distribution.
 
