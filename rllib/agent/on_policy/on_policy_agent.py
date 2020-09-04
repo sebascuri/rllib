@@ -17,14 +17,7 @@ class OnPolicyAgent(AbstractAgent):
         """See `AbstractAgent.observe'."""
         super().observe(observation)
         self.trajectories[-1].append(observation)
-        if (
-            self._training  # training mode.
-            and self.total_steps >= self.exploration_steps  # enough steps.
-            and self.total_episodes >= self.exploration_episodes  # enough episodes.
-            and len(self.trajectories[-1]) >= self.batch_size  # enough data.
-            and self.train_frequency > 0  # train after train_frequency transitions.
-            and self.total_steps % self.train_frequency == 0  # correct steps.
-        ):
+        if self.train_at_observe and len(self.trajectories[-1]) >= self.batch_size:
             self.learn()
             self.trajectories[-1] = []
 
@@ -35,13 +28,7 @@ class OnPolicyAgent(AbstractAgent):
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        if (
-            self._training  # training mode.
-            and self.total_steps >= self.exploration_steps  # enough steps.
-            and self.total_episodes >= self.exploration_episodes  # enough episodes.
-            and self.num_rollouts > 0  # train after num_rollouts transitions.
-            and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
-        ):
+        if self.train_at_end_episode:
             self.learn()
             self.trajectories = list()
         if self.num_rollouts == 0:

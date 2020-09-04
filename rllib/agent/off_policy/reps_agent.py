@@ -60,7 +60,7 @@ class REPSAgent(OffPolicyAgent):
 
     def end_episode(self):
         """See `AbstractAgent.end_episode'."""
-        if (self.total_episodes + 1) % self.num_rollouts == 0 and self._training:
+        if self.train_at_end_episode:
             self.learn()
 
         super().end_episode()

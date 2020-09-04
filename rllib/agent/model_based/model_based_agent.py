@@ -43,26 +43,44 @@ class ModelBasedAgent(AbstractAgent):
 
     def __init__(
         self,
+        num_rollouts=1,
+        train_frequency=0,
+        exploration_steps=0,
+        exploration_episodes=1,
+        model_learn_train_frequency=0,
+        model_learn_num_rollouts=1,
+        model_learn_exploration_steps=None,
+        model_learn_exploration_episodes=None,
         policy_learning_algorithm=None,
         model_learning_algorithm=None,
         planning_algorithm=None,
         simulation_algorithm=None,
         num_simulation_iterations=0,
-        num_rollouts=1,
         learn_from_real=False,
         thompson_sampling=False,
         memory=None,
-        training_verbose=True,
         *args,
         **kwargs,
     ):
         self.algorithm = policy_learning_algorithm
         super().__init__(
             num_rollouts=num_rollouts,
-            training_verbose=training_verbose,
+            train_frequency=train_frequency,
+            exploration_steps=exploration_steps,
+            exploration_episodes=exploration_episodes,
             *args,
             **kwargs,
         )
+        self.model_learn_train_frequency = model_learn_train_frequency
+        self.model_learn_num_rollouts = model_learn_num_rollouts
+
+        if model_learn_exploration_steps is None:
+            model_learn_exploration_steps = self.exploration_steps
+        if model_learn_exploration_episodes is None:
+            model_learn_exploration_episodes = self.exploration_episodes
+        self.model_learn_exploration_steps = model_learn_exploration_steps
+        self.model_learn_exploration_episodes = model_learn_exploration_episodes
+
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
         self.simulation_algorithm = simulation_algorithm
@@ -104,7 +122,7 @@ class ModelBasedAgent(AbstractAgent):
             self.dynamical_model.set_prediction_strategy("posterior")
 
         if memory is None:
-            memory = ExperienceReplay(max_len=50000, num_steps=0)
+            memory = ExperienceReplay(max_len=100000, num_steps=0)
         self.memory = memory
         self.initial_states_dataset = StateExperienceReplay(
             max_len=1000, dim_state=self.dynamical_model.dim_state
@@ -141,6 +159,10 @@ class ModelBasedAgent(AbstractAgent):
         """
         self.memory.append(observation)
         super().observe(observation)
+        if self.learn_model_at_observe:
+            self.learn_model()
+        if self.train_at_observe and len(self.memory) > self.batch_size:
+            self.learn_policy()
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
@@ -158,37 +180,25 @@ class ModelBasedAgent(AbstractAgent):
         Then train the agent.
         """
         self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
-        if self._training:  # training mode.
-            self.learn()
+        if self.learn_model_at_end_episode:
+            self.learn_model()
+        if self.train_at_end_episode:
+            self.learn_policy()
         super().end_episode()
 
-    def learn(self):
-        """Train the agent.
-
-        This consists of two steps:
-            Step 1: Train Model with new data.
-                Calls self.learn_model().
-            Step 2: Optimize policy with simulated data.
-                Calls self.simulate_and_learn_policy().
-        """
-        # Step 1: Train Model with new data.
+    def learn_model(self):
+        """Learn a model from the data."""
         self.model_learning_algorithm.learn(self.last_trajectory, self.logger)
 
-        if (
-            self.total_steps >= self.exploration_steps  # enough steps.
-            and self.total_episodes >= self.exploration_episodes  # enough episodes.
-            and self.num_rollouts > 0  # train once the episode ends.
-            and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
-        ):
-            # Step 2: Optimize policy with simulated data.
-            if self.learn_from_sim:
-                print(colorize("Optimizing Policy with Simulated Data", "yellow"))
-                self.simulate_and_learn_policy()
+    def learn_policy(self):
+        """Learn a policy with the model."""
+        if self.learn_from_sim:
+            print(colorize("Optimizing Policy with Simulated Data", "yellow"))
+            self.simulate_and_learn_policy()
 
-            # Step 3: Optimize policy with real data.
-            if self.learn_from_real:
-                print(colorize("Optimizing Policy with Real Data", "yellow"))
-                self.learn_policy_from_real_data()
+        if self.learn_from_real:
+            print(colorize("Optimizing Policy with Real Data", "yellow"))
+            self.learn_policy_from_real_data()
 
     def simulate_and_learn_policy(self):
         """Simulate the model and optimize the policy with the learned data.
@@ -274,3 +284,25 @@ class ModelBasedAgent(AbstractAgent):
         )
         for key, value in self.simulation_algorithm.reward_model.info.items():
             self.logger.update(**{f"sim_{key}": value})
+
+    @property
+    def learn_model_at_observe(self):
+        """Raise flag if learn the model after observe."""
+        return (
+            self._training
+            and self.total_steps >= self.model_learn_exploration_steps
+            and self.total_episodes >= self.model_learn_exploration_episodes
+            and self.model_learn_train_frequency > 0
+            and self.total_steps % self.model_learn_train_frequency == 0
+        )
+
+    @property
+    def learn_model_at_end_episode(self):
+        """Raise flag to learn the model at end of an episode."""
+        return (
+            self._training
+            and self.total_steps >= self.model_learn_exploration_steps
+            and self.total_episodes >= self.model_learn_exploration_episodes
+            and self.model_learn_num_rollouts > 0
+            and (self.total_episodes + 1) % self.model_learn_num_rollouts == 0
+        )

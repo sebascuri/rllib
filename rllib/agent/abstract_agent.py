@@ -179,13 +179,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def early_stop(self, losses, **kwargs):
         """Early stop the training algorithm."""
         self.early_stopping_algorithm.update(
-            # losses.combined_loss.mean().abs().item(),
-            losses.policy_loss.mean().abs().item(),
-            losses.critic_loss.mean().abs().item(),
-            losses.regularization_loss.mean().abs().item(),
-            losses.dual_loss.mean().abs().item(),
+            # losses.policy_loss.mean().item(),
+            losses.critic_loss.mean().item(),
+            # losses.regularization_loss.mean().item(),
+            losses.dual_loss.mean().item(),
         )
-        return self.early_stopping_algorithm.stop
+        return False
 
     def train(self, val=True):
         """Set the agent in training mode."""
@@ -237,6 +236,28 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def train_steps(self):
         """Return number of steps of interaction with environment."""
         return self.counters["train_steps"]
+
+    @property
+    def train_at_observe(self):
+        """Raise flag if train after an observation."""
+        return (
+            self._training  # training mode.
+            and self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
+            and self.train_frequency > 0  # train after a transition.
+            and self.total_steps % self.train_frequency == 0  # correct steps.
+        )
+
+    @property
+    def train_at_end_episode(self):
+        """Raise flag to train at end of episode."""
+        return (
+            self._training  # training mode.
+            and self.total_steps >= self.exploration_steps  # enough steps.
+            and self.total_episodes >= self.exploration_episodes  # enough episodes.
+            and self.num_rollouts > 0  # train once the episode ends.
+            and (self.total_episodes + 1) % self.num_rollouts == 0  # correct steps.
+        )
 
     @property
     def name(self):

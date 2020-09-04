@@ -8,7 +8,6 @@ from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
 from rllib.dataset.datatypes import Trajectory
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
-from rllib.policy import AbstractPolicy
 from rllib.policy.derived_policy import DerivedPolicy
 
 class ModelBasedAgent(AbstractAgent):
@@ -26,15 +25,23 @@ class ModelBasedAgent(AbstractAgent):
     thompson_sampling: bool
     memory: ExperienceReplay
     initial_states_dataset: StateExperienceReplay
+    model_learn_train_frequency: int
+    model_learn_num_rollouts: int
+    model_learn_exploration_episodes: int
+    model_learn_exploration_steps: int
     def __init__(
         self,
-        policy: AbstractPolicy,
+        train_frequency: int = ...,
+        num_rollouts: int = ...,
+        model_learn_train_frequency: int = ...,
+        model_learn_num_rollouts: int = ...,
+        model_learn_exploration_episodes: Optional[int] = ...,
+        model_learn_exploration_steps: Optional[int] = ...,
         policy_learning_algorithm: Optional[AbstractAlgorithm] = ...,
         model_learning_algorithm: Optional[ModelLearningAlgorithm] = ...,
         planning_algorithm: Optional[MPCSolver] = ...,
         simulation_algorithm: Optional[SimulationAlgorithm] = ...,
         memory: Optional[ExperienceReplay] = ...,
-        num_rollouts: int = ...,
         num_simulation_iterations: int = ...,
         learn_from_real: bool = ...,
         thompson_sampling: bool = ...,
@@ -42,8 +49,13 @@ class ModelBasedAgent(AbstractAgent):
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
-    def learn(self) -> None: ...
+    def learn_model(self) -> None: ...
+    def learn_policy(self) -> None: ...
     def log_trajectory(self, trajectory: Trajectory) -> None: ...
     def simulate_and_learn_policy(self): ...
     def learn_policy_from_sim_data(self): ...
     def learn_policy_from_real_data(self): ...
+    @property
+    def learn_model_at_observe(self) -> bool: ...
+    @property
+    def learn_model_at_end_episode(self) -> bool: ...

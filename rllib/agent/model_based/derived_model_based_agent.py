@@ -4,8 +4,6 @@ from itertools import chain
 from torch.optim import Adam
 
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.algorithms.mpc.policy_shooting import PolicyShooting
-from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
 from rllib.dataset.transforms import DeltaState, MeanFunction
 from rllib.model import EnsembleModel, NNModel, TransformedModel
 
@@ -64,8 +62,6 @@ class DerivedMBAgent(ModelBasedAgent):
     @classmethod
     def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
         """See `AbstractAgent.default'."""
-        test = kwargs.get("test", False)
-
         from importlib import import_module
 
         base_agent = getattr(
@@ -90,44 +86,17 @@ class DerivedMBAgent(ModelBasedAgent):
             num_epochs=4 if kwargs.get("test", False) else 50,
             model_optimizer=model_optimizer,
         )
-        simulation_algorithm = SimulationAlgorithm(
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            initial_distribution=None,
-            max_memory=100000,
-            num_subsample=2,
-            num_steps=4 if test else 200,
-            num_initial_state_samples=8,
-            num_initial_distribution_samples=0,
-            num_memory_samples=4,
-            refresh_interval=2,
-        )
-        planning_algorithm = PolicyShooting(
-            policy=base_agent.policy,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            horizon=1,
-            gamma=base_agent.gamma,
-            num_iter=1,
-            num_samples=8,
-            num_elites=1,
-            action_scale=base_agent.policy.action_scale,
-            num_cpu=1,
-        )
 
         return cls(
             base_algorithm=base_algorithm,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             model_learning_algorithm=model_learning_algorithm,
-            simulation_algorithm=simulation_algorithm,
-            planning_algorithm=planning_algorithm,
             optimizer=base_agent.optimizer,
-            num_iter=5 if test else kwargs.pop("num_iter", base_agent.num_iter),
+            num_iter=base_agent.num_iter,
             batch_size=base_agent.batch_size,
-            num_samples=kwargs.pop("num_samples", 15),
-            num_steps=kwargs.pop("num_steps", 1),
-            num_simulation_iterations=0,
+            train_frequency=base_agent.train_frequency,
+            num_rollouts=base_agent.num_rollouts,
             thompson_sampling=False,
             learn_from_real=True,
             gamma=base_algorithm.gamma,
