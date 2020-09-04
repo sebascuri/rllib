@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
@@ -104,17 +105,28 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
     return loss.item()
 
 
-def train_model(model, train_loader, optimizer, max_iter=100, epsilon=0.1, logger=None):
+def train_model(
+    model,
+    train_set,
+    optimizer,
+    batch_size=100,
+    max_iter=100,
+    epsilon=0.1,
+    logger=None,
+    validation_set=None,
+):
     """Train a Predictive Model.
 
     Parameters
     ----------
     model: AbstractModel.
         Predictive model to optimize.
-    train_loader: DataLoader.
-        Loader of data.
+    train_set: ExperienceReplay.
+        Dataset to train with.
     optimizer: Optimizer.
         Optimizer to call for the model.
+    batch_size: int (default=1000).
+        Batch size to iterate through.
     max_iter: int (default = 100).
         Maximum number of epochs.
     epsilon: float.
@@ -122,12 +134,17 @@ def train_model(model, train_loader, optimizer, max_iter=100, epsilon=0.1, logge
         optimization process stops.
     logger: Logger, optional.
         Progress logger.
+    validation_set: ExperienceReplay, optional.
+        Dataset to validate with.
     """
     if logger is None:
         logger = Logger(f"{model.name}_training")
+    if validation_set is None:
+        validation_set = train_set
 
     model.train()
-    early_stopping = EarlyStopping(epsilon)
+    early_stopping = EarlyStopping(epsilon, non_decrease_iter=5)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     for _ in tqdm(range(max_iter)):
         for observation, idx, mask in train_loader:
@@ -142,12 +159,13 @@ def train_model(model, train_loader, optimizer, max_iter=100, epsilon=0.1, logge
                 raise TypeError("Only Implemented for Ensembles and GP Models.")
 
             with torch.no_grad():
+                observation, _, _ = validation_set.sample_batch(batch_size)
                 mse = _model_mse(model, observation)
 
             logger.update(**{f"{model.model_kind} model-loss": loss})
-            logger.update(**{f"{model.model_kind} model-mse": mse})
+            logger.update(**{f"{model.model_kind} model-validation-mse": mse})
 
-            early_stopping.update(loss, mse)
+            early_stopping.update(mse)
 
         if early_stopping.stop:
             return

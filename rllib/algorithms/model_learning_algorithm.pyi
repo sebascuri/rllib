@@ -10,9 +10,12 @@ from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class ModelLearningAlgorithm(AbstractMBAlgorithm):
     model_optimizer: Optional[Optimizer]
-    num_epochs: int = ...
-    batch_size: int = ...
-    dataset: BootstrapExperienceReplay
+    num_epochs: int
+    batch_size: int
+    epsilon: float
+    validation_ratio: float
+    train_set: BootstrapExperienceReplay
+    validation_set: BootstrapExperienceReplay
     def __init__(
         self,
         model_optimizer: Optional[Optimizer] = ...,
@@ -20,6 +23,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         batch_size: int = ...,
         bootstrap: bool = ...,
         max_memory: int = ...,
+        validation_ratio: float = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

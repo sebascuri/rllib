@@ -4,10 +4,10 @@ from typing import Callable, List, Optional, Union
 import torch.nn as nn
 from torch import Tensor
 from torch.optim.optimizer import Optimizer
-from torch.utils.data import DataLoader
 
 from rllib.agent import AbstractAgent
 from rllib.dataset.datatypes import Observation
+from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import AbstractEnvironment
 from rllib.model.abstract_model import AbstractModel
 from rllib.model.ensemble_model import EnsembleModel
@@ -40,11 +40,13 @@ def train_exact_gp_type2mll_step(
 ) -> float: ...
 def train_model(
     model: AbstractModel,
-    train_loader: DataLoader,
+    train_set: ExperienceReplay,
     optimizer: Optimizer,
+    batch_size: int = ...,
     max_iter: int = ...,
     epsilon: float = ...,
     logger: Optional[Logger] = ...,
+    validation_set: Optional[ExperienceReplay] = ...,
 ) -> None: ...
 def train_agent(
     agent: AbstractAgent,
