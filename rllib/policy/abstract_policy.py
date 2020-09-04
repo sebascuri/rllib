@@ -61,7 +61,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self.dim_action = dim_action
         self.num_states = num_states if num_states is not None else -1
         self.num_actions = num_actions if num_actions is not None else -1
-        self.deterministic = deterministic
+        self._deterministic = deterministic
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
         self.tau = tau
@@ -82,6 +82,16 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
 
         self.action_scale = action_scale
         self.goal = goal
+
+    @property
+    def deterministic(self):
+        """Get flag if the policy is deterministic or not."""
+        return self._deterministic
+
+    @deterministic.setter
+    def deterministic(self, value):
+        """Set flag if the policy is deterministic or not."""
+        self._deterministic = value
 
     def random(self, batch_size=None, normalized=False):
         """Return a uniform random distribution of the output space.

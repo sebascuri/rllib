@@ -14,7 +14,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     dim_action: Tuple
     num_states: int
     num_actions: int
-    deterministic: bool
+    _deterministic: bool
     tau: float
     discrete_state: bool
     discrete_action: bool
@@ -35,6 +35,10 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
+    @property
+    def deterministic(self) -> bool: ...
+    @deterministic.setter
+    def deterministic(self, value: bool) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     def random(
         self, batch_size: Optional[Tuple[int]] = ..., normalized: bool = ...

@@ -18,10 +18,14 @@ class NNPolicy(AbstractPolicy):
 
     Parameters
     ----------
-    layers: list, optional
+    layers: list, optional (default=No layers).
         width of layers, each layer is connected with a non-linearity.
-    biased_head: bool, optional
+    biased_head: bool, optional (default=True).
         flag that indicates if head of NN has a bias term or not.
+    non_linearity: string, optional (default=Tanh).
+        Neural Network non-linearity.
+    input_transform: nn.Module, optional (default=None).
+        Module with which to transform inputs.
     """
 
     def __init__(
