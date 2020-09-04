@@ -13,16 +13,14 @@ class NNValueFunction(AbstractValueFunction):
 
     Parameters
     ----------
-    dim_state: Tuple
-        dimension of state.
-    num_states: int, optional
-        number of discrete states (None if state is continuous).
-    layers: list, optional
+    layers: list, optional (default=No layers).
         width of layers, each layer is connected with a non-linearity.
-    tau: float, optional
-        when a new parameter is set, tau low-passes the new parameter with the old one.
-    biased_head: bool, optional
+    biased_head: bool, optional (default=True).
         flag that indicates if head of NN has a bias term or not.
+    non_linearity: string, optional (default=Tanh).
+        Neural Network non-linearity.
+    input_transform: nn.Module, optional (default=None).
+        Module with which to transform inputs.
 
     """
 
