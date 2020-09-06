@@ -107,7 +107,7 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         initial_states = initial_states.unsqueeze(0)
         return initial_states
 
-    def simulate(self, state, policy):
+    def simulate(self, state, policy, logger=None):
         """Simulate from initial_states."""
         if self.refresh_interval > 0 and (self._idx + 1) % self.refresh_interval == 0:
             self.dataset.reset()
@@ -119,8 +119,25 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         ), gpytorch.settings.fast_pred_var():
             trajectory = super().simulate(state, policy)
 
-        sim_trajectory = stack_list_of_tuples(trajectory)
-        states = sim_trajectory.state.reshape(-1, *self.dynamical_model.dim_state)
+        stacked_trajectory = stack_list_of_tuples(trajectory)
+        states = stacked_trajectory.state.reshape(-1, *self.dynamical_model.dim_state)
         self.dataset.append(states[:: self.num_subsample])
-
+        self._log_trajectory(stacked_trajectory, logger)
         return trajectory
+
+    def _log_trajectory(self, stacked_trajectory, logger):
+        """Log the simulated trajectory."""
+        if logger is None:
+            return
+        scale = torch.diagonal(
+            stacked_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
+        )
+        logger.update(
+            sim_entropy=stacked_trajectory.entropy.mean().item(),
+            sim_return=stacked_trajectory.reward.sum(0).mean().item(),
+            sim_scale=scale.square().sum(-1).sum(0).mean().sqrt().item(),
+            sim_max_state=stacked_trajectory.state.abs().max().item(),
+            sim_max_action=stacked_trajectory.action.abs().max().item(),
+        )
+        for key, value in self.reward_model.info.items():
+            logger.update(**{f"sim_{key}": value})

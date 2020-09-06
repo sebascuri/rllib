@@ -4,6 +4,7 @@ from torch.optim.optimizer import Optimizer
 
 from rllib.dataset.datatypes import Trajectory
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
+from rllib.model import AbstractModel
 from rllib.util.logger import Logger
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -14,6 +15,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
     batch_size: int
     epsilon: float
     validation_ratio: float
+    calibrate: bool
     train_set: BootstrapExperienceReplay
     validation_set: BootstrapExperienceReplay
     def __init__(
@@ -24,10 +26,14 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         bootstrap: bool = ...,
         max_memory: int = ...,
         validation_ratio: float = ...,
+        epsilon: float = ...,
+        calibrate: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
-    def update_model_posterior(
-        self, last_trajectory: Trajectory, logger: Logger
+    def _update_model_posterior(self, last_trajectory: Trajectory) -> None: ...
+    def add_last_trajectory(self, last_trajectory: Trajectory) -> None: ...
+    def _learn(
+        self, model: AbstractModel, logger: Logger, calibrate: bool = ...
     ) -> None: ...
-    def learn(self, last_trajectory: Trajectory, logger: Logger) -> None: ...
+    def learn(self, logger: Logger) -> None: ...

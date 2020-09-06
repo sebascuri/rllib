@@ -77,7 +77,7 @@ class ModelBasedAgent(AbstractAgent):
         if model_learn_exploration_steps is None:
             model_learn_exploration_steps = self.exploration_steps
         if model_learn_exploration_episodes is None:
-            model_learn_exploration_episodes = self.exploration_episodes
+            model_learn_exploration_episodes = self.exploration_episodes + 1
         self.model_learn_exploration_steps = model_learn_exploration_steps
         self.model_learn_exploration_episodes = model_learn_exploration_episodes
 
@@ -160,9 +160,9 @@ class ModelBasedAgent(AbstractAgent):
         self.memory.append(observation)
         super().observe(observation)
         if self.learn_model_at_observe:
-            self.learn_model()
+            self.model_learning_algorithm.learn(self.logger)
         if self.train_at_observe and len(self.memory) > self.batch_size:
-            self.learn_policy()
+            self.learn()
 
     def start_episode(self):
         """See `AbstractAgent.start_episode'."""
@@ -180,17 +180,15 @@ class ModelBasedAgent(AbstractAgent):
         Then train the agent.
         """
         self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
+        if self.model_learning_algorithm is not None:
+            self.model_learning_algorithm.add_last_trajectory(self.last_trajectory)
         if self.learn_model_at_end_episode:
-            self.learn_model()
+            self.model_learning_algorithm.learn(self.logger)
         if self.train_at_end_episode:
-            self.learn_policy()
+            self.learn()
         super().end_episode()
 
-    def learn_model(self):
-        """Learn a model from the data."""
-        self.model_learning_algorithm.learn(self.last_trajectory, self.logger)
-
-    def learn_policy(self):
+    def learn(self):
         """Learn a policy with the model."""
         if self.learn_from_sim:
             print(colorize("Optimizing Policy with Simulated Data", "yellow"))
@@ -205,9 +203,7 @@ class ModelBasedAgent(AbstractAgent):
 
         This consists of two steps:
             Step 1: Simulate trajectories with the model.
-                Calls self.simulate_model().
             Step 2: Implement a model free RL method that optimizes the policy.
-                Calls self.learn_policy(). To be implemented by a Base Class.
         """
         self.dynamical_model.eval()
         # self.simulation_algorithm.dataset.reset()
@@ -223,10 +219,9 @@ class ModelBasedAgent(AbstractAgent):
                         self.initial_states_dataset, self.memory
                     )
 
-                    trajectory = self.simulation_algorithm.simulate(
-                        initial_states, self.policy
+                    self.simulation_algorithm.simulate(
+                        initial_states, self.policy, logger=self.logger
                     )
-                    self.log_trajectory(trajectory)
 
                 # Step 2: Optimize policy with simulated data.
                 self.learn_policy_from_sim_data()

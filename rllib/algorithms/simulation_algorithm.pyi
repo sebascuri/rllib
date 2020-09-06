@@ -3,9 +3,10 @@ from typing import Any, Optional
 from torch import Tensor
 from torch.distributions import Distribution
 
-from rllib.dataset.datatypes import Trajectory
+from rllib.dataset.datatypes import Observation, Trajectory
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.policy import AbstractPolicy
+from rllib.util.logger import Logger
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -35,4 +36,9 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         initial_states_dataset: StateExperienceReplay,
         real_dataset: ExperienceReplay,
     ) -> Tensor: ...
-    def simulate(self, state: Tensor, policy: AbstractPolicy) -> Trajectory: ...
+    def simulate(
+        self, state: Tensor, policy: AbstractPolicy, logger: Optional[Logger] = ...
+    ) -> Trajectory: ...
+    def _log_trajectory(
+        self, stacked_trajectory: Observation, logger: Optional[Logger] = ...
+    ) -> None: ...

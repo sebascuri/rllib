@@ -6,7 +6,7 @@ from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model import ExactGPModel
 from rllib.util.gaussian_processes import SparseGP
-from rllib.util.training import train_model
+from rllib.util.training import calibrate_model, evaluate_model, train_model
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -46,10 +46,11 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         model_optimizer=None,
         num_epochs=1,
         batch_size=100,
-        epsilon=0.1,
         bootstrap=True,
         max_memory=10000,
-        validation_ratio=0.2,
+        epsilon=0.1,
+        validation_ratio=0.1,
+        calibrate=True,
         *args,
         **kwargs,
     ):
@@ -61,6 +62,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         else:
             num_heads = 1
 
+        # Note: The transformations are shared by both data sets.
         self.train_set = BootstrapExperienceReplay(
             max_len=max_memory,
             transformations=self.dynamical_model.forward_transformations,
@@ -78,11 +80,12 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         self.batch_size = batch_size
         self.epsilon = epsilon
         self.validation_ratio = validation_ratio
+        self.calibrate = calibrate
 
         if self.num_epochs > 0:
             assert self.model_optimizer is not None
 
-    def update_model_posterior(self, last_trajectory, logger):
+    def _update_model_posterior(self, last_trajectory):
         """Update model posterior of GP-models with new data."""
         if isinstance(self.dynamical_model.base_model, ExactGPModel):
             observation = stack_list_of_tuples(last_trajectory)  # Parallelize.
@@ -96,31 +99,21 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             print(colorize("Summarize GP Model", "yellow"))
             self.dynamical_model.base_model.summarize_gp()
 
-            for i, gp in enumerate(self.dynamical_model.base_model.gp):
-                logger.update(**{f"gp{i} num inputs": len(gp.train_targets)})
-
-                if isinstance(gp, SparseGP):
-                    logger.update(**{f"gp{i} num inducing inputs": gp.xu.shape[0]})
-
-        print(colorize("Training Model", "yellow"))
-
-    def learn(self, last_trajectory, logger):
-        """Learn using stochastic gradient descent on marginal maximum likelihood.
-
-        The last trajectory is added to the data set.
-
-        Step 1: Train dynamical model.
-
-        """
-        self.update_model_posterior(last_trajectory, logger)
+    def add_last_trajectory(self, last_trajectory):
+        """Add last trajectory to learning algorithm."""
+        self._update_model_posterior(last_trajectory)
         for observation in last_trajectory:
             if np.random.rand() < self.validation_ratio:
                 self.validation_set.append(observation)
             else:
                 self.train_set.append(observation)
 
+    def _learn(self, model, logger, calibrate=False):
+        """Learn a model."""
+        print(colorize("Training Model", "yellow"))
+
         train_model(
-            self.dynamical_model.base_model,
+            model=model,
             train_set=self.train_set,
             validation_set=self.validation_set,
             batch_size=self.batch_size,
@@ -129,29 +122,27 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             logger=logger,
             epsilon=self.epsilon,
         )
+        if calibrate:
+            calibrate_model(model, self.validation_set, self.num_epochs, logger=logger)
+
+    def learn(self, logger):
+        """Learn using stochastic gradient descent on marginal maximum likelihood."""
+        self._learn(self.dynamical_model.base_model, logger, calibrate=self.calibrate)
+        evaluate_model(self.dynamical_model, self.validation_set.all_raw, logger)
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
-            train_model(
-                self.reward_model.base_model,
-                train_set=self.train_set,
-                validation_set=self.validation_set,
-                batch_size=self.batch_size,
-                max_iter=self.num_epochs,
-                optimizer=self.model_optimizer,
-                logger=logger,
-                epsilon=self.epsilon,
-            )
+            self._learn(self.reward_model.base_model, logger, calibrate=self.calibrate)
+            evaluate_model(self.reward_model, self.validation_set.all_raw, logger)
 
         if self.termination_model is not None and any(
             p.requires_grad for p in self.termination_model.parameters()
         ):
-            train_model(
-                self.termination_model,
-                train_set=self.train_set,
-                validation_set=self.validation_set,
-                batch_size=self.batch_size,
-                max_iter=self.num_epochs,
-                optimizer=self.model_optimizer,
-                logger=logger,
-                epsilon=self.epsilon,
-            )
+            self._learn(self.termination_model, logger, calibrate=False)
+            evaluate_model(self.termination_model, self.validation_set.all_raw, logger)
+
+        if isinstance(self.dynamical_model.base_model, ExactGPModel):
+            for i, gp in enumerate(self.dynamical_model.base_model.gp):
+                logger.update(**{f"gp{i} num inputs": len(gp.train_targets)})
+
+                if isinstance(gp, SparseGP):
+                    logger.update(**{f"gp{i} num inducing inputs": gp.xu.shape[0]})
