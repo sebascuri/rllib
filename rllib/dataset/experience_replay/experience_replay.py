@@ -264,11 +264,17 @@ class ExperienceReplay(data.Dataset):
     @property
     def all_data(self):
         """Get all the data."""
-        all_obs = stack_list_of_tuples(self.memory[self.valid_indexes])
+        all_obs = self.all_raw
 
         for transformation in self.transformations:
             all_obs = transformation(all_obs)
         return all_obs
+
+    @property
+    def all_raw(self):
+        """Get all the un-transformed data."""
+        all_raw = stack_list_of_tuples(self.memory[self.valid_indexes])
+        return all_raw
 
     @property
     def ptr(self):
