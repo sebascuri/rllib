@@ -110,7 +110,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
 
     def _learn(self, model, logger, calibrate=False):
         """Learn a model."""
-        print(colorize("Training Model", "yellow"))
+        print(colorize(f"Training {model.model_kind} model", "yellow"))
 
         train_model(
             model=model,
@@ -122,7 +122,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             logger=logger,
             epsilon=self.epsilon,
         )
-        if calibrate:
+        if calibrate and not model.deterministic:
             calibrate_model(model, self.validation_set, self.num_epochs, logger=logger)
 
     def learn(self, logger):
