@@ -3,7 +3,7 @@ from typing import Any, Union
 
 from torch import Tensor
 
-from rllib.util import ParameterDecay
+from rllib.util.parameter_decay import ParameterDecay
 from rllib.value_function import AbstractQFunction
 
 from ..abstract_policy import AbstractPolicy

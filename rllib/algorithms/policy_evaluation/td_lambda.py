@@ -16,6 +16,6 @@ class TDLambdaTarget(AbstractTDTarget):
 
     """
 
-    def correction(self, pi_log_prob, mu_log_prob):
+    def correction(self, pi_log_p, behavior_log_p):
         """Return the correction at time step t."""
         return self._lambda

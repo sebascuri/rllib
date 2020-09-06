@@ -1,7 +1,11 @@
 """Expected Actor-Critic Algorithm."""
 
 from rllib.dataset.datatypes import Loss
-from rllib.util import get_entropy_and_logp, integrate, tensor_to_distribution
+from rllib.util.utilities import (
+    get_entropy_and_log_p,
+    integrate,
+    tensor_to_distribution,
+)
 
 from .ac import ActorCritic
 
@@ -31,7 +35,7 @@ class ExpectedActorCritic(ActorCritic):
         state, action, reward, next_state, done, *r = observation
 
         pi = tensor_to_distribution(self.policy(state))
-        entropy, log_p = get_entropy_and_logp(pi, action)
+        entropy, _ = get_entropy_and_log_p(pi, action, self.policy.action_scale)
 
         def int_q(a, s=state, pi_=pi):
             """Integrate the critic w.r.t. the action."""

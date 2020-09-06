@@ -5,7 +5,7 @@ import torch
 
 from rllib.agent import A2CAgent
 from rllib.environment import GymEnvironment
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 ENVIRONMENT = "NChain-v0"
 MAX_STEPS = 200

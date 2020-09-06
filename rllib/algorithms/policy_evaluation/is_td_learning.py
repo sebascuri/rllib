@@ -22,6 +22,6 @@ class ImportanceSamplingOffPolicyTarget(AbstractTDTarget):
 
     """
 
-    def correction(self, pi_log_prob, mu_log_prob):
+    def correction(self, pi_log_p, behavior_log_p):
         """Return the correction at time step t."""
-        return torch.exp(pi_log_prob - mu_log_prob)
+        return torch.exp(pi_log_p - behavior_log_p)

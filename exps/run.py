@@ -7,7 +7,7 @@ from gym.envs import registry
 
 from rllib.agent import AGENTS
 from rllib.environment import GymEnvironment
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 from rllib.util.utilities import set_random_seed
 
 try:

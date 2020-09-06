@@ -4,8 +4,12 @@ from abc import ABCMeta, abstractmethod
 import torch
 import torch.nn as nn
 
-from rllib.util import integrate, tensor_to_distribution
 from rllib.util.neural_networks.utilities import reverse_cumsum
+from rllib.util.utilities import (
+    get_entropy_and_log_p,
+    integrate,
+    tensor_to_distribution,
+)
 from rllib.value_function.abstract_value_function import AbstractValueFunction
 
 
@@ -78,14 +82,14 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         self.num_samples = num_samples
 
     @abstractmethod
-    def correction(self, pi_log_prob, mu_log_prob):
+    def correction(self, pi_log_p, behavior_log_p):
         """Return the correction at time step t."""
         raise NotImplementedError
 
     def forward(self, observation):
         """Compute the loss and the td-error."""
         state, action, reward, next_state, done, *_ = observation
-        log_prob_action = observation.log_prob_action
+        behavior_log_p = observation.log_prob_action
         n_steps = state.shape[1]
 
         # done_t indicates if the current state is done.
@@ -94,10 +98,10 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         # Compute off-policy correction factor.
         if self.policy is not None:
             pi = tensor_to_distribution(self.policy(state))
-            eval_log_prob = pi.log_prob(action)
+            _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
         else:
-            eval_log_prob = log_prob_action
-        correction = self.correction(eval_log_prob, log_prob_action)
+            log_p = behavior_log_p
+        correction = self.correction(log_p, behavior_log_p)
 
         # Compute Q(state, action) and \E_\pi[Q(next_state, \pi(next_state)].
         if isinstance(self.critic, AbstractValueFunction):

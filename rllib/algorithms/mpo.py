@@ -11,7 +11,11 @@ from rllib.util.neural_networks import (
     repeat_along_dimension,
 )
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import separated_kl, tensor_to_distribution
+from rllib.util.utilities import (
+    get_entropy_and_log_p,
+    separated_kl,
+    tensor_to_distribution,
+)
 
 from .abstract_algorithm import AbstractAlgorithm
 from .policy_evaluation.retrace import ReTrace
@@ -76,7 +80,7 @@ class MPOWorker(nn.Module):
             self.epsilon_mean = torch.tensor(epsilon_mean)
             self.epsilon_var = torch.tensor(epsilon_var)
 
-    def forward(self, q_values, action_log_probs, kl_mean, kl_var):
+    def forward(self, q_values, action_log_p, kl_mean, kl_var):
         """Return primal and dual loss terms from MMPO.
 
         Parameters
@@ -84,7 +88,7 @@ class MPOWorker(nn.Module):
         q_values : torch.Tensor
             A [n_action_samples, state_batch, 1] tensor of values for
             state-action pairs.
-        action_log_probs : torch.Tensor
+        action_log_p : torch.Tensor
             A [n_action_samples, state_batch, 1] tensor of log probabilities
             of the corresponding actions under the policy.
         kl_mean : torch.Tensor
@@ -100,7 +104,7 @@ class MPOWorker(nn.Module):
         # Compute the dual loss for the constraint KL(q || old_pi) < eps.
         q_values = q_values.detach() * (torch.tensor(1.0) / self.eta())
         normalizer = torch.logsumexp(q_values, dim=0)
-        num_actions = torch.tensor(1.0 * action_log_probs.shape[0])
+        num_actions = torch.tensor(1.0 * action_log_p.shape[0])
 
         dual_loss = self.eta() * (
             self.epsilon + torch.mean(normalizer) - torch.log(num_actions)
@@ -113,8 +117,8 @@ class MPOWorker(nn.Module):
         # Maximize the log_likelihood of the weighted log probabilities, subject to the
         # KL divergence between the old_pi and the new_pi to be smaller than epsilon.
 
-        weighted_log_prob = torch.sum(weights * action_log_probs, dim=0)
-        log_likelihood = torch.mean(weighted_log_prob)
+        weighted_log_p = torch.sum(weights * action_log_p, dim=0)
+        log_likelihood = torch.mean(weighted_log_p)
 
         kl_loss = self.eta_mean().detach() * kl_mean + self.eta_var().detach() * kl_var
 
@@ -264,11 +268,11 @@ class MPO(AbstractAlgorithm):
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
         sampled_action = pi_dist.sample()
-        action_log_probs = pi_dist.log_prob(sampled_action)
+        entropy, log_p = get_entropy_and_log_p(pi_dist, sampled_action, 1)
 
         mpo_loss = self.mpo_loss(
             q_values=self.critic_target(state, sampled_action),
-            action_log_probs=action_log_probs,
+            action_log_p=log_p,
             kl_mean=kl_mean,
             kl_var=kl_var,
         )

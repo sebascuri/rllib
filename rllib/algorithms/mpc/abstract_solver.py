@@ -8,10 +8,10 @@ import torch.nn as nn
 
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model.transformed_model import TransformedModel
-from rllib.util import discount_sum
 from rllib.util.multiprocessing import modify_parallel
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_actions
+from rllib.util.value_estimation import discount_sum
 
 
 class MPCSolver(nn.Module, metaclass=ABCMeta):

@@ -194,9 +194,9 @@ def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False):
     return weight
 
 
-def get_entropy_and_logp(pi, action):
+def get_entropy_and_log_p(pi, action, action_scale):
     """Get the entropy and the log-probability of a policy and an action."""
-    log_p = pi.log_prob(action)
+    log_p = pi.log_prob(action / action_scale)
 
     try:
         entropy = pi.entropy().mean()

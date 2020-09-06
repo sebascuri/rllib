@@ -7,8 +7,8 @@ import torch
 from rllib.agent.bandit import GPUCBAgent
 from rllib.environment.bandit_environment import BanditEnvironment
 from rllib.reward.gp_reward import GPBanditReward
-from rllib.util import rollout_agent
 from rllib.util.gaussian_processes import ExactGP, RandomFeatureGP, SparseGP
+from rllib.util.rollout import rollout_agent
 
 
 def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> None:

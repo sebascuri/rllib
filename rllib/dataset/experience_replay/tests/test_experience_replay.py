@@ -36,7 +36,9 @@ def create_er_from_episodes(discrete, max_len, num_steps, num_episodes, episode_
         state = env.reset()
         for _ in range(episode_length):
             action = env.action_space.sample()  # sample a random action.
-            observation, state, done, info = step_env(env, state, action)
+            observation, state, done, info = step_env(
+                env, state, action, action_scale=1.0
+            )
             memory.append(observation)
         memory.end_episode()
 

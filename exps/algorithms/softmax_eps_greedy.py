@@ -8,8 +8,8 @@ from rllib.agent import DDQNAgent
 from rllib.dataset import ExperienceReplay
 from rllib.environment import GymEnvironment
 from rllib.policy import EpsGreedy, SoftMax
-from rllib.util import rollout_agent
 from rllib.util.parameter_decay import ExponentialDecay
+from rllib.util.rollout import rollout_agent
 from rllib.value_function import NNQFunction
 
 ENVIRONMENT = "CartPole-v0"

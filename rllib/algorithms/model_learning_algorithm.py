@@ -6,7 +6,11 @@ from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model import ExactGPModel
 from rllib.util.gaussian_processes import SparseGP
-from rllib.util.training import calibrate_model, evaluate_model, train_model
+from rllib.util.training.model_learning import (
+    calibrate_model,
+    evaluate_model,
+    train_model,
+)
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 

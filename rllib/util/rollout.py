@@ -5,11 +5,11 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
-from rllib.util.training import Evaluate
-from rllib.util.utilities import get_entropy_and_logp, tensor_to_distribution
+from rllib.util.training.utilities import Evaluate
+from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
 
-def step_env(environment, state, action, pi=None, render=False):
+def step_env(environment, state, action, action_scale, pi=None, render=False):
     """Perform a single step in an environment."""
     try:
         next_state, reward, done, info = environment.step(action)
@@ -21,7 +21,7 @@ def step_env(environment, state, action, pi=None, render=False):
 
     if pi is not None:
         with torch.no_grad():
-            entropy, log_prob_action = get_entropy_and_logp(pi, action)
+            entropy, log_prob_action = get_entropy_and_log_p(pi, action, action_scale)
     else:
         entropy, log_prob_action = 0.0, 1.0
 
@@ -41,7 +41,14 @@ def step_env(environment, state, action, pi=None, render=False):
 
 
 def step_model(
-    dynamical_model, reward_model, termination_model, state, action, done, pi=None
+    dynamical_model,
+    reward_model,
+    termination_model,
+    state,
+    action,
+    done,
+    action_scale,
+    pi=None,
 ):
     """Perform a single step in an dynamical model."""
     # Sample a next state
@@ -78,7 +85,7 @@ def step_model(
         )
 
     if pi is not None:
-        entropy, log_prob_action = get_entropy_and_logp(pi, action)
+        entropy, log_prob_action = get_entropy_and_log_p(pi, action, action_scale)
     else:
         entropy, log_prob_action = 0.0, 1.0
 
@@ -112,7 +119,9 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
         i = 0
         while not done:
             action = agent.act(state)
-            observation, state, done, info = step_env(environment, state, action)
+            observation, state, done, info = step_env(
+                environment, state, action, agent.policy.action_scale
+            )
             recorder.capture_frame()
 
             if max_steps <= environment.time:
@@ -134,6 +143,7 @@ def rollout_episode(environment, agent, max_steps, render):
             environment=environment,
             state=state,
             action=action,
+            action_scale=agent.policy.action_scale,
             pi=agent.pi,
             render=render,
         )
@@ -241,6 +251,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                     environment=environment,
                     state=state,
                     action=action,
+                    action_scale=policy.action_scale,
                     pi=pi,
                     render=render,
                 )
@@ -307,6 +318,7 @@ def rollout_model(
             termination_model=termination_model,
             state=state,
             action=action,
+            action_scale=policy.action_scale,
             done=done,
             pi=pi,
         )
@@ -364,6 +376,7 @@ def rollout_actions(
             termination_model=termination_model,
             state=state,
             action=action,
+            action_scale=1.0,
             done=done,
         )
         trajectory.append(observation)

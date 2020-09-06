@@ -6,7 +6,7 @@ import torch.optim
 from rllib.agent import SACAgent
 from rllib.dataset import ExperienceReplay, PrioritizedExperienceReplay  # noqa: F401
 from rllib.environment import GymEnvironment
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 ENVIRONMENT = ["MountainCarContinuous-v0", "Pendulum-v0"][1]
 NUM_EPISODES = 40

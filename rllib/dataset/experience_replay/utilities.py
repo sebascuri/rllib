@@ -19,7 +19,7 @@ def init_er_from_er(target_er, source_er):
     """
     for i in range(len(source_er)):
         observation, idx, weight = source_er[i]
-        target_er.append(observation)
+        target_er.append(Observation(**observation))
 
 
 def init_er_from_environment(target_er, environment):

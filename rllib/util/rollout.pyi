@@ -13,6 +13,7 @@ def step_env(
     environment: AbstractEnvironment,
     state: Union[int, ndarray],
     action: Union[int, ndarray],
+    action_scale: Action,
     pi: Optional[Distribution] = ...,
     render: bool = ...,
 ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
@@ -23,6 +24,7 @@ def step_model(
     state: Tensor,
     action: Tensor,
     done: Tensor,
+    action_scale: Action,
     pi: Optional[Distribution] = ...,
 ) -> Tuple[Observation, Tensor, Tensor]: ...
 def record(

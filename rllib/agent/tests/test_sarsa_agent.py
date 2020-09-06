@@ -5,7 +5,7 @@ from rllib.agent import ExpectedSARSAAgent, SARSAAgent
 from rllib.environment import GymEnvironment
 from rllib.environment.mdps import EasyGridWorld
 from rllib.policy import EpsGreedy, MellowMax, SoftMax
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction, TabularQFunction
 
 NUM_EPISODES = 10

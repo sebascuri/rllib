@@ -7,7 +7,7 @@ from rllib.agent import MPOAgent
 from rllib.environment import GymEnvironment
 from rllib.policy import FelixPolicy, NNPolicy  # noqa: F401
 from rllib.util.neural_networks import zero_bias  # noqa: F401
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 ENVIRONMENT = ["Taxi-v3", "CartPole-v0", "Pendulum-v0"][2]
 

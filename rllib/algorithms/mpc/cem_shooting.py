@@ -3,7 +3,7 @@
 import torch
 from torch.distributions import MultivariateNormal
 
-from rllib.util import sample_mean_and_cov
+from rllib.util.utilities import sample_mean_and_cov
 
 from .abstract_solver import MPCSolver
 

@@ -4,7 +4,7 @@ import torch
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import (
-    get_entropy_and_logp,
+    get_entropy_and_log_p,
     off_policy_weight,
     tensor_to_distribution,
 )
@@ -34,7 +34,7 @@ class SVG(BPTT):
 
         # Compute entropy and log_probability.
         pi = tensor_to_distribution((action_mean, action_chol))
-        entropy, log_p = get_entropy_and_logp(pi=pi, action=observation.action)
+        entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
 
         # Compute off-policy weight.
         with torch.no_grad():

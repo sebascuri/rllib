@@ -2,7 +2,7 @@
 
 import torch.nn as nn
 
-from rllib.util import discount_cumsum
+from rllib.util.value_estimation import discount_cumsum
 
 
 class GAE(nn.Module):

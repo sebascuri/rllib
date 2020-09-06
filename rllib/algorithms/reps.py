@@ -5,7 +5,7 @@ import torch.distributions
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm
 
@@ -71,11 +71,12 @@ class REPS(AbstractAlgorithm):
 
     def _policy_weighted_nll(self, state, action, weights):
         """Return weighted policy negative log-likelihood."""
-        action_log_probs = tensor_to_distribution(self.policy(state)).log_prob(action)
-        weighted_log_prob = weights.detach() * action_log_probs
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        _, action_log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
+        weighted_log_p = weights.detach() * action_log_p
 
         # Clamping is crucial for stability so that it does not converge to a delta.
-        log_likelihood = torch.mean(weighted_log_prob.clamp_max(1e-3))
+        log_likelihood = torch.mean(weighted_log_p.clamp_max(1e-3))
         return -log_likelihood
 
     def get_value_target(self, observation):

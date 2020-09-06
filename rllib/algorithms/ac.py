@@ -2,15 +2,15 @@
 import torch
 
 from rllib.dataset.datatypes import Loss
-from rllib.util import (
-    discount_sum,
-    get_entropy_and_logp,
+from rllib.util.neural_networks import deep_copy_module, freeze_parameters
+from rllib.util.utilities import (
+    get_entropy_and_log_p,
     integrate,
     off_policy_weight,
     separated_kl,
     tensor_to_distribution,
 )
-from rllib.util.neural_networks import deep_copy_module, freeze_parameters
+from rllib.util.value_estimation import discount_sum
 from rllib.value_function import AbstractQFunction, AbstractValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm
@@ -100,8 +100,8 @@ class ActorCritic(AbstractAlgorithm):
         pi = tensor_to_distribution(self.policy(state))
         pi_old = tensor_to_distribution(self.old_policy(state))
 
-        entropy, log_p = get_entropy_and_logp(pi=pi, action=action)
-        log_p_old = pi_old.log_prob(action)
+        entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
+        _, log_p_old = get_entropy_and_log_p(pi_old, action, self.policy.action_scale)
 
         if isinstance(pi, torch.distributions.MultivariateNormal):
             kl_mean, kl_var = separated_kl(p=pi_old, q=pi)
@@ -131,8 +131,10 @@ class ActorCritic(AbstractAlgorithm):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
         pi = tensor_to_distribution(self.policy(state))
+        _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
+
         weight = off_policy_weight(
-            pi.log_prob(action), trajectory.log_prob_action, full_trajectory=False
+            log_p, trajectory.log_prob_action, full_trajectory=False
         )
         return weight * self.critic(state, action)
 
@@ -160,8 +162,6 @@ class ActorCritic(AbstractAlgorithm):
     def actor_loss(self, observation):
         """Get Actor loss."""
         state, action, reward, next_state, done, *r = observation
-        if self.policy.discrete_action:
-            action = action.long()
 
         log_p, log_p_old, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
             state, action

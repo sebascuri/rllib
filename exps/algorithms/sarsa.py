@@ -5,7 +5,7 @@ import torch.optim
 
 from rllib.agent import ExpectedSARSAAgent, SARSAAgent  # noqa: F401
 from rllib.environment import GymEnvironment
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 ENVIRONMENT = "NChain-v0"
 ALGORITHM = "SARSA"

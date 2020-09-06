@@ -4,7 +4,7 @@ import torch
 
 from rllib.agent import REPSAgent
 from rllib.environment import GymEnvironment
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 ETA = 1.0
 NUM_EPISODES = 100

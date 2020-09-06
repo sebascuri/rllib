@@ -1,7 +1,7 @@
 """Implementation of a System from a Learned Model."""
 import torch
 
-from rllib.util import tensor_to_distribution
+from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_system import AbstractSystem
 

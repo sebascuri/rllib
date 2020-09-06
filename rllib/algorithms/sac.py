@@ -5,7 +5,7 @@ import torch
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import DisableGradient
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
 from .abstract_algorithm import AbstractAlgorithm
@@ -49,16 +49,16 @@ class SoftActorCritic(AbstractAlgorithm):
             if isinstance(self.critic_target, NNEnsembleQFunction):
                 q_val = q_val[..., 0]
 
-        log_prob = pi.log_prob(action)
-        eta_loss = self.eta() * (-log_prob - self.target_entropy).detach()
-        actor_loss = self.eta().detach() * log_prob - q_val
+        entropy, log_p = get_entropy_and_log_p(pi, action, action_scale=1)
+        eta_loss = self.eta() * (-log_p - self.target_entropy).detach()
+        actor_loss = self.eta().detach() * log_p - q_val
 
         if self.criterion.reduction == "mean":
             eta_loss, actor_loss = eta_loss.mean(), actor_loss.mean()
         elif self.criterion.reduction == "sum":
             eta_loss, actor_loss = eta_loss.sum(), actor_loss.sum()
 
-        self._info.update(eta=self.eta().detach().item())
+        self._info.update(eta=self.eta().detach().item(), entropy=entropy.item())
 
         return Loss(policy_loss=actor_loss, regularization_loss=eta_loss)
 
@@ -73,7 +73,7 @@ class SoftActorCritic(AbstractAlgorithm):
         if isinstance(self.critic_target, NNEnsembleQFunction):
             next_q = torch.min(next_q, dim=-1)[0]
 
-        log_prob = pi.log_prob(next_action)
-        next_v = next_q - self.eta().detach() * log_prob
+        _, log_p = get_entropy_and_log_p(pi, next_action, action_scale=1)
+        next_v = next_q - self.eta().detach() * log_p
         next_v = next_v * (1.0 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v

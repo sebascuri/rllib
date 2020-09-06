@@ -11,7 +11,7 @@ from rllib.policy import EpsGreedy
 from rllib.util.neural_networks.utilities import init_head_bias  # noqa: F401
 from rllib.util.neural_networks.utilities import init_head_weight, zero_bias
 from rllib.util.parameter_decay import ExponentialDecay, LinearGrowth  # noqa: F401
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 from rllib.value_function import NNQFunction
 
 ENVIRONMENT = ["NChain-v0", "CartPole-v0"][1]
