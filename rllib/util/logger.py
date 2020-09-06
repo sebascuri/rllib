@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from datetime import datetime
 
 import numpy as np
@@ -147,3 +148,12 @@ class Logger(object):
         self.writer.add_hparams(
             hparam_dict=hparams, metric_dict=metrics, name="hparams", global_step=1
         )
+
+    def delete_directory(self):
+        """Delete writer directory.
+
+        Notes
+        -----
+        Use with caution. This will erase the directory, not the object.
+        """
+        shutil.rmtree(self.writer.logdir)
