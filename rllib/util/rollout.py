@@ -5,7 +5,7 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import get_entropy_and_logp, tensor_to_distribution
 
 
 def step_env(environment, state, action, action_scale=1, pi=None, render=False):
@@ -20,14 +20,9 @@ def step_env(environment, state, action, action_scale=1, pi=None, render=False):
 
     if pi is not None:
         with torch.no_grad():
-            try:
-                entropy = pi.entropy().squeeze()
-            except NotImplementedError:  # Approximate it by MC sampling.
-                entropy = -pi.log_prob(pi.sample((10,))).mean()
-            log_prob_action = pi.log_prob(action / action_scale).squeeze()
+            entropy, log_prob_action = get_entropy_and_logp(pi, action)
     else:
-        entropy = 0.0
-        log_prob_action = 1.0
+        entropy, log_prob_action = 0.0, 1.0
 
     observation = Observation(
         state=state,
@@ -89,14 +84,9 @@ def step_model(
         )
 
     if pi is not None:
-        try:
-            entropy = pi.entropy().squeeze()
-        except NotImplementedError:
-            entropy = -pi.log_prob(action)  # Approximate it by MC sampling.
-        log_prob_action = pi.log_prob(action).squeeze()
+        entropy, log_prob_action = get_entropy_and_logp(pi, action)
     else:
-        entropy = 0.0
-        log_prob_action = 1.0
+        entropy, log_prob_action = 0.0, 1.0
 
     observation = Observation(
         state=state,
