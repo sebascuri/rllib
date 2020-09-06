@@ -4,7 +4,7 @@ from itertools import chain
 from torch.optim import Adam
 
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.dataset.transforms import DeltaState, MeanFunction
+from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
 from rllib.model import EnsembleModel, NNModel, TransformedModel
 
 from .model_based_agent import ModelBasedAgent
@@ -60,24 +60,39 @@ class DerivedMBAgent(ModelBasedAgent):
         return f"{derived_name}+{base_name}Agent"
 
     @classmethod
-    def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
+    def default(
+        cls,
+        environment,
+        base_agent_name="SAC",
+        dynamical_model=None,
+        reward_model=None,
+        *args,
+        **kwargs,
+    ):
         """See `AbstractAgent.default'."""
         from importlib import import_module
 
         base_agent = getattr(
             import_module("rllib.agent"), f"{base_agent_name}Agent"
         ).default(environment, *args, **kwargs)
+        base_agent.logger.delete_directory()
         base_algorithm = base_agent.algorithm
+        if dynamical_model is None:
+            model = EnsembleModel.default(environment, deterministic=True)
+            dynamical_model = TransformedModel(
+                model, [StateNormalizer(), MeanFunction(DeltaState())]
+            )
 
-        model = EnsembleModel.default(environment, deterministic=True)
-        dynamical_model = TransformedModel(model, [MeanFunction(DeltaState())])
-
-        reward_model = kwargs.pop(
-            "rewards", NNModel.default(environment, model_kind="rewards")
-        )
+        if reward_model is None:
+            reward_model = TransformedModel(
+                NNModel.default(environment, model_kind="rewards", deterministic=False),
+                dynamical_model.forward_transformations,
+            )
 
         model_optimizer = Adam(
-            chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
+            chain(dynamical_model.parameters(), reward_model.parameters()),
+            lr=1e-3,
+            weight_decay=1e-4,
         )
 
         model_learning_algorithm = ModelLearningAlgorithm(
