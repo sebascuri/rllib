@@ -14,7 +14,9 @@ class LinearModel(AbstractModel):
         if not isinstance(b, torch.Tensor):
             b = torch.tensor(b, dtype=torch.get_default_dtype())
 
-        super().__init__(dim_state=a.shape[1], dim_action=b.shape[1])
+        super().__init__(
+            dim_state=a.shape[1], dim_action=b.shape[1], deterministic=noise is None
+        )
 
         self.a = a.t()
         self.b = b.t()

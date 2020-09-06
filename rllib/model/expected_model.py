@@ -7,6 +7,9 @@ from .transformed_model import TransformedModel
 class ExpectedModel(TransformedModel):
     """Expected Model returns a Delta at the expected next state."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(deterministic=True, *args, **kwargs)
+
     def forward(self, state, action, next_state=None):
         """Get Expected Next state."""
         prediction_tuple = self.predict(state, action)

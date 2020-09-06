@@ -11,12 +11,31 @@ from .utilities import PredictionStrategy
 
 
 class EnsembleModel(NNModel):
-    """Ensemble Model."""
+    """Ensemble Model.
+
+    Parameters
+    ----------
+    num_heads: int.
+        Number of heads of the ensemble.
+    prediction_strategy: str, optional (default=moment_matching).
+        String that indicates how to compute the predictions of the ensemble.
+    deterministic: bool, optional (default=False).
+        Bool that indicates if the ensemble members are probabilistic or deterministic.
+
+    Other Parameters
+    ----------------
+    See NNModel.
+    """
 
     def __init__(
-        self, num_heads, prediction_strategy="moment_matching", *args, **kwargs
+        self,
+        num_heads,
+        prediction_strategy="moment_matching",
+        deterministic=False,
+        *args,
+        **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(deterministic=False, *args, **kwargs)
         self.num_heads = num_heads
 
         self.nn = torch.nn.ModuleList(
@@ -24,13 +43,12 @@ class EnsembleModel(NNModel):
                 Ensemble(
                     num_heads=num_heads,
                     prediction_strategy=prediction_strategy,
-                    deterministic=self.deterministic,
+                    deterministic=deterministic,
                     **model.kwargs,
                 )
                 for model in self.nn
             ]
         )
-        self.deterministic = False
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

@@ -30,7 +30,6 @@ class NNModel(AbstractModel):
         non_linearity="Swish",
         initial_scale=0.5,
         input_transform=None,
-        deterministic=False,
         per_coordinate=False,
         *args,
         **kwargs,
@@ -85,8 +84,6 @@ class NNModel(AbstractModel):
                     )
                 ]
             )
-
-        self.deterministic = deterministic
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

@@ -61,6 +61,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         num_observations=-1,
         goal=None,
         model_kind="dynamics",
+        deterministic=False,
         *args,
         **kwargs,
     ):
@@ -82,6 +83,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         self.goal = goal
         self.temperature = torch.tensor(1.0)
         self._info = {}
+        self.deterministic = deterministic
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

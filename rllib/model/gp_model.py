@@ -35,7 +35,7 @@ class ExactGPModel(AbstractModel):
         dim_action = (action.shape[-1],)
         self.max_num_points = max_num_points
 
-        super().__init__(dim_state, dim_action)
+        super().__init__(dim_state, dim_action, deterministic=False)
         self.input_transform = input_transform
         train_x, train_y = self.state_actions_to_train_data(state, action, target)
 

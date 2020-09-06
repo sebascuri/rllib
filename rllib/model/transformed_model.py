@@ -18,6 +18,8 @@ class TransformedModel(AbstractModel):
             num_states=base_model.num_states,
             num_actions=base_model.num_actions,
             model_kind=base_model.model_kind,
+            *args,
+            **kwargs,
         )
         self.base_model = base_model
         self.forward_transformations = nn.ModuleList(transformations)

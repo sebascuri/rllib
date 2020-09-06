@@ -19,6 +19,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     goal: Optional[Tensor]
     temperature: Tensor
     allowed_model_kind: List[str]
+    deterministic: bool
     _info: Dict[str, Any]
     def __init__(
         self,
@@ -30,6 +31,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         num_observations: int = ...,
         model_kind: str = ...,
         goal: Optional[Tensor] = ...,
+        deterministic: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
