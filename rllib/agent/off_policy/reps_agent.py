@@ -53,18 +53,6 @@ class REPSAgent(OffPolicyAgent):
 
         self.policy = self.algorithm.policy
 
-    def observe(self, observation):
-        """See `AbstractAgent.observe'."""
-        super().observe(observation)
-        self.memory.append(observation)
-
-    def end_episode(self):
-        """See `AbstractAgent.end_episode'."""
-        if self.train_at_end_episode:
-            self.learn()
-
-        super().end_episode()
-
     def learn(self):
         """See `AbstractAgent.train_agent'."""
         old_policy = deep_copy_module(self.policy)

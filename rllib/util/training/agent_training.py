@@ -4,6 +4,8 @@ import numpy as np
 
 from rllib.util.rollout import rollout_agent
 
+from .utilities import Evaluate
+
 
 def train_agent(
     agent,
@@ -12,7 +14,8 @@ def train_agent(
     max_steps,
     plot_flag=True,
     print_frequency=0,
-    plot_frequency=1,
+    eval_frequency=0,
+    plot_frequency=0,
     save_milestones=None,
     render=False,
     plot_callbacks=None,
@@ -27,6 +30,7 @@ def train_agent(
     max_steps: int
     plot_flag: bool, optional.
     print_frequency: int, optional.
+    eval_frequency: int, optional.
     plot_frequency: int
     save_milestones: List[int], optional.
         List with episodes in which to save the agent.
@@ -42,6 +46,7 @@ def train_agent(
         max_steps=max_steps,
         print_frequency=print_frequency,
         plot_frequency=plot_frequency,
+        eval_frequency=eval_frequency,
         save_milestones=save_milestones,
         render=render,
         plot_callbacks=plot_callbacks,
@@ -68,13 +73,13 @@ def evaluate_agent(agent, environment, num_episodes, max_steps, render=True):
     max_steps: int
     render: bool
     """
-    agent.eval()
-    rollout_agent(
-        environment,
-        agent,
-        max_steps=max_steps,
-        num_episodes=num_episodes,
-        render=render,
-    )
-    returns = np.mean(agent.logger.get("environment_return")[-num_episodes:])
-    print(f"Test Cumulative Rewards: {returns}")
+    with Evaluate(agent):
+        rollout_agent(
+            environment,
+            agent,
+            max_steps=max_steps,
+            num_episodes=num_episodes,
+            render=render,
+        )
+        returns = np.mean(agent.logger.get("eval_environment_return")[-num_episodes:])
+        print(f"Test Cumulative Rewards: {returns}")

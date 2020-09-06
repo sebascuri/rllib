@@ -138,10 +138,10 @@ class AbstractAgent(object, metaclass=ABCMeta):
         observation: Observation
 
         """
-        self.policy.update()  # update policy parameters (eps-greedy.)
-
-        self.counters["total_steps"] += 1
-        self.episode_steps[-1] += 1
+        if self._training:
+            self.policy.update()  # update policy parameters (eps-greedy.)
+            self.counters["total_steps"] += 1
+            self.episode_steps[-1] += 1
         self.logger.update(rewards=observation.reward.item())
         self.logger.update(entropy=observation.entropy.item())
 
@@ -150,8 +150,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def start_episode(self):
         """Start a new episode."""
         self.policy.reset()
-        self.episode_steps.append(0)
         self.last_trajectory = []
+
+        self.episode_steps.append(0)
 
     def set_goal(self, goal):
         """Set goal."""
@@ -159,13 +160,19 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def end_episode(self):
         """End an episode."""
-        self.counters["total_episodes"] += 1
         rewards = self.logger.current["rewards"]
         environment_return = rewards[0] * rewards[1]
-        self.logger.end_episode(environment_return=environment_return)
-        self.logger.export_to_json()  # save at every episode?
+        if self._training:
+            self.counters["total_episodes"] += 1
+            self.logger.end_episode(train_environment_return=environment_return)
+        else:
+            self.logger.end_episode(eval_environment_return=environment_return)
+        self.logger.export_to_json()  # save at every episode.
 
-        if environment_return >= max(self.logger.get("environment_return")):
+        if environment_return >= max(
+            self.logger.get("train_environment_return")
+            + self.logger.get("eval_environment_return")
+        ):
             self.save(f"{self.name}_best.pkl")
 
     def end_interaction(self):

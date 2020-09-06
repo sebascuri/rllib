@@ -5,10 +5,11 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
+from rllib.util.training import Evaluate
 from rllib.util.utilities import get_entropy_and_logp, tensor_to_distribution
 
 
-def step_env(environment, state, action, action_scale=1, pi=None, render=False):
+def step_env(environment, state, action, pi=None, render=False):
     """Perform a single step in an environment."""
     try:
         next_state, reward, done, info = environment.step(action)
@@ -40,14 +41,7 @@ def step_env(environment, state, action, action_scale=1, pi=None, render=False):
 
 
 def step_model(
-    dynamical_model,
-    reward_model,
-    termination_model,
-    state,
-    action,
-    done,
-    action_scale=1,
-    pi=None,
+    dynamical_model, reward_model, termination_model, state, action, done, pi=None
 ):
     """Perform a single step in an dynamical model."""
     # Sample a next state
@@ -118,9 +112,7 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
         i = 0
         while not done:
             action = agent.act(state)
-            observation, state, done, info = step_env(
-                environment, state, action, agent.policy.action_scale
-            )
+            observation, state, done, info = step_env(environment, state, action)
             recorder.capture_frame()
 
             if max_steps <= environment.time:
@@ -128,6 +120,30 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
             print(i)
             i += 1
     recorder.close()
+
+
+def rollout_episode(environment, agent, max_steps, render):
+    """Rollout a full episode."""
+    state = environment.reset()
+    agent.set_goal(environment.goal)
+    agent.start_episode()
+    done = False
+    while not done:
+        action = agent.act(state)
+        obs, state, done, info = step_env(
+            environment=environment,
+            state=state,
+            action=action,
+            pi=agent.pi,
+            render=render,
+        )
+        agent.observe(obs)
+        # Log info.
+        agent.logger.update(**info)
+
+        if max_steps <= environment.time:
+            break
+    agent.end_episode()
 
 
 def rollout_agent(
@@ -138,6 +154,7 @@ def rollout_agent(
     render=False,
     print_frequency=0,
     plot_frequency=0,
+    eval_frequency=0,
     save_milestones=None,
     plot_callbacks=None,
 ):
@@ -159,6 +176,8 @@ def rollout_agent(
         Print agent stats every `print_frequency' episodes if > 0.
     plot_frequency: int, optional.
         Plot agent callbacks every `plot_frequency' episodes if > 0.
+    eval_frequency: int, optional.
+        Evaluate agent every 'eval_frequency' episodes if > 0.
     save_milestones: List[int], optional.
         List with episodes in which to save the agent.
     plot_callbacks: List[Callable[[AbstractAgent], None]], optional.
@@ -167,28 +186,7 @@ def rollout_agent(
     save_milestones = list() if save_milestones is None else save_milestones
     plot_callbacks = list() if plot_callbacks is None else plot_callbacks
     for episode in tqdm(range(num_episodes)):
-        state = environment.reset()
-        agent.set_goal(environment.goal)
-
-        agent.start_episode()
-        done = False
-        while not done:
-            action = agent.act(state)
-            obs, state, done, info = step_env(
-                environment=environment,
-                state=state,
-                action=action,
-                action_scale=agent.policy.action_scale,
-                pi=agent.pi,
-                render=render,
-            )
-            agent.observe(obs)
-            # Log info.
-            agent.logger.update(**info)
-
-            if max_steps <= environment.time:
-                break
-        agent.end_episode()
+        rollout_episode(environment, agent, max_steps, render)
 
         if print_frequency and episode % print_frequency == 0:
             print(agent)
@@ -198,6 +196,10 @@ def rollout_agent(
 
         if episode in save_milestones:
             agent.save(f"{agent.name}_{episode}.pkl")
+
+        if eval_frequency and episode % eval_frequency == 0:
+            with Evaluate(agent):
+                rollout_episode(environment, agent, max_steps, render)
     agent.end_interaction()
 
 
@@ -239,7 +241,6 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                     environment=environment,
                     state=state,
                     action=action,
-                    action_scale=policy.action_scale,
                     pi=pi,
                     render=render,
                 )
@@ -307,7 +308,6 @@ def rollout_model(
             state=state,
             action=action,
             done=done,
-            action_scale=policy.action_scale,
             pi=pi,
         )
         trajectory.append(observation)

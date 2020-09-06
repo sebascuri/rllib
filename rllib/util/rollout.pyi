@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 from numpy import ndarray
 from torch import Tensor
@@ -13,7 +13,6 @@ def step_env(
     environment: AbstractEnvironment,
     state: Union[int, ndarray],
     action: Union[int, ndarray],
-    action_scale: Action = ...,
     pi: Optional[Distribution] = ...,
     render: bool = ...,
 ) -> Tuple[Observation, Union[int, ndarray], bool, dict]: ...
@@ -24,7 +23,6 @@ def step_model(
     state: Tensor,
     action: Tensor,
     done: Tensor,
-    action_scale: Action = ...,
     pi: Optional[Distribution] = ...,
 ) -> Tuple[Observation, Tensor, Tensor]: ...
 def record(
@@ -34,6 +32,9 @@ def record(
     num_episodes: int = ...,
     max_steps: int = ...,
 ) -> None: ...
+def rollout_episode(
+    environment: AbstractEnvironment, agent: AbstractAgent, max_steps: int, render: bool
+) -> None: ...
 def rollout_agent(
     environment: AbstractEnvironment,
     agent: AbstractAgent,
@@ -42,6 +43,7 @@ def rollout_agent(
     render: bool = ...,
     print_frequency: int = ...,
     plot_frequency: int = ...,
+    eval_frequency: int = ...,
     save_milestones: Optional[List[int]] = ...,
     plot_callbacks: Optional[List[Callable[[AbstractAgent, int], None]]] = ...,
 ) -> None: ...

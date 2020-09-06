@@ -118,3 +118,18 @@ def model_loss(model, observation):
         idx = torch.arange(mean.shape[-1])
         loss += 2 * torch.log(scale_tril[..., idx, idx]).mean(dim=-1).squeeze()
     return loss
+
+
+class Evaluate(object):
+    """Context manager for evaluating an agent."""
+
+    def __init__(self, agent):
+        self.agent = agent
+
+    def __enter__(self):
+        """Set the agent into eval mode."""
+        self.agent.eval()
+
+    def __exit__(self, *args):
+        """Set the agent into training mode."""
+        self.agent.train()

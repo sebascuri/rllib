@@ -75,6 +75,8 @@ class DPGAgent(OffPolicyAgent):
     def eval(self, val=True):
         """Set the agent in evaluation mode."""
         super().eval(val)
+        # Set add_noise to false because tensor_to_distribution in the `act' method
+        # will perturb the mean of the action distribution.
         self.policy.dist_params.update(add_noise=False)
 
     @classmethod

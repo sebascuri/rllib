@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 import torch.nn as nn
 
@@ -13,6 +13,7 @@ def train_agent(
     plot_flag: bool = ...,
     print_frequency: int = ...,
     plot_frequency: int = ...,
+    eval_frequency: int = ...,
     save_milestones: Optional[List[int]] = ...,
     render: bool = ...,
     plot_callbacks: Optional[List[Callable[[AbstractAgent, int], None]]] = ...,

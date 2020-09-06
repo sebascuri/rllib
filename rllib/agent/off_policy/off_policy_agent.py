@@ -25,7 +25,8 @@ class OffPolicyAgent(AbstractAgent):
     def observe(self, observation):
         """See `AbstractAgent.observe'."""
         super().observe(observation)  # this update total steps.
-        self.memory.append(observation)
+        if self._training:
+            self.memory.append(observation)
         if self.train_at_observe and len(self.memory) >= self.batch_size:
             self.learn()
 
@@ -34,7 +35,7 @@ class OffPolicyAgent(AbstractAgent):
         if self.train_at_end_episode and len(self.memory) >= self.batch_size:
             self.learn()
 
-        if len(self.memory) > 0:  # Maybe learn() resets the memory.
+        if len(self.memory) > 0 and self._training:  # Maybe learn() resets the memory.
             self.memory.end_episode()
 
         super().end_episode()  # this update total episodes.

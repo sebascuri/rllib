@@ -14,7 +14,6 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.util.neural_networks.utilities import DisableGradient
@@ -157,8 +156,9 @@ class ModelBasedAgent(AbstractAgent):
         If the episode is new, add the initial state to the state transitions.
         Add the transition to the data set.
         """
-        self.memory.append(observation)
         super().observe(observation)
+        if self._training:
+            self.memory.append(observation)
         if self.learn_model_at_observe:
             self.model_learning_algorithm.learn(self.logger)
         if self.train_at_observe and len(self.memory) > self.batch_size:
@@ -180,7 +180,7 @@ class ModelBasedAgent(AbstractAgent):
         Then train the agent.
         """
         self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
-        if self.model_learning_algorithm is not None:
+        if self.model_learning_algorithm is not None and self._training:
             self.model_learning_algorithm.add_last_trajectory(self.last_trajectory)
         if self.learn_model_at_end_episode:
             self.model_learning_algorithm.learn(self.logger)
@@ -263,22 +263,6 @@ class ModelBasedAgent(AbstractAgent):
             return losses
 
         self._learn_steps(closure)
-
-    def log_trajectory(self, trajectory):
-        """Log simulated trajectory."""
-        if self.logger is None:
-            return
-        trajectory = stack_list_of_tuples(trajectory)
-        scale = torch.diagonal(trajectory.next_state_scale_tril, dim1=-1, dim2=-2)
-        self.logger.update(
-            sim_entropy=trajectory.entropy.mean().item(),
-            sim_return=trajectory.reward.sum(0).mean().item(),
-            sim_scale=scale.square().sum(-1).sum(0).mean().sqrt().item(),
-            sim_max_state=trajectory.state.abs().max().item(),
-            sim_max_action=trajectory.action.abs().max().item(),
-        )
-        for key, value in self.simulation_algorithm.reward_model.info.items():
-            self.logger.update(**{f"sim_{key}": value})
 
     @property
     def learn_model_at_observe(self):
