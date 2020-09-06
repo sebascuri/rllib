@@ -22,7 +22,8 @@ def get_target(model, observation):
 
 def gaussian_cdf(x, mean, chol_std):
     """Get cdf of multi-variate gaussian."""
-    z = (torch.inverse(chol_std) @ ((x - mean).unsqueeze(-1))).squeeze(-1)
+    scale = torch.diagonal(chol_std, dim1=-1, dim2=-2)
+    z = (x - mean) / (scale + 1e-6)
     return 0.5 * (1 + torch.erf(z / torch.sqrt(torch.tensor(2.0))))
 
 
@@ -81,7 +82,7 @@ def sharpness(model, observation):
     """
     mean, chol_std = model(observation.state, observation.action)
     scale = torch.diagonal(chol_std, dim1=-1, dim2=-2)
-    return scale.square().sum(-1).mean()
+    return scale.square().mean()
 
 
 def model_mse(model, observation):
@@ -92,7 +93,7 @@ def model_mse(model, observation):
     mean = model(state, action)[0]
     y = target
 
-    return ((mean - y) ** 2).sum(-1).mean()
+    return ((mean - y) ** 2).mean(-1).mean()
 
 
 def model_loss(model, observation):
@@ -107,7 +108,7 @@ def model_loss(model, observation):
     mean, scale_tril = prediction[0], prediction[1]
     y = target
     if torch.all(scale_tril == 0):  # Deterministic Model
-        loss = ((mean - y) ** 2).sum(-1)
+        loss = ((mean - y) ** 2).mean(-1)
     else:  # Probabilistic Model
         scale_tril_inv = torch.inverse(scale_tril)
         delta = scale_tril_inv @ ((mean - y).unsqueeze(-1))
@@ -115,5 +116,5 @@ def model_loss(model, observation):
 
         # log det \Sigma = 2 trace log (scale_tril)
         idx = torch.arange(mean.shape[-1])
-        loss += 2 * torch.log(scale_tril[..., idx, idx]).sum(dim=-1).squeeze()
+        loss += 2 * torch.log(scale_tril[..., idx, idx]).mean(dim=-1).squeeze()
     return loss
