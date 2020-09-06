@@ -51,6 +51,8 @@ def update_var(old_mean, old_var, old_count, new_mean, new_var, new_count):
     """
     delta = new_mean - old_mean
     total = old_count + new_count
+    if total <= 1:
+        return torch.ones_like(new_var)
 
     if old_count <= 1:
         old_m = torch.zeros_like(old_var)

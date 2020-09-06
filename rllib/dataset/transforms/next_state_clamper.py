@@ -26,12 +26,12 @@ class NextStateClamper(AbstractTransform):
         self.high = high
         self.constant_idx = [] if constant_idx is None else constant_idx
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         next_state = torch.max(torch.min(observation.next_state, self.high), self.low)
         next_state[..., self.constant_idx] = 0.0

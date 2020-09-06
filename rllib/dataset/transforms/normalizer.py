@@ -42,8 +42,12 @@ class Normalizer(nn.Module):
     @torch.jit.export
     def update(self, array):
         """See `AbstractTransform.update'."""
+        if array.ndim == 1:
+            array = array.unsqueeze(0)
         new_mean = torch.mean(array, 0)
         new_var = torch.var(array, 0)
+        if torch.any(torch.isnan(new_var)):
+            new_var = torch.zeros_like(new_var)
         new_count = torch.tensor(1.0) * torch.tensor(array.shape[0])
         self.variance = update_var(
             self.mean, self.variance, self.count, new_mean, new_var, new_count
@@ -70,7 +74,7 @@ class StateActionNormalizer(AbstractTransform):
         self._state_normalizer = StateNormalizer(preserve_origin)
         self._action_normalizer = ActionNormalizer(preserve_origin)
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return self._action_normalizer(self._state_normalizer(observation))
 
@@ -108,7 +112,7 @@ class StateNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
         return Observation(
@@ -167,7 +171,7 @@ class NextStateNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
         return Observation(
@@ -226,7 +230,7 @@ class ActionNormalizer(AbstractTransform):
         super().__init__()
         self._normalizer = Normalizer(preserve_origin)
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         return Observation(
             state=observation.state,
