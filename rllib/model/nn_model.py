@@ -27,7 +27,7 @@ class NNModel(AbstractModel):
         self,
         layers=None,
         biased_head=True,
-        non_linearity="Tanh",
+        non_linearity="Swish",
         initial_scale=0.5,
         input_transform=None,
         deterministic=False,
@@ -92,7 +92,7 @@ class NNModel(AbstractModel):
     def default(cls, environment, *args, **kwargs):
         """See AbstractModel.default()."""
         return super().default(
-            environment, layers=kwargs.pop("layers", [1024, 1024]), *args, **kwargs
+            environment, layers=kwargs.pop("layers", [200] * 5), *args, **kwargs
         )
 
     def state_actions_to_input_data(self, state, action):
@@ -109,18 +109,26 @@ class NNModel(AbstractModel):
         return state_action
 
     def stack_predictions(self, mean_std_dim):
-        """Stack Predictions."""
-        if len(mean_std_dim) == 1:
-            return mean_std_dim[0]
-
-        mean = torch.stack(tuple(mean_std[0][..., 0] for mean_std in mean_std_dim), -1)
-        stddev = torch.diag_embed(
-            torch.stack(tuple(mean_std[1][..., 0, 0] for mean_std in mean_std_dim), -1)
-        )
+        """Stack Predictions and scale by temperature."""
+        if self.discrete_state:
+            logits = torch.stack(
+                tuple(mean_std[0][..., 0] for mean_std in mean_std_dim), -1
+            )
+            return self.temperature * logits
+        if len(mean_std_dim) == 1:  # Only 1 NN.
+            mean, scale_tril = mean_std_dim[0]
+        else:  # There is a NN per dimension.
+            mean = torch.stack(
+                tuple(mean_std[0][..., 0] for mean_std in mean_std_dim), -1
+            )
+            stddev = torch.stack(
+                tuple(mean_std[1][..., 0, 0] for mean_std in mean_std_dim), -1
+            )
+            scale_tril = torch.diag_embed(stddev)
 
         if self.deterministic:
-            return mean, torch.zeros_like(stddev)
-        return mean, stddev
+            return mean, torch.zeros_like(scale_tril)
+        return mean, self.temperature * scale_tril
 
     def forward(self, state, action, next_state=None):
         """Get Next-State distribution."""

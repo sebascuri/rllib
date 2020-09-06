@@ -7,6 +7,7 @@ import torch.jit
 from rllib.util.neural_networks import Ensemble
 
 from .nn_model import NNModel
+from .utilities import PredictionStrategy
 
 
 class EnsembleModel(NNModel):
@@ -17,7 +18,6 @@ class EnsembleModel(NNModel):
     ):
         super().__init__(*args, **kwargs)
         self.num_heads = num_heads
-        # if deterministic
 
         self.nn = torch.nn.ModuleList(
             [
@@ -30,6 +30,7 @@ class EnsembleModel(NNModel):
                 for model in self.nn
             ]
         )
+        self.deterministic = False
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -48,15 +49,8 @@ class EnsembleModel(NNModel):
 
     def scale(self, state, action):
         """Get epistemic variance at a state-action pair."""
-        # Save state.
-        prediction_strategy = self.get_prediction_strategy()
-
-        # Compute epistemic uncertainty through moment matching.
-        self.set_prediction_strategy("moment_matching")
-        _, scale = self.forward(state, action[..., : self.dim_action[0]])
-
-        # Set state.
-        self.set_prediction_strategy(prediction_strategy)
+        with PredictionStrategy(self, prediction_strategy="moment_matching"):
+            _, scale = self.forward(state, action[..., : self.dim_action[0]])
 
         return scale
 

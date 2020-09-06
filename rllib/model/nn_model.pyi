@@ -1,5 +1,5 @@
 """Model implemented by a Neural Network."""
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
 import torch
 from torch import Tensor

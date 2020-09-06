@@ -80,6 +80,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         if model_kind not in self.allowed_model_kind:
             raise ValueError(f"{model_kind} not in {self.allowed_model_kind}")
         self.goal = goal
+        self.temperature = torch.tensor(1.0)
         self._info = {}
 
     @classmethod

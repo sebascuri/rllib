@@ -17,6 +17,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     discrete_action: bool
     model_kind: str
     goal: Optional[Tensor]
+    temperature: Tensor
     allowed_model_kind: List[str]
     _info: Dict[str, Any]
     def __init__(
