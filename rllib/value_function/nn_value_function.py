@@ -98,14 +98,14 @@ class NNValueFunction(AbstractValueFunction):
             state = self.input_transform(state)
 
         if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+            state = one_hot_encode(state, self.num_states)
         return self.nn(state).squeeze(-1)
 
     @torch.jit.export
     def embeddings(self, state):
         """Get embeddings of the value-function at a given state."""
         if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+            state = one_hot_encode(state, self.num_states)
         return self.nn.last_layer_embeddings(state).squeeze(-1)
 
 
@@ -229,7 +229,7 @@ class NNQFunction(AbstractQFunction):
 
         """
         if self.discrete_state:
-            state = one_hot_encode(state.long(), self.num_states)
+            state = one_hot_encode(state, self.num_states)
 
         if self.input_transform is not None:
             state = self.input_transform(state)

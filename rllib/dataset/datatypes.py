@@ -4,9 +4,7 @@ from typing import List, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch
-from gpytorch.distributions import Delta
 from torch import Tensor
-from torch.distributions import Categorical, MultivariateNormal, Uniform
 
 Array = Union[np.ndarray, torch.Tensor]
 State = Union[int, float, Array]
@@ -14,8 +12,6 @@ Action = Union[int, float, Array]
 Reward = Union[int, float, Array]
 Probability = Union[int, float, Array]
 Done = Union[bool, Array]
-Gaussian = Union[MultivariateNormal, Delta]
-Distribution = Union[MultivariateNormal, Delta, Categorical, Uniform]
 TupleDistribution = Union[Tensor, Tuple[Tensor, Tensor]]
 
 NaN = float("nan")

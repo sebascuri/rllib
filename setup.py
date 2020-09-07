@@ -11,6 +11,7 @@ extras = {
         "pytest_cov>=2.7,<3",
         "mypy==0.750",
     ],
+    "envs": ["box2d-py>=2.3.5", "atari_py>=0.2.6"],
     "mujoco": ["mujoco-py<2.1,>=2.0", "imageio-ffmpeg==0.4.1", "dm_control"],
     "logging": ["tensorboard>=2.0,<3"],
     "experiments": [
@@ -36,7 +37,6 @@ setup(
         "scipy>=1.3.0,<1.4.0",
         "torch>=1.5.0,<1.6.0",
         "gym>=0.15.4",
-        "atari_py>=0.2.6",
         "tqdm>=4.0.0,<5.0",
         "matplotlib>=3.1.0",
         "gpytorch>=1.1.1,<1.2.0",

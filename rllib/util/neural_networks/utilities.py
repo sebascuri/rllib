@@ -399,6 +399,7 @@ def one_hot_encode(tensor, num_classes: int):
         if tensor not of dtype long.
 
     """
+    tensor = tensor.long()
     if tensor.dim() == 0:
         return torch.scatter(torch.zeros(num_classes), -1, tensor, 1)
     else:

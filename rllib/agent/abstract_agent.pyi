@@ -2,10 +2,11 @@ from abc import ABCMeta
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar
 
 from torch import Tensor
+from torch.distributions import Distribution
 from torch.optim.optimizer import Optimizer
 
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
-from rllib.dataset.datatypes import Action, Distribution, Loss, Observation, State
+from rllib.dataset.datatypes import Action, Loss, Observation, State
 from rllib.environment import AbstractEnvironment
 from rllib.policy import AbstractPolicy
 from rllib.util.early_stopping import EarlyStopping

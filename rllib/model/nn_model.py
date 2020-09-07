@@ -95,9 +95,9 @@ class NNModel(AbstractModel):
     def state_actions_to_input_data(self, state, action):
         """Process state-action pairs."""
         if self.discrete_state:
-            state = one_hot_encode(state.long(), num_classes=self.num_states)
+            state = one_hot_encode(state, num_classes=self.num_states)
         if self.discrete_action:
-            action = one_hot_encode(action.long(), num_classes=self.num_actions)
+            action = one_hot_encode(action, num_classes=self.num_actions)
 
         if self.input_transform is not None:
             state = self.input_transform(state)

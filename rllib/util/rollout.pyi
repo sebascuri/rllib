@@ -2,9 +2,10 @@ from typing import Callable, List, Optional, Tuple, Union
 
 from numpy import ndarray
 from torch import Tensor
+from torch.distributions import Distribution
 
 from rllib.agent import AbstractAgent
-from rllib.dataset.datatypes import Action, Distribution, Observation, State, Trajectory
+from rllib.dataset.datatypes import Action, Observation, State, Trajectory
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy

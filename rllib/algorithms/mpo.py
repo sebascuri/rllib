@@ -268,7 +268,7 @@ class MPO(AbstractAlgorithm):
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
         sampled_action = pi_dist.sample()
-        entropy, log_p = get_entropy_and_log_p(pi_dist, sampled_action, 1)
+        entropy, log_p = get_entropy_and_log_p(pi_dist, sampled_action, 1.0)
 
         mpo_loss = self.mpo_loss(
             q_values=self.critic_target(state, sampled_action),

@@ -145,7 +145,7 @@ class NNPolicy(AbstractPolicy):
             state = self.input_transform(state)
 
         if self.discrete_state:  # One hot encode discrete states.
-            state = one_hot_encode(state.long(), num_classes=self.num_states)
+            state = one_hot_encode(state, num_classes=self.num_states)
 
         if self.goal is not None:  # concatenate goal to state.
             goal = self.goal.repeat(*state.shape[:-1], 1)
