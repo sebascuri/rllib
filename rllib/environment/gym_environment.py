@@ -27,6 +27,7 @@ class GymEnvironment(AbstractEnvironment):
             env = env.unwrapped
         self.env = env
         self.env.seed(seed)
+        self.env_name = env_name
 
         dim_action, num_actions = parse_space(self.env.action_space)
         dim_state, num_states = parse_space(self.env.observation_space)
@@ -127,4 +128,4 @@ class GymEnvironment(AbstractEnvironment):
     @property
     def name(self):
         """Return class name."""
-        return self.env.__class__.__name__
+        return self.env_name

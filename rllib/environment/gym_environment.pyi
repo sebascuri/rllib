@@ -9,6 +9,7 @@ from .abstract_environment import AbstractEnvironment
 
 class GymEnvironment(AbstractEnvironment):
     env: gym.envs.registration
+    env_name: str
     _time: float
     def __init__(
         self, env_name: str, seed: Optional[int] = ..., **kwargs: Any
