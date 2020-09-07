@@ -41,7 +41,14 @@ class BPTTAgent(ModelBasedAgent):
             **kwargs,
         )
 
-        super().__init__(policy_learning_algorithm=algorithm, *args, **kwargs)
+        super().__init__(
+            policy_learning_algorithm=algorithm,
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            termination_model=termination_model,
+            *args,
+            **kwargs,
+        )
 
         self.optimizer = type(self.optimizer)(
             [

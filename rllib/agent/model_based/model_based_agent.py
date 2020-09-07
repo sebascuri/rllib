@@ -49,6 +49,9 @@ class ModelBasedAgent(AbstractAgent):
 
     def __init__(
         self,
+        dynamical_model,
+        reward_model,
+        termination_model=None,
         num_rollouts=1,
         train_frequency=0,
         exploration_steps=0,
@@ -90,18 +93,6 @@ class ModelBasedAgent(AbstractAgent):
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
         self.simulation_algorithm = simulation_algorithm
-
-        dynamical_model, reward_model, termination_model = None, None, None
-        for alg in [
-            policy_learning_algorithm,
-            planning_algorithm,
-            model_learning_algorithm,
-            simulation_algorithm,
-        ]:
-            if alg is not None:
-                dynamical_model, reward_model = alg.dynamical_model, alg.reward_model
-                termination_model = alg.termination_model
-                break
 
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model

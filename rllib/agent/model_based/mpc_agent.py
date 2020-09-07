@@ -9,7 +9,16 @@ class MPCAgent(ModelBasedAgent):
     """Implementation of an agent that runs an MPC policy."""
 
     def __init__(self, mpc_solver, *args, **kwargs):
-        super().__init__(planning_algorithm=mpc_solver, *args, **kwargs)
+        super().__init__(
+            planning_algorithm=mpc_solver,
+            dynamical_model=kwargs.pop("dynamical_model", mpc_solver.dynamical_model),
+            reward_model=kwargs.pop("reward_model", mpc_solver.reward_model),
+            termination_model=kwargs.pop(
+                "termination_model", mpc_solver.termination_model
+            ),
+            *args,
+            **kwargs,
+        )
 
     @classmethod
     def default(cls, environment, mpc_solver=None, *args, **kwargs):

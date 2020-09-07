@@ -31,6 +31,9 @@ class ModelBasedAgent(AbstractAgent):
     model_learn_exploration_steps: int
     def __init__(
         self,
+        dynamical_model: AbstractModel,
+        reward_model: AbstractModel,
+        termination_model: Optional[AbstractModel] = ...,
         train_frequency: int = ...,
         num_rollouts: int = ...,
         model_learn_train_frequency: int = ...,
