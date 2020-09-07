@@ -157,7 +157,7 @@ class ModelBasedAgent(AbstractAgent):
         Add the transition to the data set.
         """
         super().observe(observation)
-        if self._training:
+        if self.training:
             self.memory.append(observation)
         if self.learn_model_at_observe:
             self.model_learning_algorithm.learn(self.logger)
@@ -180,7 +180,7 @@ class ModelBasedAgent(AbstractAgent):
         Then train the agent.
         """
         self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
-        if self.model_learning_algorithm is not None and self._training:
+        if self.model_learning_algorithm is not None and self.training:
             self.model_learning_algorithm.add_last_trajectory(self.last_trajectory)
         if self.learn_model_at_end_episode:
             self.model_learning_algorithm.learn(self.logger)
@@ -268,7 +268,8 @@ class ModelBasedAgent(AbstractAgent):
     def learn_model_at_observe(self):
         """Raise flag if learn the model after observe."""
         return (
-            self._training
+            self.training
+            and self.model_learning_algorithm is not None
             and self.total_steps >= self.model_learn_exploration_steps
             and self.total_episodes >= self.model_learn_exploration_episodes
             and self.model_learn_train_frequency > 0
@@ -279,7 +280,8 @@ class ModelBasedAgent(AbstractAgent):
     def learn_model_at_end_episode(self):
         """Raise flag to learn the model at end of an episode."""
         return (
-            self._training
+            self.training
+            and self.model_learning_algorithm is not None
             and self.total_steps >= self.model_learn_exploration_steps
             and self.total_episodes >= self.model_learn_exploration_episodes
             and self.model_learn_num_rollouts > 0

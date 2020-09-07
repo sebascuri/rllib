@@ -35,7 +35,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     target_update_frequency: int
     clip_gradient_val: float
 
-    _training: bool
+    training: bool
     _training_verbose: bool
     comment: str
     params: Dict[str, ParameterDecay]

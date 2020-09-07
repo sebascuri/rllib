@@ -81,16 +81,18 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.clip_gradient_val = clip_gradient_val
         self.optimizer = optimizer
 
-        self._training = True
+        self.training = True
         self._training_verbose = training_verbose
         self.comment = comment
         self.last_trajectory = []
         self.params = {}
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, comment=None, *args, **kwargs):
         """Get default agent for a given environment."""
-        return cls(comment=environment.name, *args, **kwargs)
+        return cls(
+            comment=environment.name if comment is None else comment, *args, **kwargs
+        )
 
     def __str__(self):
         """Generate string to parse the agent."""
@@ -117,7 +119,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
             policy = self.policy(state)
 
         self.pi = tensor_to_distribution(policy, **self.policy.dist_params)
-        if self._training:
+        if self.training:
             action = self.pi.sample()
         elif self.pi.has_enumerate_support:
             action = torch.argmax(self.pi.probs)
@@ -138,7 +140,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         observation: Observation
 
         """
-        if self._training:
+        if self.training:
             self.policy.update()  # update policy parameters (eps-greedy.)
             self.counters["total_steps"] += 1
             self.episode_steps[-1] += 1
@@ -162,7 +164,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """End an episode."""
         rewards = self.logger.current["rewards"]
         environment_return = rewards[0] * rewards[1]
-        if self._training:
+        if self.training:
             self.counters["total_episodes"] += 1
             self.logger.end_episode(train_environment_return=environment_return)
         else:
@@ -195,7 +197,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def train(self, val=True):
         """Set the agent in training mode."""
-        self._training = val
+        self.training = val
 
     def eval(self, val=True):
         """Set the agent in evaluation mode."""
@@ -248,7 +250,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def train_at_observe(self):
         """Raise flag if train after an observation."""
         return (
-            self._training  # training mode.
+            self.training  # training mode.
             and self.total_steps >= self.exploration_steps  # enough steps.
             and self.total_episodes >= self.exploration_episodes  # enough episodes.
             and self.train_frequency > 0  # train after a transition.
@@ -259,7 +261,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def train_at_end_episode(self):
         """Raise flag to train at end of episode."""
         return (
-            self._training  # training mode.
+            self.training  # training mode.
             and self.total_steps >= self.exploration_steps  # enough steps.
             and self.total_episodes >= self.exploration_episodes  # enough episodes.
             and self.num_rollouts > 0  # train once the episode ends.
