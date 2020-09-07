@@ -19,7 +19,7 @@ commands:
           name: Install library
           command: |
             pip install --progress-bar off numpy
-            pip install --progress-bar off -e .[test]
+            pip install --progress-bar off -e .[envs,test]
 
 
       - save_cache:
