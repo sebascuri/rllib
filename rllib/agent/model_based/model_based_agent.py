@@ -110,8 +110,10 @@ class ModelBasedAgent(AbstractAgent):
             policy = RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
         self.policy = DerivedPolicy(policy, self.dynamical_model.base_model.dim_action)
         self.num_simulation_iterations = num_simulation_iterations
-        self.learn_from_real = learn_from_real
-        self.learn_from_sim = self.num_simulation_iterations > 0
+        self.learn_from_real = learn_from_real and self.algorithm is not None
+        self.learn_from_sim = (
+            self.num_simulation_iterations > 0 and self.algorithm is not None
+        )
         self.thompson_sampling = thompson_sampling
 
         if self.thompson_sampling:
