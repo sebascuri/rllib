@@ -6,14 +6,20 @@ A model based agent has three behaviors:
 - It plans with the model and policies (as guiding sampler).
 """
 
+from itertools import chain
+
 import torch
 from gym.utils import colorize
+from torch.optim import Adam
 from tqdm import tqdm
 
 from rllib.agent.abstract_agent import AbstractAgent
+from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
+from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
+from rllib.model import EnsembleModel, NNModel, TransformedModel
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.util.neural_networks.utilities import DisableGradient
@@ -55,7 +61,7 @@ class ModelBasedAgent(AbstractAgent):
         planning_algorithm=None,
         simulation_algorithm=None,
         num_simulation_iterations=0,
-        learn_from_real=False,
+        learn_from_real=True,
         thompson_sampling=False,
         memory=None,
         *args,
@@ -286,4 +292,43 @@ class ModelBasedAgent(AbstractAgent):
             and self.total_episodes >= self.model_learn_exploration_episodes
             and self.model_learn_num_rollouts > 0
             and (self.total_episodes + 1) % self.model_learn_num_rollouts == 0
+        )
+
+    @classmethod
+    def default(
+        cls, environment, dynamical_model=None, reward_model=None, *args, **kwargs
+    ):
+        """Get a default model-based agent."""
+        if dynamical_model is None:
+            model = EnsembleModel.default(environment, deterministic=False)
+            dynamical_model = TransformedModel(
+                model, [StateNormalizer(), MeanFunction(DeltaState())]
+            )
+
+        if reward_model is None:
+            reward_model = TransformedModel(
+                NNModel.default(environment, model_kind="rewards", deterministic=False),
+                dynamical_model.forward_transformations,
+            )
+
+        params = list(chain(dynamical_model.parameters(), reward_model.parameters()))
+        if len(params):
+            model_optimizer = Adam(params, lr=1e-3, weight_decay=1e-4)
+
+            model_learning_algorithm = ModelLearningAlgorithm(
+                dynamical_model=dynamical_model,
+                reward_model=reward_model,
+                num_epochs=4 if kwargs.get("test", False) else 50,
+                model_optimizer=model_optimizer,
+            )
+        else:
+            model_learning_algorithm = None
+
+        return super().default(
+            environment,
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            model_learning_algorithm=model_learning_algorithm,
+            *args,
+            **kwargs,
         )

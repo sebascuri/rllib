@@ -1,11 +1,5 @@
 """Derived Agent."""
-from itertools import chain
-
-from torch.optim import Adam
-
-from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
-from rllib.model import EnsembleModel, NNModel, TransformedModel
+from importlib import import_module
 
 from .model_based_agent import ModelBasedAgent
 
@@ -60,61 +54,21 @@ class DerivedMBAgent(ModelBasedAgent):
         return f"{derived_name}+{base_name}Agent"
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        base_agent_name="SAC",
-        dynamical_model=None,
-        reward_model=None,
-        *args,
-        **kwargs,
-    ):
+    def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
         """See `AbstractAgent.default'."""
-        from importlib import import_module
-
         base_agent = getattr(
             import_module("rllib.agent"), f"{base_agent_name}Agent"
         ).default(environment, *args, **kwargs)
         base_agent.logger.delete_directory()
         base_algorithm = base_agent.algorithm
-        if dynamical_model is None:
-            model = EnsembleModel.default(environment, deterministic=True)
-            dynamical_model = TransformedModel(
-                model, [StateNormalizer(), MeanFunction(DeltaState())]
-            )
-
-        if reward_model is None:
-            reward_model = TransformedModel(
-                NNModel.default(environment, model_kind="rewards", deterministic=False),
-                dynamical_model.forward_transformations,
-            )
-
-        model_optimizer = Adam(
-            chain(dynamical_model.parameters(), reward_model.parameters()),
-            lr=1e-3,
-            weight_decay=1e-4,
-        )
-
-        model_learning_algorithm = ModelLearningAlgorithm(
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            num_epochs=4 if kwargs.get("test", False) else 50,
-            model_optimizer=model_optimizer,
-        )
-
-        return cls(
+        return super().default(
+            environment=environment,
             base_algorithm=base_algorithm,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            model_learning_algorithm=model_learning_algorithm,
             optimizer=base_agent.optimizer,
             num_iter=base_agent.num_iter,
             batch_size=base_agent.batch_size,
             train_frequency=base_agent.train_frequency,
             num_rollouts=base_agent.num_rollouts,
-            thompson_sampling=False,
-            learn_from_real=True,
-            gamma=base_algorithm.gamma,
             *args,
             **kwargs,
         )

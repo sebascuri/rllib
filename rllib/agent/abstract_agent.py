@@ -88,10 +88,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.params = {}
 
     @classmethod
-    def default(cls, environment, comment=None, *args, **kwargs):
+    def default(cls, environment, comment=None, gamma=0.99, *args, **kwargs):
         """Get default agent for a given environment."""
         return cls(
-            comment=environment.name if comment is None else comment, *args, **kwargs
+            comment=environment.name if comment is None else comment,
+            gamma=gamma,
+            *args,
+            **kwargs,
         )
 
     def __str__(self):

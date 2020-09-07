@@ -5,9 +5,6 @@ import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
 from rllib.algorithms.bptt import BPTT
-from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.dataset.transforms import DeltaState, MeanFunction
-from rllib.model import EnsembleModel, NNModel, TransformedModel
 from rllib.policy import NNPolicy
 from rllib.value_function import NNValueFunction
 
@@ -64,38 +61,15 @@ class BPTTAgent(ModelBasedAgent):
         policy = NNPolicy.default(environment)
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
-        model = EnsembleModel.default(environment, deterministic=True)
-        dynamical_model = TransformedModel(model, [MeanFunction(DeltaState())])
 
-        reward_model = kwargs.pop(
-            "rewards", NNModel.default(environment, model_kind="rewards")
-        )
-        model_optimizer = Adam(
-            chain(dynamical_model.parameters(), reward_model.parameters()), lr=5e-4
-        )
-
-        model_learning_algorithm = ModelLearningAlgorithm(
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            num_epochs=2 if kwargs.get("test", False) else 30,
-            batch_size=64,
-            bootstrap=True,
-            model_optimizer=model_optimizer,
-        )
-
-        return cls(
+        return super().default(
+            environment=environment,
             policy=policy,
             critic=critic,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
             learn_from_real=True,
-            model_learning_algorithm=model_learning_algorithm,
             optimizer=optimizer,
             num_iter=5 if test else 50,
             batch_size=100,
-            thompson_sampling=False,
-            comment=environment.name,
-            gamma=0.99,
             *args,
             **kwargs,
         )
