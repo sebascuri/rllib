@@ -31,6 +31,7 @@ class MPCAgent(ModelBasedAgent):
                 dynamical_model=agent.dynamical_model,
                 reward_model=agent.reward_model,
                 termination_model=agent.termination_model,
+                action_scale=environment.action_scale,
                 horizon=5 if kwargs.get("test", False) else 25,
                 gamma=agent.gamma,
                 num_iter=2 if kwargs.get("test", False) else 5,
