@@ -1,7 +1,6 @@
 """Wrapper for OpenAI-Gym Environments."""
 
 import gym
-import gym.envs.atari
 import gym.wrappers
 
 from .abstract_environment import AbstractEnvironment
@@ -26,18 +25,6 @@ class GymEnvironment(AbstractEnvironment):
             "episodic", False
         ):
             env = env.unwrapped
-        if isinstance(env, gym.envs.atari.AtariEnv):
-            try:
-                env = gym.wrappers.AtariPreprocessing(
-                    env,
-                    terminal_on_life_loss=kwargs.get("terminal_on_life_loss", True),
-                    grayscale_obs=kwargs.get("greyscale", True),
-                    scale_obs=kwargs.get("scale_obs", False),
-                )
-            except AssertionError:
-                pass
-            env = gym.wrappers.FrameStack(env, num_stack=4)
-
         self.env = env
         self.env.seed(seed)
 
