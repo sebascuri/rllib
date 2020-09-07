@@ -58,6 +58,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         scale=0.3,
         terminal_reward=None,
         warm_start=True,
+        clamp=True,
         default_action="zero",
         action_scale=1.0,
         num_cpu=1,
@@ -104,7 +105,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             action_scale = torch.cat((action_scale, torch.ones(extra_dim)))
 
         self.action_scale = action_scale
-
+        self.clamp = clamp
         self.num_cpu = num_cpu
 
     def evaluate_action_sequence(self, action_sequence, state):
@@ -211,6 +212,9 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             returns = torch.cat(batch_returns, dim=-1)
             elite_actions = self.get_best_action(action_sequence, returns)
             self.update_sequence_generation(elite_actions)
+
+        if self.clamp:
+            return self.mean.clamp(-1.0, 1.0)
 
         return self.mean
 

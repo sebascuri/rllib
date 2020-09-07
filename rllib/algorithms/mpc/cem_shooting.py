@@ -62,6 +62,8 @@ class CEMShooting(MPCSolver):
         action_sequence = action_sequence.permute(
             tuple(torch.arange(1, action_sequence.dim() - 1)) + (0, -1)
         )
+        if self.clamp:
+            return action_sequence.clamp(-1.0, 1.0)
         return action_sequence
 
     def get_best_action(self, action_sequence, returns):

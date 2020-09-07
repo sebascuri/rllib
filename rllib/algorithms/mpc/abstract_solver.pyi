@@ -20,6 +20,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     warm_start: bool
     default_action: str
     action_scale: Tensor
+    clamp: bool
 
     mean: Optional[Tensor]
     _scale: float
@@ -38,6 +39,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         warm_start: bool = ...,
         default_action: str = ...,
         action_scale: float = ...,
+        clamp: bool = ...,
         num_cpu: int = ...,
     ) -> None: ...
     def evaluate_action_sequence(
