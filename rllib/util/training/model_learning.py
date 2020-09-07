@@ -63,6 +63,7 @@ def train_model(
     batch_size=100,
     max_iter=100,
     epsilon=0.1,
+    non_decrease_iter=float("inf"),
     logger=None,
     validation_set=None,
 ):
@@ -83,6 +84,9 @@ def train_model(
     epsilon: float.
         Early stopping parameter. If epoch loss is > (1 + epsilon) of minimum loss the
         optimization process stops.
+    non_decrease_iter: int, optional.
+        Early stopping parameter. If epoch loss does not decrease for consecutive
+        non_decrease_iter, the optimization process stops.
     logger: Logger, optional.
         Progress logger.
     validation_set: ExperienceReplay, optional.
@@ -94,7 +98,7 @@ def train_model(
         validation_set = train_set
 
     model.train()
-    early_stopping = EarlyStopping(epsilon, non_decrease_iter=5)
+    early_stopping = EarlyStopping(epsilon, non_decrease_iter=non_decrease_iter)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     validation_loader = DataLoader(validation_set, batch_size=batch_size, shuffle=False)
 

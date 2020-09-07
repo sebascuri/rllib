@@ -27,7 +27,7 @@ class EarlyStopping(object):
         When absolute, the stop flag is true when average > epsilon.
     """
 
-    def __init__(self, epsilon, non_decrease_iter=float("inf"), relative=True):
+    def __init__(self, epsilon=-1.0, non_decrease_iter=float("inf"), relative=True):
         self.epsilon = epsilon
         self.relative = relative
         self.moving_average = []

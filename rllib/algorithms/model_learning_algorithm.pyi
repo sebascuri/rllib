@@ -14,6 +14,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
     num_epochs: int
     batch_size: int
     epsilon: float
+    non_decrease_iter: int
     validation_ratio: float
     calibrate: bool
     train_set: BootstrapExperienceReplay
@@ -27,6 +28,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         max_memory: int = ...,
         validation_ratio: float = ...,
         epsilon: float = ...,
+        non_decrease_iter: int = ...,
         calibrate: bool = ...,
         *args: Any,
         **kwargs: Any,

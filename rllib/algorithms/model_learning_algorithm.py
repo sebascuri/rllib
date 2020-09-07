@@ -53,6 +53,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         bootstrap=True,
         max_memory=10000,
         epsilon=0.1,
+        non_decrease_iter=5,
         validation_ratio=0.1,
         calibrate=True,
         *args,
@@ -83,6 +84,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.epsilon = epsilon
+        self.non_decrease_iter = non_decrease_iter
         self.validation_ratio = validation_ratio
         self.calibrate = calibrate
 
@@ -125,6 +127,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             optimizer=self.model_optimizer,
             logger=logger,
             epsilon=self.epsilon,
+            non_decrease_iter=self.non_decrease_iter,
         )
         if calibrate and not model.deterministic:
             calibrate_model(model, self.validation_set, self.num_epochs, logger=logger)
