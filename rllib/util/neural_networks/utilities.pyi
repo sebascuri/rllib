@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Iterable, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 import torch.nn as nn
@@ -16,7 +16,7 @@ class Mish(nn.Module):
 
 def parse_nonlinearity(non_linearity: str) -> nn.Module: ...
 def parse_layers(
-    layers: Optional[List[int]], in_dim: Tuple, non_linearity: str
+    layers: Sequence[int], in_dim: Tuple, non_linearity: str
 ) -> Tuple[nn.Sequential, int]: ...
 def update_parameters(
     target_module: nn.Module, new_module: nn.Module, tau: float = ...
@@ -38,7 +38,11 @@ class TileCode(nn.Module):
     extra_dims: int
     one_hot: bool
     def __init__(
-        self, low: List[float], high: List[float], bins: int, one_hot: bool = ...
+        self,
+        low: Sequence[float],
+        high: Sequence[float],
+        bins: int,
+        one_hot: bool = ...,
     ) -> None: ...
     def _tuple_to_int(self, tuple_: Union[Tensor, Tuple[Tensor]]) -> Tensor: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...

@@ -1,5 +1,5 @@
 """Model implemented by a Neural Network."""
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 import torch
 from torch import Tensor
@@ -15,7 +15,7 @@ class NNModel(AbstractModel):
     def __init__(
         self,
         initial_scale: float = ...,
-        layers: Optional[List[int]] = ...,
+        layers: Sequence[int] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
         input_transform: Optional[torch.nn.Module] = ...,

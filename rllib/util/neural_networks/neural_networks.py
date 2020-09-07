@@ -29,7 +29,7 @@ class FeedForwardNN(nn.Module):
         self,
         in_dim,
         out_dim,
-        layers=None,
+        layers=(),
         non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
@@ -116,7 +116,7 @@ class HeteroGaussianNN(FeedForwardNN):
         self,
         in_dim,
         out_dim,
-        layers=None,
+        layers=(),
         non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
@@ -168,7 +168,7 @@ class HomoGaussianNN(FeedForwardNN):
         self,
         in_dim,
         out_dim,
-        layers=None,
+        layers=(),
         non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
@@ -215,7 +215,7 @@ class CategoricalNN(FeedForwardNN):
     """A Module that parametrizes a Categorical distribution."""
 
     def __init__(
-        self, in_dim, out_dim, layers=None, non_linearity="Tanh", biased_head=True
+        self, in_dim, out_dim, layers=(), non_linearity="Tanh", biased_head=True
     ):
         super().__init__(
             in_dim,
@@ -268,7 +268,7 @@ class Ensemble(HeteroGaussianNN):
         out_dim,
         num_heads,
         prediction_strategy="moment_matching",
-        layers=None,
+        layers=(),
         non_linearity="Tanh",
         biased_head=True,
         squashed_output=False,
@@ -409,7 +409,7 @@ class FelixNet(FeedForwardNN):
         super().__init__(
             in_dim,
             out_dim,
-            layers=[64, 64],
+            layers=(64, 64),
             non_linearity="Tanh",
             squashed_output=True,
             biased_head=False,

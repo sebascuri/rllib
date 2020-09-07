@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Optional, Sequence, Tuple, Type, TypeVar
 
 import torch
 from torch import Tensor
@@ -14,7 +14,7 @@ class NNPolicy(AbstractPolicy):
     nn: torch.nn.Module
     def __init__(
         self,
-        layers: Optional[List[int]] = ...,
+        layers: Sequence[int] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
         squashed_output: bool = ...,

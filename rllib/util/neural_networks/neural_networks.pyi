@@ -1,6 +1,6 @@
 """Implementation of different Neural Networks with pytorch."""
 
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar
 
 import torch.nn as nn
 from torch import Tensor
@@ -20,7 +20,7 @@ class FeedForwardNN(nn.Module):
         self,
         in_dim: Tuple,
         out_dim: Tuple,
-        layers: Optional[List[int]] = ...,
+        layers: Optional[Sequence[int]] = ...,
         non_linearity: str = ...,
         biased_head: bool = ...,
         squashed_output: bool = ...,
@@ -39,7 +39,7 @@ class CategoricalNN(FeedForwardNN):
         self,
         in_dim: Tuple,
         out_dim: Tuple,
-        layers: Optional[List[int]] = ...,
+        layers: Optional[Sequence[int]] = ...,
         non_linearity: str = ...,
         biased_head: bool = ...,
     ) -> None: ...
@@ -63,7 +63,7 @@ class Ensemble(HeteroGaussianNN):
         out_dim: Tuple,
         num_heads: int,
         prediction_strategy: str = ...,
-        layers: Optional[List[int]] = ...,
+        layers: Optional[Sequence[int]] = ...,
         non_linearity: str = ...,
         biased_head: bool = ...,
         squashed_output: bool = ...,

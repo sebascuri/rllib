@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Type, TypeVar
 
 import torch.nn
 from torch import Tensor

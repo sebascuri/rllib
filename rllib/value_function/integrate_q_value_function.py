@@ -41,12 +41,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
         """See AbstractValueFunction.default."""
         q_function = NNQFunction.default(environment, *args, **kwargs)
         policy = NNPolicy.default(environment, *args, **kwargs)
-        return super().default(
-            environment,
-            q_function=q_function,
-            policy=policy,
-            num_samples=kwargs.pop("num_samples", 15),
-        )
+        return super().default(environment, q_function=q_function, policy=policy)
 
     def forward(self, state):
         """Get value of the value-function at a given state."""

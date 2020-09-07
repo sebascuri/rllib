@@ -17,7 +17,7 @@ from rllib.util.neural_networks.utilities import count_vars
 from rllib.util.utilities import tensor_to_distribution
 
 
-@pytest.fixture(params=[None, [], [32], [64, 32]])
+@pytest.fixture(params=[[], [32], [64, 32]])
 def layers(request):
     return request.param
 

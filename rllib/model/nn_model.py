@@ -25,7 +25,7 @@ class NNModel(AbstractModel):
 
     def __init__(
         self,
-        layers=None,
+        layers=(200, 200, 200, 200, 200),
         biased_head=True,
         non_linearity="Swish",
         initial_scale=0.5,
@@ -88,9 +88,7 @@ class NNModel(AbstractModel):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractModel.default()."""
-        return super().default(
-            environment, layers=kwargs.pop("layers", [200] * 5), *args, **kwargs
-        )
+        return super().default(environment, *args, **kwargs)
 
     def state_actions_to_input_data(self, state, action):
         """Process state-action pairs."""

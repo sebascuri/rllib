@@ -148,8 +148,6 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
             dim_action=kwargs.pop("dim_action", environment.dim_action),
             num_states=kwargs.pop("num_states", environment.num_states),
             num_actions=kwargs.pop("num_actions", environment.num_actions),
-            tau=kwargs.pop("tau", 5e-3),
-            deterministic=kwargs.pop("deterministic", False),
             action_scale=environment.action_scale,
             goal=environment.goal,
             *args,

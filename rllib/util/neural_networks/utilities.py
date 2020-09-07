@@ -82,9 +82,6 @@ def parse_nonlinearity(non_linearity):
 
 def parse_layers(layers, in_dim, non_linearity):
     """Parse layers of nn."""
-    if layers is None:
-        layers = []
-
     nonlinearity = parse_nonlinearity(non_linearity)
     layers_ = list()
     if len(in_dim) > 1:  # Convolutional Layers.

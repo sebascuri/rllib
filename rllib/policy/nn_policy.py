@@ -30,7 +30,7 @@ class NNPolicy(AbstractPolicy):
 
     def __init__(
         self,
-        layers=None,
+        layers=(200, 200),
         biased_head=True,
         non_linearity="Tanh",
         squashed_output=True,
@@ -65,17 +65,7 @@ class NNPolicy(AbstractPolicy):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractPolicy.default()."""
-        return super().default(
-            environment,
-            layers=kwargs.pop("layers", [200, 200]),
-            biased_head=kwargs.pop("biased_head", True),
-            non_linearity=kwargs.pop("non_linearity", "Tanh"),
-            squashed_output=kwargs.pop("squashed_output", True),
-            initial_scale=kwargs.pop("initial_scale", 0.5),
-            input_transform=kwargs.pop("input_transform", None),
-            *args,
-            **kwargs,
-        )
+        return super().default(environment, *args, **kwargs)
 
     @classmethod
     def from_other(cls, other, copy=True):

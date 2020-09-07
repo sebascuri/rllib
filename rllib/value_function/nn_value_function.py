@@ -26,7 +26,7 @@ class NNValueFunction(AbstractValueFunction):
 
     def __init__(
         self,
-        layers=None,
+        layers=(200, 200),
         biased_head=True,
         non_linearity="Tanh",
         input_transform=None,
@@ -58,15 +58,7 @@ class NNValueFunction(AbstractValueFunction):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractValueFunction.default."""
-        return super().default(
-            environment,
-            layers=kwargs.pop("layers", [200, 200]),
-            biased_head=kwargs.pop("biased_head", True),
-            non_linearity=kwargs.pop("non_linearity", "Tanh"),
-            input_transform=kwargs.pop("input_transform", None),
-            *args,
-            **kwargs,
-        )
+        return super().default(environment, *args, **kwargs)
 
     @classmethod
     def from_other(cls, other, copy=True):
@@ -130,7 +122,7 @@ class NNQFunction(AbstractQFunction):
 
     def __init__(
         self,
-        layers=None,
+        layers=(200, 200),
         biased_head=True,
         non_linearity="Tanh",
         input_transform=None,
@@ -168,15 +160,7 @@ class NNQFunction(AbstractQFunction):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractQFunction.default."""
-        return super().default(
-            environment,
-            layers=kwargs.pop("layers", [200, 200]),
-            biased_head=kwargs.pop("biased_head", True),
-            non_linearity=kwargs.pop("non_linearity", "Tanh"),
-            input_transform=kwargs.pop("input_transform", None),
-            *args,
-            **kwargs,
-        )
+        return super().default(environment, *args, **kwargs)
 
     @classmethod
     def from_other(cls, other, copy=True):

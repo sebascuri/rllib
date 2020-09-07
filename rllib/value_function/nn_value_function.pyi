@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Optional, Sequence, Tuple, Type, TypeVar
 
 import torch.nn
 from torch import Tensor
@@ -13,7 +13,7 @@ class NNValueFunction(AbstractValueFunction):
     nn: torch.nn.Module
     def __init__(
         self,
-        layers: Optional[List[int]] = ...,
+        layers: Sequence[int] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
         input_transform: Optional[torch.nn.Module] = ...,
@@ -44,7 +44,7 @@ class NNQFunction(AbstractQFunction):
         dim_action: Tuple,
         num_states: int = ...,
         num_actions: int = ...,
-        layers: Optional[List[int]] = ...,
+        layers: Sequence[int] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
         tau: float = ...,
