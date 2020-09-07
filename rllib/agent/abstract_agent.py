@@ -212,10 +212,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
             if self.train_steps % self.policy_update_frequency == 0:
                 cm = contextlib.nullcontext()
             else:
-                if hasattr(self, "plan_policy"):
-                    cm = DisableGradient(self.plan_policy)
-                else:
-                    cm = DisableGradient(self.policy)
+                cm = DisableGradient(self.policy)
 
             with cm:
                 losses = self.optimizer.step(closure=closure)  # type: Loss

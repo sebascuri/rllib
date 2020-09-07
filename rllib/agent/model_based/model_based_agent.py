@@ -22,6 +22,7 @@ from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
 from rllib.model import EnsembleModel, NNModel, TransformedModel
 from rllib.policy.derived_policy import DerivedPolicy
 from rllib.policy.mpc_policy import MPCPolicy
+from rllib.policy.random_policy import RandomPolicy
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import tensor_to_distribution
 
@@ -90,13 +91,6 @@ class ModelBasedAgent(AbstractAgent):
         self.model_learning_algorithm = model_learning_algorithm
         self.simulation_algorithm = simulation_algorithm
 
-        if policy_learning_algorithm is not None:
-            policy = policy_learning_algorithm.policy
-        elif planning_algorithm is not None:
-            policy = MPCPolicy(self.planning_algorithm)
-        else:
-            raise NotImplementedError
-
         dynamical_model, reward_model, termination_model = None, None, None
         for alg in [
             policy_learning_algorithm,
@@ -117,6 +111,12 @@ class ModelBasedAgent(AbstractAgent):
         if self.termination_model is not None:
             assert self.termination_model.model_kind == "termination"
 
+        if policy_learning_algorithm:
+            policy = policy_learning_algorithm.policy
+        elif planning_algorithm is not None:
+            policy = MPCPolicy(self.planning_algorithm)
+        else:
+            policy = RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
         self.policy = DerivedPolicy(policy, self.dynamical_model.base_model.dim_action)
         self.num_simulation_iterations = num_simulation_iterations
         self.learn_from_real = learn_from_real
