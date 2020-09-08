@@ -7,11 +7,11 @@ from rllib.environment import GymEnvironment
 from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 MAX_STEPS = 25
-NUM_EPISODES = 4
+NUM_EPISODES = 2
 SEED = 0
 
 
-@pytest.fixture(params=["MountainCarContinuous-v0"])
+@pytest.fixture(params=["LunarLanderContinuous-v2"])
 def continuous_environment(request):
     return request.param
 

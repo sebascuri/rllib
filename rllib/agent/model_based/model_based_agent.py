@@ -86,7 +86,7 @@ class ModelBasedAgent(AbstractAgent):
         if model_learn_exploration_steps is None:
             model_learn_exploration_steps = self.exploration_steps
         if model_learn_exploration_episodes is None:
-            model_learn_exploration_episodes = self.exploration_episodes + 1
+            model_learn_exploration_episodes = self.exploration_episodes - 1
         self.model_learn_exploration_steps = model_learn_exploration_steps
         self.model_learn_exploration_episodes = model_learn_exploration_episodes
 
@@ -293,14 +293,14 @@ class ModelBasedAgent(AbstractAgent):
     ):
         """Get a default model-based agent."""
         if dynamical_model is None:
-            model = EnsembleModel.default(environment, deterministic=False)
+            model = EnsembleModel.default(environment, *args, **kwargs)
             dynamical_model = TransformedModel(
                 model, [StateNormalizer(), MeanFunction(DeltaState())]
             )
 
         if reward_model is None:
             reward_model = TransformedModel(
-                NNModel.default(environment, model_kind="rewards", deterministic=False),
+                NNModel.default(environment, model_kind="rewards"),
                 dynamical_model.forward_transformations,
             )
 

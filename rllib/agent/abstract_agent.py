@@ -132,6 +132,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
             except NotImplementedError:
                 action = self.pi.sample((100,)).mean(dim=0)
 
+        if not self.policy.discrete_state:
+            action = action.clamp(-1.0, 1.0)
         action = self.policy.action_scale * action
         return action.detach().numpy()
 

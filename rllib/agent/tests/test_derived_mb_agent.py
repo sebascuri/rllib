@@ -11,7 +11,7 @@ NUM_EPISODES = 4
 SEED = 0
 
 
-@pytest.fixture(params=["MountainCarContinuous-v0"])
+@pytest.fixture(params=["LunarLanderContinuous-v2"])
 def continuous_environment(request):
     return request.param
 

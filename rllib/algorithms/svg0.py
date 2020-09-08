@@ -36,7 +36,7 @@ class SVG0(DPG):
         # Compute re-parameterized policy sample.
         action = self.policy.action_scale * (
             action_mean + (action_chol @ eta).squeeze(-1)
-        ).clamp(-1, 1)
+        ).clamp(-1.0, 1.0)
 
         # Propagate gradient.
         with DisableGradient(self.critic_target):

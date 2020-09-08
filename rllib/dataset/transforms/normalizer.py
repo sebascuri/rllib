@@ -52,6 +52,8 @@ class Normalizer(nn.Module):
         self.variance = update_var(
             self.mean, self.variance, self.count, new_mean, new_var, new_count
         )
+        # If variance is too small, clamp the variance to 1.0
+        self.variance[self.variance < 1e-6] = 1.0
         self.mean = update_mean(self.mean, self.count, new_mean, new_count)
 
         self.count += new_count
