@@ -14,7 +14,7 @@ from rllib.environment import SystemEnvironment
 from rllib.environment.systems.cart1d import Cart1d
 from rllib.policy import FelixPolicy
 from rllib.util.parameter_decay import ExponentialDecay
-from rllib.util.training import evaluate_agent, train_agent
+from rllib.util.training.agent_training import evaluate_agent, train_agent
 
 torch.manual_seed(0)
 np.random.seed(0)

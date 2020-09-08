@@ -2,11 +2,6 @@
 from rllib.model import TransformedModel
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
-from rllib.value_function import (
-    AbstractQFunction,
-    AbstractValueFunction,
-    IntegrateQValueFunction,
-)
 
 
 class AbstractMBAlgorithm(object):
@@ -60,19 +55,6 @@ class AbstractMBAlgorithm(object):
 
         self.num_steps = num_steps
         self.num_samples = num_samples
-
-        if hasattr(self, "critic_target"):
-            if isinstance(self.critic_target, AbstractValueFunction):
-                self.value_target = self.critic_target
-            elif isinstance(self.critic_target, AbstractQFunction):
-                if hasattr(self, "policy"):
-                    self.value_target = IntegrateQValueFunction(
-                        self.critic_target, self.policy, num_samples=1
-                    )
-                else:
-                    self.value_target = None
-        else:
-            self.value_target = None
 
     def simulate(self, state, policy):
         """Simulate a set of particles starting from `state' and following `policy'."""

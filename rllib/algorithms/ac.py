@@ -5,7 +5,6 @@ from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import deep_copy_module, freeze_parameters
 from rllib.util.utilities import (
     get_entropy_and_log_p,
-    integrate,
     off_policy_weight,
     separated_kl,
     tensor_to_distribution,
@@ -56,15 +55,15 @@ class ActorCritic(AbstractAlgorithm):
     def __init__(
         self, num_samples=15, standardize_returns=True, ope=None, *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(num_samples=num_samples, *args, **kwargs)
         old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
         self.old_policy = old_policy
 
-        self.num_samples = num_samples
         self.standardize_returns = standardize_returns
 
         self.ope = ope
+        self.num_samples = num_samples
 
     def get_log_p_kl_entropy(self, state, action):
         """Get kl divergence and current policy at a given state.
@@ -97,8 +96,10 @@ class ActorCritic(AbstractAlgorithm):
             KL-Divergence due to the change in the variance between current and
             previous policy.
         """
-        pi = tensor_to_distribution(self.policy(state))
-        pi_old = tensor_to_distribution(self.old_policy(state))
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        pi_old = tensor_to_distribution(
+            self.old_policy(state), **self.policy.dist_params
+        )
 
         entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
         _, log_p_old = get_entropy_and_log_p(pi_old, action, self.policy.action_scale)
@@ -122,6 +123,14 @@ class ActorCritic(AbstractAlgorithm):
 
         return log_p, log_p_old, kl_mean, kl_var, entropy
 
+    def get_ope_weight(self, state, action, log_prob_action):
+        """Get off-policy weight of a given transition."""
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
+
+        weight = off_policy_weight(log_p, log_prob_action, full_trajectory=False)
+        return weight
+
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
         # Copy over old policy for KL divergence
@@ -130,12 +139,7 @@ class ActorCritic(AbstractAlgorithm):
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
-        pi = tensor_to_distribution(self.policy(state))
-        _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-
-        weight = off_policy_weight(
-            log_p, trajectory.log_prob_action, full_trajectory=False
-        )
+        weight = self.get_ope_weight(state, action, trajectory.log_prob_action)
         return weight * self.critic(state, action)
 
     def get_value_target(self, observation):
@@ -144,19 +148,13 @@ class ActorCritic(AbstractAlgorithm):
             return self.ope(observation)
         if isinstance(self.critic_target, AbstractValueFunction):
             next_v = self.critic_target(observation.next_state)
-            next_v = next_v * (1 - observation.done)
         elif isinstance(self.critic_target, AbstractQFunction):
-            next_pi = tensor_to_distribution(self.policy(observation.next_state))
-            next_v = integrate(
-                lambda a: self.critic_target(observation.next_state, a),
-                next_pi,
-                num_samples=self.num_samples,
-            )
-            next_v = next_v * (1.0 - observation.done)
+            next_v = self.value_target(observation.next_state)
         else:
             raise RuntimeError(
                 f"Critic Target type {type(self.critic_target)} not understood."
             )
+        next_v = next_v * (1.0 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def actor_loss(self, observation):

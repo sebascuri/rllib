@@ -25,5 +25,8 @@ class DQNAgent(QLearningAgent):
     def __init__(self, critic, policy, *args, **kwargs):
         super().__init__(critic=critic, policy=policy, *args, **kwargs)
         self.algorithm = DQN(
-            critic=critic, criterion=self.algorithm.criterion, gamma=self.gamma
+            policy=policy,
+            critic=critic,
+            criterion=self.algorithm.criterion,
+            gamma=self.gamma,
         )

@@ -19,7 +19,7 @@ class ExpectedActorCritic(ActorCritic):
 
     The EPG algorithm is a policy gradient algorithm that estimates the
     gradient:
-    .. math:: \grad J = \int_{\tau} \grad \log \pi(s_t) Q(s_t, a_t),
+    .. math:: \grad J = \int_{\tau} \grad \log \pi(s_t) Q(s_t, a_t) - V(s_t),
     where the previous integral is computed through samples (s_t) and exactly
     integrating the actions with the policy.
 
@@ -32,19 +32,17 @@ class ExpectedActorCritic(ActorCritic):
 
     def actor_loss(self, observation):
         """Get Actor loss."""
-        state, action, reward, next_state, done, *r = observation
+        state, action, *_ = observation
 
-        pi = tensor_to_distribution(self.policy(state))
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         entropy, _ = get_entropy_and_log_p(pi, action, self.policy.action_scale)
 
-        def int_q(a, s=state, pi_=pi):
-            """Integrate the critic w.r.t. the action."""
-            return self.critic(s, a) - integrate(
-                lambda a_: self.critic(s, a_), pi_, num_samples=self.num_samples
-            )
-
         policy_loss = integrate(
-            lambda a, pi_=pi, iq=int_q: -pi_.log_prob(a) * iq(a).detach(),
+            lambda a: -pi.log_prob(a)
+            * (
+                self.critic(state, self.policy.action_scale * a)
+                - self.value_target(state)
+            ).detach(),
             pi,
             num_samples=self.num_samples,
         ).sum()

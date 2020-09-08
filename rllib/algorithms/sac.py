@@ -68,12 +68,12 @@ class SoftActorCritic(AbstractAlgorithm):
         pi = tensor_to_distribution(
             self.policy(observation.next_state), **self.policy.dist_params
         )
-        next_action = pi.sample()
+        next_action = self.policy.action_scale * pi.sample()
         next_q = self.critic_target(observation.next_state, next_action)
         if isinstance(self.critic_target, NNEnsembleQFunction):
             next_q = torch.min(next_q, dim=-1)[0]
 
-        _, log_p = get_entropy_and_log_p(pi, next_action, action_scale=1)
+        _, log_p = get_entropy_and_log_p(pi, next_action, self.policy.action_scale)
         next_v = next_q - self.eta().detach() * log_p
         next_v = next_v * (1.0 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v

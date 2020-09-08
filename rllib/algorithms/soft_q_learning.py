@@ -44,24 +44,17 @@ class SoftQLearning(QLearning):
     Combining policy gradient and Q-learning. ICLR.
     """
 
-    def __init__(self, temperature, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # TODO: Directly pass it as an argument?
-
-        self.policy = SoftMax(self.critic, temperature)
-        self.policy_target = SoftMax(self.critic_target, temperature)
-        self.policy_target.param = self.policy.param
+    def __init__(self, critic, temperature, *args, **kwargs):
+        super().__init__(
+            policy=SoftMax(critic, temperature), critic=critic, *args, **kwargs
+        )
+        self.policy_target.param = self.policy.param  # Hard copy the parameter.
 
     def get_value_target(self, observation):
         """Get q function target."""
-        tau = self.policy.param()
-        next_v = tau * torch.logsumexp(
-            self.critic_target(observation.next_state) / tau, dim=-1
+        temperature = self.policy.param()
+        next_v = temperature * torch.logsumexp(
+            self.critic_target(observation.next_state) / temperature, dim=-1
         )
         next_v = next_v * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
-
-    def update(self):
-        """Update the target network."""
-        super().update()
-        self.policy_target.param = self.policy.param

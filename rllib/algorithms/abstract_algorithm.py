@@ -9,9 +9,10 @@ from rllib.dataset.datatypes import Loss, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import deep_copy_module, update_parameters
 from rllib.util.utilities import RewardTransformer
-from rllib.value_function.abstract_value_function import (
+from rllib.value_function import (
     AbstractQFunction,
     AbstractValueFunction,
+    IntegrateQValueFunction,
 )
 from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
 
@@ -67,6 +68,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         policy,
         critic,
         entropy_regularization=0.0,
+        num_samples=1,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
         *args,
@@ -82,6 +84,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.criterion = criterion
         self.reward_transformer = reward_transformer
         self.entropy_regularization = entropy_regularization
+
+        self.value_target = IntegrateQValueFunction(
+            self.critic_target, self.policy, num_samples=num_samples
+        )
 
     def get_value_target(self, observation):
         """Get Q target from the observation."""

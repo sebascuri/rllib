@@ -8,7 +8,7 @@ from torch.nn.modules.loss import _Loss
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.policy import AbstractPolicy
 from rllib.util.utilities import RewardTransformer
-from rllib.value_function.abstract_value_function import AbstractQFunction
+from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
@@ -23,12 +23,14 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     policy_target: AbstractPolicy
     criterion: _Loss
     entropy_regularization: float
+    value_target: IntegrateQValueFunction
     def __init__(
         self,
         gamma: float,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
         entropy_regularization: float = ...,
+        num_samples: int = ...,
         criterion: _Loss = ...,
         reward_transformer: RewardTransformer = ...,
         *args: Any,

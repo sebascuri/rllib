@@ -24,6 +24,7 @@ class DDQN(QLearning):
     def get_value_target(self, observation):
         """Get q function target."""
         next_action = self.critic(observation.next_state).argmax(dim=-1)
+        # there is no need of re-scaling because actions are discrete.
         next_v = self.critic_target(observation.next_state, next_action)
         next_v = next_v * (1.0 - observation.done)
 

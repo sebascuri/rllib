@@ -2,8 +2,6 @@
 
 import torch
 
-from rllib.policy import EpsGreedy
-
 from .abstract_algorithm import AbstractAlgorithm
 
 
@@ -18,15 +16,6 @@ class QLearning(AbstractAlgorithm):
     Usually the loss is computed as:
     .. math:: Q_{target} = r(s, a) + \gamma \max_a Q(s', a)
     .. math:: \mathcal{L}(Q(s, a), Q_{target})
-
-    Parameters
-    ----------
-    critic: AbstractQFunction
-        Q_function to optimize.
-    criterion: _Loss
-        Criterion to optimize.
-    gamma: float
-        Discount factor.
 
     References
     ----------
@@ -45,11 +34,6 @@ class QLearning(AbstractAlgorithm):
     Mnih, V., et. al. (2013).
     Playing atari with deep reinforcement learning. NIPS.
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            policy=EpsGreedy(kwargs.get("critic"), param=0), *args, **kwargs
-        )
 
     def get_value_target(self, observation):
         """Get q function target."""

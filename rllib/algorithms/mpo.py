@@ -226,8 +226,10 @@ class MPO(AbstractAlgorithm):
         pi_dist: torch.distribution.Distribution
             Current policy distribution.
         """
-        pi_dist = tensor_to_distribution(self.policy(state))
-        pi_dist_old = tensor_to_distribution(self.old_policy(state))
+        pi_dist = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        pi_dist_old = tensor_to_distribution(
+            self.old_policy(state), **self.policy.dist_params
+        )
 
         if isinstance(pi_dist, torch.distributions.MultivariateNormal):
             kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
@@ -249,29 +251,24 @@ class MPO(AbstractAlgorithm):
         """Get value target."""
         if self.ope is not None:
             return self.ope(observation)
-        next_pi = tensor_to_distribution(self.old_policy(observation.next_state))
-        next_action = next_pi.sample()
-
-        next_values = self.critic_target(observation.next_state, next_action)
-        next_values = next_values * (1.0 - observation.done)
-
-        reward = self.reward_transformer(observation.reward)
-        value_target = reward + self.gamma * next_values
-        return value_target
+        next_v = self.value_target(observation.next_state)
+        next_v = next_v * (1.0 - observation.done)
+        return self.reward_transformer(observation.reward) + self.gamma * next_v
 
     def actor_loss(self, observation):
         """Compute actor loss."""
-        state, action, reward, next_state, done, *r = observation
-
-        state = repeat_along_dimension(state, number=self.num_action_samples, dim=0)
+        state = repeat_along_dimension(
+            observation.state, number=self.num_action_samples, dim=0
+        )
 
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
 
-        sampled_action = pi_dist.sample()
-        entropy, log_p = get_entropy_and_log_p(pi_dist, sampled_action, 1.0)
+        action = pi_dist.sample()
+        entropy, log_p = get_entropy_and_log_p(pi_dist, action, action_scale=1.0)
+        # Use action_scale = 1.0 because action is sampled from pi_dist.
 
         mpo_loss = self.mpo_loss(
-            q_values=self.critic_target(state, sampled_action),
+            q_values=self.critic_target(state, self.policy.action_scale * action),
             action_log_p=log_p,
             kl_mean=kl_mean,
             kl_var=kl_var,

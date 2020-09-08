@@ -7,7 +7,7 @@ from torch import Tensor
 
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
-from rllib.value_function import AbstractQFunction
+from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
 class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     critic: AbstractQFunction
@@ -15,6 +15,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     gamma: float
     lambda_: float
     num_samples: int
+    value_target: IntegrateQValueFunction
     def __init__(
         self,
         critic: AbstractQFunction,

@@ -1,10 +1,4 @@
 """Advantage Actor Critic Algorithm."""
-from rllib.util.utilities import (
-    get_entropy_and_log_p,
-    integrate,
-    off_policy_weight,
-    tensor_to_distribution,
-)
 
 from .ac import ActorCritic
 
@@ -32,13 +26,5 @@ class A2C(ActorCritic):
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
-        pred_q = self.critic(state, action)
-        pi = tensor_to_distribution(self.policy(state))
-        returns = pred_q - integrate(
-            lambda a: self.critic(state, a), pi, num_samples=self.num_samples
-        )
-        _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-        weight = off_policy_weight(
-            log_p, trajectory.log_prob_action, full_trajectory=False
-        )
-        return weight * returns
+        weight = self.get_ope_weight(state, action, trajectory.log_prob_action)
+        return weight * (self.critic(state, action) - self.value_target(state))

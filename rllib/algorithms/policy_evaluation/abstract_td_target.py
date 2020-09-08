@@ -5,12 +5,8 @@ import torch
 import torch.nn as nn
 
 from rllib.util.neural_networks.utilities import reverse_cumsum
-from rllib.util.utilities import (
-    get_entropy_and_log_p,
-    integrate,
-    tensor_to_distribution,
-)
-from rllib.value_function.abstract_value_function import AbstractValueFunction
+from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
+from rllib.value_function import AbstractValueFunction, IntegrateQValueFunction
 
 
 class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
@@ -77,6 +73,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         super().__init__()
         self.critic = critic
         self.policy = policy
+        self.value_target = IntegrateQValueFunction(critic, policy, num_samples)
         self.gamma = gamma
         self.lambda_ = lambda_
         self.num_samples = num_samples
@@ -97,7 +94,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
 
         # Compute off-policy correction factor.
         if self.policy is not None:
-            pi = tensor_to_distribution(self.policy(state))
+            pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
             _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
         else:
             log_p = behavior_log_p
@@ -106,17 +103,12 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         # Compute Q(state, action) and \E_\pi[Q(next_state, \pi(next_state)].
         if isinstance(self.critic, AbstractValueFunction):
             this_v = self.critic(state) * (1.0 - done_t)
-            next_v = self.critic(next_state) * (1.0 - done)
+            next_v = self.critic(next_state)
         else:
             this_v = self.critic(state, action) * (1.0 - done_t)
 
             if self.policy is not None:
-                next_pi = tensor_to_distribution(self.policy(next_state))
-                next_v = integrate(
-                    lambda a: self.critic(next_state, a),
-                    next_pi,
-                    num_samples=self.num_samples,
-                ) * (1.0 - done)
+                next_v = self.value_target(next_state)
             else:
                 next_v = self.critic(next_state[:, : n_steps - 1], action[:, 1:])
                 last_v = torch.zeros(next_v.shape[0], 1)
@@ -124,8 +116,8 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                     last_v = last_v.unsqueeze(-1).repeat_interleave(
                         next_v.shape[-1], -1
                     )
-                next_v = torch.cat((next_v, last_v), -1) * (1.0 - done)
-
+                next_v = torch.cat((next_v, last_v), -1)
+        next_v = next_v * (1.0 - done)
         # Compute td = r + gamma E\pi[Q(next_state, \pi(next_state)] - Q(state, action).
         td = self.td(this_v, next_v, reward, correction)
 

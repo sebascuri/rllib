@@ -2,8 +2,6 @@
 
 import torch
 
-from rllib.util.utilities import integrate, tensor_to_distribution
-
 from .sarsa import SARSA
 
 
@@ -34,19 +32,12 @@ class ESARSA(SARSA):
     temporal-difference learning algorithms. Utrecht University.
     """
 
-    def __init__(self, num_samples=15, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.num_samples = num_samples
 
     def get_value_target(self, observation):
         """Get q function target."""
-        pi = tensor_to_distribution(self.policy(observation.next_state))
-        next_v = integrate(
-            lambda a: self.critic_target(observation.next_state, a),
-            pi,
-            num_samples=self.num_samples,
-        )
-        next_v = next_v * (1 - observation.done)
+        next_v = self.value_target(observation.next_state) * (1 - observation.done)
         return self.reward_transformer(observation.reward) + self.gamma * next_v
 
 

@@ -40,10 +40,13 @@ class QLearningAgent(OffPolicyAgent):
 
     def __init__(self, critic, policy, criterion=loss.MSELoss, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.policy = policy
         self.algorithm = QLearning(
-            critic=critic, criterion=criterion(reduction="none"), gamma=self.gamma
+            policy=policy,
+            critic=critic,
+            criterion=criterion(reduction="none"),
+            gamma=self.gamma,
         )
+        self.policy = self.algorithm.policy
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

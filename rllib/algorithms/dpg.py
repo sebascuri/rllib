@@ -42,11 +42,14 @@ class DPG(AbstractAlgorithm):
         self.policy_target.dist_params.update(
             add_noise=True, policy_noise=policy_noise, noise_clip=noise_clip
         )
+        self.value_target.policy = self.policy_target
 
     def actor_loss(self, observation):
         """Get Actor Loss."""
         state = observation.state
-        action = tensor_to_distribution(self.policy(state)).mean.clamp(-1, 1)
+        action = tensor_to_distribution(
+            self.policy(state), **self.policy.dist_params
+        ).mean.clamp(-1, 1)
         with DisableGradient(self.critic_target):
             q = self.critic_target(state, action)
             if isinstance(self.critic_target, NNEnsembleQFunction):
@@ -55,10 +58,7 @@ class DPG(AbstractAlgorithm):
 
     def get_value_target(self, observation):
         """Get q function target."""
-        next_action = tensor_to_distribution(
-            self.policy_target(observation.next_state), **self.policy_target.dist_params
-        ).sample()
-        next_v = self.critic_target(observation.next_state, next_action)
+        next_v = self.value_target(observation.next_state)
         if isinstance(self.critic_target, NNEnsembleQFunction):
             next_v = torch.min(next_v, dim=-1)[0]
         next_v = next_v * (1 - observation.done)
