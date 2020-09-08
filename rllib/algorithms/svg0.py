@@ -17,24 +17,26 @@ class SVG0(DPG):
 
     def actor_loss(self, observation) -> Loss:
         """Compute Actor loss."""
-        action_mean, action_chol = self.policy(observation.state[..., 0, :])
+        state, action = observation.state[..., 0, :], observation.action[..., 0, :]
+        action_mean, action_chol = self.policy(state)
+
         # Infer eta.
         with torch.no_grad():
-            delta = observation.action[..., 0, :] - action_mean
+            delta = action / self.policy.action_scale - action_mean
             eta = torch.inverse(action_chol) @ delta.unsqueeze(-1)
 
         # Compute entropy and log_probability.
         pi = tensor_to_distribution((action_mean, action_chol))
-        entropy, log_p = get_entropy_and_log_p(
-            pi, observation.action[..., 0, :], self.policy.action_scale
-        )
+        entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
 
         # Compute off-policy weight.
         with torch.no_grad():
             weight = torch.exp(log_p - observation.log_prob_action[..., 0])
 
         # Compute re-parameterized policy sample.
-        action = (action_mean + (action_chol @ eta).squeeze(-1)).clamp(-1, 1)
+        action = self.policy.action_scale * (
+            action_mean + (action_chol @ eta).squeeze(-1)
+        ).clamp(-1, 1)
 
         # Propagate gradient.
         with DisableGradient(self.critic_target):
