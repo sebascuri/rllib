@@ -71,7 +71,7 @@ class TransformedModel(AbstractModel):
 
     def forward(self, state, action, next_state=None):
         """Predict next state distribution."""
-        return self.predict(state, action, next_state)
+        return self.predict(state, action[..., : self.dim_action[0]], next_state)
 
     def scale(self, state, action):
         """Get epistemic scale of model."""

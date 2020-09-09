@@ -12,7 +12,7 @@ class ExpectedModel(TransformedModel):
 
     def forward(self, state, action, next_state=None):
         """Get Expected Next state."""
-        prediction_tuple = self.predict(state, action)
+        prediction_tuple = self.predict(state, action[..., : self.dim_action[0]])
         if len(prediction_tuple) == 1:
             return prediction_tuple
         else:
