@@ -284,7 +284,7 @@ class ExperienceReplay(data.Dataset):
     @property
     def valid_indexes(self):
         """Return list of valid indexes."""
-        return self.valid.nonzero().squeeze(1)
+        return torch.nonzero(self.valid, as_tuple=False).squeeze(1)
 
     @property
     def num_steps(self):
