@@ -5,14 +5,10 @@ from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.abstract_solver import MPCSolver
 from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
-from rllib.dataset.datatypes import Trajectory
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
-from rllib.policy.derived_policy import DerivedPolicy
 
 class ModelBasedAgent(AbstractAgent):
-    policy: DerivedPolicy
-    algorithm: AbstractAlgorithm
     model_learning_algorithm: ModelLearningAlgorithm
     planning_algorithm: Optional[MPCSolver]
     simulation_algorithm: Optional[SimulationAlgorithm]

@@ -95,6 +95,10 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         """Update model posterior of GP-models with new data."""
         if isinstance(self.dynamical_model.base_model, ExactGPModel):
             observation = stack_list_of_tuples(last_trajectory)  # Parallelize.
+            if observation.action.shape[-1] > self.dynamical_model.dim_action[0]:
+                observation.action = observation.action[
+                    ..., : self.dynamical_model.dim_action[0]
+                ]
             for transform in self.train_set.transformations:
                 observation = transform(observation)
             print(colorize("Add data to GP Model", "yellow"))
@@ -109,6 +113,10 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         """Add last trajectory to learning algorithm."""
         self._update_model_posterior(last_trajectory)
         for observation in last_trajectory:
+            if observation.action.shape[-1] > self.dynamical_model.dim_action[0]:
+                observation.action = observation.action[
+                    ..., : self.dynamical_model.dim_action[0]
+                ]
             if np.random.rand() < self.validation_ratio:
                 self.validation_set.append(observation)
             else:

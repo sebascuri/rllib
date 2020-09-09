@@ -3,9 +3,11 @@ import torch
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Observation
+from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
 
 from .abstract_model import AbstractModel
 from .ensemble_model import EnsembleModel
+from .nn_model import NNModel
 
 
 class TransformedModel(AbstractModel):
@@ -26,15 +28,32 @@ class TransformedModel(AbstractModel):
         self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(
+        cls,
+        environment,
+        base_model=None,
+        model_kind="dynamics",
+        transformations=None,
+        *args,
+        **kwargs,
+    ):
         """See AbstractModel.default()."""
-        base_model = EnsembleModel.default(environment)
-        return super().default(
-            environment,
-            base_model=base_model,
-            transformations=kwargs.pop("transfromations", []),
-            *args,
-            **kwargs,
+        if base_model is None:
+            if model_kind == "dynamics":
+                base_model = EnsembleModel.default(environment, *args, **kwargs)
+            elif model_kind == "rewards":
+                base_model = NNModel.default(
+                    environment, model_kind=model_kind, *args, **kwargs
+                )
+            else:
+                raise NotImplementedError
+        if transformations is None:
+            if not base_model.discrete_state:
+                transformations = [StateNormalizer(), MeanFunction(DeltaState())]
+            else:
+                transformations = []
+        return cls(
+            base_model=base_model, transformations=transformations, *args, **kwargs
         )
 
     @property

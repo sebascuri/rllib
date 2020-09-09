@@ -18,9 +18,7 @@ from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
-from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
-from rllib.model import EnsembleModel, NNModel, TransformedModel
-from rllib.policy.derived_policy import DerivedPolicy
+from rllib.model import TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.policy.random_policy import RandomPolicy
 from rllib.util.neural_networks.utilities import DisableGradient
@@ -108,7 +106,7 @@ class ModelBasedAgent(AbstractAgent):
             policy = MPCPolicy(self.planning_algorithm)
         else:
             policy = RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
-        self.policy = DerivedPolicy(policy, self.dynamical_model.base_model.dim_action)
+        self.policy = policy
         self.num_simulation_iterations = num_simulation_iterations
         self.learn_from_real = learn_from_real and self.algorithm is not None
         self.learn_from_sim = (
@@ -143,8 +141,6 @@ class ModelBasedAgent(AbstractAgent):
         else:
             action = super().act(state)
 
-        dim = self.dynamical_model.base_model.dim_action[0]
-        action = action[..., :dim]
         return action.clip(
             -self.policy.action_scale.numpy(), self.policy.action_scale.numpy()
         )
@@ -293,15 +289,12 @@ class ModelBasedAgent(AbstractAgent):
     ):
         """Get a default model-based agent."""
         if dynamical_model is None:
-            model = EnsembleModel.default(environment, *args, **kwargs)
-            dynamical_model = TransformedModel(
-                model, [StateNormalizer(), MeanFunction(DeltaState())]
-            )
-
+            dynamical_model = TransformedModel.default(environment, *args, **kwargs)
         if reward_model is None:
-            reward_model = TransformedModel(
-                NNModel.default(environment, model_kind="rewards"),
-                dynamical_model.forward_transformations,
+            reward_model = TransformedModel.default(
+                environment,
+                model_kind="rewards",
+                transformations=dynamical_model.forward_transformations,
             )
 
         params = list(chain(dynamical_model.parameters(), reward_model.parameters()))

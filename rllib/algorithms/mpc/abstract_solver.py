@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.model.transformed_model import TransformedModel
 from rllib.util.multiprocessing import modify_parallel
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_actions
@@ -66,12 +65,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         **kwargs,
     ):
         super().__init__()
-        if not isinstance(dynamical_model, TransformedModel):
-            dynamical_model = TransformedModel(dynamical_model, [])
-        if not isinstance(reward_model, TransformedModel):
-            reward_model = TransformedModel(reward_model, [])
         self.dynamical_model = dynamical_model
-
         self.reward_model = reward_model
         self.termination_model = termination_model
 
