@@ -159,7 +159,7 @@ class MPO(AbstractAlgorithm):
     epsilon_var: float
         The KL-divergence for the variance component in the M-step (fitting the policy).
         See `mbrl.control.separated_kl`.
-    num_action_samples: int.
+    num_samples: int.
         Number of action samples to approximate integral.
     gamma: float
         The discount factor.
@@ -173,7 +173,7 @@ class MPO(AbstractAlgorithm):
 
     def __init__(
         self,
-        num_action_samples=15,
+        num_samples=15,
         epsilon=0.1,
         epsilon_mean=0.0,
         epsilon_var=0.0001,
@@ -181,20 +181,21 @@ class MPO(AbstractAlgorithm):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(num_samples=num_samples, *args, **kwargs)
+        self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
+        self.post_init()
+
+    def post_init(self):
+        """Call after initialization to initialize other modules."""
+        super().post_init()
         old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
-
         self.old_policy = old_policy
-        self.critic_target = deep_copy_module(self.critic)
-        self.num_action_samples = num_action_samples
-
-        self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
         self.ope = ReTrace(
             policy=self.old_policy,
             critic=self.critic_target,
             gamma=self.gamma,
-            num_samples=self.num_action_samples,
+            num_samples=self.num_samples,
             lambda_=1.0,
         )
 
@@ -258,7 +259,7 @@ class MPO(AbstractAlgorithm):
     def actor_loss(self, observation):
         """Compute actor loss."""
         state = repeat_along_dimension(
-            observation.state, number=self.num_action_samples, dim=0
+            observation.state, number=self.num_samples, dim=0
         )
 
         kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)

@@ -47,11 +47,15 @@ class PPO(GAAC):
     """
 
     def __init__(
-        self, epsilon=0.2, clamp_value=False, monte_carlo_target=False, *args, **kwargs
+        self,
+        epsilon=0.2,
+        clamp_value=False,
+        monte_carlo_target=False,
+        standardize_returns=True,
+        *args,
+        **kwargs,
     ):
-        super().__init__(
-            standardize_returns=kwargs.pop("standardize_returns", True), *args, **kwargs
-        )
+        super().__init__(standardize_returns=standardize_returns, *args, **kwargs)
 
         if not isinstance(epsilon, ParameterDecay):
             epsilon = Constant(epsilon)

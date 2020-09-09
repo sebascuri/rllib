@@ -2,6 +2,7 @@
 import torch
 
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util.training.utilities import sharpness
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -46,13 +47,19 @@ def dyna_expand(
 
         def forward(self, observation, **kwargs_):
             """Rollout model and call base algorithm with transitions."""
+            real_loss = super().forward(observation)
             with torch.no_grad():
                 state = observation.state[..., 0, :]
                 trajectory = self.simulate(state, self.policy)
             try:
                 observation = stack_list_of_tuples(trajectory, dim=-2)
-                return super().forward(observation)
+                sim_loss = super().forward(observation)
             except RuntimeError:
-                return super().forward(trajectory)
+                sim_loss = super().forward(trajectory)
+
+            sharpness_ = sharpness(self.dynamical_model, observation).item()
+            alpha = 1.0 / (1.0 + self.num_steps * sharpness_)
+
+            return (1 - alpha) * real_loss + alpha * sim_loss
 
     return Dyna()

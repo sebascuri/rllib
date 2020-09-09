@@ -23,7 +23,6 @@ class SoftActorCritic(AbstractAlgorithm):
     def __init__(self, eta, regularization=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Actor
-        self.policy.dist_params.update(tanh=True)
         self.target_entropy = -self.policy.dim_action[0]
         assert (
             len(self.policy.dim_action) == 1
@@ -37,6 +36,12 @@ class SoftActorCritic(AbstractAlgorithm):
             if isinstance(eta, ParameterDecay):
                 eta = eta()
             self.eta = Learnable(eta, positive=True)
+
+    def post_init(self) -> None:
+        """Set derived modules after initialization."""
+        super().post_init()
+        self.policy.dist_params.update(tanh=True)
+        self.policy_target.dist_params.update(tanh=True)
 
     def actor_loss(self, observation):
         """Get Actor Loss."""

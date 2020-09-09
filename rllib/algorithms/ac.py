@@ -56,14 +56,16 @@ class ActorCritic(AbstractAlgorithm):
         self, num_samples=15, standardize_returns=True, ope=None, *args, **kwargs
     ):
         super().__init__(num_samples=num_samples, *args, **kwargs)
+        self.post_init()
+        self.standardize_returns = standardize_returns
+        self.ope = ope
+
+    def post_init(self):
+        """Set derived modules after initialization."""
+        super().post_init()
         old_policy = deep_copy_module(self.policy)
         freeze_parameters(old_policy)
         self.old_policy = old_policy
-
-        self.standardize_returns = standardize_returns
-
-        self.ope = ope
-        self.num_samples = num_samples
 
     def get_log_p_kl_entropy(self, state, action):
         """Get kl divergence and current policy at a given state.

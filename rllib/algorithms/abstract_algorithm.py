@@ -84,10 +84,20 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.criterion = criterion
         self.reward_transformer = reward_transformer
         self.entropy_regularization = entropy_regularization
+        self.num_samples = num_samples
+        self.post_init()
 
+    def post_init(self):
+        """Set derived modules after initialization."""
         self.value_target = IntegrateQValueFunction(
-            self.critic_target, self.policy, num_samples=num_samples
+            self.critic_target, self.policy, num_samples=self.num_samples
         )
+
+    def set_policy(self, new_policy):
+        """Set new policy."""
+        self.policy = new_policy
+        self.policy_target = deep_copy_module(self.policy)
+        self.post_init()
 
     def get_value_target(self, observation):
         """Get Q target from the observation."""

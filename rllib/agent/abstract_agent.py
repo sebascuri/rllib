@@ -87,6 +87,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.last_trajectory = []
         self.params = {}
 
+    def set_policy(self, new_policy):
+        """Set policy."""
+        self.policy = new_policy
+        self.algorithm.set_policy(new_policy)
+
     @classmethod
     def default(cls, environment, comment=None, gamma=0.99, *args, **kwargs):
         """Get default agent for a given environment."""

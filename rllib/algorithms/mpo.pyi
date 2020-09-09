@@ -30,12 +30,11 @@ class MPOWorker(nn.Module):
 
 class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
-    num_action_samples: int
     mpo_loss: MPOWorker
     ope: Optional[AbstractTDTarget]
     def __init__(
         self,
-        num_action_samples: int = ...,
+        num_samples: int = ...,
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,

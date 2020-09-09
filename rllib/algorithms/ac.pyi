@@ -9,7 +9,6 @@ from .abstract_algorithm import AbstractAlgorithm
 from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class ActorCritic(AbstractAlgorithm):
-    num_samples: int
     standardize_returns: bool
     ope: Optional[AbstractTDTarget]
     def __init__(

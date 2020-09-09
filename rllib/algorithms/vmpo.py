@@ -53,10 +53,13 @@ class VMPO(MPO):
                 f"Top-k fraction should be in [0, 1]. Got {top_k_fraction} instead."
             )
 
+    def post_init(self) -> None:
+        """Set derived modules after initialization."""
+        super().post_init()
         self.ope = VTrace(
             policy=self.policy,
             critic=self.critic_target,
-            num_samples=self.num_action_samples,
+            num_samples=self.num_samples,
             rho_bar=1.0,
             gamma=self.gamma,
             lambda_=1.0,

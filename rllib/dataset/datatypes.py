@@ -245,7 +245,7 @@ class Loss:
 
     def __mul__(self, other):
         """Multiply losses by a scalar."""
-        return Loss(*map(lambda x: x[0] * other, self))
+        return Loss(*map(lambda x: x * other, self))
 
     def __rmul__(self, other):
         """Multiply losses by a scalar."""
