@@ -113,6 +113,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         """Add last trajectory to learning algorithm."""
         self._update_model_posterior(last_trajectory)
         for observation in last_trajectory:
+            observation = observation.clone()
             if observation.action.shape[-1] > self.dynamical_model.dim_action[0]:
                 observation.action = observation.action[
                     ..., : self.dynamical_model.dim_action[0]

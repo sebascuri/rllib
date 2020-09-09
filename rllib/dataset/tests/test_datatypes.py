@@ -43,10 +43,10 @@ class TestObservation(object):
     def test_example(self, discrete, dim_state, dim_action, kind):
         if discrete:
             num_states, num_actions = dim_state, dim_action
-            dim_state, dim_action = 1, 1
+            dim_state, dim_action = (), ()
         else:
             num_states, num_actions = -1, -1
-
+            dim_state, dim_action = (dim_state,), (dim_action,)
         if kind == "nan":
             o = Observation.nan_example(
                 dim_state=dim_state,
@@ -87,10 +87,29 @@ class TestObservation(object):
             torch.testing.assert_allclose(o.log_prob_action, torch.tensor(1.0))
 
         else:
-            torch.testing.assert_allclose(o.state.shape, torch.Size((dim_state,)))
-            torch.testing.assert_allclose(o.action.shape, torch.Size((dim_action,)))
-            torch.testing.assert_allclose(o.next_state.shape, torch.Size((dim_state,)))
-            torch.testing.assert_allclose(
-                o.next_action.shape, torch.Size((dim_action,))
-            )
+            torch.testing.assert_allclose(o.state.shape, torch.Size(dim_state))
+            torch.testing.assert_allclose(o.action.shape, torch.Size(dim_action))
+            torch.testing.assert_allclose(o.next_state.shape, torch.Size(dim_state))
+            torch.testing.assert_allclose(o.next_action.shape, torch.Size(dim_action))
             torch.testing.assert_allclose(o.log_prob_action, torch.tensor(1.0))
+
+    def test_clone(self, discrete, dim_state, dim_action):
+        if discrete:
+            num_states, num_actions = dim_state, dim_action
+            dim_state, dim_action = (), ()
+        else:
+            num_states, num_actions = -1, -1
+            dim_state, dim_action = (dim_state,), (dim_action,)
+
+        o = Observation.random_example(
+            dim_state=dim_state,
+            dim_action=dim_action,
+            num_states=num_states,
+            num_actions=num_actions,
+        )
+        o1 = o.clone()
+        assert o is not o1
+        assert o == o1
+        for x, x1 in zip(o, o1):
+            assert Observation._is_equal_nan(x, x1)
+            assert x is not x1

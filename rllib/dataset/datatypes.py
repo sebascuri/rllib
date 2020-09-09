@@ -190,6 +190,14 @@ class Observation:
         """Check if two observations are not equal."""
         return not self.__eq__(other)
 
+    def clone(self):
+        """Get a cloned copy of the current observation."""
+        return Observation(*tuple(x.clone() for x in self.to_torch()))
+
+    def to(self, *args, **kwargs):
+        """Perform dtypes and device conversions. See torch.to()."""
+        return Observation(*tuple(x.to(*args, **kwargs) for x in self.to_torch()))
+
     def to_torch(self):
         """Transform to torch."""
         return Observation(
