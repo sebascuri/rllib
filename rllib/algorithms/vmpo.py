@@ -3,8 +3,6 @@
 import torch
 import torch.distributions
 
-from rllib.util.utilities import get_entropy_and_log_p
-
 from .mpo import MPO
 from .policy_evaluation.vtrace import VTrace
 
@@ -88,7 +86,8 @@ class VMPO(MPO):
         """
         state, action, *r = observation
 
-        kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
+        log_p, _, kl_mean, kl_var, _ = self.get_log_p_kl_entropy(state, action)
+
         value_prediction = self.critic(state)
 
         with torch.no_grad():
@@ -96,8 +95,8 @@ class VMPO(MPO):
 
         # Since actions are on-policy, advantage is correct but
         # we should use IS in the off-policy case.
-        advantage = value_target - value_prediction
-        _, log_p = get_entropy_and_log_p(pi_dist, action, self.policy.action_scale)
+        weight = self.get_ope_weight(state, action, observation.log_prob_action)
+        advantage = weight * (value_target - value_prediction)
 
         k = int(self.top_k_fraction * state.shape[0])
         _, idx_top_k = torch.topk(advantage.mean(-1), k=k, dim=0, largest=True)

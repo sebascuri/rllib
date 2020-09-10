@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -20,9 +20,3 @@ class ActorCritic(AbstractAlgorithm):
         **kwargs: Any,
     ) -> None: ...
     def returns(self, trajectory: Observation) -> Tensor: ...
-    def get_ope_weight(
-        self, state: Tensor, action: Tensor, log_prob_action: Tensor
-    ) -> Tensor: ...
-    def get_log_p_kl_entropy(
-        self, state: Tensor, action: Tensor
-    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...

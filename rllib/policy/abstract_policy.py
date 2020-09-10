@@ -50,7 +50,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         num_actions=-1,
         tau=5e-3,
         deterministic=False,
-        action_scale=1,
+        action_scale=1.0,
         goal=None,
         dist_params=None,
         *args,
@@ -68,7 +68,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         self.dist_params = dict() if dist_params is None else dist_params
 
         if self.discrete_action:
-            action_scale = torch.tensor(1)
+            action_scale = torch.tensor(1.0)
         elif isinstance(action_scale, np.ndarray):
             action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
         elif not isinstance(action_scale, torch.Tensor):

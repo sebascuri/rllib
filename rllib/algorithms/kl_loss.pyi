@@ -1,7 +1,8 @@
 """KL-Constraint Helper Module."""
-from typing import Any, Union, Optional
-from torch import Tensor
+from typing import Any, Optional, Union
+
 import torch.nn as nn
+from torch import Tensor
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.parameter_decay import ParameterDecay

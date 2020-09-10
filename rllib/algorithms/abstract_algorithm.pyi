@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, List, Union
+from typing import Any, List, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -21,6 +21,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     critic_target: AbstractQFunction
     policy: AbstractPolicy
     policy_target: AbstractPolicy
+    old_policy: AbstractPolicy
     criterion: _Loss
     entropy_regularization: float
     num_samples: int
@@ -48,6 +49,12 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def get_value_target(self, observation: Observation) -> Tensor: ...
     def process_value_prediction(
         self, value_prediction: Tensor, observation: Observation
+    ) -> Tensor: ...
+    def get_log_p_kl_entropy(
+        self, state: Tensor, action: Tensor
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...
+    def get_ope_weight(
+        self, state: Tensor, action: Tensor, log_prob_action: Tensor
     ) -> Tensor: ...
     def actor_loss(self, observation: Observation) -> Loss: ...
     def critic_loss(self, observation: Observation) -> Loss: ...

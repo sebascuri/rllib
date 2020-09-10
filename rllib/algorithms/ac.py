@@ -2,13 +2,6 @@
 import torch
 
 from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks import deep_copy_module, freeze_parameters
-from rllib.util.utilities import (
-    get_entropy_and_log_p,
-    off_policy_weight,
-    separated_kl,
-    tensor_to_distribution,
-)
 from rllib.util.value_estimation import discount_sum
 from rllib.value_function import AbstractQFunction, AbstractValueFunction
 
@@ -56,87 +49,8 @@ class ActorCritic(AbstractAlgorithm):
         self, num_samples=15, standardize_returns=True, ope=None, *args, **kwargs
     ):
         super().__init__(num_samples=num_samples, *args, **kwargs)
-        self.post_init()
         self.standardize_returns = standardize_returns
         self.ope = ope
-
-    def post_init(self):
-        """Set derived modules after initialization."""
-        super().post_init()
-        old_policy = deep_copy_module(self.policy)
-        freeze_parameters(old_policy)
-        self.old_policy = old_policy
-
-    def get_log_p_kl_entropy(self, state, action):
-        """Get kl divergence and current policy at a given state.
-
-        Compute the separated KL divergence between current and old policy.
-        When the policy is a MultivariateNormal distribution, it compute the divergence
-        that correspond to the mean and the covariance separately.
-
-        When the policy is a Categorical distribution, it computes the divergence and
-        assigns it to the mean component. The variance component is kept to zero.
-
-        Parameters
-        ----------
-        state: torch.Tensor
-            Empirical state distribution.
-
-        action: torch.Tensor
-            Actions sampled by pi_old.
-
-        Returns
-        -------
-        log_p: torch.Tensor
-            Log probability of actions according to current policy.
-        log_p_old: torch.Tensor
-            Log probability of actions according to old policy.
-        kl_mean: torch.Tensor
-            KL-Divergence due to the change in the mean between current and
-            previous policy.
-        kl_var: torch.Tensor
-            KL-Divergence due to the change in the variance between current and
-            previous policy.
-        """
-        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        pi_old = tensor_to_distribution(
-            self.old_policy(state), **self.policy.dist_params
-        )
-
-        entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-        _, log_p_old = get_entropy_and_log_p(pi_old, action, self.policy.action_scale)
-
-        if isinstance(pi, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_old, q=pi)
-        else:
-            try:
-                kl_mean = torch.distributions.kl_divergence(p=pi_old, q=pi).mean()
-            except NotImplementedError:
-                kl_mean = (log_p_old - log_p).mean()  # Approximate the KL with samples.
-            kl_var = torch.zeros_like(kl_mean)
-
-        num_t = self._info["num_trajectories"]
-        self._info.update(
-            kl_div=self._info["kl_div"] + (kl_mean + kl_var) / num_t,
-            kl_mean=self._info["kl_mean"] + kl_mean / num_t,
-            kl_var=self._info["kl_var"] + kl_var / num_t,
-            entropy=self._info["entropy"] + entropy / num_t,
-        )
-
-        return log_p, log_p_old, kl_mean, kl_var, entropy
-
-    def get_ope_weight(self, state, action, log_prob_action):
-        """Get off-policy weight of a given transition."""
-        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-
-        weight = off_policy_weight(log_p, log_prob_action, full_trajectory=False)
-        return weight
-
-    def reset(self):
-        """Reset the optimization (kl divergence) for the next epoch."""
-        # Copy over old policy for KL divergence
-        self.old_policy.load_state_dict(self.policy.state_dict())
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""
@@ -163,9 +77,7 @@ class ActorCritic(AbstractAlgorithm):
         """Get Actor loss."""
         state, action, reward, next_state, done, *r = observation
 
-        log_p, log_p_old, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
-            state, action
-        )
+        log_p, _, _, _, entropy = self.get_log_p_kl_entropy(state, action)
 
         with torch.no_grad():
             returns = self.returns(observation)
@@ -176,14 +88,4 @@ class ActorCritic(AbstractAlgorithm):
         return Loss(
             policy_loss=policy_loss.mean(),
             regularization_loss=-self.entropy_regularization * entropy,
-        )
-
-    def reset_info(self, *args, **kwargs):
-        """Reset AC info."""
-        super().reset_info(*args, **kwargs)
-        self._info.update(
-            kl_div=torch.tensor(0.0),
-            kl_mean=torch.tensor(0.0),
-            kl_var=torch.tensor(0.0),
-            entropy=torch.tensor(0.0),
         )

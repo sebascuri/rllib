@@ -5,17 +5,9 @@ import torch.distributions
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks import (
-    deep_copy_module,
-    freeze_parameters,
-    repeat_along_dimension,
-)
+from rllib.util.neural_networks import repeat_along_dimension
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import (
-    get_entropy_and_log_p,
-    separated_kl,
-    tensor_to_distribution,
-)
+from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm
 from .kl_loss import KLLoss
@@ -151,9 +143,6 @@ class MPO(AbstractAlgorithm):
     def post_init(self):
         """Call after initialization to initialize other modules."""
         super().post_init()
-        old_policy = deep_copy_module(self.policy)
-        freeze_parameters(old_policy)
-        self.old_policy = old_policy
         self.ope = ReTrace(
             policy=self.old_policy,
             critic=self.critic_target,
@@ -161,55 +150,6 @@ class MPO(AbstractAlgorithm):
             num_samples=self.num_samples,
             lambda_=1.0,
         )
-
-    def get_kl_and_pi(self, state):
-        """Get kl divergence and current policy at a given state.
-
-        Compute the separated KL divergence between current and old policy.
-        When the policy is a MultivariateNormal distribution, it compute the divergence
-        that correspond to the mean and the covariance separately.
-
-        When the policy is a Categorical distribution, it computes the divergence and
-        assigns it to the mean component. The variance component is kept to zero.
-
-        Parameters
-        ----------
-        state: torch.Tensor
-            Empirical state distribution.
-
-        Returns
-        -------
-        kl_mean: torch.Tensor
-            KL-Divergence due to the change in the mean between current and
-            previous policy.
-
-        kl_var: torch.Tensor
-            KL-Divergence due to the change in the variance between current and
-            previous policy.
-
-        pi_dist: torch.distribution.Distribution
-            Current policy distribution.
-        """
-        pi_dist = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        pi_dist_old = tensor_to_distribution(
-            self.old_policy(state), **self.policy.dist_params
-        )
-
-        if isinstance(pi_dist, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_dist_old, q=pi_dist)
-        else:
-            kl_mean = torch.distributions.kl_divergence(p=pi_dist_old, q=pi_dist).mean()
-            kl_var = torch.zeros_like(kl_mean)
-
-        num_t = self._info["num_trajectories"]
-        self._info.update(
-            kl_div=self._info["kl_div"] + (kl_mean + kl_var) / num_t,
-            kl_mean=self._info["kl_mean"] + kl_mean / num_t,
-            kl_var=self._info["kl_var"] + kl_var / num_t,
-            entropy=self._info["entropy"] + pi_dist.entropy().mean() / num_t,
-        )
-
-        return kl_mean, kl_var, pi_dist
 
     def get_value_target(self, observation):
         """Get value target."""
@@ -224,13 +164,12 @@ class MPO(AbstractAlgorithm):
         state = repeat_along_dimension(
             observation.state, number=self.num_samples, dim=0
         )
+        pi_dist = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        action = self.policy.action_scale * pi_dist.sample().clamp(-1.0, 1.0)
 
-        kl_mean, kl_var, pi_dist = self.get_kl_and_pi(state)
+        log_p, _, kl_mean, kl_var, _ = self.get_log_p_kl_entropy(state, action)
 
-        action = pi_dist.sample()
-        entropy, log_p = get_entropy_and_log_p(pi_dist, action, action_scale=1.0)
-        # Use action_scale = 1.0 because action is sampled from pi_dist.
-        q_values = self.critic_target(state, self.policy.action_scale * action)
+        q_values = self.critic_target(state, action)
 
         mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p)
         kl_loss = self.kl_loss(kl_mean=kl_mean, kl_var=kl_var)
@@ -242,18 +181,3 @@ class MPO(AbstractAlgorithm):
         )
 
         return mpo_loss + kl_loss
-
-    def reset(self):
-        """Reset the optimization (kl divergence) for the next epoch."""
-        # Copy over old policy for KL divergence
-        self.old_policy.load_state_dict(self.policy.state_dict())
-
-    def reset_info(self, *args, **kwargs):
-        """Reset MPO info."""
-        super().reset_info(*args, **kwargs)
-        self._info.update(
-            kl_div=torch.tensor(0.0),
-            kl_mean=torch.tensor(0.0),
-            kl_var=torch.tensor(0.0),
-            entropy=torch.tensor(0.0),
-        )

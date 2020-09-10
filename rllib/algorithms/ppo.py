@@ -73,9 +73,7 @@ class PPO(GAAC):
     def actor_loss(self, trajectory):
         """Get actor loss."""
         state, action, reward, next_state, done, *r = trajectory
-        log_p, log_p_old, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
-            state, action
-        )
+        log_p, log_p_old, _, _, entropy = self.get_log_p_kl_entropy(state, action)
 
         with torch.no_grad():
             adv = self.returns(trajectory)

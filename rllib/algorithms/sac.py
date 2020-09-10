@@ -37,7 +37,7 @@ class SoftActorCritic(AbstractAlgorithm):
                 eta = eta()
             self.eta = Learnable(eta, positive=True)
 
-    def post_init(self) -> None:
+    def post_init(self):
         """Set derived modules after initialization."""
         super().post_init()
         self.policy.dist_params.update(tanh=True)
