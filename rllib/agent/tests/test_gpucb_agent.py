@@ -53,3 +53,4 @@ def test_gpucb(reward, model_class):
     agent = GPUCBAgent(model, x, beta=2.0)
 
     rollout_agent(environment, agent, num_episodes=1, max_steps=STEPS)
+    agent.logger.delete_directory()  # Cleanup directory.

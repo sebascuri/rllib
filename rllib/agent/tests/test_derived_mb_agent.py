@@ -45,6 +45,7 @@ def rollout_agent(environment, base_agent, extender, num_steps, td_k=True):
     )
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
+    agent.logger.delete_directory()  # Cleanup directory.
 
 
 def test_continuous_agent(continuous_environment, base_agent, extender, num_steps):

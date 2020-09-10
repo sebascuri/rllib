@@ -113,6 +113,7 @@ def test_mpc_solvers(solver, num_cpu):
     evaluate_agent(
         agent, environment=env, num_episodes=1, max_steps=MAX_ITER, render=False
     )
+    agent.logger.delete_directory()  # Cleanup directory.
 
 
 def test_mpc_warm_start(solver, warm_start):
@@ -122,6 +123,7 @@ def test_mpc_warm_start(solver, warm_start):
     evaluate_agent(
         agent, environment=env, num_episodes=1, max_steps=MAX_ITER, render=False
     )
+    agent.logger.delete_directory()  # Cleanup directory.
 
 
 def test_mpc_default_action(solver, default_action):
@@ -131,3 +133,4 @@ def test_mpc_default_action(solver, default_action):
     evaluate_agent(
         agent, environment=env, num_episodes=1, max_steps=MAX_ITER, render=False
     )
+    agent.logger.delete_directory()  # Cleanup directory.

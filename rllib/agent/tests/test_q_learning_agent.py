@@ -71,6 +71,7 @@ def test_policies(environment, policy):
     )
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
+    agent.logger.delete_directory()  # Cleanup directory.
 
 
 def test_tabular_interaction(agent, policy):
@@ -98,6 +99,7 @@ def test_tabular_interaction(agent, policy):
 
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
+    agent.logger.delete_directory()  # Cleanup directory.
 
     torch.testing.assert_allclose(
         critic.table.shape,
