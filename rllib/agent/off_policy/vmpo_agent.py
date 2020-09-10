@@ -37,7 +37,7 @@ class VMPOAgent(MPOAgent):
         self.algorithm = VMPO(
             policy=policy,
             critic=critic,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,

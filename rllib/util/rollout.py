@@ -246,11 +246,13 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                     policy(torch.tensor(state, dtype=torch.get_default_dtype())),
                     **policy.dist_params,
                 )
-                action = (policy.action_scale * pi.sample()).numpy()
+                action = pi.sample()
+                if not policy.discrete_action:
+                    action = policy.action_scale * action.clamp_(-1.0, 1.0)
                 obs, state, done, info = step_env(
                     environment=environment,
                     state=state,
-                    action=action,
+                    action=action.detach().numpy(),
                     action_scale=policy.action_scale,
                     pi=pi,
                     render=render,
@@ -310,7 +312,9 @@ def rollout_model(
             action = pi.rsample()
         else:
             action = pi.sample()
-        action = policy.action_scale * action.clamp_(-1, 1)
+
+        if not policy.discrete_action:
+            action = policy.action_scale * action.clamp_(-1.0, 1.0)
 
         observation, next_state, done = step_model(
             dynamical_model=dynamical_model,
