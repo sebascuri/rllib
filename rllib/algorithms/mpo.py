@@ -18,10 +18,11 @@ from rllib.util.utilities import (
 )
 
 from .abstract_algorithm import AbstractAlgorithm
+from .kl_loss import KLLoss
 from .policy_evaluation.retrace import ReTrace
 
 
-class MPOWorker(nn.Module):
+class MPOLoss(nn.Module):
     """Maximum a Posterior Policy Optimization Losses.
 
     This method uses critic values under samples from a policy to construct a
@@ -33,55 +34,31 @@ class MPOWorker(nn.Module):
     epsilon: float
         The average KL-divergence for the E-step, i.e., the KL divergence between
         the sample-based policy and the original policy
-    epsilon_mean: float
-        The KL-divergence for the mean component in the M-step (fitting the policy).
-        See `rllib.util.utilities.separated_kl`.
-    epsilon_var: float
-        The KL-divergence for the variance component in the M-step (fitting the policy).
-        See `rllib.util.utilities.separated_kl`.
 
     References
     ----------
     Abdolmaleki, et al. "Maximum a Posteriori Policy Optimisation." (2018). ICLR.
     """
 
-    def __init__(
-        self, epsilon=0.1, epsilon_mean=0.1, epsilon_var=0.0001, regularization=False
-    ):
+    def __init__(self, epsilon=0.1, regularization=False):
         super().__init__()
-        if epsilon_var is None:
-            epsilon_var = 0.0
 
         if regularization:
             eta = epsilon
-            eta_mean = epsilon_mean
-            eta_var = epsilon_var
             if not isinstance(eta, ParameterDecay):
                 eta = Constant(eta)
-            if not isinstance(eta_mean, ParameterDecay):
-                eta_mean = Constant(eta_mean)
-            if not isinstance(eta_var, ParameterDecay):
-                eta_var = Constant(eta_var)
 
             self.eta = eta
-            self.eta_mean = eta_mean
-            self.eta_var = eta_var
 
             self.epsilon = torch.tensor(0.0)
-            self.epsilon_mean = torch.tensor(0.0)
-            self.epsilon_var = torch.tensor(0.0)
 
-        else:  # Trust-Region: || KL(q || \pi_old) || < \epsilon
+        else:  # Trust-Region: || KL(q || q) || < \epsilon
             self.eta = Learnable(1.0, positive=True)
-            self.eta_mean = Learnable(1.0, positive=True)
-            self.eta_var = Learnable(1.0, positive=True)
 
             self.epsilon = torch.tensor(epsilon)
-            self.epsilon_mean = torch.tensor(epsilon_mean)
-            self.epsilon_var = torch.tensor(epsilon_var)
 
-    def forward(self, q_values, action_log_p, kl_mean, kl_var):
-        """Return primal and dual loss terms from MMPO.
+    def forward(self, q_values, action_log_p):
+        """Return primal and dual loss terms from MPO.
 
         Parameters
         ----------
@@ -91,10 +68,6 @@ class MPOWorker(nn.Module):
         action_log_p : torch.Tensor
             A [n_action_samples, state_batch, 1] tensor of log probabilities
             of the corresponding actions under the policy.
-        kl_mean : torch.Tensor
-            A float corresponding to the KL divergence.
-        kl_var : torch.Tensor
-            A float corresponding to the KL divergence.
         """
         # Make sure the lagrange multipliers stay positive.
         # self.project_etas()
@@ -120,18 +93,7 @@ class MPOWorker(nn.Module):
         weighted_log_p = torch.sum(weights * action_log_p, dim=0)
         log_likelihood = torch.mean(weighted_log_p)
 
-        kl_loss = self.eta_mean().detach() * kl_mean + self.eta_var().detach() * kl_var
-
-        eta_mean_loss = self.eta_mean() * (self.epsilon_mean - kl_mean.detach())
-        eta_var_loss = self.eta_var() * (self.epsilon_var - kl_var.detach())
-
-        dual_loss = dual_loss + eta_mean_loss + eta_var_loss
-
-        return Loss(
-            policy_loss=-log_likelihood,
-            regularization_loss=kl_loss,
-            dual_loss=dual_loss,
-        )
+        return Loss(policy_loss=-log_likelihood, dual_loss=dual_loss)
 
 
 class MPO(AbstractAlgorithm):
@@ -182,7 +144,8 @@ class MPO(AbstractAlgorithm):
         **kwargs,
     ):
         super().__init__(num_samples=num_samples, *args, **kwargs)
-        self.mpo_loss = MPOWorker(epsilon, epsilon_mean, epsilon_var, regularization)
+        self.mpo_loss = MPOLoss(epsilon, regularization)
+        self.kl_loss = KLLoss(epsilon_mean, epsilon_var, regularization)
         self.post_init()
 
     def post_init(self):
@@ -267,21 +230,18 @@ class MPO(AbstractAlgorithm):
         action = pi_dist.sample()
         entropy, log_p = get_entropy_and_log_p(pi_dist, action, action_scale=1.0)
         # Use action_scale = 1.0 because action is sampled from pi_dist.
+        q_values = self.critic_target(state, self.policy.action_scale * action)
 
-        mpo_loss = self.mpo_loss(
-            q_values=self.critic_target(state, self.policy.action_scale * action),
-            action_log_p=log_p,
-            kl_mean=kl_mean,
-            kl_var=kl_var,
-        )
+        mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p)
+        kl_loss = self.kl_loss(kl_mean=kl_mean, kl_var=kl_var)
 
         self._info.update(
             eta=self.mpo_loss.eta(),
-            eta_mean=self.mpo_loss.eta_mean(),
-            eta_var=self.mpo_loss.eta_var(),
+            eta_mean=self.kl_loss.eta_mean(),
+            eta_var=self.kl_loss.eta_var(),
         )
 
-        return mpo_loss
+        return mpo_loss + kl_loss
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""

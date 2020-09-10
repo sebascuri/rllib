@@ -9,16 +9,12 @@ from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 
 from .abstract_algorithm import AbstractAlgorithm
+from .kl_loss import KLLoss
 from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
-class MPOWorker(nn.Module):
+class MPOLoss(nn.Module):
     eta: ParameterDecay
-    eta_mean: ParameterDecay
-    eta_var: ParameterDecay
-
     epsilon: Tensor
-    epsilon_mean: Tensor
-    epsilon_var: Tensor
     def __init__(
         self,
         epsilon: Union[ParameterDecay, float] = ...,
@@ -30,7 +26,8 @@ class MPOWorker(nn.Module):
 
 class MPO(AbstractAlgorithm):
     old_policy: AbstractPolicy
-    mpo_loss: MPOWorker
+    mpo_loss: MPOLoss
+    kl_loss: KLLoss
     ope: Optional[AbstractTDTarget]
     def __init__(
         self,

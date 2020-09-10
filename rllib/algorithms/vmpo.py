@@ -101,20 +101,18 @@ class VMPO(MPO):
 
         k = int(self.top_k_fraction * state.shape[0])
         _, idx_top_k = torch.topk(advantage.mean(-1), k=k, dim=0, largest=True)
-        advantage_top_k = advantage[idx_top_k]
-        log_p_top_k = log_p[idx_top_k]
 
-        mpo_loss = self.mpo_loss(
-            q_values=advantage_top_k.unsqueeze(0),  # 1-st dim is MPO action samples.
-            action_log_p=log_p_top_k.unsqueeze(0),
-            kl_mean=kl_mean,
-            kl_var=kl_var,
-        )
+        # 1-st dim in MPO action samples, as here is on-policy unsqueeze the first dim.
+        advantage_top_k = advantage[idx_top_k].unsqueeze(0)
+        log_p_top_k = log_p[idx_top_k].unsqueeze(0)
+
+        mpo_loss = self.mpo_loss(q_values=advantage_top_k, action_log_p=log_p_top_k)
+        kl_loss = self.kl_loss(kl_mean=kl_mean, kl_var=kl_var)
 
         self._info.update(
             eta=self.mpo_loss.eta(),
-            eta_mean=self.mpo_loss.eta_mean(),
-            eta_var=self.mpo_loss.eta_var(),
+            eta_mean=self.kl_loss.eta_mean(),
+            eta_var=self.kl_loss.eta_var(),
         )
 
-        return mpo_loss
+        return mpo_loss + kl_loss

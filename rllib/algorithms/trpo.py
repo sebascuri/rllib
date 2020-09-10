@@ -4,8 +4,8 @@ import torch
 import torch.distributions
 
 from rllib.dataset.datatypes import Loss
-from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 
+from .kl_loss import KLLoss
 from .ppo import PPO
 
 
@@ -40,32 +40,10 @@ class TRPO(PPO):
     """
 
     def __init__(
-        self, regularization=False, epsilon_mean=0.2, epsilon_var=1e-4, *args, **kwargs
+        self, epsilon_mean=0.2, epsilon_var=1e-4, regularization=False, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        if epsilon_var is None:
-            epsilon_var = epsilon_mean
-
-        if regularization:
-            eta_mean = epsilon_mean
-            eta_var = epsilon_var
-            if not isinstance(eta_mean, ParameterDecay):
-                eta_mean = Constant(eta_mean)
-            if not isinstance(eta_var, ParameterDecay):
-                eta_mean = Constant(eta_var)
-
-            self.eta_mean = eta_mean
-            self.eta_var = eta_var
-
-            self.epsilon_mean = torch.tensor(0.0)
-            self.epsilon_var = torch.tensor(0.0)
-
-        else:  # Trust-Region: || KL(\pi_old || p) || < \epsilon
-            self.eta_mean = Learnable(1.0, positive=True)
-            self.eta_var = Learnable(1.0, positive=True)
-
-            self.epsilon_mean = torch.tensor(epsilon_mean)
-            self.epsilon_var = torch.tensor(epsilon_var)
+        self.kl_loss = KLLoss(epsilon_mean, epsilon_var, regularization)
 
     def actor_loss(self, trajectory):
         """Get actor loss."""
@@ -82,16 +60,16 @@ class TRPO(PPO):
         ratio = torch.exp(log_p - log_p_old)
         surrogate_loss = -(ratio * adv).mean()
 
-        # Compute KL Loss.
-        kl_loss = self.eta_mean().detach() * kl_mean + self.eta_var().detach() * kl_var
-
-        # Compute Dual Loss.
-        eta_mean_loss = self.eta_mean() * (self.epsilon_mean - kl_mean.detach())
-        eta_var_loss = self.eta_var() * (self.epsilon_var - kl_var.detach())
-        dual_loss = eta_mean_loss + eta_var_loss
-
-        self._info.update(eta_mean=self.eta_mean(), eta_var=self.eta_var())
-
-        return Loss(
-            policy_loss=surrogate_loss, regularization_loss=kl_loss, dual_loss=dual_loss
+        # Compute Policy Loss
+        actor_loss = Loss(
+            policy_loss=surrogate_loss,
+            regularization_loss=-self.entropy_regularization * entropy,
         )
+
+        # Compute KL Loss.
+        kl_loss = self.kl_loss(kl_mean, kl_var)
+        self._info.update(
+            eta_mean=self.kl_loss.eta_mean(), eta_var=self.kl_loss.eta_var()
+        )
+
+        return actor_loss + kl_loss
