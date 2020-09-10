@@ -16,7 +16,7 @@ def mve_expand(
     num_steps=1,
     num_samples=15,
     termination_model=None,
-    td_k=True,
+    td_k=False,
     *args,
     **kwargs,
 ):
