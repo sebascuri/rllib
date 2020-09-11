@@ -66,6 +66,7 @@ class REPSAgent(OffPolicyAgent):
         self._optimize_dual()
         if hasattr(self.policy, "prior"):
             self.policy.prior = old_policy
+            self.set_policy(self.policy)
 
         if self.algorithm.learn_policy:
             self._fit_policy()
