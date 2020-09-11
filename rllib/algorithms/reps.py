@@ -55,7 +55,7 @@ class REPS(AbstractAlgorithm):
         self, epsilon, regularization=False, learn_policy=True, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self.learn_policy = True
+        self.learn_policy = learn_policy
         if regularization:
             eta = epsilon
             if not isinstance(eta, ParameterDecay):
