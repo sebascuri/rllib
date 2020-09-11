@@ -36,21 +36,17 @@ from .on_policy import (
 )
 from .random_agent import RandomAgent
 
-AGENTS = [
+MODEL_FREE = [
     "A2C",
     "ActorCritic",
-    "BPTT",
     "DDQN",
     "DPG",
     "DQN",
-    "Dyna",
     "ExpectedActorCritic",
     "ExpectedSARSA",
     "GAAC",
     "GPUCB",
-    "MPC",
     "MPO",
-    "MVE",
     "PPO",
     "QLearning",
     "REINFORCE",
@@ -58,11 +54,14 @@ AGENTS = [
     "Random",
     "SAC",
     "SARSA",
-    "STEVE",
     "SVG0",
-    "SVG1",
     "SoftQLearning",
     "TD3",
     "TRPO",
     "VMPO",
 ]
+
+MODEL_BASED = ["BPTT", "MPC", "SVG"]
+
+MODEL_AUGMENTED = ["Dyna", "MVE", "STEVE"]
+AGENTS = MODEL_FREE + MODEL_BASED + MODEL_AUGMENTED

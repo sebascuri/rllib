@@ -61,13 +61,8 @@ class REPS(AbstractAlgorithm):
             self.eta = eta
             self.epsilon = torch.tensor(0.0)
         else:
-            self.eta = Learnable(1.0)
+            self.eta = Learnable(1.0, positive=True)
             self.epsilon = torch.tensor(epsilon)
-
-    def _project_eta(self):
-        """Project the etas to be positive inplace."""
-        # Since we divide by eta, make sure it doesn't go to zero.
-        self.eta.start.data.clamp_(min=1e-5)
 
     def _policy_weighted_nll(self, state, action, weights):
         """Return weighted policy negative log-likelihood."""
@@ -87,8 +82,6 @@ class REPS(AbstractAlgorithm):
     def actor_loss(self, observation):
         """Return primal and dual loss terms from REPS."""
         state, action, reward, next_state, done, *r = observation
-        # Make sure the lagrange multipliers stay positive.
-        self._project_eta()
 
         # Compute Scaled TD-Errors
         value = self.critic(state)

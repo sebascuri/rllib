@@ -29,13 +29,18 @@ class REPSAgent(OffPolicyAgent):
         critic,
         epsilon=1.0,
         regularization=False,
+        num_iter=200,
         train_frequency=0,
         num_rollouts=15,
         *args,
         **kwargs,
     ):
         super().__init__(
-            train_frequency=train_frequency, num_rollouts=num_rollouts, *args, **kwargs
+            num_iter=num_iter,
+            train_frequency=train_frequency,
+            num_rollouts=num_rollouts,
+            *args,
+            **kwargs,
         )
 
         self.algorithm = REPS(
@@ -57,8 +62,8 @@ class REPSAgent(OffPolicyAgent):
         """See `AbstractAgent.train_agent'."""
         old_policy = deep_copy_module(self.policy)
         self._optimizer_dual()
-
-        self.policy.prior = old_policy
+        if hasattr(self.policy, "prior"):
+            self.policy.prior = old_policy
         self._fit_policy()
 
         if self.train_frequency == 0:
@@ -94,10 +99,11 @@ class REPSAgent(OffPolicyAgent):
         self._learn_steps(closure)
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, policy=None, *args, **kwargs):
         """See `AbstractAgent.default'."""
         critic = NNValueFunction.default(environment)
-        policy = NNPolicy.default(environment)
+        if policy is None:
+            policy = NNPolicy.default(environment)
 
         optimizer = Adam(critic.parameters(), lr=3e-4)
 
