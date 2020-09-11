@@ -83,6 +83,8 @@ class Logger(object):
             if isinstance(value, torch.Tensor):
                 value = value.detach().numpy()
             value = np.nan_to_num(value)
+            if isinstance(value, np.ndarray):
+                value = float(np.mean(value))
             if isinstance(value, np.float32):
                 value = float(value)
             if isinstance(value, np.int64):
