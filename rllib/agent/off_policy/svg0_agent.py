@@ -43,12 +43,12 @@ class SVG0Agent(OffPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
         critic = NNQFunction.default(environment)
         policy = NNPolicy.default(environment)
 
-        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=3e-4)
+        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
         return super().default(
             environment,

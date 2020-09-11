@@ -57,20 +57,22 @@ class SACAgent(OffPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(
+        cls, environment, num_iter=50, train_frequency=50, lr=1e-3, *args, **kwargs
+    ):
         """See `AbstractAgent.default'."""
         critic = NNQFunction.default(environment, non_linearity="ReLU")
         policy = NNPolicy.default(environment, non_linearity="ReLU")
 
-        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
+        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
         return super().default(
             environment,
             critic=critic,
             policy=policy,
             optimizer=optimizer,
-            num_iter=kwargs.pop("num_iter", 50),
-            train_frequency=kwargs.pop("train_frequency", 50),
+            num_iter=num_iter,
+            train_frequency=train_frequency,
             *args,
             **kwargs,
         )

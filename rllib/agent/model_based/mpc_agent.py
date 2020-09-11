@@ -21,7 +21,9 @@ class MPCAgent(ModelBasedAgent):
         )
 
     @classmethod
-    def default(cls, environment, mpc_solver=None, *args, **kwargs):
+    def default(
+        cls, environment, mpc_solver=None, horizon=25, num_iter=5, *args, **kwargs
+    ):
         """See `AbstractAgent.default'."""
         agent = ModelBasedAgent.default(environment, *args, **kwargs)
         agent.logger.delete_directory()
@@ -32,10 +34,8 @@ class MPCAgent(ModelBasedAgent):
                 reward_model=agent.reward_model,
                 termination_model=agent.termination_model,
                 action_scale=environment.action_scale,
-                horizon=5 if kwargs.get("test", False) else 25,
+                horizon=horizon,
                 gamma=agent.gamma,
-                num_iter=2 if kwargs.get("test", False) else 5,
-                num_samples=20 if kwargs.get("test", False) else 400,
-                num_elites=5 if kwargs.get("test", False) else 40,
+                num_iter=num_iter,
             )
         return super().default(environment, mpc_solver=mpc_solver, *args, **kwargs)

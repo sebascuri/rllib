@@ -29,6 +29,7 @@ class REPSAgent(OffPolicyAgent):
         critic,
         epsilon=1.0,
         regularization=False,
+        learn_policy=True,
         num_iter=200,
         train_frequency=0,
         num_rollouts=15,
@@ -48,6 +49,7 @@ class REPSAgent(OffPolicyAgent):
             critic=critic,
             epsilon=epsilon,
             regularization=regularization,
+            learn_policy=learn_policy,
             gamma=self.gamma,
         )
         # Over-write optimizer.
@@ -61,15 +63,17 @@ class REPSAgent(OffPolicyAgent):
     def learn(self):
         """See `AbstractAgent.train_agent'."""
         old_policy = deep_copy_module(self.policy)
-        self._optimizer_dual()
+        self._optimize_dual()
         if hasattr(self.policy, "prior"):
             self.policy.prior = old_policy
-        self._fit_policy()
+
+        if self.algorithm.learn_policy:
+            self._fit_policy()
 
         if self.train_frequency == 0:
             self.memory.reset()  # Erase memory.
 
-    def _optimizer_dual(self):
+    def _optimize_dual(self):
         """Optimize the dual function."""
         self._optimize_loss(loss_name="dual_loss")
 
@@ -99,20 +103,19 @@ class REPSAgent(OffPolicyAgent):
         self._learn_steps(closure)
 
     @classmethod
-    def default(cls, environment, policy=None, *args, **kwargs):
+    def default(cls, environment, policy=None, lr=5e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
         critic = NNValueFunction.default(environment)
         if policy is None:
             policy = NNPolicy.default(environment)
 
-        optimizer = Adam(critic.parameters(), lr=3e-4)
+        optimizer = Adam(critic.parameters(), lr=lr)
 
         return super().default(
             environment,
             policy=policy,
             critic=critic,
             optimizer=optimizer,
-            num_iter=5 if kwargs.get("test", False) else 200,
             *args,
             **kwargs,
         )

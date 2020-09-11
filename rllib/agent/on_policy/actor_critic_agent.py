@@ -39,15 +39,24 @@ class ActorCriticAgent(OnPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, num_iter=8, num_rollouts=4, *args, **kwargs):
+    def default(
+        cls,
+        environment,
+        num_iter=8,
+        num_rollouts=4,
+        critic_lr=1e-3,
+        actor_lr=3e-4,
+        *args,
+        **kwargs,
+    ):
         """See `AbstractAgent.default'."""
         policy = kwargs.pop("policy", NNPolicy.default(environment))
         critic = kwargs.pop("critic", NNQFunction.default(environment))
 
         optimizer = Adam(
             [
-                {"params": policy.parameters(), "lr": 3e-4},
-                {"params": critic.parameters(), "lr": 1e-3},
+                {"params": policy.parameters(), "lr": actor_lr},
+                {"params": critic.parameters(), "lr": critic_lr},
             ]
         )
 

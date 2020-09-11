@@ -51,9 +51,11 @@ class REPS(AbstractAlgorithm):
     A survey on policy search for robotics. Foundations and Trends® in Robotics.
     """
 
-    def __init__(self, epsilon, regularization=False, *args, **kwargs):
+    def __init__(
+        self, epsilon, regularization=False, learn_policy=True, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
-
+        self.learn_policy = True
         if regularization:
             eta = epsilon
             if not isinstance(eta, ParameterDecay):

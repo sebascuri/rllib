@@ -101,7 +101,8 @@ def rollout_agent(environment, agent):
     np.random.seed(SEED)
 
     environment = GymEnvironment(environment, SEED)
-    agent = agent.default(environment, test=True)
+    agent = agent.default(environment, num_iter=1, num_epochs=2)
+    agent.num_rollouts = min(agent.num_rollouts, NUM_EPISODES // 6)
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
     agent.logger.delete_directory()  # Cleanup directory.

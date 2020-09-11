@@ -201,8 +201,6 @@ class ModelBasedAgent(AbstractAgent):
             Step 2: Implement a model free RL method that optimizes the policy.
         """
         self.dynamical_model.eval()
-        # self.simulation_algorithm.dataset.reset()
-
         with DisableGradient(
             self.dynamical_model, self.reward_model, self.termination_model
         ):
@@ -285,7 +283,15 @@ class ModelBasedAgent(AbstractAgent):
 
     @classmethod
     def default(
-        cls, environment, dynamical_model=None, reward_model=None, *args, **kwargs
+        cls,
+        environment,
+        dynamical_model=None,
+        reward_model=None,
+        num_epochs=50,
+        model_lr=1e-3,
+        l2_reg=1e-4,
+        *args,
+        **kwargs,
     ):
         """Get a default model-based agent."""
         if dynamical_model is None:
@@ -299,12 +305,12 @@ class ModelBasedAgent(AbstractAgent):
 
         params = list(chain(dynamical_model.parameters(), reward_model.parameters()))
         if len(params):
-            model_optimizer = Adam(params, lr=1e-3, weight_decay=1e-4)
+            model_optimizer = Adam(params, lr=model_lr, weight_decay=l2_reg)
 
             model_learning_algorithm = ModelLearningAlgorithm(
                 dynamical_model=dynamical_model,
                 reward_model=reward_model,
-                num_epochs=4 if kwargs.get("test", False) else 50,
+                num_epochs=num_epochs,
                 model_optimizer=model_optimizer,
             )
         else:

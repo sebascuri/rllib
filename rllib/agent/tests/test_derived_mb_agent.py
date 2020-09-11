@@ -40,7 +40,9 @@ def rollout_agent(environment, base_agent, extender, num_steps, td_k=True):
         environment,
         base_agent_name=base_agent,
         num_steps=num_steps,
-        test=True,
+        num_samples=2,
+        num_iter=2,
+        num_epochs=2,
         td_k=td_k,
     )
     train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)

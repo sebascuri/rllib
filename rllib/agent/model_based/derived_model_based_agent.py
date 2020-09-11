@@ -68,14 +68,13 @@ class DerivedMBAgent(ModelBasedAgent):
         ).default(environment, *args, **kwargs)
         base_agent.logger.delete_directory()
         base_algorithm = base_agent.algorithm
-        return super().default(
-            environment=environment,
-            base_algorithm=base_algorithm,
+        kwargs.update(
             optimizer=base_agent.optimizer,
             num_iter=base_agent.num_iter,
             batch_size=base_agent.batch_size,
             train_frequency=base_agent.train_frequency,
             num_rollouts=base_agent.num_rollouts,
-            *args,
-            **kwargs,
+        )
+        return super().default(
+            environment=environment, base_algorithm=base_algorithm, *args, **kwargs
         )

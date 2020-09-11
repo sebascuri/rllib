@@ -66,14 +66,12 @@ class BPTTAgent(ModelBasedAgent):
         )
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, num_iter=50, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        test = kwargs.get("test", False)
-
         critic = NNValueFunction.default(environment)
         policy = NNPolicy.default(environment)
 
-        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=1e-3)
+        optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
         return super().default(
             environment=environment,
@@ -81,7 +79,7 @@ class BPTTAgent(ModelBasedAgent):
             critic=critic,
             learn_from_real=True,
             optimizer=optimizer,
-            num_iter=5 if test else 50,
+            num_iter=num_iter,
             batch_size=100,
             *args,
             **kwargs,

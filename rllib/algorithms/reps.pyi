@@ -11,10 +11,12 @@ class REPS(AbstractAlgorithm):
     eta: ParameterDecay
     epsilon: Tensor
     critic: AbstractValueFunction
+    learn_policy: bool
     def __init__(
         self,
         epsilon: Union[ParameterDecay, float],
         regularization: bool = ...,
+        learn_policy: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
