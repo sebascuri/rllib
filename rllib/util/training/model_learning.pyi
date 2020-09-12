@@ -1,5 +1,5 @@
 """Utility functions for training models."""
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -41,6 +41,7 @@ def calibrate_model(
     train_set: ExperienceReplay,
     max_iter: int = ...,
     epsilon: float = ...,
+    temperature_range: Tuple[float, float] = ...,
     logger: Optional[Logger] = ...,
 ) -> None: ...
 def evaluate_model(

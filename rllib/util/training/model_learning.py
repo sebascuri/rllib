@@ -137,7 +137,14 @@ def train_model(
         early_stopping.reset(hard=False)  # reset to zero the moving averages.
 
 
-def calibrate_model(model, calibration_set, max_iter=100, epsilon=0.0001, logger=None):
+def calibrate_model(
+    model,
+    calibration_set,
+    max_iter=100,
+    epsilon=0.0001,
+    temperature_range=(0.1, 100.0),
+    logger=None,
+):
     """Calibrate a model by scaling the temperature.
 
     First, find a suitable temperature by logarithmic search (increasing or decreasing).
@@ -147,7 +154,7 @@ def calibrate_model(model, calibration_set, max_iter=100, epsilon=0.0001, logger
         logger = Logger(f"{model.name}_calibration")
 
     observation = calibration_set.all_data
-
+    min_temperature, max_temperature = temperature_range
     with torch.no_grad():
         initial_score = calibration_score(model, observation).item()
     initial_temperature = model.temperature
@@ -161,6 +168,8 @@ def calibrate_model(model, calibration_set, max_iter=100, epsilon=0.0001, logger
             new_score = calibration_score(model, observation).item()
         if new_score > score:
             break
+        if model.temperature > max_temperature:
+            break
         score, temperature = new_score, model.temperature.clone()
     max_score, max_temperature = score, temperature
 
@@ -172,6 +181,8 @@ def calibrate_model(model, calibration_set, max_iter=100, epsilon=0.0001, logger
         with torch.no_grad():
             new_score = calibration_score(model, observation).item()
         if new_score > score:
+            break
+        if model.temperature < min_temperature:
             break
         score, temperature = new_score, model.temperature.clone()
     min_score, min_temperature = score, temperature

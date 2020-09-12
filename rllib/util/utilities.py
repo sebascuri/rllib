@@ -196,6 +196,9 @@ def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False):
 
 def get_entropy_and_log_p(pi, action, action_scale):
     """Get the entropy and the log-probability of a policy and an action."""
+    if isinstance(action_scale, torch.Tensor):
+        action_scale = action_scale.clone()
+        action_scale[action_scale == 0] = 1.0
     log_p = pi.log_prob(action / action_scale)
 
     try:
