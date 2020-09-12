@@ -2,7 +2,6 @@
 import torch
 
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.training.utilities import sharpness
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -57,9 +56,6 @@ def dyna_expand(
             except RuntimeError:
                 sim_loss = super().forward(trajectory)
 
-            sharpness_ = sharpness(self.dynamical_model, observation).item()
-            alpha = 1.0 / (1.0 + self.num_steps * sharpness_)
-
-            return (1 - alpha) * real_loss + alpha * sim_loss
+            return real_loss + sim_loss
 
     return Dyna()
