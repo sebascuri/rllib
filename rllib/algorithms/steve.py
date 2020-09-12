@@ -12,7 +12,7 @@ def steve_expand(
     dynamical_model,
     reward_model,
     num_steps=1,
-    num_samples=15,
+    num_samples=8,
     termination_model=None,
     *args,
     **kwargs,
@@ -73,16 +73,10 @@ def steve_expand(
             """Rollout model and call base algorithm with transitions."""
             critic_target = torch.zeros(
                 observation.state.shape[: -len(self.dynamical_model.dim_state)]
-                + (self.num_steps + 1, self.num_models, self.num_q)
+                + (self.num_steps, self.num_models, self.num_q)
             )  # Critic target shape B x (H + 1) x M x Q
 
-            td_target = super().get_value_target(observation)  # TD-Target B x 1.
-            critic_target[..., 0, :, :] = (
-                td_target.unsqueeze(-1)
-                .unsqueeze(-1)
-                .repeat_interleave(self.num_models, dim=-2)
-                .repeat_interleave(self.num_q, dim=-1)
-            )
+            real_target_q = super().get_value_target(observation)  # TD-Target B x 1.
 
             with PredictionStrategy(
                 self.dynamical_model, self.reward_model, prediction_strategy="set_head"
@@ -100,14 +94,16 @@ def steve_expand(
                             reward_transformer=self.reward_transformer,
                         ).reshape(self.num_samples, -1, self.num_q)
                         value = value.mean(0).unsqueeze(1)
-                        critic_target[..., horizon + 1, model_idx, :] = value
+                        critic_target[..., horizon, model_idx, :] = value
 
             mean_target = critic_target.mean(dim=(-1, -2))
             weight_target = 1 / (self.eps + critic_target.var(dim=(-1, -2)))
 
             weights = weight_target / weight_target.sum(-1, keepdim=True)
-            critic_target = (weights * mean_target).sum(-1)
+            model_target_q = (weights * mean_target).sum(-1)
 
-            return critic_target
+            target_q = 0.5 * model_target_q + 0.5 * real_target_q
+
+            return target_q
 
     return STEVE()
