@@ -38,7 +38,7 @@ class OnPolicyAgent(AbstractAgent):
 
     def learn(self):
         """Train Policy Gradient Agent."""
-        trajectories = [stack_list_of_tuples(t) for t in self.trajectories]
+        trajectories = [stack_list_of_tuples(t).clone() for t in self.trajectories]
 
         def closure():
             """Gradient calculation."""

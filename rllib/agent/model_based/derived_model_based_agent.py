@@ -17,7 +17,7 @@ class DerivedMBAgent(ModelBasedAgent):
         derived_algorithm_,
         dynamical_model,
         reward_model,
-        num_samples=15,
+        num_samples=8,
         num_steps=1,
         termination_model=None,
         *args,

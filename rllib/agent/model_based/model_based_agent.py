@@ -66,6 +66,7 @@ class ModelBasedAgent(AbstractAgent):
         learn_from_real=True,
         thompson_sampling=False,
         memory=None,
+        clip_grad_var=10.0,
         *args,
         **kwargs,
     ):
@@ -75,6 +76,7 @@ class ModelBasedAgent(AbstractAgent):
             train_frequency=train_frequency,
             exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
+            clip_grad_var=clip_grad_var,
             *args,
             **kwargs,
         )
@@ -228,7 +230,7 @@ class ModelBasedAgent(AbstractAgent):
             state = self.simulation_algorithm.dataset.sample_batch(self.batch_size)
             observation = Observation(state=state.unsqueeze(-2))
             self.optimizer.zero_grad()
-            losses = self.algorithm(observation)
+            losses = self.algorithm(observation.clone())
             losses.combined_loss.mean().backward()
 
             torch.nn.utils.clip_grad_norm_(
@@ -247,7 +249,7 @@ class ModelBasedAgent(AbstractAgent):
             """Gradient calculation."""
             observation, *_ = self.memory.sample_batch(self.batch_size)
             self.optimizer.zero_grad()
-            losses = self.algorithm(observation)
+            losses = self.algorithm(observation.clone())
             losses.combined_loss.mean().backward()
 
             torch.nn.utils.clip_grad_norm_(

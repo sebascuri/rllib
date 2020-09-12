@@ -49,7 +49,7 @@ class OffPolicyAgent(AbstractAgent):
             observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
             self.optimizer.zero_grad()
-            losses_ = self.algorithm(observation)
+            losses_ = self.algorithm(observation.clone())
             loss = (losses_.combined_loss * weight.detach()).mean()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(

@@ -91,7 +91,7 @@ class REPSAgent(OffPolicyAgent):
             observation, idx, weight = self.memory.sample_batch(self.batch_size)
 
             self.optimizer.zero_grad()
-            losses = self.algorithm(observation)
+            losses = self.algorithm(observation.clone())
             self.optimizer.zero_grad()
             loss = getattr(losses, loss_name)
             loss.backward()
