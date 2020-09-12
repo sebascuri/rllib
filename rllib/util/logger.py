@@ -27,7 +27,8 @@ class Logger(object):
     def __init__(self, name, comment="", tensorboard=False):
         self.statistics = list()
         self.current = dict()
-        current_time = datetime.now().strftime("%b%d_%H-%M-%S")
+        now = datetime.now()
+        current_time = now.strftime("%b%d_%H-%M-%S")
         comment = comment + "_" + current_time if len(comment) else current_time
         self.log_dir = f"runs/{name}/{comment}"
         if tensorboard:
@@ -37,7 +38,7 @@ class Logger(object):
             try:
                 os.makedirs(self.log_dir)
             except OSError:
-                self.log_dir = self.log_dir + "_"
+                self.log_dir = self.log_dir + f"-{now.microsecond}"
                 os.makedirs(self.log_dir)
 
         self.episode = 0
