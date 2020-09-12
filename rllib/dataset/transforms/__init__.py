@@ -6,6 +6,7 @@ from .next_state_clamper import NextStateClamper
 from .normalizer import (
     ActionNormalizer,
     NextStateNormalizer,
+    RewardNormalizer,
     StateActionNormalizer,
     StateNormalizer,
 )

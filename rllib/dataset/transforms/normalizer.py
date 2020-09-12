@@ -22,7 +22,7 @@ class Normalizer(nn.Module):
         self.count = torch.tensor(0.0)
         self.preserve_origin = preserve_origin
 
-    def forward(self, array: torch.Tensor):
+    def forward(self, array):
         """See `AbstractTransform.__call__'."""
         if self.preserve_origin:
             scale = torch.sqrt(self.variance + self.mean ** 2)
@@ -42,7 +42,7 @@ class Normalizer(nn.Module):
     @torch.jit.export
     def update(self, array):
         """See `AbstractTransform.update'."""
-        if array.ndim == 1:
+        while array.ndim <= 1:
             array = array.unsqueeze(0)
         new_mean = torch.mean(array, 0)
         new_var = torch.var(array, 0)
@@ -117,35 +117,26 @@ class StateNormalizer(AbstractTransform):
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
-        return Observation(
-            state=self._normalizer(observation.state),
-            action=observation.action,
-            reward=observation.reward,
-            next_state=self._normalizer(observation.next_state),
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=rescale(observation.state_scale_tril, scale),
-            next_state_scale_tril=rescale(observation.next_state_scale_tril, scale),
+        observation.state = self._normalizer(observation.state)
+        observation.next_state = self._normalizer(observation.next_state)
+        observation.state_scale_tril = rescale(observation.state_scale_tril, scale)
+        observation.next_state_scale_tril = rescale(
+            observation.next_state_scale_tril, scale
         )
+
+        return observation
 
     @torch.jit.export
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
         inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
-        return Observation(
-            state=self._normalizer.inverse(observation.state),
-            action=observation.action,
-            reward=observation.reward,
-            next_state=self._normalizer.inverse(observation.next_state),
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=rescale(observation.state_scale_tril, inv_scale),
-            next_state_scale_tril=rescale(observation.next_state_scale_tril, inv_scale),
+        observation.state = self._normalizer.inverse(observation.state)
+        observation.next_state = self._normalizer.inverse(observation.next_state)
+        observation.state_scale_tril = rescale(observation.state_scale_tril, inv_scale)
+        observation.next_state_scale_tril = rescale(
+            observation.next_state_scale_tril, inv_scale
         )
+        return observation
 
     @torch.jit.export
     def update(self, observation: Observation):
@@ -176,40 +167,56 @@ class NextStateNormalizer(AbstractTransform):
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=self._normalizer(observation.next_state),
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=rescale(observation.next_state_scale_tril, scale),
+        observation.next_state = self._normalizer(observation.next_state)
+        observation.next_state_scale_tril = rescale(
+            observation.next_state_scale_tril, scale
         )
+        return observation
 
     @torch.jit.export
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
         inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=self._normalizer.inverse(observation.next_state),
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=rescale(observation.next_state_scale_tril, inv_scale),
+        observation.next_state = self._normalizer.inverse(observation.next_state)
+        observation.next_state_scale_tril = rescale(
+            observation.next_state_scale_tril, inv_scale
         )
+        return observation
 
     @torch.jit.export
     def update(self, observation: Observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.next_state)
+
+
+class RewardNormalizer(AbstractTransform):
+    """Implementation of a transformer that normalizes the rewards."""
+
+    def __init__(self, preserve_origin=False):
+        super().__init__()
+        self._normalizer = Normalizer(preserve_origin)
+
+    def forward(self, observation):
+        """See `AbstractTransform.__call__'."""
+        scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
+        observation.reward = self._normalizer(observation.reward)
+        observation.reward_scale_tril = rescale(observation.reward_scale_tril, scale)
+        return observation
+
+    @torch.jit.export
+    def inverse(self, observation: Observation):
+        """See `AbstractTransform.inverse'."""
+        inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
+        observation.reward = self._normalizer.inverse(observation.reward)
+        observation.reward_scale_tril = rescale(
+            observation.reward_scale_tril, inv_scale
+        )
+        return observation
+
+    @torch.jit.export
+    def update(self, observation: Observation):
+        """See `AbstractTransform.update'."""
+        self._normalizer.update(observation.reward)
 
 
 class ActionNormalizer(AbstractTransform):
@@ -234,34 +241,14 @@ class ActionNormalizer(AbstractTransform):
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
-        return Observation(
-            state=observation.state,
-            action=self._normalizer(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.action = self._normalizer(observation.action)
+        return observation
 
     @torch.jit.export
     def inverse(self, observation: Observation):
         """See `AbstractTransform.inverse'."""
-        return Observation(
-            state=observation.state,
-            action=self._normalizer.inverse(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.action = self._normalizer.inverse(observation.action)
+        return observation
 
     @torch.jit.export
     def update(self, observation: Observation):

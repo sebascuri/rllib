@@ -38,18 +38,9 @@ class AngleWrapper(AbstractTransform):
             cos, sin = torch.cos(angles), torch.sin(angles)
             next_state[..., self._indexes] = torch.atan2(sin, cos)
 
-        return Observation(
-            state=state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.state = state
+        observation.next_state = next_state
+        return observation
 
     @torch.jit.export
     def inverse(self, observation: Observation):

@@ -2,8 +2,6 @@
 
 import torch.jit
 
-from rllib.dataset.datatypes import Observation
-
 from .abstract_transform import AbstractTransform
 
 
@@ -42,16 +40,6 @@ class NextStateClamper(AbstractTransform):
             next_scale_tril[..., self.constant_idx, self.constant_idx].clamp_max_(1e-6)
         except IndexError:
             pass
-
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=next_scale_tril,
-        )
+        observation.next_state = next_state
+        observation.next_state_scale_tril = next_scale_tril
+        return observation

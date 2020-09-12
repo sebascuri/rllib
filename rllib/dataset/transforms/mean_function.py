@@ -3,8 +3,6 @@
 import torch.jit
 import torch.nn as nn
 
-from rllib.dataset.datatypes import Observation
-
 from .abstract_transform import AbstractTransform
 
 
@@ -32,35 +30,15 @@ class MeanFunction(AbstractTransform):
         super().__init__()
         self.mean_function = mean_function
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
         mean_next_state = self.mean_function(observation.state, observation.action)
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=observation.next_state - mean_next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.next_state = observation.next_state - mean_next_state
+        return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         mean_next_state = self.mean_function(observation.state, observation.action)
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=observation.reward,
-            next_state=observation.next_state + mean_next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.next_state = observation.next_state + mean_next_state
+        return observation

@@ -33,6 +33,7 @@ class Observation:
     entropy: Probability = torch.tensor(NaN)  # Entropy of current policy.
     state_scale_tril: Tensor = torch.tensor(NaN)
     next_state_scale_tril: Tensor = torch.tensor(NaN)
+    reward_scale_tril: Tensor = torch.tensor(NaN)
 
     def __iter__(self):
         """Iterate the properties of the observation."""
@@ -120,6 +121,7 @@ class Observation:
             entropy=torch.tensor(0.0),
             state_scale_tril=torch.tensor(NaN),
             next_state_scale_tril=torch.tensor(NaN),
+            reward_scale_tril=torch.tensor(NaN),
         )
 
     @classmethod

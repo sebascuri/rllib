@@ -5,8 +5,6 @@ import torch
 import torch.jit
 import torch.nn as nn
 
-from rllib.dataset.datatypes import Observation
-
 from .abstract_transform import AbstractTransform
 
 
@@ -54,36 +52,16 @@ class RewardClipper(AbstractTransform):
         super().__init__()
         self._clipper = Clipper(min_reward, max_reward)
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=self._clipper(observation.reward),
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.reward = self._clipper(observation.reward)
+        return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
-        return Observation(
-            state=observation.state,
-            action=observation.action,
-            reward=self._clipper.inverse(observation.reward),
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.reward = self._clipper.inverse(observation.reward)
+        return observation
 
 
 class ActionClipper(AbstractTransform):
@@ -109,33 +87,13 @@ class ActionClipper(AbstractTransform):
         super().__init__()
         self._clipper = Clipper(min_action, max_action)
 
-    def forward(self, observation: Observation):
+    def forward(self, observation):
         """See `AbstractTransform.__call__'."""
-        return Observation(
-            state=observation.state,
-            action=self._clipper(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.action = self._clipper(observation.action)
+        return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
-        return Observation(
-            state=observation.state,
-            action=self._clipper.inverse(observation.action),
-            reward=observation.reward,
-            next_state=observation.next_state,
-            done=observation.done,
-            next_action=observation.next_action,
-            log_prob_action=observation.log_prob_action,
-            entropy=observation.entropy,
-            state_scale_tril=observation.state_scale_tril,
-            next_state_scale_tril=observation.next_state_scale_tril,
-        )
+        observation.action = self._clipper.inverse(observation.action)
+        return observation
