@@ -45,7 +45,7 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
         state, action = observation.state, observation.action
         _, _, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(state, action)
         bptt_loss = Loss(
-            policy_loss=-v.sum(),
+            policy_loss=-v.mean(),
             regularization_loss=-self.entropy_regularization * entropy,
         )
         kl_loss = self.kl_loss(kl_mean, kl_var)

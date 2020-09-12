@@ -66,6 +66,6 @@ class SVG(BPTT):
             v = r + self.gamma * next_v
 
         return Loss(
-            policy_loss=-(weight * v).sum(),
+            policy_loss=-(weight * v).mean(),
             regularization_loss=-self.entropy_regularization * entropy,
         )
