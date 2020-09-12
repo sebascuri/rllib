@@ -33,7 +33,7 @@ class GAAC(ActorCritic):
     High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
-    def __init__(self, lambda_, *args, **kwargs):
+    def __init__(self, lambda_=0.95, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gae = GAE(lambda_, self.gamma, self.critic_target)
 
