@@ -36,7 +36,9 @@ def main(args):
     # %% Initialize module.
     agent_module = importlib.import_module("rllib.agent")
     agent = getattr(agent_module, f"{args.agent}Agent").default(
-        environment, exploration_steps=args.exp_steps
+        environment,
+        exploration_episodes=args.exploration_episodes,
+        base_agent_name=args.base_agent,
     )
 
     # %% Train Agent.
@@ -66,12 +68,16 @@ if __name__ == "__main__":
         "environment", type=str, help="Environment name.", choices=gym_envs + dm_envs
     )
     parser.add_argument("agent", type=str, help="Agent name.", choices=AGENTS)
-
+    parser.add_argument(
+        "--base-agent", type=str, help="Base agent name.", choices=AGENTS
+    )
     parser.add_argument("--seed", type=int, default=0, help="Random Seed.")
     parser.add_argument("--max-steps", type=int, default=1000, help="Maximum steps.")
     parser.add_argument("--num-train", type=int, default=200, help="Training episodes.")
     parser.add_argument("--num-test", type=int, default=5, help="Testing episodes.")
-    parser.add_argument("--exp-steps", type=int, default=0, help="Exploration Steps.")
+    parser.add_argument(
+        "--exploration-episodes", type=int, default=0, help="Exploration Episodes."
+    )
     parser.add_argument("--render-test", action="store_true", default=False)
 
     main(parser.parse_args())
