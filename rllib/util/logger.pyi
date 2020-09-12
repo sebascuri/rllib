@@ -8,10 +8,10 @@ import tensorboardX
 class Logger(object):
     statistics: List[Dict[str, float]]
     current: Dict[str, Tuple[int, float]]
-    writer: tensorboardX.SummaryWriter
+    writer: Optional[tensorboardX.SummaryWriter]
     episode: int
     keys: set
-    _tensorboard: bool
+    log_dir: str
     def __init__(
         self, name: str, comment: str = ..., tensorboard: bool = ...
     ) -> None: ...

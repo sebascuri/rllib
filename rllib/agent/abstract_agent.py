@@ -296,7 +296,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
             Path where agent is saved.
         """
         if directory is None:
-            directory = self.logger.writer.logdir
+            directory = self.logger.log_dir
         path = f"{directory}/{filename}"
 
         params = {}

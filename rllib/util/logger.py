@@ -29,17 +29,19 @@ class Logger(object):
         self.current = dict()
         current_time = datetime.now().strftime("%b%d_%H-%M-%S")
         comment = comment + "_" + current_time if len(comment) else current_time
-        self.writer = SummaryWriter(f"runs/{name}/{comment}")
-        self._tensorboard = tensorboard
+        self.log_dir = f"runs/{name}/{comment}"
+        if tensorboard:
+            self.writer = SummaryWriter(log_dir=self.log_dir)
+        else:
+            self.writer = None
+            try:
+                os.makedirs(self.log_dir)
+            except OSError:
+                self.log_dir = self.log_dir + "_"
+                os.makedirs(self.log_dir)
 
         self.episode = 0
         self.keys = set()
-
-        if not self._tensorboard:
-            for file in filter(
-                lambda x: x.startswith("events"), os.listdir(self.writer.logdir)
-            ):
-                os.remove(f"{self.writer.logdir}/{file}")
 
     def __len__(self):
         """Return the number of episodes."""
@@ -98,7 +100,7 @@ class Logger(object):
                 new_value = old_value + (value - old_value) * (1 / new_count)
                 self.current[key] = (new_count, new_value)
 
-            if self._tensorboard:
+            if self.writer is not None:
                 self.writer.add_scalar(
                     f"episode_{self.episode}/{key}",
                     self.current[key][1],
@@ -121,7 +123,9 @@ class Logger(object):
 
         for key, value in data.items():
             self.keys.add(key)
-            if isinstance(value, float) or isinstance(value, int) and self._tensorboard:
+            if (
+                isinstance(value, float) or isinstance(value, int)
+            ) and self.writer is not None:
                 self.writer.add_scalar(
                     f"average/{key}", value, global_step=self.episode
                 )
@@ -132,17 +136,17 @@ class Logger(object):
 
     def save_hparams(self, hparams):
         """Save hparams to a json file."""
-        with open(f"{self.writer.logdir}/hparams.json", "w") as f:
+        with open(f"{self.log_dir}/hparams.json", "w") as f:
             json.dump(hparams, f)
 
     def export_to_json(self):
         """Save the statistics to a json file."""
-        with open(f"{self.writer.logdir}/statistics.json", "w") as f:
+        with open(f"{self.log_dir}/statistics.json", "w") as f:
             json.dump(self.statistics, f)
 
     def log_hparams(self, hparams, metrics=None):
         """Log hyper parameters together with a metric dictionary."""
-        if not self._tensorboard:  # Do not save.
+        if self.writer is None:  # Do not save.
             return
         for k, v in hparams.items():
             if v is None:
@@ -158,4 +162,4 @@ class Logger(object):
         -----
         Use with caution. This will erase the directory, not the object.
         """
-        shutil.rmtree(self.writer.logdir)
+        shutil.rmtree(self.log_dir)
