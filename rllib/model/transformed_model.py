@@ -114,9 +114,14 @@ class TransformedModel(AbstractModel):
 
         # Predict next-state
         if self.model_kind == "dynamics":
+            reward, done = (none, none), none
             next_state = self.base_model(obs.state, obs.action, obs.next_state)
-        elif self.model_kind in ["rewards", "termination"]:
-            return self.base_model(obs.state, obs.action, obs.next_state)
+        elif self.model_kind == "rewards":
+            reward = self.base_model(obs.state, obs.action, obs.next_state)
+            next_state, done = (none, none), none
+        elif self.model_kind == "termination":
+            done = self.base_model(obs.state, obs.action, obs.next_state)
+            next_state, reward = (none, none), (none, none)
         else:
             raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
 
@@ -124,19 +129,26 @@ class TransformedModel(AbstractModel):
         obs = Observation(
             obs.state,
             obs.action,
-            reward=none,
-            done=none,
+            reward=reward[0],
+            done=done,
             next_action=none,
             log_prob_action=none,
             entropy=none,
             state_scale_tril=none,
             next_state=next_state[0],
             next_state_scale_tril=next_state[1],
+            reward_scale_tril=reward[1],
         )
 
         for transformation in self.reverse_transformations:
             obs = transformation.inverse(obs)
-        return obs.next_state, obs.next_state_scale_tril
+
+        if self.model_kind == "dynamics":
+            return obs.next_state, obs.next_state_scale_tril
+        elif self.model_kind == "rewards":
+            return obs.reward, obs.reward_scale_tril
+        elif self.model_kind == "termination":
+            return obs.done
 
     @torch.jit.export
     def set_head(self, head_ptr: int):
