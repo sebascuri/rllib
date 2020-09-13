@@ -1,4 +1,5 @@
 """Utilities for the rllib library."""
+import time
 import warnings
 
 import numpy as np
@@ -338,3 +339,19 @@ class RewardTransformer(object):
             return (self.scale * (reward - self.offset)).clamp(self.low, self.high)
         else:
             return np.clip(self.scale * (reward - self.offset), self.low, self.high)
+
+
+class TimeIt(object):
+    """Class to time a piece of code."""
+
+    def __init__(self, name=""):
+        self.start = 0
+        self.name = name
+
+    def __enter__(self):
+        """Start counting the time."""
+        self.start = time.time()
+
+    def __exit__(self, *args):
+        """Print the elapsed time."""
+        print(f"Elapsed time doing {self.name}: {time.time() - self.start}")
