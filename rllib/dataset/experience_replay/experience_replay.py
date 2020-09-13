@@ -233,7 +233,7 @@ class ExperienceReplay(data.Dataset):
         if self.zero_observation is None:
             self._init_observation(observation)
 
-        self.memory[self.ptr] = observation
+        self.memory[self.ptr] = observation.clone()
         self.valid[self.ptr] = 1
 
         for i in range(self.num_steps):
