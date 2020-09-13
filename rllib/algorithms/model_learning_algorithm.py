@@ -144,17 +144,18 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
     def learn(self, logger):
         """Learn using stochastic gradient descent on marginal maximum likelihood."""
         self._learn(self.dynamical_model.base_model, logger, calibrate=self.calibrate)
-        evaluate_model(self.dynamical_model, self.validation_set.all_raw, logger)
+        validation_data = self.validation_set.all_raw
+        evaluate_model(self.dynamical_model, validation_data, logger)
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
             self._learn(self.reward_model.base_model, logger, calibrate=self.calibrate)
-            evaluate_model(self.reward_model, self.validation_set.all_raw, logger)
+            evaluate_model(self.reward_model, validation_data, logger)
 
         if self.termination_model is not None and any(
             p.requires_grad for p in self.termination_model.parameters()
         ):
             self._learn(self.termination_model, logger, calibrate=False)
-            evaluate_model(self.termination_model, self.validation_set.all_raw, logger)
+            evaluate_model(self.termination_model, validation_data, logger)
 
         if isinstance(self.dynamical_model.base_model, ExactGPModel):
             for i, gp in enumerate(self.dynamical_model.base_model.gp):
