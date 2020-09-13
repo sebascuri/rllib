@@ -95,7 +95,7 @@ def steve_expand(
                         gamma=self.gamma,
                         value_function=self.value_target,
                         reward_transformer=self.reward_transformer,
-                        reduce=False,
+                        reduction="none",
                     )  # samples*batch x horizon x num_q
                     fv = fast_value.reshape(
                         -1, self.num_samples, self.num_steps, self.num_q
