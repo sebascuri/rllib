@@ -21,7 +21,7 @@ gym_envs = list(registry.env_specs.keys())
 dm_envs = [f"{env}/{task}" for (env, task) in BENCHMARKING]
 
 
-def main(args):
+def main(args, pre_train_callback=None, **kwargs):
     """Run main function with arguments."""
     # %% Set Random seeds.
     set_random_seed(args.seed)
@@ -38,9 +38,12 @@ def main(args):
     agent = getattr(agent_module, f"{args.agent}Agent").default(
         environment,
         exploration_episodes=args.exploration_episodes,
+        model_learn_exploration_episodes=args.model_learn_exploration_episodes,
         base_agent_name=args.base_agent,
+        **kwargs,
     )
-    agent.algorithm.num_steps = 4
+    if pre_train_callback is not None:
+        pre_train_callback(agent)
 
     # %% Train Agent.
     train_agent(
@@ -48,6 +51,7 @@ def main(args):
         environment=environment,
         num_episodes=args.num_train,
         max_steps=args.max_steps,
+        eval_frequency=args.eval_frequency,
         print_frequency=1,
         render=False,
     )
@@ -77,7 +81,19 @@ if __name__ == "__main__":
     parser.add_argument("--num-train", type=int, default=200, help="Training episodes.")
     parser.add_argument("--num-test", type=int, default=5, help="Testing episodes.")
     parser.add_argument(
-        "--exploration-episodes", type=int, default=0, help="Exploration Episodes."
+        "--eval_frequency", type=int, default=10, help="Frequency to evaluate the mean."
+    )
+    parser.add_argument(
+        "--exploration-episodes",
+        type=int,
+        default=10,
+        help="Exploration Episodes before learning the policy.",
+    )
+    parser.add_argument(
+        "--model-learn-exploration-episodes",
+        type=int,
+        default=5,
+        help="Exploration Episodes before learning the model.",
     )
     parser.add_argument("--render-test", action="store_true", default=False)
 
