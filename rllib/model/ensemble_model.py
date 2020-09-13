@@ -29,7 +29,7 @@ class EnsembleModel(NNModel):
 
     def __init__(
         self,
-        num_heads,
+        num_heads=5,
         prediction_strategy="moment_matching",
         deterministic=False,
         *args,
@@ -53,13 +53,7 @@ class EnsembleModel(NNModel):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractModel.default()."""
-        return super().default(
-            environment,
-            num_heads=kwargs.pop("num_heads", 5),
-            prediction_strategy=kwargs.pop("prediction_strategy", "moment_matching"),
-            *args,
-            **kwargs,
-        )
+        return super().default(environment, *args, **kwargs)
 
     def sample_posterior(self) -> None:
         """Set an ensemble head."""

@@ -7,7 +7,6 @@ from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
 
 from .abstract_model import AbstractModel
 from .ensemble_model import EnsembleModel
-from .nn_model import NNModel
 
 
 class TransformedModel(AbstractModel):
@@ -42,8 +41,12 @@ class TransformedModel(AbstractModel):
             if model_kind == "dynamics":
                 base_model = EnsembleModel.default(environment, *args, **kwargs)
             elif model_kind == "rewards":
-                base_model = NNModel.default(
-                    environment, model_kind=model_kind, *args, **kwargs
+                base_model = EnsembleModel.default(
+                    environment,
+                    model_kind=model_kind,
+                    deterministic=True,
+                    *args,
+                    **kwargs,
                 )
             else:
                 raise NotImplementedError
