@@ -188,11 +188,13 @@ class ModelBasedAgent(AbstractAgent):
     def learn(self):
         """Learn a policy with the model."""
         if self.learn_from_sim:
-            print(colorize("Optimizing Policy with Simulated Data", "yellow"))
+            if self._training_verbose:
+                print(colorize("Optimizing Policy with Simulated Data", "yellow"))
             self.simulate_and_learn_policy()
 
         if self.learn_from_real:
-            print(colorize("Optimizing Policy with Real Data", "yellow"))
+            if self._training_verbose:
+                print(colorize("Optimizing Policy with Real Data", "yellow"))
             self.learn_policy_from_real_data()
 
     def simulate_and_learn_policy(self):
