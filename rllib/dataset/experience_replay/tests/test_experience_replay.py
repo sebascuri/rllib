@@ -188,7 +188,7 @@ class TestExperienceReplay(object):
         assert memory.valid[(memory.ptr - 2) % max_len] == 1
         for i in range(num_steps):
             assert memory.valid[(memory.ptr + i) % max_len] == 0
-        assert memory.memory[(memory.ptr - 1) % max_len] is observation
+        assert memory.memory[(memory.ptr - 1) % max_len] is not observation
 
     def test_len(self, discrete, dim_state, dim_action, max_len, num_steps):
         num_transitions = 200
