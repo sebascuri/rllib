@@ -34,14 +34,15 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""
         trajectory = self.simulate(observation.state, self.policy)
+        observation = stack_list_of_tuples(trajectory, dim=-2)
         with DisableGradient(self.value_target):
             v = mc_return(
-                trajectory,
+                observation,
                 gamma=self.gamma,
                 value_function=self.value_target,
                 reward_transformer=self.reward_transformer,
+                reduction="min",
             )
-        observation = stack_list_of_tuples(trajectory, dim=-2)
         state, action = observation.state, observation.action
         _, _, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(state, action)
         bptt_loss = Loss(

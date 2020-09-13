@@ -2,7 +2,6 @@
 
 import torch
 
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.value_estimation import mb_return
 
 from .random_shooting import RandomShooting
@@ -44,7 +43,7 @@ class PolicyShooting(RandomShooting):
             value_function=self.terminal_reward,
             termination_model=self.termination_model,
         )
-        actions = stack_list_of_tuples(trajectory).action
+        actions = trajectory.action
         idx = torch.topk(value, k=self.num_elites, largest=True)[1]
 
         # Return first action and the mean over the elite samples.

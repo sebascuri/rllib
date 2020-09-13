@@ -6,11 +6,29 @@ import scipy
 import scipy.signal
 import torch
 
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import RewardTransformer, get_backend
 
 MBValueReturn = namedtuple("MBValueReturn", ["value_estimate", "trajectory"])
+
+
+def reward_to_go(
+    rewards, gamma=1.0, reward_transformer=RewardTransformer(), terminal_reward=None
+):
+    """Compute rewards to go."""
+    rewards = reward_transformer(rewards)
+    n_steps = rewards.shape[-1]
+    discount = torch.pow(torch.tensor(gamma), torch.arange(n_steps))
+
+    discounted_sum_rewards = torch.nn.functional.conv1d(
+        rewards.unsqueeze(1), discount.unsqueeze(0).unsqueeze(1), padding=n_steps
+    )[:, 0, -(n_steps + 1) : -1]
+
+    if terminal_reward is not None:
+        discounted_sum_rewards += gamma ** n_steps * terminal_reward
+    return discounted_sum_rewards
 
 
 def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
@@ -94,12 +112,58 @@ def discount_sum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
         )
 
 
-def mc_return(
-    trajectory,
+def n_step_return(
+    observation,
     gamma=1.0,
-    value_function=None,
-    entropy_reg=0.0,
+    entropy_regularization=0.0,
     reward_transformer=RewardTransformer(),
+    value_function=None,
+    reduction="none",
+):
+    """Calculate all n-step returns for the observation.
+
+    It expects an observation with shape batch x n-step x dim.
+    It returns a tensor with shape batch x n-step.
+    """
+    while observation.reward.ndim < 2:
+        observation.reward = observation.reward.unsqueeze(0)
+    n_steps = observation.reward.shape[-1]
+    discount = torch.pow(torch.tensor(gamma), torch.arange(n_steps))
+    rewards = (
+        reward_transformer(observation.reward)
+        + entropy_regularization * observation.entropy
+    )
+    discounted_rewards = rewards * discount
+    value = torch.cumsum(discounted_rewards, dim=-1)
+
+    if value_function is not None:
+        final_value = value_function(observation.next_state)
+        not_done = 1.0 - observation.done
+        if final_value.ndim > value.ndim:
+            if reduction == "min":
+                final_value = final_value.min(-1)[0]
+            elif reduction == "mean":
+                final_value = final_value.mean(-1)
+            elif reduction == "none":
+                num_q = final_value.shape[-1]
+                value = value.unsqueeze(-1).repeat_interleave(
+                    final_value.shape[-1], dim=-1
+                )
+                discount = discount.unsqueeze(-1).repeat_interleave(num_q, dim=-1)
+                not_done = not_done.unsqueeze(-1).repeat_interleave(num_q, dim=-1)
+            else:
+                raise NotImplementedError(f"{reduction} not implemented.")
+        value += gamma * discount * final_value * not_done
+    return value
+
+
+def mc_return(
+    observation,
+    gamma=1.0,
+    reward_transformer=RewardTransformer(),
+    value_function=None,
+    reduction="none",
+    entropy_regularization=0.0,
 ):
     r"""Calculate n-step MC return from the trajectory.
 
@@ -108,38 +172,29 @@ def mc_return(
 
     Parameters
     ----------
-    trajectory: List[Observation]
+    observation: Observation
         List of observations to compute the n-step return.
     gamma: float, optional.
         Discount factor.
     value_function: AbstractValueFunction, optional.
         Value function to bootstrap the value of the final state.
-    entropy_reg: float, optional.
+    entropy_regularization: float, optional.
         Entropy regularization coefficient.
     reward_transformer: RewardTransformer
+    reduction: str.
+        How to reduce ensemble value functions.
 
     """
-    if len(trajectory) == 0:
+    if observation.reward.ndim == 0 or len(observation.reward) == 0:
         return 0.0
-    discount = 1.0
-    value = torch.zeros_like(trajectory[0].reward)
-    for observation in trajectory:
-        value += discount * (
-            reward_transformer(observation.reward) + entropy_reg * observation.entropy
-        )
-        discount *= gamma
-
-    if value_function is not None:
-        final_state = trajectory[-1].next_state
-        is_terminal = trajectory[-1].done
-        final_value = value_function(final_state)
-        if final_value.ndim > value.ndim:
-            num_heads = final_value.shape[-1]
-            value = value.unsqueeze(-1).repeat_interleave(num_heads, -1)
-            value += discount * final_value * (1.0 - is_terminal.unsqueeze(-1))
-        else:
-            value += discount * final_value * (1.0 - is_terminal)
-    return value
+    return n_step_return(
+        observation,
+        gamma=gamma,
+        reward_transformer=reward_transformer,
+        entropy_regularization=entropy_regularization,
+        value_function=value_function,
+        reduction=reduction,
+    )[..., -1]
 
 
 def mb_return(
@@ -221,12 +276,13 @@ def mb_return(
         termination_model=termination_model,
         **kwargs,
     )
+    observation = stack_list_of_tuples(trajectory, dim=-2)
     value = mc_return(
-        trajectory,
+        observation,
         gamma=gamma,
         value_function=value_function,
-        entropy_reg=entropy_reg,
+        entropy_regularization=entropy_reg,
         reward_transformer=reward_transformer,
     )
 
-    return MBValueReturn(value, trajectory)
+    return MBValueReturn(value, observation)

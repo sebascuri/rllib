@@ -5,6 +5,7 @@ import torch
 import torch.testing
 
 from rllib.dataset.datatypes import Observation
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.value_estimation import discount_cumsum, discount_sum, mc_return
 
 
@@ -67,7 +68,7 @@ class TestDiscountedCumSum(object):
 
 
 class TestMCReturn(object):
-    @pytest.fixture(params=[1, 0.99, 0.9, 0], scope="class")
+    @pytest.fixture(params=[1, 0.99, 0.9, 0.5, 0], scope="class")
     def gamma(self, request):
         return request.param
 
@@ -97,9 +98,23 @@ class TestMCReturn(object):
 
         v = 0.01 if value_function is not None else 0
 
-        reward = mc_return(trajectory, gamma, value_function, entropy_reg)
+        reward = mc_return(
+            stack_list_of_tuples(trajectory, -2),
+            gamma,
+            value_function=value_function,
+            entropy_regularization=entropy_reg,
+            reduction="min",
+        )
 
         torch.testing.assert_allclose(
             reward, r0 + r1 * gamma + r2 * gamma ** 2 + r3 * gamma ** 3 + v * gamma ** 4
         )
-        assert mc_return([], gamma, value_function, entropy_reg) == 0
+        assert (
+            mc_return(
+                Observation(state=0, reward=0).to_torch(),
+                gamma,
+                value_function,
+                entropy_reg,
+            )
+            == 0
+        )

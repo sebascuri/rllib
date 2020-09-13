@@ -9,7 +9,8 @@ from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class STEVE(AbstractAlgorithm, AbstractMBAlgorithm):
-    num_models: int
+    num_dynamical_models: int
+    num_reward_models: int
     num_q = int
     base_algorithm_name: str
     def __init__(self) -> None: ...

@@ -2,7 +2,7 @@ from typing import Any, NamedTuple, Optional
 
 from torch import Tensor
 
-from rllib.dataset.datatypes import Array, State, Trajectory
+from rllib.dataset.datatypes import Array, Observation, State
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
@@ -11,20 +11,35 @@ from .utilities import RewardTransformer
 
 class MBValueReturn(NamedTuple):
     value_estimate: Tensor
-    trajectory: Trajectory
+    trajectory: Observation
 
+def reward_to_go(
+    rewards: Tensor,
+    gamma: float = ...,
+    reward_transformer: RewardTransformer = ...,
+    terminal_reward: Optional[Tensor] = ...,
+) -> Tensor: ...
 def discount_cumsum(
     rewards: Array, gamma: float = ..., reward_transformer: RewardTransformer = ...
 ) -> Array: ...
 def discount_sum(
     rewards: Tensor, gamma: float = ..., reward_transformer: RewardTransformer = ...,
 ) -> Array: ...
-def mc_return(
-    trajectory: Trajectory,
+def n_step_return(
+    observation: Observation,
     gamma: float = ...,
-    value_function: Optional[AbstractValueFunction] = ...,
-    entropy_reg: float = ...,
+    entropy_regularization: float = ...,
     reward_transformer: RewardTransformer = ...,
+    value_function: Optional[AbstractValueFunction] = ...,
+    reduction: str = ...,
+) -> Tensor: ...
+def mc_return(
+    trajectory: Observation,
+    gamma: float = ...,
+    entropy_regularization: float = ...,
+    reward_transformer: RewardTransformer = ...,
+    value_function: Optional[AbstractValueFunction] = ...,
+    reduction: str = ...,
 ) -> Tensor: ...
 def mb_return(
     state: State,

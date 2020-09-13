@@ -40,6 +40,7 @@ def main(args):
         exploration_episodes=args.exploration_episodes,
         base_agent_name=args.base_agent,
     )
+    agent.algorithm.num_steps = 4
 
     # %% Train Agent.
     train_agent(
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("agent", type=str, help="Agent name.", choices=AGENTS)
     parser.add_argument(
-        "--base-agent", type=str, help="Base agent name.", choices=AGENTS
+        "--base-agent", default="SAC", type=str, help="Base agent name.", choices=AGENTS
     )
     parser.add_argument("--seed", type=int, default=0, help="Random Seed.")
     parser.add_argument("--max-steps", type=int, default=1000, help="Maximum steps.")
