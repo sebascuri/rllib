@@ -55,12 +55,6 @@ def step_model(
     next_state_out = dynamical_model(state, action)
     next_state_distribution = tensor_to_distribution(next_state_out)
 
-    # Compute the epistemic scale of the model
-    try:
-        next_state_tril = dynamical_model.scale(state, action)
-    except NotImplementedError:
-        next_state_tril = next_state_out[-1]
-
     if next_state_distribution.has_rsample:
         next_state = next_state_distribution.rsample()
     else:
@@ -97,7 +91,7 @@ def step_model(
         done=done.float(),
         entropy=entropy,
         log_prob_action=log_prob_action,
-        next_state_scale_tril=next_state_tril,
+        next_state_scale_tril=next_state_out[-1],
     ).to_torch()
 
     # Update state.
