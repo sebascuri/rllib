@@ -102,13 +102,15 @@ def steve_expand(
                     )
                     critic_target[..., model_idx, :] = fv.unsqueeze(1)
 
-            mean_target = critic_target.mean(dim=(2, 4, 5))
+            mean_target = critic_target.mean(dim=(2, 4, 5))  # (samples, models, qs)
             weight_target = 1 / (self.eps + critic_target.var(dim=(2, 4, 5)))
 
             weights = weight_target / weight_target.sum(-1, keepdim=True)
             model_target_q = (weights * mean_target).sum(-1)
 
-            sharpness_ = sharpness(self.dynamical_model, observation)
+            sharpness_ = sharpness(self.dynamical_model, observation) + sharpness(
+                self.reward_model, observation
+            )
             alpha = 1.0 / (1.0 + sharpness_)
             target_q = alpha * model_target_q + (1 - alpha) * real_target_q
 

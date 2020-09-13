@@ -104,7 +104,9 @@ def mve_expand(
                         self.num_samples, *real_target_q.shape
                     ).mean(0)
 
-            sharpness_ = sharpness(self.dynamical_model, observation)
+            sharpness_ = sharpness(self.dynamical_model, observation) + sharpness(
+                self.reward_model, observation
+            )
             alpha = 1.0 / (1.0 + sharpness_)
             target_q = alpha * model_target_q + (1 - alpha) * real_target_q
 
