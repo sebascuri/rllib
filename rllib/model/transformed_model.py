@@ -3,7 +3,12 @@ import torch
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Observation
-from rllib.dataset.transforms import DeltaState, MeanFunction, StateNormalizer
+from rllib.dataset.transforms import (
+    DeltaState,
+    MeanFunction,
+    RewardNormalizer,
+    StateNormalizer,
+)
 
 from .abstract_model import AbstractModel
 from .ensemble_model import EnsembleModel
@@ -52,7 +57,11 @@ class TransformedModel(AbstractModel):
                 raise NotImplementedError
         if transformations is None:
             if not base_model.discrete_state:
-                transformations = [StateNormalizer(), MeanFunction(DeltaState())]
+                transformations = [
+                    StateNormalizer(),
+                    RewardNormalizer(),
+                    MeanFunction(DeltaState()),
+                ]
             else:
                 transformations = []
         return cls(
