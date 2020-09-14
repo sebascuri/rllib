@@ -5,7 +5,7 @@ import numpy as np
 try:
     from gym.envs.mujoco.half_cheetah_v3 import HalfCheetahEnv
 except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
-    pass
+    HalfCheetahEnv = object
 
 
 class MBHalfCheetahEnv(HalfCheetahEnv):

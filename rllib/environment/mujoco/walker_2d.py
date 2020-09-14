@@ -1,6 +1,11 @@
 """Walker2d Environment with full observation."""
+import gym.error
 import numpy as np
-from gym.envs.mujoco.walker2d_v3 import Walker2dEnv
+
+try:
+    from gym.envs.mujoco.walker2d_v3 import Walker2dEnv
+except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
+    Walker2dEnv = object
 
 
 class MBWalker2dEnv(Walker2dEnv):

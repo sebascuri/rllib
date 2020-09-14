@@ -1,6 +1,11 @@
 """Humanoid Environment with full observation."""
+import gym.error
 import numpy as np
-from gym.envs.mujoco.humanoid_v3 import HumanoidEnv
+
+try:
+    from gym.envs.mujoco.humanoid_v3 import HumanoidEnv
+except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
+    HumanoidEnv = object
 
 
 class MBHumanoidEnv(HumanoidEnv):

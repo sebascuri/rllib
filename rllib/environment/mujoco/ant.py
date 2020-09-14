@@ -5,7 +5,7 @@ import numpy as np
 try:
     from gym.envs.mujoco.ant_v3 import AntEnv
 except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
-    pass
+    AntEnv = object
 
 
 class MBAntEnv(AntEnv):

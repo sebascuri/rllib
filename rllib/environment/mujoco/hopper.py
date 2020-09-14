@@ -1,6 +1,11 @@
 """Hopper Environment with full observation."""
+import gym.error
 import numpy as np
-from gym.envs.mujoco.hopper_v3 import HopperEnv
+
+try:
+    from gym.envs.mujoco.hopper_v3 import HopperEnv
+except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
+    HopperEnv = object
 
 
 class MBHopperEnv(HopperEnv):

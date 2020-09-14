@@ -1,6 +1,11 @@
 """Swimmer Environment with full observation."""
+import gym.error
 import numpy as np
-from gym.envs.mujoco.swimmer_v3 import SwimmerEnv
+
+try:
+    from gym.envs.mujoco.swimmer_v3 import SwimmerEnv
+except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
+    SwimmerEnv = object
 
 
 class MBSwimmerEnv(SwimmerEnv):
