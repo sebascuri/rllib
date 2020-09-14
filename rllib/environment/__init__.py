@@ -1,5 +1,6 @@
 """Import environments."""
 import rllib.environment.mdps
+import rllib.environment.mujoco
 import rllib.environment.system_environment
 import rllib.environment.vectorized
 

@@ -46,9 +46,6 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     critic_loss(self, observation) -> Loss:
         Return the loss of the critic.
 
-    forward_slow(self, observation) -> Loss:
-        Compute the algorithm losses.
-
     update(self):
         Update the algorithm parameters. Useful for annealing.
 
