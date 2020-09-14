@@ -1,71 +1,86 @@
-"""ModelBasedAlgorithm."""
-from rllib.model import TransformedModel
-from rllib.util.neural_networks.utilities import repeat_along_dimension
-from rllib.util.rollout import rollout_model
+"""Model Ensemble Early Stopping Algorithm."""
+import torch
+
+from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.model.utilities import PredictionStrategy
+from rllib.util.early_stopping import EarlyStopping
+
+from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
-class AbstractMBAlgorithm(object):
-    """Model Based Algorithm.
+class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
+    """Model Ensemble Early Stopping Algorithm.
 
-    A model based algorithm has a dynamical_model and a reward_model and, it has a
-    simulate method that simulates trajectories following a policy.
+    Evaluate the policy by simulating all the models separately.
+    Return stop when a the returns in a fraction of the models increases.
 
-    Parameters
+    TODO: Why sample different models?
+    TODO: Add discounts :) and maybe terminal returns?
+
+    References
     ----------
-    dynamical_model: AbstractModel.
-        Dynamical model to simulate.
-    reward_model: AbstractReward.
-        Reward model to simulate.
-    num_steps: int.
-        Number of steps to simulate.
-    num_samples: int.
-        Number of parallel samples to simulate.
-    termination: Termination, optional.
-        Termination condition to evaluate while simulating.
-
-    Methods
-    -------
-    simulate(self, state: State, policy: AbstractPolicy) -> Trajectory:
-        Simulate a set of particles starting from `state' and following `policy'.
+    Kurutach, T., Clavera, I., Duan, Y., Tamar, A., & Abbeel, P. (2018).
+    Model-ensemble trust-region policy optimization. ICLR.
     """
 
     def __init__(
         self,
-        dynamical_model,
-        reward_model,
-        num_steps=1,
-        num_samples=1,
-        termination_model=None,
+        fraction=0.3,
+        eval_frequency=5,
+        epsilon=-1.0,
+        non_decrease_iter=float("inf"),
+        relative=True,
         *args,
         **kwargs,
     ):
-        super().__init__()
-        if not isinstance(dynamical_model, TransformedModel):
-            dynamical_model = TransformedModel(dynamical_model, [])
-        if not isinstance(reward_model, TransformedModel):
-            reward_model = TransformedModel(reward_model, [])
-        self.dynamical_model = dynamical_model
-        self.reward_model = reward_model
-        self.termination_model = termination_model
+        super().__init__(*args, **kwargs)
+        try:
+            num_models = self.dynamical_model.base_model.num_heads
+        except AttributeError:
+            num_models = 1
+        self.num_models = num_models
+        self.fraction = max(1, int(fraction * num_models))
+        self.eval_frequency = eval_frequency
+        self.step_counts = 0
+        self.policy = None
+        self.model_ensemble_early_stopping = [
+            EarlyStopping(epsilon, non_decrease_iter, relative)
+            for _ in range(num_models)
+        ]
 
-        assert self.dynamical_model.model_kind == "dynamics"
-        assert self.reward_model.model_kind == "rewards"
-        if self.termination_model is not None:
-            assert self.termination_model.model_kind == "termination"
+    @property
+    def stop(self):
+        """Evaluate the model."""
+        count = sum([es.stop for es in self.model_ensemble_early_stopping])
+        return count >= self.fraction
 
-        self.num_steps = num_steps
-        self.num_samples = num_samples
+    def reset(self, hard=True):
+        """Reset moving average and minimum values.
 
-    def simulate(self, state, policy):
-        """Simulate a set of particles starting from `state' and following `policy'."""
-        if self.num_samples > 0:
-            state = repeat_along_dimension(state, number=self.num_samples, dim=0)
-        state = state.reshape(-1, *self.dynamical_model.dim_state)
-        return rollout_model(
-            dynamical_model=self.dynamical_model,
-            reward_model=self.reward_model,
-            policy=policy,
-            initial_state=state,
-            max_steps=self.num_steps,
-            termination_model=self.termination_model,
-        )
+        Parameters
+        ----------
+        hard: bool, optional (default=True).
+            If true, reset moving average and min_value.
+            If false, reset only moving average.
+        """
+        for es_algorithm in self.model_ensemble_early_stopping:
+            es_algorithm.reset(hard=hard)
+
+    def update(self, state, policy):
+        """Update estimation."""
+        if self.eval_frequency > 0 and (self.step_counts + 1) % self.eval_frequency > 0:
+            self.step_counts += 1
+            return
+
+        self.step_counts = 0
+        with torch.no_grad(), PredictionStrategy(
+            self.dynamical_model, self.reward_model, prediction_strategy="set_head"
+        ):
+            for i in range(self.num_models):
+                self.dynamical_model.set_head(i)
+                self.reward_model.set_head(i)
+                trajectory = self.simulate(state, policy)
+                observation = stack_list_of_tuples(trajectory, dim=state.ndim - 1)
+                self.model_ensemble_early_stopping[i].update(
+                    observation.reward.sum(-1).mean()
+                )
