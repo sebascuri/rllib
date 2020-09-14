@@ -195,6 +195,21 @@ class ModelBasedAgent(AbstractAgent):
                 print(colorize("Optimizing Policy with Real Data", "yellow"))
             self.learn_policy_from_real_data()
 
+    def early_stop(self, losses, **kwargs):
+        """Early stop with simulation algorithm."""
+        if self.simulation_algorithm is not None:
+            with torch.no_grad():
+                self.policy.reset()  # TODO: Add goal distribution.
+                initial_states = self.simulation_algorithm.get_initial_states(
+                    self.initial_states_dataset, self.memory
+                )
+
+                self.simulation_algorithm.simulate(
+                    initial_states, self.policy, logger=self.logger
+                )
+            self.early_stopping_algorithm.update(self.logger.current["sim_return"])
+        return self.early_stopping_algorithm.stop
+
     def simulate_and_learn_policy(self):
         """Simulate the model and optimize the policy with the learned data.
 
