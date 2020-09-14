@@ -1,6 +1,11 @@
 """Half-Cheetah Environment with full observation."""
+import gym.error
 import numpy as np
-from gym.envs.mujoco.half_cheetah_v3 import HalfCheetahEnv
+
+try:
+    from gym.envs.mujoco.half_cheetah_v3 import HalfCheetahEnv
+except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
+    pass
 
 
 class MBHalfCheetahEnv(HalfCheetahEnv):
