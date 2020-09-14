@@ -1,6 +1,7 @@
 from typing import Any
 
 from rllib.algorithms.ppo import PPO
+from rllib.dataset.datatypes import Loss
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractValueFunction
 
@@ -23,6 +24,4 @@ class PPOAgent(ActorCriticAgent):
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
-    def early_stop(self, *args: Any, **kwargs: Any) -> bool:
-        """Early stop the training algorithm."""
-        return kwargs.get("approximate_kl", self.target_kl) >= 1.5 * self.target_kl
+    def early_stop(self, losses: Loss, **kwargs: Any) -> bool: ...

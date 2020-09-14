@@ -198,10 +198,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def early_stop(self, losses, **kwargs):
         """Early stop the training algorithm."""
         self.early_stopping_algorithm.update(
-            # losses.policy_loss.mean().item(),
-            losses.critic_loss.mean().item(),
-            # losses.regularization_loss.mean().item(),
-            losses.dual_loss.mean().item(),
+            losses.critic_loss.mean().item(), losses.dual_loss.mean().item()
         )
         return False
 
