@@ -1,7 +1,11 @@
 """Ant Environment with full observation."""
 
 import numpy as np
-from gym.envs.mujoco.ant_v3 import AntEnv
+
+try:
+    from gym.envs.mujoco.ant_v3 import AntEnv
+except ModuleNotFoundError:
+    AntEnv = object
 
 
 class MBAntEnv(AntEnv):
