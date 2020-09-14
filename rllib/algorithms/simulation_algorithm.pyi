@@ -3,7 +3,7 @@ from typing import Any, Optional
 from torch import Tensor
 from torch.distributions import Distribution
 
-from rllib.dataset.datatypes import Observation, Trajectory
+from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
@@ -37,8 +37,12 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         real_dataset: ExperienceReplay,
     ) -> Tensor: ...
     def simulate(
-        self, state: Tensor, policy: AbstractPolicy, logger: Optional[Logger] = ...
-    ) -> Trajectory: ...
+        self,
+        state: Tensor,
+        policy: AbstractPolicy,
+        initial_action: Optional[Tensor] = ...,
+        logger: Optional[Logger] = ...,
+    ) -> Observation: ...
     def _log_trajectory(
         self, stacked_trajectory: Observation, logger: Optional[Logger] = ...
     ) -> None: ...

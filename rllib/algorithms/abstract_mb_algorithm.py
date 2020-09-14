@@ -1,4 +1,5 @@
 """ModelBasedAlgorithm."""
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model import TransformedModel
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_model
@@ -56,16 +57,27 @@ class AbstractMBAlgorithm(object):
         self.num_steps = num_steps
         self.num_samples = num_samples
 
-    def simulate(self, state, policy):
+    def simulate(self, initial_state, policy, initial_action=None, logger=None):
         """Simulate a set of particles starting from `state' and following `policy'."""
         if self.num_samples > 0:
-            state = repeat_along_dimension(state, number=self.num_samples, dim=0)
-        state = state.reshape(-1, *self.dynamical_model.dim_state)
-        return rollout_model(
+            initial_state = repeat_along_dimension(
+                initial_state, number=self.num_samples, dim=0
+            )
+            initial_state = initial_state.reshape(-1, *self.dynamical_model.dim_state)
+            if initial_action is not None:
+                initial_action = repeat_along_dimension(
+                    initial_action, number=self.num_samples, dim=0
+                )
+                initial_action = initial_action.reshape(*initial_state.shape[:-1], -1)
+
+        trajectory = rollout_model(
             dynamical_model=self.dynamical_model,
             reward_model=self.reward_model,
             policy=policy,
-            initial_state=state,
+            initial_state=initial_state,
+            initial_action=initial_action,
             max_steps=self.num_steps,
             termination_model=self.termination_model,
         )
+        observation = stack_list_of_tuples(trajectory, dim=initial_state.ndim - 1)
+        return observation

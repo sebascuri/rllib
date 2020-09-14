@@ -1,7 +1,6 @@
 """Stochastic Ensemble Value Expansion Algorithm."""
 import torch
 
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model.utilities import PredictionStrategy
 from rllib.util.training.utilities import sharpness
 from rllib.util.value_estimation import n_step_return
@@ -84,12 +83,13 @@ def steve_expand(
                 self.dynamical_model, self.reward_model, prediction_strategy="set_head"
             ), torch.no_grad():
                 state = observation.state[..., 0, :]
-
+                action = observation.action[..., 0, :]
                 for model_idx in range(self.num_models):  # Rollout each model.
                     self.dynamical_model.set_head(model_idx)
                     self.reward_model.set_head(model_idx)
-                    trajectory = self.simulate(state, self.policy)
-                    observation = stack_list_of_tuples(trajectory, dim=-2)
+                    observation = self.simulate(
+                        state, self.policy, initial_action=action
+                    )
                     fast_value = n_step_return(
                         observation,
                         gamma=self.gamma,

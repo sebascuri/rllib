@@ -1,7 +1,6 @@
 """Model Ensemble Early Stopping Algorithm."""
 import torch
 
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model.utilities import PredictionStrategy
 from rllib.util.early_stopping import EarlyStopping
 
@@ -79,8 +78,7 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
             for i in range(self.num_models):
                 self.dynamical_model.set_head(i)
                 self.reward_model.set_head(i)
-                trajectory = self.simulate(state, policy)
-                observation = stack_list_of_tuples(trajectory, dim=state.ndim - 1)
+                observation = self.simulate(state, policy)
                 self.model_ensemble_early_stopping[i].update(
                     observation.reward.sum(-1).mean()
                 )

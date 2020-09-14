@@ -1,8 +1,6 @@
 """ModelBasedAlgorithm."""
 import torch
 
-from rllib.dataset.utilities import stack_list_of_tuples
-
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
@@ -49,13 +47,8 @@ def dyna_expand(
             real_loss = super().forward(observation)
             with torch.no_grad():
                 state = observation.state[..., 0, :]
-                trajectory = self.simulate(state, self.policy)
-            try:
-                observation = stack_list_of_tuples(trajectory, dim=-2)
-                sim_loss = super().forward(observation)
-            except RuntimeError:
-                sim_loss = super().forward(trajectory)
-
+                sim_observation = self.simulate(state, self.policy)
+            sim_loss = super().forward(sim_observation)
             return real_loss + sim_loss
 
     return Dyna()

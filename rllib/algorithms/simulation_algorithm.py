@@ -3,7 +3,6 @@ import gpytorch
 import torch
 
 from rllib.dataset.experience_replay import StateExperienceReplay
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import DisableGradient
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -107,7 +106,7 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         initial_states = initial_states.unsqueeze(0)
         return initial_states
 
-    def simulate(self, state, policy, logger=None):
+    def simulate(self, state, policy, initial_action=None, logger=None):
         """Simulate from initial_states."""
         if self.refresh_interval > 0 and (self._idx + 1) % self.refresh_interval == 0:
             self.dataset.reset()
@@ -117,13 +116,12 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         with DisableGradient(
             self.dynamical_model, self.reward_model, self.termination_model
         ), gpytorch.settings.fast_pred_var():
-            trajectory = super().simulate(state, policy)
+            observation = super().simulate(state, policy)
 
-        stacked_trajectory = stack_list_of_tuples(trajectory)
-        states = stacked_trajectory.state.reshape(-1, *self.dynamical_model.dim_state)
+        states = observation.state.reshape(-1, *self.dynamical_model.dim_state)
         self.dataset.append(states[:: self.num_subsample])
-        self._log_trajectory(stacked_trajectory, logger)
-        return trajectory
+        self._log_trajectory(observation, logger)
+        return observation
 
     def _log_trajectory(self, stacked_trajectory, logger):
         """Log the simulated trajectory."""
@@ -134,7 +132,7 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         )
         logger.update(
             sim_entropy=stacked_trajectory.entropy.mean().item(),
-            sim_return=stacked_trajectory.reward.sum(0).mean().item(),
+            sim_return=stacked_trajectory.reward.sum(-1).mean().item(),
             sim_scale=scale.square().sum(-1).sum(0).mean().sqrt().item(),
             sim_max_state=stacked_trajectory.state.abs().max().item(),
             sim_max_action=stacked_trajectory.action.abs().max().item(),

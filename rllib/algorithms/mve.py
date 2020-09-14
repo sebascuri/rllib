@@ -1,8 +1,6 @@
 """Model Based Value Expansion Algorithm."""
 import torch
 
-from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.training.utilities import sharpness
 from rllib.util.value_estimation import discount_cumsum, mc_return
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -61,19 +59,14 @@ def mve_expand(
             if self.td_k:
                 with torch.no_grad():
                     state = observation.state[..., 0, :]
-                    trajectory = self.simulate(state, self.policy)
-                observation = stack_list_of_tuples(trajectory, dim=-2)
+                    observation = self.simulate(state, self.policy)
 
             return super().critic_loss(observation)
 
         def get_value_target(self, observation):
             """Rollout model and call base algorithm with transitions."""
-            real_target_q = super().get_value_target(observation)
             if self.td_k:
-                if self.critic.discrete_state:
-                    final_state = observation.next_state[..., -1]
-                else:
-                    final_state = observation.next_state[..., -1, :]
+                final_state = observation.next_state[..., -1, :]
                 done = observation.done[..., -1]
                 final_value = self.value_target(final_state)
 
@@ -84,32 +77,23 @@ def mve_expand(
                     (observation.reward, (final_value * (1 - done)).unsqueeze(-1)),
                     dim=-1,
                 )
-                model_target_q = discount_cumsum(
+                sim_target = discount_cumsum(
                     rewards, self.gamma, self.reward_transformer
                 )[..., :-1]
-
             else:
                 with torch.no_grad():
-                    state = observation.state[..., 0, :]
-                    trajectory = self.simulate(state, self.policy)
-                    observation = stack_list_of_tuples(trajectory, dim=-2)
-                    model_target_q = mc_return(
-                        observation,
-                        gamma=self.gamma,
-                        value_function=self.value_target,
-                        reward_transformer=self.reward_transformer,
-                        reduction="min",
+                    state, action = observation.state, observation.action
+                    observation = self.simulate(
+                        state, self.policy, initial_action=action
                     )
-                    model_target_q = model_target_q.reshape(
-                        self.num_samples, *real_target_q.shape
-                    ).mean(0)
+                sim_target = mc_return(
+                    observation,
+                    gamma=self.gamma,
+                    value_function=self.value_target,
+                    reward_transformer=self.reward_transformer,
+                    reduction="min",
+                ).unsqueeze(-1)
 
-            sharpness_ = sharpness(self.dynamical_model, observation) + sharpness(
-                self.reward_model, observation
-            )
-            alpha = 1.0 / (1.0 + sharpness_)
-            target_q = alpha * model_target_q + (1 - alpha) * real_target_q
-
-            return target_q
+            return sim_target
 
     return MVE()

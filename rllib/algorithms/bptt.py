@@ -1,6 +1,5 @@
 """Back-Propagation Through Time Algorithm."""
 from rllib.dataset.datatypes import Loss
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.value_estimation import mc_return
 
@@ -23,17 +22,18 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
     Model-Augmented Actor-Critic: Backpropagating through Paths. ICLR.
     """
 
+    num_samples: int
+
     def __init__(self, *args, **kwargs):
         AbstractAlgorithm.__init__(self, *args, **kwargs)
         AbstractMBAlgorithm.__init__(self, *args, **kwargs)
 
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""
-        trajectory = self.simulate(observation.state, self.policy)
-        observation = stack_list_of_tuples(trajectory, dim=-2)
+        sim_observation = self.simulate(observation.state, self.policy)
         with DisableGradient(self.value_target):
             v = mc_return(
-                observation,
+                sim_observation,
                 gamma=self.gamma,
                 value_function=self.value_target,
                 reward_transformer=self.reward_transformer,
