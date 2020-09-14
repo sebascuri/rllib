@@ -46,8 +46,8 @@ def step_model(
     termination_model,
     state,
     action,
-    done,
-    action_scale,
+    done=None,
+    action_scale=1.0,
     pi=None,
 ):
     """Perform a single step in an dynamical model."""
@@ -68,6 +68,8 @@ def step_model(
         reward = reward_distribution.rsample().squeeze(-1)
     else:
         reward = reward_distribution.sample().squeeze(-1)
+    if done is None:
+        done = torch.zeros_like(reward).bool()
     reward *= (~done).float()
 
     # Check for termination.
@@ -263,6 +265,7 @@ def rollout_model(
     reward_model,
     policy,
     initial_state,
+    initial_action=None,
     termination_model=None,
     max_steps=1000,
 ):
@@ -278,6 +281,8 @@ def rollout_model(
         Policy that interacts with the environment.
     initial_state: State
         Starting states for the interaction.
+    initial_action: Action.
+        Starting action for the interaction.
     termination_model: AbstractModel.
         Termination condition to finish the rollout.
     max_steps: int.
@@ -299,16 +304,18 @@ def rollout_model(
     done = torch.full(state.shape[:-1], False, dtype=torch.bool)
 
     assert max_steps > 0
-    for _ in range(max_steps):
-        # Sample an action
+    for i in range(max_steps):
         pi = tensor_to_distribution(policy(state), **policy.dist_params)
-        if pi.has_rsample:
-            action = pi.rsample()
+        if i == 0 and initial_action is not None:
+            action = initial_action
         else:
-            action = pi.sample()
-
-        if not policy.discrete_action:
-            action = policy.action_scale * action.clamp_(-1.0, 1.0)
+            # Sample an action
+            if pi.has_rsample:
+                action = pi.rsample()
+            else:
+                action = pi.sample()
+            if not policy.discrete_action:
+                action = policy.action_scale * action.clamp_(-1.0, 1.0)
 
         observation, next_state, done = step_model(
             dynamical_model=dynamical_model,

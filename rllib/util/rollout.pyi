@@ -24,8 +24,8 @@ def step_model(
     termination_model: AbstractModel,
     state: Tensor,
     action: Tensor,
-    done: Tensor,
-    action_scale: Action,
+    done: Optional[Tensor] = ...,
+    action_scale: Action = 1.0,
     pi: Optional[Distribution] = ...,
 ) -> Tuple[Observation, Tensor, Tensor]: ...
 def record(
@@ -62,6 +62,7 @@ def rollout_model(
     reward_model: AbstractModel,
     policy: AbstractPolicy,
     initial_state: State,
+    initial_action: Optional[Action] = ...,
     termination_model: Optional[AbstractModel] = ...,
     max_steps: int = ...,
 ) -> Trajectory: ...
