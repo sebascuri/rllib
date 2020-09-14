@@ -170,7 +170,7 @@ def separated_kl(p, q):
     return kl_mean, kl_var
 
 
-def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False):
+def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False, clamp_max=5.0):
     """Compute off-policy weight.
 
     Parameters
@@ -182,6 +182,8 @@ def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False):
     full_trajectory: bool, optional (default=False).
         Flag that indicates whether the off-policy weight is for a single step or for
         the full trajectory.
+    clamp_max: float.
+        Value to clamp max.
 
     Returns
     -------
@@ -192,7 +194,7 @@ def off_policy_weight(eval_log_p, behavior_log_p, full_trajectory=False):
     if full_trajectory:
         weight = torch.cumprod(weight, dim=-1)
 
-    return weight
+    return weight.clamp_max(clamp_max)
 
 
 def get_entropy_and_log_p(pi, action, action_scale):

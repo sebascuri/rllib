@@ -154,7 +154,7 @@ def calibrate_model(
         logger = Logger(f"{model.name}_calibration")
 
     observation = calibration_set.all_data
-    min_temperature, max_temperature = temperature_range
+
     with torch.no_grad():
         initial_score = calibration_score(model, observation).item()
     initial_temperature = model.temperature
@@ -163,7 +163,7 @@ def calibrate_model(
     model.temperature = initial_temperature.clone()
     score, temperature = initial_score, initial_temperature.clone()
     for _ in range(max_iter):
-        if model.temperature > max_temperature:
+        if model.temperature > 2 * temperature_range[1]:
             break
         model.temperature *= 2
         with torch.no_grad():
@@ -177,7 +177,7 @@ def calibrate_model(
     model.temperature = initial_temperature.clone()
     score, temperature = initial_score, initial_temperature.clone()
     for _ in range(max_iter):
-        if model.temperature < min_temperature:
+        if model.temperature < temperature_range[0] / 2:
             break
         model.temperature /= 2
         with torch.no_grad():
@@ -220,7 +220,7 @@ def calibrate_model(
         temperature = torch.exp(
             0.5 * (torch.log(min_temperature) + torch.log(max_temperature))
         )
-        model.temperature = temperature.clone()
+        model.temperature = temperature.clone().clamp(*temperature_range)
         with torch.no_grad():
             score = calibration_score(model, observation).item()
     sharpness_ = sharpness(model, observation).item()

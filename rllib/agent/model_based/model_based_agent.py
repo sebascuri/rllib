@@ -66,7 +66,6 @@ class ModelBasedAgent(AbstractAgent):
         learn_from_real=True,
         thompson_sampling=False,
         memory=None,
-        clip_grad_var=10.0,
         *args,
         **kwargs,
     ):
@@ -76,7 +75,6 @@ class ModelBasedAgent(AbstractAgent):
             train_frequency=train_frequency,
             exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
-            clip_grad_var=clip_grad_var,
             *args,
             **kwargs,
         )
@@ -241,7 +239,10 @@ class ModelBasedAgent(AbstractAgent):
 
             return losses
 
-        self._learn_steps(closure)
+        with DisableGradient(
+            self.dynamical_model, self.reward_model, self.termination_model
+        ):
+            self._learn_steps(closure)
 
     def learn_policy_from_real_data(self):
         """Learn policy using real transitions and use the model to predict targets."""
@@ -259,7 +260,10 @@ class ModelBasedAgent(AbstractAgent):
             )
             return losses
 
-        self._learn_steps(closure)
+        with DisableGradient(
+            self.dynamical_model, self.reward_model, self.termination_model
+        ):
+            self._learn_steps(closure)
 
     @property
     def learn_model_at_observe(self):

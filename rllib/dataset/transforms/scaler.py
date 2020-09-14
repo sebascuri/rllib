@@ -67,9 +67,7 @@ class ActionScaler(AbstractTransform):
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
-        print(observation.action)
         observation.action = self._scaler(observation.action)
-        print(observation.action)
         return observation
 
     @torch.jit.export

@@ -27,11 +27,7 @@ class SVG0(DPG):
 
         # Compute entropy and log_probability.
         pi = tensor_to_distribution((action_mean, action_chol))
-        entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-
-        # Compute off-policy weight.
-        with torch.no_grad():
-            weight = torch.exp(log_p - observation.log_prob_action[..., 0])
+        entropy, _ = get_entropy_and_log_p(pi, action, self.policy.action_scale)
 
         # Compute re-parameterized policy sample.
         action = self.policy.action_scale * (
@@ -45,6 +41,5 @@ class SVG0(DPG):
                 q = q[..., 0]
 
         return Loss(
-            policy_loss=-weight * q,
-            regularization_loss=-self.entropy_regularization * entropy,
+            policy_loss=-q, regularization_loss=-self.entropy_regularization * entropy
         )
