@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 from torch import Tensor
 
@@ -34,7 +34,7 @@ def n_step_return(
     reduction: str = ...,
 ) -> Tensor: ...
 def mc_return(
-    trajectory: Observation,
+    observation: Observation,
     gamma: float = ...,
     entropy_regularization: float = ...,
     reward_transformer: RewardTransformer = ...,
@@ -53,5 +53,5 @@ def mb_return(
     entropy_reg: float = ...,
     termination_model: Optional[AbstractModel] = ...,
     reward_transformer: RewardTransformer = ...,
-    **kwargs: Any,
+    reduction: str = ...,
 ) -> MBValueReturn: ...
