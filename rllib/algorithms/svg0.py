@@ -3,7 +3,6 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
 from .dpg import DPG
@@ -25,10 +24,6 @@ class SVG0(DPG):
             delta = action / self.policy.action_scale - action_mean
             eta = torch.inverse(action_chol) @ delta.unsqueeze(-1)
 
-        # Compute entropy and log_probability.
-        pi = tensor_to_distribution((action_mean, action_chol))
-        entropy, _ = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-
         # Compute re-parameterized policy sample.
         action = self.policy.action_scale * (
             action_mean + (action_chol @ eta).squeeze(-1)
@@ -40,6 +35,4 @@ class SVG0(DPG):
             if isinstance(self.critic_target, NNEnsembleQFunction):
                 q = q[..., 0]
 
-        return Loss(
-            policy_loss=-q, regularization_loss=-self.entropy_regularization * entropy
-        )
+        return Loss(policy_loss=-q).reduce(self.criterion.reduction)

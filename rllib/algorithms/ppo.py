@@ -6,12 +6,11 @@ import torch.distributions
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import resume_learning
 from rllib.util.parameter_decay import Constant, ParameterDecay
-from rllib.util.value_estimation import discount_cumsum
 
-from .gaac import GAAC
+from .trpo import TRPO
 
 
-class PPO(GAAC):
+class PPO(TRPO):
     """Proximal Policy Optimization algorithm..
 
     The PPO algorithm returns a loss that is a combination of three losses.
@@ -46,23 +45,16 @@ class PPO(GAAC):
     Implementation Matters in Deep Policy Gradients: A Case Study on PPO and TRPO. ICLR.
     """
 
-    def __init__(
-        self,
-        epsilon=0.2,
-        clamp_value=False,
-        monte_carlo_target=False,
-        standardize_returns=True,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(standardize_returns=standardize_returns, *args, **kwargs)
+    def __init__(self, epsilon=0.2, clamp_value=False, *args, **kwargs):
+        super().__init__(
+            epsilon_mean=0, epsilon_var=0, regularization=True, *args, **kwargs
+        )
 
         if not isinstance(epsilon, ParameterDecay):
             epsilon = Constant(epsilon)
         self.epsilon = epsilon
 
         self.clamp_value = clamp_value
-        self.monte_carlo_target = monte_carlo_target
 
     def reset(self):
         """Reset the optimization (kl divergence) for the next epoch."""
@@ -73,7 +65,7 @@ class PPO(GAAC):
     def actor_loss(self, trajectory):
         """Get actor loss."""
         state, action, reward, next_state, done, *r = trajectory
-        log_p, log_p_old, _, _, entropy = self.get_log_p_kl_entropy(state, action)
+        log_p, log_p_old, _, _, _ = self.get_log_p_kl_entropy(state, action)
 
         with torch.no_grad():
             adv = self.returns(trajectory)
@@ -82,35 +74,12 @@ class PPO(GAAC):
 
         # Compute surrogate loss.
         ratio = torch.exp(log_p - log_p_old)
-        clip_adv = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
-        surrogate_loss = -torch.min(ratio * adv, clip_adv).mean()
+        weighted_advantage = ratio * adv
+        clipped_advantage = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
+        surrogate_loss = -torch.min(weighted_advantage, clipped_advantage)
+        # Instead of using the Trust-region, TRPO takes the minimum in line 80.
 
-        return Loss(
-            policy_loss=surrogate_loss,
-            regularization_loss=-self.entropy_regularization * entropy,
-        )
-
-    def get_value_target(self, observation):
-        """Get the Q-Target."""
-        if self.ope is not None:
-            return self.ope(observation)
-        elif self.monte_carlo_target:
-            final_state = observation.next_state[-1:]
-            reward_to_go = self.critic_target(final_state) * (
-                1.0 - observation.done[-1:]
-            )
-            value_target = discount_cumsum(
-                torch.cat((observation.reward, reward_to_go)), gamma=self.gamma
-            )[:-1]
-            return (value_target - value_target.mean()) / (
-                value_target.std() + self.eps
-            )
-        else:
-            adv = self.returns(observation)
-            if self.standardize_returns:
-                adv = (adv - adv.mean()) / (adv.std() + self.eps)
-
-            return adv + self.critic_target(observation.state)
+        return Loss(policy_loss=surrogate_loss).reduce(self.criterion.reduction)
 
     def process_value_prediction(self, value_prediction, observation):
         """Clamp predicted value."""

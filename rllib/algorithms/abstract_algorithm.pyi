@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -7,8 +7,11 @@ from torch.nn.modules.loss import _Loss
 
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.policy import AbstractPolicy
+from rllib.util.parameter_decay import ParameterDecay
 from rllib.util.utilities import RewardTransformer
 from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
+
+from .kl_loss import KLLoss
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
@@ -24,6 +27,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     old_policy: AbstractPolicy
     criterion: _Loss
     entropy_regularization: float
+    kl_loss: KLLoss
     num_samples: int
     value_target: IntegrateQValueFunction
     def __init__(
@@ -32,6 +36,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         policy: AbstractPolicy,
         critic: AbstractQFunction,
         entropy_regularization: float = ...,
+        epsilon_mean: Union[ParameterDecay, float] = ...,
+        epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
+        regularization: bool = ...,
         num_samples: int = ...,
         criterion: _Loss = ...,
         reward_transformer: RewardTransformer = ...,
@@ -56,6 +63,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def get_ope_weight(
         self, state: Tensor, action: Tensor, log_prob_action: Tensor
     ) -> Tensor: ...
+    def regularization_loss(self, observation: Observation) -> Loss: ...
     def actor_loss(self, observation: Observation) -> Loss: ...
     def critic_loss(self, observation: Observation) -> Loss: ...
     def forward(

@@ -86,7 +86,7 @@ class VMPO(MPO):
         """
         state, action, *r = observation
 
-        log_p, _, kl_mean, kl_var, _ = self.get_log_p_kl_entropy(state, action)
+        log_p, _, _, _, _ = self.get_log_p_kl_entropy(state, action)
 
         value_prediction = self.critic(state)
 
@@ -106,12 +106,7 @@ class VMPO(MPO):
         log_p_top_k = log_p[idx_top_k].unsqueeze(0)
 
         mpo_loss = self.mpo_loss(q_values=advantage_top_k, action_log_p=log_p_top_k)
-        kl_loss = self.kl_loss(kl_mean=kl_mean, kl_var=kl_var)
 
-        self._info.update(
-            eta=self.mpo_loss.eta(),
-            eta_mean=self.kl_loss.eta_mean(),
-            eta_var=self.kl_loss.eta_var(),
-        )
+        self._info.update(eta=self.mpo_loss.eta())
 
-        return mpo_loss + kl_loss
+        return mpo_loss.reduce(self.criterion.reduction)

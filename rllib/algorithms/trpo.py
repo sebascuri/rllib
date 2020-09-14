@@ -4,12 +4,12 @@ import torch
 import torch.distributions
 
 from rllib.dataset.datatypes import Loss
+from rllib.util.value_estimation import discount_cumsum
 
-from .kl_loss import KLLoss
-from .ppo import PPO
+from .gaac import GAAC
 
 
-class TRPO(PPO):
+class TRPO(GAAC):
     """Trust Region Policy Optimization algorithm..
 
     The TRPO algorithm returns a loss that is a combination of three losses.
@@ -40,17 +40,52 @@ class TRPO(PPO):
     """
 
     def __init__(
-        self, epsilon_mean=0.2, epsilon_var=1e-4, regularization=False, *args, **kwargs
+        self,
+        epsilon_mean=0.01,
+        epsilon_var=None,
+        regularization=False,
+        lambda_=0.95,
+        monte_carlo_target=False,
+        *args,
+        **kwargs,
     ):
-        super().__init__(*args, **kwargs)
-        self.kl_loss = KLLoss(epsilon_mean, epsilon_var, regularization)
+        super().__init__(
+            epsilon_mean=epsilon_mean,
+            epsilon_var=epsilon_var,
+            regularization=regularization,
+            lambda_=lambda_,
+            *args,
+            **kwargs,
+        )
+        self.monte_carlo_target = monte_carlo_target
+
+    def get_value_target(self, observation):
+        """Get the Q-Target."""
+        if self.ope is not None:
+            return self.ope(observation)
+        elif self.monte_carlo_target:
+            final_state = observation.next_state[-1:]
+            reward_to_go = self.critic_target(final_state) * (
+                1.0 - observation.done[-1:]
+            )
+            value_target = discount_cumsum(
+                torch.cat((observation.reward, reward_to_go)), gamma=self.gamma
+            )[:-1]
+            return (value_target - value_target.mean()) / (
+                value_target.std() + self.eps
+            )
+        else:
+            adv = self.returns(observation)
+            if self.standardize_returns:
+                adv = (adv - adv.mean()) / (adv.std() + self.eps)
+
+            return adv + self.critic_target(observation.state)
 
     def actor_loss(self, trajectory):
         """Get actor loss."""
         state, action, reward, next_state, done, *r = trajectory
-        log_p, log_p_old, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
-            state, action
-        )
+        log_p, log_p_old, _, _, _ = self.get_log_p_kl_entropy(state, action)
+
         with torch.no_grad():
             adv = self.returns(trajectory)
             if self.standardize_returns:
@@ -58,18 +93,6 @@ class TRPO(PPO):
 
         # Compute surrogate loss.
         ratio = torch.exp(log_p - log_p_old)
-        surrogate_loss = -(ratio * adv).mean()
+        weighted_advantage = ratio * adv
 
-        # Compute Policy Loss
-        actor_loss = Loss(
-            policy_loss=surrogate_loss,
-            regularization_loss=-self.entropy_regularization * entropy,
-        )
-
-        # Compute KL Loss.
-        kl_loss = self.kl_loss(kl_mean, kl_var)
-        self._info.update(
-            eta_mean=self.kl_loss.eta_mean(), eta_var=self.kl_loss.eta_var()
-        )
-
-        return actor_loss + kl_loss
+        return Loss(policy_loss=-weighted_advantage).reduce(self.criterion.reduction)

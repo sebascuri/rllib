@@ -60,7 +60,7 @@ class DPG(AbstractAlgorithm):
             q = self.critic_target(state, action)
             if isinstance(self.critic_target, NNEnsembleQFunction):
                 q = q[..., 0]
-        return Loss(policy_loss=-q)
+        return Loss(policy_loss=-q).reduce(self.criterion.reduction)
 
     def get_value_target(self, observation):
         """Get q function target."""

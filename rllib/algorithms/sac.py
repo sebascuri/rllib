@@ -54,18 +54,15 @@ class SoftActorCritic(AbstractAlgorithm):
             if isinstance(self.critic_target, NNEnsembleQFunction):
                 q_val = q_val[..., 0]
 
-        entropy, log_p = get_entropy_and_log_p(pi, action, action_scale=1)
+        entropy, log_p = get_entropy_and_log_p(pi, action, action_scale=1.0)
         eta_loss = self.eta() * (-log_p - self.target_entropy).detach()
         actor_loss = self.eta().detach() * log_p - q_val
 
-        if self.criterion.reduction == "mean":
-            eta_loss, actor_loss = eta_loss.mean(), actor_loss.mean()
-        elif self.criterion.reduction == "sum":
-            eta_loss, actor_loss = eta_loss.sum(), actor_loss.sum()
-
         self._info.update(eta=self.eta().detach().item(), entropy=entropy.item())
 
-        return Loss(policy_loss=actor_loss, regularization_loss=eta_loss)
+        return Loss(policy_loss=actor_loss, regularization_loss=eta_loss).reduce(
+            self.criterion.reduction
+        )
 
     def get_value_target(self, observation):
         """Get the target of the q function."""

@@ -26,6 +26,8 @@ from rllib.value_function import (
 )
 from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
 
+from .kl_loss import KLLoss
+
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm base class.
@@ -78,6 +80,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         policy,
         critic,
         entropy_regularization=0.0,
+        epsilon_mean=0.0,
+        epsilon_var=0.0,
+        regularization=True,
         num_samples=1,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
@@ -94,6 +99,11 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.criterion = criterion
         self.reward_transformer = reward_transformer
         self.entropy_regularization = entropy_regularization
+        self.kl_loss = KLLoss(
+            epsilon_mean=epsilon_mean,
+            epsilon_var=epsilon_var,
+            regularization=regularization,
+        )
         self.num_samples = num_samples
         self.post_init()
 
@@ -229,6 +239,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         for trajectory in trajectories:
             loss += self.actor_loss(trajectory)
             loss += self.critic_loss(trajectory)
+            loss += self.regularization_loss(trajectory)
 
         return loss / len(trajectories)
 
@@ -297,6 +308,18 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
         weight = off_policy_weight(log_p, log_prob_action, full_trajectory=False)
         return weight
+
+    def regularization_loss(self, observation):
+        """Compute regularization loss."""
+        _, _, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
+            observation.state, observation.action
+        )
+        entropy_loss = Loss(regularization_loss=-self.entropy_regularization * entropy)
+        kl_loss = self.kl_loss(kl_mean, kl_var)
+        self._info.update(
+            eta_mean=self.kl_loss.eta_mean(), eta_var=self.kl_loss.eta_var()
+        )
+        return entropy_loss + kl_loss
 
     @torch.jit.export
     def update(self):

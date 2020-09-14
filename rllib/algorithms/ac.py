@@ -77,7 +77,7 @@ class ActorCritic(AbstractAlgorithm):
         """Get Actor loss."""
         state, action, reward, next_state, done, *r = observation
 
-        log_p, _, _, _, entropy = self.get_log_p_kl_entropy(state, action)
+        log_p, _, _, _, _ = self.get_log_p_kl_entropy(state, action)
 
         with torch.no_grad():
             returns = self.returns(observation)
@@ -85,7 +85,4 @@ class ActorCritic(AbstractAlgorithm):
                 returns = (returns - returns.mean()) / (returns.std() + self.eps)
 
         policy_loss = discount_sum(-log_p * returns, self.gamma)
-        return Loss(
-            policy_loss=policy_loss.mean(),
-            regularization_loss=-self.entropy_regularization * entropy,
-        )
+        return Loss(policy_loss=policy_loss).reduce(self.criterion.reduction)

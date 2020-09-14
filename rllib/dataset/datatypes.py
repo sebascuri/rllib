@@ -279,5 +279,16 @@ class Loss:
             else:
                 yield value
 
+    def reduce(self, kind):
+        """Reduce losses."""
+        if kind == "sum":
+            return Loss(*map(lambda x: x.sum(), self))
+        elif kind == "mean":
+            return Loss(*map(lambda x: x.mean(), self))
+        elif kind == "none":
+            return self
+        else:
+            raise NotImplementedError
+
 
 Trajectory = List[Observation]

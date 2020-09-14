@@ -6,7 +6,6 @@ from rllib.util.value_estimation import mc_return
 
 from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
-from .kl_loss import KLLoss
 
 
 class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
@@ -24,12 +23,9 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
     Model-Augmented Actor-Critic: Backpropagating through Paths. ICLR.
     """
 
-    def __init__(
-        self, epsilon_mean=0.0, epsilon_var=0.0, regularization=True, *args, **kwargs
-    ):
+    def __init__(self, *args, **kwargs):
         AbstractAlgorithm.__init__(self, *args, **kwargs)
         AbstractMBAlgorithm.__init__(self, *args, **kwargs)
-        self.kl_loss = KLLoss(epsilon_mean, epsilon_var, regularization)
 
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""
@@ -43,11 +39,5 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
                 reward_transformer=self.reward_transformer,
                 reduction="min",
             )
-        state, action = observation.state, observation.action
-        _, _, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(state, action)
-        bptt_loss = Loss(
-            policy_loss=-v.mean(),
-            regularization_loss=-self.entropy_regularization * entropy,
-        )
-        kl_loss = self.kl_loss(kl_mean, kl_var)
-        return bptt_loss + kl_loss
+        bptt_loss = Loss(policy_loss=-v).reduce(self.criterion.reduction)
+        return bptt_loss

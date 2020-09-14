@@ -4,12 +4,11 @@ import torch.nn as nn
 
 from rllib.util.parameter_decay import ParameterDecay
 
-from .gaac import GAAC
+from .trpo import TRPO
 
-class PPO(GAAC):
+class PPO(TRPO):
     epsilon: ParameterDecay
     clamp_value: bool
-    monte_carlo_target: bool
     def __init__(
         self,
         epsilon: Union[ParameterDecay, float] = ...,

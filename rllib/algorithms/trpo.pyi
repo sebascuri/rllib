@@ -4,11 +4,10 @@ import torch.nn as nn
 
 from rllib.util.parameter_decay import ParameterDecay
 
-from .abstract_algorithm import AbstractAlgorithm
-from .kl_loss import KLLoss
+from .gaac import GAAC
 
-class TRPO(AbstractAlgorithm):
-    kl_loss: KLLoss
+class TRPO(GAAC):
+    monte_carlo_target: bool
     def __init__(
         self,
         epsilon_mean: Union[ParameterDecay, float] = ...,

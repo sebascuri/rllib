@@ -10,7 +10,6 @@ from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm
-from .kl_loss import KLLoss
 from .policy_evaluation.retrace import ReTrace
 
 
@@ -83,7 +82,7 @@ class MPOLoss(nn.Module):
         # KL divergence between the old_pi and the new_pi to be smaller than epsilon.
 
         weighted_log_p = torch.sum(weights * action_log_p, dim=0)
-        log_likelihood = torch.mean(weighted_log_p)
+        log_likelihood = weighted_log_p
 
         return Loss(policy_loss=-log_likelihood, dual_loss=dual_loss)
 
@@ -126,18 +125,12 @@ class MPO(AbstractAlgorithm):
     """
 
     def __init__(
-        self,
-        num_samples=15,
-        epsilon=0.1,
-        epsilon_mean=0.0,
-        epsilon_var=0.0001,
-        regularization=False,
-        *args,
-        **kwargs,
+        self, num_samples=15, epsilon=0.1, regularization=False, *args, **kwargs
     ):
-        super().__init__(num_samples=num_samples, *args, **kwargs)
+        super().__init__(
+            num_samples=num_samples, regularization=regularization, *args, **kwargs
+        )
         self.mpo_loss = MPOLoss(epsilon, regularization)
-        self.kl_loss = KLLoss(epsilon_mean, epsilon_var, regularization)
         self.post_init()
 
     def post_init(self):
@@ -171,13 +164,9 @@ class MPO(AbstractAlgorithm):
 
         q_values = self.critic_target(state, action)
 
-        mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p)
-        kl_loss = self.kl_loss(kl_mean=kl_mean, kl_var=kl_var)
-
-        self._info.update(
-            eta=self.mpo_loss.eta(),
-            eta_mean=self.kl_loss.eta_mean(),
-            eta_var=self.kl_loss.eta_var(),
+        mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p).reduce(
+            self.criterion.reduction
         )
+        self._info.update(eta=self.mpo_loss.eta())
 
-        return mpo_loss + kl_loss
+        return mpo_loss

@@ -47,7 +47,4 @@ class ExpectedActorCritic(ActorCritic):
             num_samples=self.num_samples,
         ).sum()
 
-        return Loss(
-            policy_loss=policy_loss,
-            regularization_loss=-self.entropy_regularization * entropy,
-        )
+        return Loss(policy_loss=policy_loss).reduce(self.criterion.reduction)
