@@ -1,6 +1,5 @@
 """Import environments."""
 import rllib.environment.mdps
-import rllib.environment.mujoco
 import rllib.environment.system_environment
 import rllib.environment.vectorized
 
@@ -9,3 +8,8 @@ from .gym_environment import *
 from .mdp import *
 from .system_environment import *
 from .utilities import *
+
+try:
+    import rllib.environment.mujoco
+except ModuleNotFoundError:
+    pass
