@@ -140,7 +140,7 @@ def tensor_to_distribution(args, **kwargs):
         return d
 
 
-def separated_kl(p, q):
+def separated_kl(p, q, log_p=torch.tensor(0.0), log_q=torch.tensor(0.0)):
     """Compute the mean and variance components of the average KL divergence.
 
     Separately computes the mean and variance contributions to the KL divergence
@@ -150,6 +150,8 @@ def separated_kl(p, q):
     ----------
     p: torch.distributions.MultivariateNormal
     q: torch.distributions.MultivariateNormal
+    log_p: torch.Tensor.
+    log_q: torch.Tensor.
 
     Returns
     -------
@@ -160,12 +162,25 @@ def separated_kl(p, q):
         KL divergence that corresponds to a shift in the scale components while keeping
         the location fixed.
     """
-    kl_mean = torch.distributions.kl_divergence(
-        p=MultivariateNormal(p.loc, scale_tril=q.scale_tril), q=q
-    ).mean()
-    kl_var = torch.distributions.kl_divergence(
-        p=MultivariateNormal(q.loc, scale_tril=p.scale_tril), q=q
-    ).mean()
+    assert isinstance(p, type(q))
+    if isinstance(p, torch.distributions.MultivariateNormal) and isinstance(
+        q, torch.distributions.MultivariateNormal
+    ):
+        kl_mean = torch.distributions.kl_divergence(
+            p=MultivariateNormal(p.loc, scale_tril=q.scale_tril), q=q
+        )
+        kl_var = torch.distributions.kl_divergence(
+            p=MultivariateNormal(q.loc, scale_tril=p.scale_tril), q=q
+        )
+    elif isinstance(p, Delta):
+        kl_mean = 0.5 * (p.mean - q.mean).square().mean(-1)
+        kl_var = torch.zeros_like(kl_mean)
+    else:
+        try:
+            kl_mean = torch.distributions.kl_divergence(p=p, q=q)
+        except NotImplementedError:
+            kl_mean = log_p - log_q  # Approximate the KL with samples.
+        kl_var = torch.zeros_like(kl_mean)
 
     return kl_mean, kl_var
 
@@ -205,9 +220,9 @@ def get_entropy_and_log_p(pi, action, action_scale):
     log_p = pi.log_prob(action / action_scale)
 
     try:
-        entropy = pi.entropy().mean()
+        entropy = pi.entropy()
     except NotImplementedError:
-        entropy = -log_p.mean()  # Approximate with the sampled action (biased).
+        entropy = -log_p  # Approximate with the sampled action (biased).
 
     return entropy, log_p
 

@@ -8,8 +8,8 @@ from rllib.dataset.datatypes import Loss
 from rllib.util.parameter_decay import ParameterDecay
 
 class KLLoss(nn.Module):
-    eta_mean: ParameterDecay
-    eta_var: ParameterDecay
+    _eta_mean: ParameterDecay
+    _eta_var: ParameterDecay
     epsilon_mean: Tensor
     epsilon_var: Tensor
     regularization: bool

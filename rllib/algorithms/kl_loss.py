@@ -45,7 +45,7 @@ class KLLoss(nn.Module):
     Trust region policy optimization. ICML.
     """
 
-    def __init__(self, epsilon_mean=0.1, epsilon_var=0.0001, regularization=False):
+    def __init__(self, epsilon_mean=0.0, epsilon_var=0.0, regularization=False):
         super().__init__()
         if epsilon_var is None:
             epsilon_var = 0.0
@@ -58,18 +58,28 @@ class KLLoss(nn.Module):
             if not isinstance(eta_var, ParameterDecay):
                 eta_var = Constant(eta_var)
 
-            self.eta_mean = eta_mean
-            self.eta_var = eta_var
+            self._eta_mean = eta_mean
+            self._eta_var = eta_var
 
             self.epsilon_mean = torch.tensor(0.0)
             self.epsilon_var = torch.tensor(0.0)
 
         else:  # Trust-Region: || KL(q || \pi_old) || < \epsilon
-            self.eta_mean = Learnable(1.0, positive=True)
-            self.eta_var = Learnable(1.0, positive=True)
+            self._eta_mean = Learnable(1.0, positive=True)
+            self._eta_var = Learnable(1.0, positive=True)
 
             self.epsilon_mean = torch.tensor(epsilon_mean)
             self.epsilon_var = torch.tensor(epsilon_var)
+
+    @property
+    def eta_mean(self):
+        """Get eta parameter."""
+        return self._eta_mean().detach()
+
+    @property
+    def eta_var(self):
+        """Get eta parameter."""
+        return self._eta_var().detach()
 
     def forward(self, kl_mean, kl_var=None):
         """Return primal and dual loss terms from MMPO.
@@ -81,15 +91,16 @@ class KLLoss(nn.Module):
         kl_var : torch.Tensor
             A float corresponding to the KL divergence.
         """
+        if self.epsilon_mean == 0.0 and not self.regularization:
+            return Loss()
         if kl_var is None:
             kl_var = torch.zeros_like(kl_mean)
         if self.regularization:
-            loss = self.eta_mean().detach() * kl_mean + self.eta_var().detach() * kl_var
-
+            loss = self.eta_mean * kl_mean + self.eta_var * kl_var
             return Loss(regularization_loss=loss)
         else:
-            eta_mean_loss = self.eta_mean() * (self.epsilon_mean - kl_mean.detach())
-            eta_var_loss = self.eta_var() * (self.epsilon_var - kl_var.detach())
+            eta_mean_loss = self._eta_mean() * (self.epsilon_mean - kl_mean.detach())
+            eta_var_loss = self._eta_var() * (self.epsilon_var - kl_var.detach())
 
             dual_loss = eta_mean_loss + eta_var_loss
 
