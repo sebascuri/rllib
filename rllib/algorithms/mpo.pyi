@@ -13,7 +13,7 @@ from .kl_loss import KLLoss
 from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class MPOLoss(nn.Module):
-    eta: ParameterDecay
+    _eta: ParameterDecay
     epsilon: Tensor
     def __init__(
         self,
@@ -22,6 +22,8 @@ class MPOLoss(nn.Module):
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         regularization: bool = ...,
     ) -> None: ...
+    @property
+    def eta(self) -> Tensor: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Loss: ...
 
 class MPO(AbstractAlgorithm):

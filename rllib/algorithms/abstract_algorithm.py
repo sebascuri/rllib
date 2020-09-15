@@ -26,6 +26,7 @@ from rllib.value_function import (
 )
 from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
 
+from .entropy_loss import EntropyLoss
 from .kl_loss import KLLoss
 
 
@@ -63,7 +64,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         Algorithm policy.
     critic: AbstractQFunction.
         Algorithm critic.
-    criterion: Type[nn._Loss].
+    criterion: nn._Loss.
         Criterion to optimize the critic.
     reward_transformer: RewardTransformer.
         Transformations to optimize reward.
@@ -76,10 +77,11 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         gamma,
         policy,
         critic,
-        entropy_regularization=0.0,
+        eta=0.0,
+        entropy_regularization=True,
         epsilon_mean=0.0,
         epsilon_var=0.0,
-        regularization=True,
+        kl_regularization=True,
         num_samples=1,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
@@ -95,12 +97,23 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.critic_target = deep_copy_module(self.critic)
         self.criterion = criterion
         self.reward_transformer = reward_transformer
-        self.entropy_regularization = entropy_regularization
-        self.kl_loss = KLLoss(
-            epsilon_mean=epsilon_mean,
-            epsilon_var=epsilon_var,
-            regularization=regularization,
-        )
+
+        if policy is None:
+            self.entropy_loss = EntropyLoss()
+            self.kl_loss = KLLoss()
+        else:
+            self.entropy_loss = EntropyLoss(
+                eta=eta,
+                regularization=entropy_regularization,
+                target_entropy=(
+                    -self.policy.dim_action[0] if not self.policy.discrete_action else 0
+                ),
+            )
+            self.kl_loss = KLLoss(
+                epsilon_mean=epsilon_mean,
+                epsilon_var=epsilon_var,
+                regularization=kl_regularization,
+            )
         self.num_samples = num_samples
         self.post_init()
 
@@ -120,15 +133,27 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.policy_target = deep_copy_module(self.policy)
         self.post_init()
 
+    def get_value_prediction(self, observation):
+        """Get Value prediction from the observation."""
+        # Get pred_q at the current state, action pairs.
+        if isinstance(self.critic, AbstractValueFunction):
+            pred_q = self.critic(observation.state)
+        elif isinstance(self.critic, AbstractQFunction):
+            pred_q = self.critic(observation.state, observation.action)
+        else:
+            raise NotImplementedError
+        return pred_q
+
+    def get_reward(self, observation):
+        """Get Reward."""
+        _, _, entropy = self.get_kl_entropy(observation.state)
+        tau = self.entropy_loss.eta
+        return self.reward_transformer(observation.reward) + tau * entropy
+
     def get_value_target(self, observation):
         """Get Q target from the observation."""
-        next_v = self.critic(observation.next_state)
-        next_v = next_v * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
-
-    def process_value_prediction(self, predicted_value, observation):
-        """Return processed value prediction (e.g. clamped)."""
-        return predicted_value
+        next_v = self.value_target(observation.next_state) * (1 - observation.done)
+        return self.get_reward(observation) + self.gamma * next_v
 
     def actor_loss(self, observation):
         """Get actor loss.
@@ -174,14 +199,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         if self.critic is None:
             return Loss()
 
-        # Get pred_q at the current state, action pairs.
-        if isinstance(self.critic, AbstractValueFunction):
-            pred_q = self.critic(observation.state)
-        elif isinstance(self.critic, AbstractQFunction):
-            pred_q = self.critic(observation.state, observation.action)
-        else:
-            raise NotImplementedError
-        pred_q = self.process_value_prediction(pred_q, observation)
+        pred_q = self.get_value_prediction(observation)
 
         # Get target_q with semi-gradients.
         with torch.no_grad():
@@ -210,6 +228,24 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         td_error = td_error.mean(-1)
 
         return Loss(critic_loss=critic_loss, td_error=td_error)
+
+    def regularization_loss(self, observation):
+        """Compute regularization loss."""
+        kl_mean, kl_var, entropy = self.get_kl_entropy(observation.state)
+        entropy_loss = self.entropy_loss(entropy).reduce(self.criterion.reduction)
+        kl_loss = self.kl_loss(kl_mean, kl_var).reduce(self.criterion.reduction)
+
+        num_t = self._info["num_trajectories"]
+        self._info.update(
+            eta=self.entropy_loss.eta,
+            eta_mean=self.kl_loss.eta_mean,
+            eta_var=self.kl_loss.eta_var,
+            kl_div=self._info["kl_div"] + (kl_mean + kl_var).mean() / num_t,
+            kl_mean=self._info["kl_mean"] + kl_mean.mean() / num_t,
+            kl_var=self._info["kl_var"] + kl_var.mean() / num_t,
+            entropy=self._info["entropy"] + entropy.mean() / num_t,
+        )
+        return entropy_loss + kl_loss
 
     def forward(self, observation):
         """Compute the losses.
@@ -240,7 +276,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
         return loss / len(trajectories)
 
-    def get_log_p_kl_entropy(self, state, action):
+    def get_kl_entropy(self, state):
         """Get kl divergence and current policy at a given state.
 
         Compute the separated KL divergence between current and old policy.
@@ -255,48 +291,43 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         state: torch.Tensor
             Empirical state distribution.
 
-        action: torch.Tensor
-            Actions sampled by pi_old.
-
         Returns
         -------
-        log_p: torch.Tensor
-            Log probability of actions according to current policy.
-        log_p_old: torch.Tensor
-            Log probability of actions according to old policy.
         kl_mean: torch.Tensor
             KL-Divergence due to the change in the mean between current and
             previous policy.
         kl_var: torch.Tensor
             KL-Divergence due to the change in the variance between current and
             previous policy.
+        entropy: torch.Tensor
+            Entropy of the current policy at the given state.
         """
         pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         pi_old = tensor_to_distribution(
             self.old_policy(state), **self.policy.dist_params
         )
+        try:
+            action = pi.rsample()
+        except NotImplementedError:
+            action = pi.sample()
+        if not self.policy.discrete_action:
+            action = self.policy.action_scale * (action.clamp(-1.0, 1.0))
 
         entropy, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
         _, log_p_old = get_entropy_and_log_p(pi_old, action, self.policy.action_scale)
 
-        if isinstance(pi, torch.distributions.MultivariateNormal):
-            kl_mean, kl_var = separated_kl(p=pi_old, q=pi)
-        else:
-            try:
-                kl_mean = torch.distributions.kl_divergence(p=pi_old, q=pi).mean()
-            except NotImplementedError:
-                kl_mean = (log_p_old - log_p).mean()  # Approximate the KL with samples.
-            kl_var = torch.zeros_like(kl_mean)
+        kl_mean, kl_var = separated_kl(p=pi_old, q=pi, log_p=log_p_old, log_q=log_p)
 
-        num_t = self._info["num_trajectories"]
-        self._info.update(
-            kl_div=self._info["kl_div"] + (kl_mean + kl_var) / num_t,
-            kl_mean=self._info["kl_mean"] + kl_mean / num_t,
-            kl_var=self._info["kl_var"] + kl_var / num_t,
-            entropy=self._info["entropy"] + entropy / num_t,
-        )
+        return kl_mean, kl_var, entropy
 
-        return log_p, log_p_old, kl_mean, kl_var, entropy
+    def get_log_p_and_ope_weight(self, state, action):
+        """Get log_p of a state-action and the off-pol weight w.r.t. the old policy."""
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        pi_o = tensor_to_distribution(self.old_policy(state), **self.policy.dist_params)
+        _, log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
+        _, log_p_old = get_entropy_and_log_p(pi_o, action, self.policy.action_scale)
+        ratio = torch.exp(log_p - log_p_old)
+        return log_p, ratio
 
     def get_ope_weight(self, state, action, log_prob_action):
         """Get off-policy weight of a given transition."""
@@ -305,18 +336,6 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
         weight = off_policy_weight(log_p, log_prob_action, full_trajectory=False)
         return weight
-
-    def regularization_loss(self, observation):
-        """Compute regularization loss."""
-        _, _, kl_mean, kl_var, entropy = self.get_log_p_kl_entropy(
-            observation.state, observation.action
-        )
-        entropy_loss = Loss(regularization_loss=-self.entropy_regularization * entropy)
-        kl_loss = self.kl_loss(kl_mean, kl_var)
-        self._info.update(
-            eta_mean=self.kl_loss.eta_mean(), eta_var=self.kl_loss.eta_var()
-        )
-        return entropy_loss + kl_loss
 
     @torch.jit.export
     def update(self):

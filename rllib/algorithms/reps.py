@@ -79,7 +79,7 @@ class REPS(AbstractAlgorithm):
     def get_value_target(self, observation):
         """Get value-function target."""
         next_v = self.critic(observation.next_state) * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v
 
     def actor_loss(self, observation):
         """Return primal and dual loss terms from REPS."""

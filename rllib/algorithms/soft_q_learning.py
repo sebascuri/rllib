@@ -34,8 +34,7 @@ class SoftQLearning(QLearning):
     Fox, R., Pakman, A., & Tishby, N. (2015).
     Taming the noise in reinforcement learning via soft updates. UAI.
 
-    Schulman, J., Chen, X., & Abbeel, P. (2017).
-    Equivalence between policy gradients and soft q-learning.
+    Schulman, J., Chen, X., ,
 
     Haarnoja, T., Tang, H., Abbeel, P., & Levine, S. (2017).
     Reinforcement learning with deep energy-based policies. ICML.
@@ -57,4 +56,4 @@ class SoftQLearning(QLearning):
             self.critic_target(observation.next_state) / temperature, dim=-1
         )
         next_v = next_v * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v

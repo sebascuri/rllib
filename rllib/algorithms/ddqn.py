@@ -28,4 +28,4 @@ class DDQN(QLearning):
         next_v = self.critic_target(observation.next_state, next_action)
         next_v = next_v * (1.0 - observation.done)
 
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v

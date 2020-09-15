@@ -53,13 +53,18 @@ def mve_expand(
             self.policy_target.dist_params.update(
                 **base_algorithm.policy_target.dist_params
             )
+            self.entropy_loss = base_algorithm.entropy_loss
+            self.kl_loss = base_algorithm.kl_loss
+            self.ope = None
 
         def critic_loss(self, observation):
             """Get critic-loss by rolling out a model."""
-            if self.td_k:
-                with torch.no_grad():
-                    state = observation.state[..., 0, :]
-                    observation = self.simulate(state, self.policy)
+            with torch.no_grad():
+                state = observation.state[..., 0, :]
+                observation = self.simulate(state, self.policy)
+            if not self.td_k:
+                observation.state = observation.state[..., :1, :]
+                observation.action = observation.action[..., :1, :]
 
             return super().critic_loss(observation)
 
@@ -81,11 +86,6 @@ def mve_expand(
                     rewards, self.gamma, self.reward_transformer
                 )[..., :-1]
             else:
-                with torch.no_grad():
-                    state, action = observation.state, observation.action
-                    observation = self.simulate(
-                        state, self.policy, initial_action=action
-                    )
                 sim_target = mc_return(
                     observation,
                     gamma=self.gamma,

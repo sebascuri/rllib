@@ -39,14 +39,19 @@ class MPOLoss(nn.Module):
             if not isinstance(eta, ParameterDecay):
                 eta = Constant(eta)
 
-            self.eta = eta
+            self._eta = eta
 
             self.epsilon = torch.tensor(0.0)
 
         else:  # Trust-Region: || KL(q || q) || < \epsilon
-            self.eta = Learnable(1.0, positive=True)
+            self._eta = Learnable(1.0, positive=True)
 
             self.epsilon = torch.tensor(epsilon)
+
+    @property
+    def eta(self):
+        """Get MPO regularization parameter."""
+        return self._eta().detach()
 
     def forward(self, q_values, action_log_p):
         """Return primal and dual loss terms from MPO.
@@ -66,11 +71,11 @@ class MPOLoss(nn.Module):
         # E-step: Solve Problem (7).
         # Create a weighed, sample-based representation of the optimal policy q Eq(8).
         # Compute the dual loss for the constraint KL(q || old_pi) < eps.
-        q_values = q_values.detach() * (torch.tensor(1.0) / self.eta())
+        q_values = q_values.detach() * (torch.tensor(1.0) / self._eta())
         normalizer = torch.logsumexp(q_values, dim=0)
         num_actions = torch.tensor(1.0 * action_log_p.shape[0])
 
-        dual_loss = self.eta() * (
+        dual_loss = self._eta() * (
             self.epsilon + torch.mean(normalizer) - torch.log(num_actions)
         )
         # non-parametric representation of the optimal policy.
@@ -128,7 +133,7 @@ class MPO(AbstractAlgorithm):
         self, num_samples=15, epsilon=0.1, regularization=False, *args, **kwargs
     ):
         super().__init__(
-            num_samples=num_samples, regularization=regularization, *args, **kwargs
+            num_samples=num_samples, kl_regularization=regularization, *args, **kwargs
         )
         self.mpo_loss = MPOLoss(epsilon, regularization)
         self.post_init()
@@ -150,7 +155,7 @@ class MPO(AbstractAlgorithm):
             return self.ope(observation)
         next_v = self.value_target(observation.next_state)
         next_v = next_v * (1.0 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v
 
     def actor_loss(self, observation):
         """Compute actor loss."""
@@ -160,13 +165,13 @@ class MPO(AbstractAlgorithm):
         pi_dist = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         action = self.policy.action_scale * pi_dist.sample().clamp(-1.0, 1.0)
 
-        log_p, _, kl_mean, kl_var, _ = self.get_log_p_kl_entropy(state, action)
+        log_p, _, = self.get_log_p_and_ope_weight(state, action)
 
         q_values = self.critic_target(state, action)
 
         mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p).reduce(
             self.criterion.reduction
         )
-        self._info.update(eta=self.mpo_loss.eta())
+        self._info.update(mpo_eta=self.mpo_loss.eta)
 
         return mpo_loss

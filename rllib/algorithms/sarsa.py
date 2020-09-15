@@ -54,7 +54,7 @@ class SARSA(AbstractAlgorithm):
         """Get q function target."""
         next_v = self.critic_target(observation.next_state, observation.next_action)
         next_v = next_v * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v
 
 
 class GradientSARSA(SARSA):

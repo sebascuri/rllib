@@ -11,6 +11,7 @@ from rllib.util.parameter_decay import ParameterDecay
 from rllib.util.utilities import RewardTransformer
 from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
+from .entropy_loss import EntropyLoss
 from .kl_loss import KLLoss
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
@@ -26,7 +27,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     policy_target: AbstractPolicy
     old_policy: AbstractPolicy
     criterion: _Loss
-    entropy_regularization: float
+    entropy_loss: EntropyLoss
     kl_loss: KLLoss
     num_samples: int
     value_target: IntegrateQValueFunction
@@ -35,7 +36,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         gamma: float,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
-        entropy_regularization: float = ...,
+        eta: Optional[Union[ParameterDecay, float]] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         regularization: bool = ...,
@@ -53,13 +54,13 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self, num_trajectories: int = ..., *args: Any, **kwargs: Any
     ) -> None: ...
     def set_policy(self, new_policy: AbstractPolicy) -> None: ...
+    def get_reward(self, observation: Observation) -> Tensor: ...
+    def get_value_prediction(self, observation: Observation) -> Tensor: ...
     def get_value_target(self, observation: Observation) -> Tensor: ...
-    def process_value_prediction(
-        self, value_prediction: Tensor, observation: Observation
-    ) -> Tensor: ...
-    def get_log_p_kl_entropy(
+    def get_kl_entropy(self, state: Tensor) -> Tuple[Tensor, Tensor, Tensor]: ...
+    def get_log_p_and_ope_weight(
         self, state: Tensor, action: Tensor
-    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: ...
+    ) -> Tuple[Tensor, Tensor]: ...
     def get_ope_weight(
         self, state: Tensor, action: Tensor, log_prob_action: Tensor
     ) -> Tensor: ...

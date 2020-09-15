@@ -65,7 +65,7 @@ class PPO(TRPO):
     def actor_loss(self, trajectory):
         """Get actor loss."""
         state, action, reward, next_state, done, *r = trajectory
-        log_p, log_p_old, _, _, _ = self.get_log_p_kl_entropy(state, action)
+        log_p, ratio = self.get_log_p_and_ope_weight(state, action)
 
         with torch.no_grad():
             adv = self.returns(trajectory)
@@ -73,7 +73,6 @@ class PPO(TRPO):
                 adv = (adv - adv.mean()) / (adv.std() + self.eps)
 
         # Compute surrogate loss.
-        ratio = torch.exp(log_p - log_p_old)
         weighted_advantage = ratio * adv
         clipped_advantage = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
         surrogate_loss = -torch.min(weighted_advantage, clipped_advantage)
@@ -81,8 +80,9 @@ class PPO(TRPO):
 
         return Loss(policy_loss=surrogate_loss).reduce(self.criterion.reduction)
 
-    def process_value_prediction(self, value_prediction, observation):
+    def get_value_prediction(self, observation):
         """Clamp predicted value."""
+        value_prediction = super().get_value_prediction(observation)
         if self.clamp_value:
             old_value_pred = self.critic_target(observation.state).detach()
             value_prediction = torch.max(

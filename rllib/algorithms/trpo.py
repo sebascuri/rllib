@@ -52,7 +52,7 @@ class TRPO(GAAC):
         super().__init__(
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
-            regularization=regularization,
+            kl_regularization=regularization,
             lambda_=lambda_,
             *args,
             **kwargs,
@@ -84,7 +84,7 @@ class TRPO(GAAC):
     def actor_loss(self, trajectory):
         """Get actor loss."""
         state, action, reward, next_state, done, *r = trajectory
-        log_p, log_p_old, _, _, _ = self.get_log_p_kl_entropy(state, action)
+        log_p, ratio = self.get_log_p_and_ope_weight(state, action)
 
         with torch.no_grad():
             adv = self.returns(trajectory)
@@ -92,7 +92,6 @@ class TRPO(GAAC):
                 adv = (adv - adv.mean()) / (adv.std() + self.eps)
 
         # Compute surrogate loss.
-        ratio = torch.exp(log_p - log_p_old)
         weighted_advantage = ratio * adv
 
         return Loss(policy_loss=-weighted_advantage).reduce(self.criterion.reduction)

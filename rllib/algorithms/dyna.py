@@ -41,6 +41,8 @@ def dyna_expand(
             self.policy_target.dist_params.update(
                 **base_algorithm.policy_target.dist_params
             )
+            self.entropy_loss = base_algorithm.entropy_loss
+            self.kl_loss = base_algorithm.kl_loss
 
         def forward(self, observation, **kwargs_):
             """Rollout model and call base algorithm with transitions."""

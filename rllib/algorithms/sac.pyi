@@ -8,8 +8,6 @@ from rllib.util.parameter_decay import ParameterDecay
 from .abstract_algorithm import AbstractAlgorithm
 
 class SoftActorCritic(AbstractAlgorithm):
-    eta: ParameterDecay
-    target_entropy: Union[float, Tensor]
     def __init__(
         self,
         eta: Union[ParameterDecay, float] = ...,

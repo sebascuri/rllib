@@ -4,8 +4,7 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.neural_networks import DisableGradient
-from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
-from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
+from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function import NNEnsembleQFunction
 
 from .abstract_algorithm import AbstractAlgorithm
@@ -18,24 +17,24 @@ class SoftActorCritic(AbstractAlgorithm):
 
     epsilon: Learned temperature as a constraint.
     eta: Fixed regularization.
+
+    References
+    ----------
+    Haarnoja, T., Zhou, A., Abbeel, P., & Levine, S. (2018).
+    Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a
+    Stochastic Actor. ICML.
+
+    Haarnoja, T., Zhou, A., ... & Levine, S. (2018).
+    Soft actor-critic algorithms and applications. arXiv.
     """
 
-    def __init__(self, eta, regularization=False, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Actor
-        self.target_entropy = -self.policy.dim_action[0]
+    def __init__(self, eta=0.2, regularization=False, *args, **kwargs):
+        super().__init__(
+            eta=eta, entropy_regularization=regularization, *args, **kwargs
+        )
         assert (
             len(self.policy.dim_action) == 1
         ), "Only Nx1 continuous actions implemented."
-
-        if regularization:  # Regularization: \eta KL(\pi || Uniform)
-            if not isinstance(eta, ParameterDecay):
-                eta = Constant(eta)
-            self.eta = eta
-        else:  # Trust-Region: || KL(\pi || Uniform)|| < \epsilon
-            if isinstance(eta, ParameterDecay):
-                eta = eta()
-            self.eta = Learnable(eta, positive=True)
 
     def post_init(self):
         """Set derived modules after initialization."""
@@ -53,16 +52,9 @@ class SoftActorCritic(AbstractAlgorithm):
             q_val = self.critic_target(state, action)
             if isinstance(self.critic_target, NNEnsembleQFunction):
                 q_val = q_val[..., 0]
+        actor_loss = -q_val
 
-        entropy, log_p = get_entropy_and_log_p(pi, action, action_scale=1.0)
-        eta_loss = self.eta() * (-log_p - self.target_entropy).detach()
-        actor_loss = self.eta().detach() * log_p - q_val
-
-        self._info.update(eta=self.eta().detach().item(), entropy=entropy.item())
-
-        return Loss(policy_loss=actor_loss, regularization_loss=eta_loss).reduce(
-            self.criterion.reduction
-        )
+        return Loss(policy_loss=actor_loss).reduce(self.criterion.reduction)
 
     def get_value_target(self, observation):
         """Get the target of the q function."""
@@ -71,11 +63,10 @@ class SoftActorCritic(AbstractAlgorithm):
             self.policy(observation.next_state), **self.policy.dist_params
         )
         next_action = self.policy.action_scale * pi.sample()
-        next_q = self.critic_target(observation.next_state, next_action)
+        next_v = self.critic_target(observation.next_state, next_action)
         if isinstance(self.critic_target, NNEnsembleQFunction):
-            next_q = torch.min(next_q, dim=-1)[0]
+            next_v = torch.min(next_v, dim=-1)[0]
 
-        _, log_p = get_entropy_and_log_p(pi, next_action, self.policy.action_scale)
-        next_v = next_q - self.eta().detach() * log_p
         next_v = next_v * (1.0 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        aux = self.get_reward(observation) + self.gamma * next_v
+        return aux

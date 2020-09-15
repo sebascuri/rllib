@@ -68,4 +68,4 @@ class DPG(AbstractAlgorithm):
         if isinstance(self.critic_target, NNEnsembleQFunction):
             next_v = torch.min(next_v, dim=-1)[0]
         next_v = next_v * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v

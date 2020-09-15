@@ -71,13 +71,13 @@ class ActorCritic(AbstractAlgorithm):
                 f"Critic Target type {type(self.critic_target)} not understood."
             )
         next_v = next_v * (1.0 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v
 
     def actor_loss(self, observation):
         """Get Actor loss."""
         state, action, reward, next_state, done, *r = observation
 
-        log_p, _, _, _, _ = self.get_log_p_kl_entropy(state, action)
+        log_p, _ = self.get_log_p_and_ope_weight(state, action)
 
         with torch.no_grad():
             returns = self.returns(observation)

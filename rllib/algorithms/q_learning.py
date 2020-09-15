@@ -39,7 +39,7 @@ class QLearning(AbstractAlgorithm):
         """Get q function target."""
         next_v = self.critic(observation.next_state).max(dim=-1)[0]
         next_v = next_v * (1 - observation.done)
-        return self.reward_transformer(observation.reward) + self.gamma * next_v
+        return self.get_reward(observation) + self.gamma * next_v
 
 
 class GradientQLearning(QLearning):
