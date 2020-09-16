@@ -95,13 +95,15 @@ class KLLoss(nn.Module):
             return Loss()
         if kl_var is None:
             kl_var = torch.zeros_like(kl_mean)
+
+        loss = self.eta_mean * kl_mean + self.eta_var * kl_var
         if self.regularization:
-            loss = self.eta_mean * kl_mean + self.eta_var * kl_var
             return Loss(regularization_loss=loss)
         else:
-            eta_mean_loss = self._eta_mean() * (self.epsilon_mean - kl_mean.detach())
-            eta_var_loss = self._eta_var() * (self.epsilon_var - kl_var.detach())
-
+            eta_mean_loss = self._eta_mean() * (
+                self.epsilon_mean - kl_mean.mean().detach()
+            )
+            eta_var_loss = self._eta_var() * (self.epsilon_var - kl_var.mean().detach())
             dual_loss = eta_mean_loss + eta_var_loss
 
-            return Loss(dual_loss=dual_loss)
+            return Loss(dual_loss=dual_loss, regularization_loss=loss)
