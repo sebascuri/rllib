@@ -165,7 +165,7 @@ class MPO(AbstractAlgorithm):
         pi_dist = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         action = self.policy.action_scale * pi_dist.sample().clamp(-1.0, 1.0)
 
-        log_p, _, = self.get_log_p_and_ope_weight(state, action)
+        log_p, _ = self.get_log_p_and_ope_weight(state, action)
 
         q_values = self.critic_target(state, action)
 
