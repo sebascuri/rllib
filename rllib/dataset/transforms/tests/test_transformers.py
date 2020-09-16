@@ -324,9 +324,7 @@ class TestStateNormalize(object):
             mean = transformer._normalizer.mean
             scale = torch.sqrt(transformer._normalizer.variance)
         torch.testing.assert_allclose(transformed.state, (obs.state - mean) / scale)
-        torch.testing.assert_allclose(
-            transformed.next_state, (obs.next_state - mean) / scale
-        )
+        torch.testing.assert_allclose(transformed.next_state, obs.next_state)
 
         torch.testing.assert_allclose(transformed.action, obs.action)
         torch.testing.assert_allclose(transformed.reward, obs.reward)
