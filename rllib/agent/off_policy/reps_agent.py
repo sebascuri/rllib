@@ -104,9 +104,10 @@ class REPSAgent(OffPolicyAgent):
         self._learn_steps(closure)
 
     @classmethod
-    def default(cls, environment, policy=None, lr=5e-4, *args, **kwargs):
+    def default(cls, environment, critic=None, policy=None, lr=5e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        critic = NNValueFunction.default(environment)
+        if critic is None:
+            critic = NNValueFunction.default(environment)
         if policy is None:
             policy = NNPolicy.default(environment)
 
