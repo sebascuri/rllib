@@ -15,7 +15,7 @@ class DPGAgent(OffPolicyAgent):
         self,
         critic: AbstractQFunction,
         policy: AbstractPolicy,
-        exploration_noise: Union[float, ParameterDecay],
+        exploration_noise: Union[float, ParameterDecay] = ...,
         criterion: Type[_Loss] = ...,
         policy_noise: float = ...,
         noise_clip: float = ...,

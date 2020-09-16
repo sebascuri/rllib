@@ -39,7 +39,7 @@ class DPGAgent(OffPolicyAgent):
         self,
         critic,
         policy,
-        exploration_noise,
+        exploration_noise=0.1,
         criterion=loss.MSELoss,
         policy_noise=0.2,
         noise_clip=0.5,
@@ -80,22 +80,20 @@ class DPGAgent(OffPolicyAgent):
         self.policy.dist_params.update(add_noise=False)
 
     @classmethod
-    def default(cls, environment, lr=3e-4, *args, **kwargs):
+    def default(cls, environment, lr=3e-4, exploration_noise=None, *args, **kwargs):
         """See `AbstractAgent.default'."""
         critic = NNQFunction.default(environment)
         policy = NNPolicy.default(environment, deterministic=True)
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
-
+        if exploration_noise is None:
+            exploration_noise = OUNoise(dim=environment.dim_action)
         return super().default(
             environment=environment,
             critic=critic,
             policy=policy,
             optimizer=optimizer,
-            exploration_noise=kwargs.pop(
-                "exploration_noise", OUNoise(dim=environment.dim_action)
-            ),
+            exploration_noise=exploration_noise,
             policy_update_frequency=2,
-            clip_gradient_val=10,
             *args,
             **kwargs,
         )

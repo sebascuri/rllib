@@ -1,4 +1,5 @@
 """Implementation of TD3 Algorithm."""
+from rllib.util.parameter_decay import Constant
 from rllib.value_function import NNEnsembleQFunction
 
 from .dpg_agent import DPGAgent
@@ -32,4 +33,11 @@ class TD3Agent(DPGAgent):
         self.optimizer = type(self.optimizer)(
             [p for n, p in self.algorithm.named_parameters() if "target" not in n],
             **self.optimizer.defaults,
+        )
+
+    @classmethod
+    def default(cls, environment, *args, **kwargs):
+        """Get Default TD3 agent."""
+        return super().default(
+            environment, exploration_noise=Constant(0.1), *args, **kwargs
         )
