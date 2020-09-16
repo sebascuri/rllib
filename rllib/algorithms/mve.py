@@ -41,12 +41,13 @@ class MVE(Dyna):
             sim_observation.state = observation.state[..., :1, :]
             sim_observation.action = observation.action[..., :1, :]
 
-        pred_q = self.base_algorithm.get_value_prediction(observation)
+        pred_q = self.base_algorithm.get_value_prediction(sim_observation)
 
         # Get target_q with semi-gradients.
         with torch.no_grad():
             target_q = self.get_value_target(sim_observation)
-            target_q = target_q.reshape(self.num_samples, *pred_q.shape[:2]).mean(0)
+            if not self.td_k:
+                target_q = target_q.reshape(self.num_samples, *pred_q.shape[:2]).mean(0)
             if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
                 target_q = target_q.unsqueeze(-1).repeat_interleave(
