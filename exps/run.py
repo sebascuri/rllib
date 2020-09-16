@@ -33,6 +33,11 @@ def main(args, pre_train_callback=None, **kwargs):
         env_name, env_task = args.environment.split("/")
         environment = DMSuiteEnvironment(env_name, env_task, seed=args.seed)
 
+    try:
+        reward_model = environment.env.reward_model()
+    except AttributeError:
+        reward_model = None
+
     # %% Initialize module.
     agent_module = importlib.import_module("rllib.agent")
     agent = getattr(agent_module, f"{args.agent}Agent").default(
@@ -40,6 +45,7 @@ def main(args, pre_train_callback=None, **kwargs):
         exploration_episodes=args.exploration_episodes,
         model_learn_exploration_episodes=args.model_learn_exploration_episodes,
         base_agent_name=args.base_agent,
+        reward_model=reward_model,
         **kwargs,
     )
     if pre_train_callback is not None:
@@ -97,4 +103,4 @@ if __name__ == "__main__":
     )
     parser.add_argument("--render-test", action="store_true", default=False)
 
-    main(parser.parse_args())
+    main(parser.parse_args(), num_steps=1, num_samples=4)

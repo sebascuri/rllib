@@ -66,6 +66,7 @@ class ModelBasedAgent(AbstractAgent):
         learn_from_real=True,
         thompson_sampling=False,
         memory=None,
+        clip_grad_val=10.0,
         *args,
         **kwargs,
     ):
@@ -75,6 +76,7 @@ class ModelBasedAgent(AbstractAgent):
             train_frequency=train_frequency,
             exploration_steps=exploration_steps,
             exploration_episodes=exploration_episodes,
+            clip_grad_val=clip_grad_val,
             *args,
             **kwargs,
         )
@@ -310,8 +312,8 @@ class ModelBasedAgent(AbstractAgent):
         environment,
         dynamical_model=None,
         reward_model=None,
-        num_epochs=50,
-        model_lr=1e-3,
+        num_epochs=20,
+        model_lr=5e-4,
         l2_reg=1e-4,
         *args,
         **kwargs,
