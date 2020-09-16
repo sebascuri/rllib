@@ -11,7 +11,9 @@ class Scaler(nn.Module):
 
     def __init__(self, scale):
         super().__init__()
-        self._scale = torch.tensor(scale, dtype=torch.get_default_dtype())
+        if not isinstance(scale, torch.Tensor):
+            self._scale = torch.tensor(scale, dtype=torch.get_default_dtype())
+        self._scale[self._scale == 0] = 1.0
         assert torch.all(self._scale > 0), "Scale must be positive."
 
     def forward(self, array):

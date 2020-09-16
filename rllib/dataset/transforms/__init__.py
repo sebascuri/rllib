@@ -7,7 +7,6 @@ from .normalizer import (
     ActionNormalizer,
     NextStateNormalizer,
     RewardNormalizer,
-    StateActionNormalizer,
     StateNormalizer,
 )
 from .scaler import ActionScaler, RewardScaler

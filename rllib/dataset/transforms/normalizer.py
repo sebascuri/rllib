@@ -4,7 +4,6 @@ import torch
 import torch.jit
 import torch.nn as nn
 
-from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms.utilities import rescale, update_mean, update_var
 
 from .abstract_transform import AbstractTransform
@@ -59,41 +58,6 @@ class Normalizer(nn.Module):
         self.count += new_count
 
 
-class StateActionNormalizer(AbstractTransform):
-    r"""Transformer that normalizes the states, next states, and actions.
-
-    It compounds a StateNormalizer with an ActionNormalizer.
-
-    Parameters
-    ----------
-    preserve_origin: bool, optional (default=False)
-        preserve the origin when rescaling.
-
-    """
-
-    def __init__(self, preserve_origin=False):
-        super().__init__()
-        self._state_normalizer = StateNormalizer(preserve_origin)
-        self._action_normalizer = ActionNormalizer(preserve_origin)
-
-    def forward(self, observation):
-        """See `AbstractTransform.__call__'."""
-        return self._action_normalizer(self._state_normalizer(observation))
-
-    @torch.jit.export
-    def inverse(self, observation: Observation):
-        """See `AbstractTransform.inverse'."""
-        return self._action_normalizer.inverse(
-            self._state_normalizer.inverse(observation)
-        )
-
-    @torch.jit.export
-    def update(self, observation: Observation):
-        """See `AbstractTransform.update'."""
-        self._state_normalizer.update(observation)
-        self._action_normalizer.update(observation)
-
-
 class StateNormalizer(AbstractTransform):
     r"""Implementation of a transformer that normalizes the states and next states.
 
@@ -118,28 +82,20 @@ class StateNormalizer(AbstractTransform):
         """See `AbstractTransform.__call__'."""
         scale = torch.diag_embed(1 / torch.sqrt(self._normalizer.variance))
         observation.state = self._normalizer(observation.state)
-        observation.next_state = self._normalizer(observation.next_state)
         observation.state_scale_tril = rescale(observation.state_scale_tril, scale)
-        observation.next_state_scale_tril = rescale(
-            observation.next_state_scale_tril, scale
-        )
 
         return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
         observation.state = self._normalizer.inverse(observation.state)
-        observation.next_state = self._normalizer.inverse(observation.next_state)
         observation.state_scale_tril = rescale(observation.state_scale_tril, inv_scale)
-        observation.next_state_scale_tril = rescale(
-            observation.next_state_scale_tril, inv_scale
-        )
         return observation
 
     @torch.jit.export
-    def update(self, observation: Observation):
+    def update(self, observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.state)
 
@@ -174,7 +130,7 @@ class NextStateNormalizer(AbstractTransform):
         return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
         observation.next_state = self._normalizer.inverse(observation.next_state)
@@ -184,7 +140,7 @@ class NextStateNormalizer(AbstractTransform):
         return observation
 
     @torch.jit.export
-    def update(self, observation: Observation):
+    def update(self, observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.next_state)
 
@@ -204,7 +160,7 @@ class RewardNormalizer(AbstractTransform):
         return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         inv_scale = torch.diag_embed(torch.sqrt(self._normalizer.variance))
         observation.reward = self._normalizer.inverse(observation.reward)
@@ -214,7 +170,7 @@ class RewardNormalizer(AbstractTransform):
         return observation
 
     @torch.jit.export
-    def update(self, observation: Observation):
+    def update(self, observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.reward)
 
@@ -245,12 +201,12 @@ class ActionNormalizer(AbstractTransform):
         return observation
 
     @torch.jit.export
-    def inverse(self, observation: Observation):
+    def inverse(self, observation):
         """See `AbstractTransform.inverse'."""
         observation.action = self._normalizer.inverse(observation.action)
         return observation
 
     @torch.jit.export
-    def update(self, observation: Observation):
+    def update(self, observation):
         """See `AbstractTransform.update'."""
         self._normalizer.update(observation.action)

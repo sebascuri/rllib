@@ -4,8 +4,10 @@ import torch.nn as nn
 
 from rllib.dataset.datatypes import Observation
 from rllib.dataset.transforms import (
+    ActionScaler,
     DeltaState,
     MeanFunction,
+    NextStateNormalizer,
     RewardNormalizer,
     StateNormalizer,
 )
@@ -44,7 +46,9 @@ class TransformedModel(AbstractModel):
         """See AbstractModel.default()."""
         if base_model is None:
             if model_kind == "dynamics":
-                base_model = EnsembleModel.default(environment, *args, **kwargs)
+                base_model = EnsembleModel.default(
+                    environment, deterministic=True, *args, **kwargs
+                )
             elif model_kind == "rewards":
                 base_model = EnsembleModel.default(
                     environment,
@@ -58,9 +62,11 @@ class TransformedModel(AbstractModel):
         if transformations is None:
             if not base_model.discrete_state:
                 transformations = [
-                    StateNormalizer(),
-                    RewardNormalizer(),
                     MeanFunction(DeltaState()),
+                    StateNormalizer(),
+                    ActionScaler(scale=environment.action_scale),
+                    RewardNormalizer(),
+                    NextStateNormalizer(),
                 ]
             else:
                 transformations = []
