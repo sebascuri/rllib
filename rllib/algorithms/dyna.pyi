@@ -7,20 +7,19 @@ from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
+    base_algorithm: AbstractAlgorithm
     base_algorithm_name: str
-    def __init__(self) -> None: ...
+    def __init__(
+        self,
+        base_algorithm: AbstractAlgorithm,
+        dynamical_model: AbstractModel,
+        reward_model: AbstractModel,
+        num_steps: int = ...,
+        num_samples: int = ...,
+        termination_model: Optional[AbstractModel] = ...,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None: ...
     def forward(
         self, observation: Union[Observation, List[Observation]], **kwargs: Any
     ) -> Loss: ...
-
-def dyna_expand(
-    base_algorithm: AbstractAlgorithm,
-    dynamical_model: AbstractModel,
-    reward_model: AbstractModel,
-    num_steps: int = ...,
-    num_samples: int = ...,
-    termination_model: Optional[AbstractModel] = ...,
-    td_k: bool = ...,
-    *args: Any,
-    **kwargs: Any,
-) -> Dyna: ...

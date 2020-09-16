@@ -1,56 +1,66 @@
 """ModelBasedAlgorithm."""
 import torch
 
+from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
-def dyna_expand(
-    base_algorithm,
-    dynamical_model,
-    reward_model,
-    num_steps=1,
-    num_samples=15,
-    termination_model=None,
-    *args,
-    **kwargs,
-):
-    """Expand algorithm with dyna simulations."""
-    #
+class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
+    """Dyna Algorithm."""
 
-    class Dyna(type(base_algorithm), AbstractMBAlgorithm):
-        """Model Based Algorithm.
+    def __init__(
+        self,
+        base_algorithm,
+        dynamical_model,
+        reward_model,
+        num_steps=1,
+        num_samples=15,
+        termination_model=None,
+        *args,
+        **kwargs,
+    ):
+        self.base_algorithm_name = base_algorithm.__class__.__name__
+        AbstractAlgorithm.__init__(
+            self, **{**base_algorithm.__dict__, **dict(base_algorithm.named_modules())}
+        )
+        AbstractMBAlgorithm.__init__(
+            self,
+            dynamical_model,
+            reward_model,
+            num_steps=num_steps,
+            num_samples=num_samples,
+            termination_model=termination_model,
+        )
+        self.base_algorithm = base_algorithm
+        self.base_algorithm.criterion = type(self.base_algorithm.criterion)(
+            reduction="mean"
+        )
 
-        A model based algorithm simulates trajectories with a model.
-        """
+    def forward(self, observation):
+        """Rollout model and call base algorithm with transitions."""
+        real_loss = self.base_algorithm.forward(observation)
+        with torch.no_grad():
+            state = observation.state[..., 0, :]
+            sim_observation = self.simulate(state, self.policy)
+        sim_loss = self.base_algorithm.forward(sim_observation)
+        return real_loss + sim_loss
 
-        def __init__(self):
-            super().__init__(
-                **{**base_algorithm.__dict__, **dict(base_algorithm.named_modules())}
-            )
-            AbstractMBAlgorithm.__init__(
-                self,
-                dynamical_model,
-                reward_model,
-                num_steps=num_steps,
-                num_samples=num_samples,
-                termination_model=termination_model,
-            )
-            self.base_algorithm_name = base_algorithm.__class__.__name__
+    def update(self):
+        """Update base algorithm."""
+        self.base_algorithm.update()
 
-            self.policy.dist_params.update(**base_algorithm.policy.dist_params)
-            self.policy_target.dist_params.update(
-                **base_algorithm.policy_target.dist_params
-            )
-            self.entropy_loss = base_algorithm.entropy_loss
-            self.kl_loss = base_algorithm.kl_loss
+    def reset(self):
+        """Reset base algorithm."""
+        self.base_algorithm.reset()
 
-        def forward(self, observation, **kwargs_):
-            """Rollout model and call base algorithm with transitions."""
-            real_loss = super().forward(observation)
-            with torch.no_grad():
-                state = observation.state[..., 0, :]
-                sim_observation = self.simulate(state, self.policy)
-            sim_loss = super().forward(sim_observation)
-            return real_loss + sim_loss
+    def info(self):
+        """Get info from base algorithm."""
+        return self.base_algorithm.info()
 
-    return Dyna()
+    def reset_info(self, num_trajectories=1, *args, **kwargs):
+        """Reset info from base algorithm."""
+        return self.base_algorithm.reset_info(num_trajectories, *args, **kwargs)
+
+    def set_policy(self, new_policy):
+        """Set policy in base algorithm."""
+        self.base_algorithm.set_policy(new_policy)

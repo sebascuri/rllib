@@ -1,23 +1,13 @@
-from typing import Any, Optional
+from typing import Any, List, Union
+from torch import Tensor
+from rllib.dataset.datatypes import Loss, Observation
+from .dyna import Dyna
 
-from rllib.model import AbstractModel
-
-from .abstract_algorithm import AbstractAlgorithm
-from .abstract_mb_algorithm import AbstractMBAlgorithm
-
-class MVE(AbstractAlgorithm, AbstractMBAlgorithm):
+class MVE(Dyna):
     td_k: bool
-    base_algorithm_name: str
-    def __init__(self) -> None: ...
-
-def mve_expand(
-    base_algorithm: AbstractAlgorithm,
-    dynamical_model: AbstractModel,
-    reward_model: AbstractModel,
-    num_steps: int = ...,
-    num_samples: int = ...,
-    termination_model: Optional[AbstractModel] = ...,
-    td_k: bool = ...,
-    *args: Any,
-    **kwargs: Any,
-) -> MVE: ...
+    def __init__(self, td_k: bool = ..., *args: Any, **kwargs: Any,) -> None: ...
+    def forward(
+        self, observation: Union[Observation, List[Observation]], **kwargs: Any
+    ) -> Loss: ...
+    def model_augmented_critic_loss(self, observation: Observation) -> Loss: ...
+    def get_value_target(self, observation: Observation) -> Tensor: ...
