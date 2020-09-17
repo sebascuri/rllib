@@ -312,6 +312,7 @@ class ModelBasedAgent(AbstractAgent):
         environment,
         dynamical_model=None,
         reward_model=None,
+        termination_model=None,
         num_epochs=20,
         model_lr=5e-4,
         l2_reg=1e-4,
@@ -330,7 +331,11 @@ class ModelBasedAgent(AbstractAgent):
                     model_kind="rewards",
                     transformations=dynamical_model.forward_transformations,
                 )
-
+        if termination_model is None:
+            try:
+                termination_model = environment.env.termination_model()
+            except AttributeError:
+                pass
         params = list(chain(dynamical_model.parameters(), reward_model.parameters()))
         if len(params):
             model_optimizer = Adam(params, lr=model_lr, weight_decay=l2_reg)
@@ -338,6 +343,7 @@ class ModelBasedAgent(AbstractAgent):
             model_learning_algorithm = ModelLearningAlgorithm(
                 dynamical_model=dynamical_model,
                 reward_model=reward_model,
+                termination_model=termination_model,
                 num_epochs=num_epochs,
                 model_optimizer=model_optimizer,
             )
@@ -348,6 +354,7 @@ class ModelBasedAgent(AbstractAgent):
             environment,
             dynamical_model=dynamical_model,
             reward_model=reward_model,
+            termination_model=termination_model,
             model_learning_algorithm=model_learning_algorithm,
             *args,
             **kwargs,

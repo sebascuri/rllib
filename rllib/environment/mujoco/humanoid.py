@@ -1,7 +1,7 @@
 """Humanoid Environment with full observation."""
 import gym.error
 
-from .locomotion import LocomotionEnv
+from .locomotion import LargeStateTermination, LocomotionEnv
 
 try:
     from gym.envs.mujoco.humanoid_v3 import HumanoidEnv
@@ -26,4 +26,12 @@ class MBHumanoidEnv(LocomotionEnv, HumanoidEnv):
             contact_cost_weight=0.0,
             forward_reward_weight=1.25,
             healthy_reward=5.0,
+        )
+
+    def termination_model(self):
+        """Get Termination Model."""
+        return LargeStateTermination(
+            z_dim=2,
+            healthy_z_range=self._healthy_z_range,
+            healthy_state_range=(-1000, 1000),
         )
