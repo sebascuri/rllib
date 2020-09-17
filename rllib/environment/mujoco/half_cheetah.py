@@ -9,7 +9,7 @@ except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
     HalfCheetahEnv = object
 
 
-class MBHalfCheetahV1Env(LocomotionEnv, HalfCheetahEnv):
+class MBHalfCheetahEnv(LocomotionEnv, HalfCheetahEnv):
     """Half-Cheetah Environment."""
 
     def __init__(self, action_cost=0.1):

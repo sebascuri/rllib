@@ -1,12 +1,5 @@
 """Deterministic Policy Gradient Algorithm."""
 
-import torch
-
-from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.utilities import tensor_to_distribution
-from rllib.value_function import NNEnsembleQFunction
-
 from .abstract_algorithm import AbstractAlgorithm
 
 
@@ -42,6 +35,7 @@ class DPG(AbstractAlgorithm):
         self.policy_target.dist_params.update(
             add_noise=True, policy_noise=policy_noise, noise_clip=noise_clip
         )
+        self.value_target.policy = self.policy_target
 
     def set_policy(self, new_policy):
         """Set new policy."""
@@ -52,20 +46,4 @@ class DPG(AbstractAlgorithm):
 
     def actor_loss(self, observation):
         """Get Actor Loss."""
-        state = observation.state
-        action = tensor_to_distribution(
-            self.policy(state), **self.policy.dist_params
-        ).mean.clamp(-1, 1)
-        with DisableGradient(self.critic_target):
-            q = self.critic_target(state, action)
-            if isinstance(self.critic_target, NNEnsembleQFunction):
-                q = q[..., 0]
-        return Loss(policy_loss=-q).reduce(self.criterion.reduction)
-
-    def get_value_target(self, observation):
-        """Get q function target."""
-        next_v = self.value_target(observation.next_state)
-        if isinstance(self.critic_target, NNEnsembleQFunction):
-            next_v = torch.min(next_v, dim=-1)[0]
-        next_v = next_v * (1 - observation.done)
-        return self.get_reward(observation) + self.gamma * next_v
+        return self.pathwise_actor_loss(observation).reduce(self.criterion.reduction)

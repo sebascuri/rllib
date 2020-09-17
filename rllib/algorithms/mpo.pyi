@@ -1,16 +1,12 @@
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import torch.nn as nn
 from torch import Tensor
-from torch.distributions import Distribution
 
 from rllib.dataset.datatypes import Loss
-from rllib.policy import AbstractPolicy
 from rllib.util.parameter_decay import ParameterDecay
 
 from .abstract_algorithm import AbstractAlgorithm
-from .kl_loss import KLLoss
-from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class MPOLoss(nn.Module):
     _eta: ParameterDecay
@@ -27,10 +23,7 @@ class MPOLoss(nn.Module):
     def forward(self, *args: Tensor, **kwargs: Any) -> Loss: ...
 
 class MPO(AbstractAlgorithm):
-    old_policy: AbstractPolicy
     mpo_loss: MPOLoss
-    kl_loss: KLLoss
-    ope: Optional[AbstractTDTarget]
     def __init__(
         self,
         num_samples: int = ...,

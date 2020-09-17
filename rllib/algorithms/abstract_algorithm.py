@@ -8,6 +8,7 @@ import torch.nn as nn
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import (
+    DisableGradient,
     deep_copy_module,
     freeze_parameters,
     update_parameters,
@@ -19,6 +20,7 @@ from rllib.util.utilities import (
     separated_kl,
     tensor_to_distribution,
 )
+from rllib.util.value_estimation import discount_sum
 from rllib.value_function import (
     AbstractQFunction,
     AbstractValueFunction,
@@ -83,6 +85,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         epsilon_var=0.0,
         kl_regularization=True,
         num_samples=1,
+        ope=None,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
         *args,
@@ -115,6 +118,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 regularization=kl_regularization,
             )
         self.num_samples = num_samples
+        self.ope = ope
         self.post_init()
 
     def post_init(self):
@@ -152,8 +156,49 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
     def get_value_target(self, observation):
         """Get Q target from the observation."""
-        next_v = self.value_target(observation.next_state) * (1 - observation.done)
+        if self.ope is not None:
+            return self.ope(observation)
+        if isinstance(self.critic_target, AbstractValueFunction):
+            next_v = self.critic_target(observation.next_state)
+        elif isinstance(self.critic_target, AbstractQFunction):
+            next_v = self.value_target(observation.next_state)
+        else:
+            raise RuntimeError(
+                f"Critic Target type {type(self.critic_target)} not understood."
+            )
+        if isinstance(self.critic_target, NNEnsembleQFunction):
+            next_v = torch.min(next_v, dim=-1)[0]
+        next_v = next_v * (1.0 - observation.done)
         return self.get_reward(observation) + self.gamma * next_v
+
+    def score_actor_loss(self, observation, linearized=False):
+        """Get score actor loss for policy gradients."""
+        state, action, reward, next_state, done, *r = observation
+
+        log_p, ratio = self.get_log_p_and_ope_weight(state, action)
+
+        with torch.no_grad():
+            adv = self.returns(observation)
+            if self.standardize_returns:
+                adv = (adv - adv.mean()) / (adv.std() + self.eps)
+
+        if linearized:
+            score = ratio * adv
+        else:
+            score = discount_sum(log_p * adv, self.gamma)
+
+        return Loss(policy_loss=-score)
+
+    def pathwise_actor_loss(self, observation):
+        """Get the path-wise policy loss for policy gradients."""
+        state = observation.state
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        action = self.policy.action_scale * pi.rsample().clamp(-1, 1)
+        with DisableGradient(self.critic_target):
+            q = self.critic_target(state, action)
+            if isinstance(self.critic_target, NNEnsembleQFunction):
+                q = q[..., 0]
+        return Loss(policy_loss=-q)
 
     def actor_loss(self, observation):
         """Get actor loss.

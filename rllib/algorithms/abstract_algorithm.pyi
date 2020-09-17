@@ -13,6 +13,7 @@ from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
 from .entropy_loss import EntropyLoss
 from .kl_loss import KLLoss
+from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     """Abstract Algorithm template."""
@@ -30,6 +31,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     entropy_loss: EntropyLoss
     kl_loss: KLLoss
     num_samples: int
+    ope: Optional[AbstractTDTarget]
     value_target: IntegrateQValueFunction
     def __init__(
         self,
@@ -42,6 +44,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         regularization: bool = ...,
         num_samples: int = ...,
         criterion: _Loss = ...,
+        ope: Optional[AbstractTDTarget] = ...,
         reward_transformer: RewardTransformer = ...,
         *args: Any,
         **kwargs: Any,
@@ -64,6 +67,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def get_ope_weight(
         self, state: Tensor, action: Tensor, log_prob_action: Tensor
     ) -> Tensor: ...
+    def score_actor_loss(
+        self, observation: Observation, linearized: bool = ...
+    ) -> Loss: ...
+    def pathwise_actor_loss(self, observation: Observation) -> Loss: ...
     def regularization_loss(self, observation: Observation) -> Loss: ...
     def actor_loss(self, observation: Observation) -> Loss: ...
     def critic_loss(self, observation: Observation) -> Loss: ...

@@ -3,7 +3,6 @@
 import torch
 import torch.distributions
 
-from rllib.dataset.datatypes import Loss
 from rllib.util.value_estimation import discount_cumsum
 
 from .gaac import GAAC
@@ -63,7 +62,7 @@ class TRPO(GAAC):
         """Get the Q-Target."""
         if self.ope is not None:
             return self.ope(observation)
-        elif self.monte_carlo_target:
+        elif self.monte_carlo_target:  # Compute as \sum_returns.
             final_state = observation.next_state[-1:]
             reward_to_go = self.critic_target(final_state) * (
                 1.0 - observation.done[-1:]
@@ -74,24 +73,15 @@ class TRPO(GAAC):
             return (value_target - value_target.mean()) / (
                 value_target.std() + self.eps
             )
-        else:
+        else:  # Compute as ADV(S, A) + V(S).
             adv = self.returns(observation)
             if self.standardize_returns:
                 adv = (adv - adv.mean()) / (adv.std() + self.eps)
 
             return adv + self.critic_target(observation.state)
 
-    def actor_loss(self, trajectory):
+    def actor_loss(self, observation):
         """Get actor loss."""
-        state, action, reward, next_state, done, *r = trajectory
-        log_p, ratio = self.get_log_p_and_ope_weight(state, action)
-
-        with torch.no_grad():
-            adv = self.returns(trajectory)
-            if self.standardize_returns:
-                adv = (adv - adv.mean()) / (adv.std() + self.eps)
-
-        # Compute surrogate loss.
-        weighted_advantage = ratio * adv
-
-        return Loss(policy_loss=-weighted_advantage).reduce(self.criterion.reduction)
+        return self.score_actor_loss(observation, linearized=True).reduce(
+            self.criterion.reduction
+        )
