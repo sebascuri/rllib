@@ -1,8 +1,13 @@
 """Python Script Template."""
+import gym
 import numpy as np
-from gym.envs.mujoco.humanoid_v3 import HumanoidEnv, mass_center
 
 from rllib.reward.locomotion_reward import LocomotionReward
+
+try:
+    from gym.envs.mujoco.humanoid_v3 import HumanoidEnv, mass_center
+except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
+    SwimmerEnv, mass_center = None, None
 
 
 class LocomotionEnv(object):
