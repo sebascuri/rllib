@@ -2,14 +2,15 @@
 import torch
 
 from rllib.dataset.datatypes import Loss
+from rllib.model import TransformedModel
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 from rllib.value_function import NNEnsembleValueFunction
 
-from .bptt import BPTT
+from .abstract_algorithm import AbstractAlgorithm
 
 
-class SVG(BPTT):
+class SVG(AbstractAlgorithm):
     """Stochastic Value Gradient Algorithm.
 
     References
@@ -17,6 +18,18 @@ class SVG(BPTT):
     Heess, N., Wayne, G., Silver, D., Lillicrap, T., Erez, T., & Tassa, Y. (2015).
     Learning continuous control policies by stochastic value gradients. NeuRIPS.
     """
+
+    def __init__(
+        self, dynamical_model, reward_model, termination_model=None, *args, **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        if not isinstance(dynamical_model, TransformedModel):
+            dynamical_model = TransformedModel(dynamical_model, [])
+        if not isinstance(reward_model, TransformedModel):
+            reward_model = TransformedModel(reward_model, [])
+        self.dynamical_model = dynamical_model
+        self.reward_model = reward_model
+        self.termination_model = termination_model
 
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""

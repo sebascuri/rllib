@@ -48,7 +48,6 @@ class DPGAgent(OffPolicyAgent):
     ):
         super().__init__(*args, **kwargs)
 
-        assert policy.deterministic, "Policy must be deterministic."
         self.algorithm = DPG(
             critic=critic,
             policy=policy,
@@ -80,10 +79,18 @@ class DPGAgent(OffPolicyAgent):
         self.policy.dist_params.update(add_noise=False)
 
     @classmethod
-    def default(cls, environment, lr=3e-4, exploration_noise=None, *args, **kwargs):
+    def default(
+        cls,
+        environment,
+        lr=3e-4,
+        deterministic=True,
+        exploration_noise=None,
+        *args,
+        **kwargs,
+    ):
         """See `AbstractAgent.default'."""
         critic = NNQFunction.default(environment)
-        policy = NNPolicy.default(environment, deterministic=True)
+        policy = NNPolicy.default(environment, deterministic=deterministic)
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
         if exploration_noise is None:
             exploration_noise = OUNoise(dim=environment.dim_action)

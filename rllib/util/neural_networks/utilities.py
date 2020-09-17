@@ -547,6 +547,33 @@ class DisableGradient(object):
                 unfreeze_parameters(module)
 
 
+class EnableGradient(object):
+    """Context manager to enables gradients temporarily.
+
+    Gradients terms will be zero-ed, momentum terms will continue.
+
+    Parameters
+    ----------
+    modules : sequence
+        List of torch.nn.Module.
+    """
+
+    def __init__(self, *modules):
+        self.modules = modules
+
+    def __enter__(self):
+        """Unfreeze the parameters."""
+        for module in self.modules:
+            if module is not None:
+                unfreeze_parameters(module)
+
+    def __exit__(self, *args):
+        """Freeze the parameters."""
+        for module in self.modules:
+            if module is not None:
+                freeze_parameters(module)
+
+
 class DisableOptimizer(object):
     """Context manager to disable optimization steps temporarily.
 

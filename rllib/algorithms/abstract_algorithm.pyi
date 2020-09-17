@@ -13,6 +13,7 @@ from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
 from .entropy_loss import EntropyLoss
 from .kl_loss import KLLoss
+from .pathwise_loss import PathwiseLoss
 from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
@@ -30,6 +31,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     criterion: _Loss
     entropy_loss: EntropyLoss
     kl_loss: KLLoss
+    pathwise_loss: Optional[PathwiseLoss]
     num_samples: int
     ope: Optional[AbstractTDTarget]
     value_target: IntegrateQValueFunction
@@ -39,9 +41,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         policy: AbstractPolicy,
         critic: AbstractQFunction,
         eta: Optional[Union[ParameterDecay, float]] = ...,
+        entropy_regularization: bool = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization: bool = ...,
+        kl_regularization: bool = ...,
         num_samples: int = ...,
         criterion: _Loss = ...,
         ope: Optional[AbstractTDTarget] = ...,
@@ -70,7 +73,6 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def score_actor_loss(
         self, observation: Observation, linearized: bool = ...
     ) -> Loss: ...
-    def pathwise_actor_loss(self, observation: Observation) -> Loss: ...
     def regularization_loss(self, observation: Observation) -> Loss: ...
     def actor_loss(self, observation: Observation) -> Loss: ...
     def critic_loss(self, observation: Observation) -> Loss: ...

@@ -37,4 +37,4 @@ class SAC(AbstractAlgorithm):
 
     def actor_loss(self, observation):
         """Get Actor Loss."""
-        return self.pathwise_actor_loss(observation).reduce(self.criterion.reduction)
+        return self.pathwise_loss(observation).reduce(self.criterion.reduction)

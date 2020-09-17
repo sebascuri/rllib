@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 from .abstract_policy import AbstractPolicy
 
@@ -6,5 +6,13 @@ class SetDeterministic(object):
     policy: AbstractPolicy
     cache: bool
     def __init__(self, policy: AbstractPolicy) -> None: ...
+    def __enter__(self) -> None: ...
+    def __exit__(self, *args: Any) -> None: ...
+
+class DistParams(object):
+    policy: AbstractPolicy
+    dist_params: Dict
+    cache: Dict
+    def __init__(self, policy: AbstractPolicy, **kwargs: Any) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, *args: Any) -> None: ...

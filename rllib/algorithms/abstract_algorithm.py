@@ -8,7 +8,6 @@ import torch.nn as nn
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks import (
-    DisableGradient,
     deep_copy_module,
     freeze_parameters,
     update_parameters,
@@ -30,6 +29,7 @@ from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
 
 from .entropy_loss import EntropyLoss
 from .kl_loss import KLLoss
+from .pathwise_loss import PathwiseLoss
 
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
@@ -104,6 +104,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         if policy is None:
             self.entropy_loss = EntropyLoss()
             self.kl_loss = KLLoss()
+            self.pathwise_loss = None
         else:
             self.entropy_loss = EntropyLoss(
                 eta=eta,
@@ -117,6 +118,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 epsilon_var=epsilon_var,
                 regularization=kl_regularization,
             )
+            self.pathwise_loss = PathwiseLoss(critic=self.critic, policy=self.policy)
         self.num_samples = num_samples
         self.ope = ope
         self.post_init()
@@ -127,6 +129,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.critic_target, self.policy, num_samples=self.num_samples
         )
         if self.policy is not None:
+            self.pathwise_loss.policy = self.policy
             old_policy = deep_copy_module(self.policy)
             freeze_parameters(old_policy)
             self.old_policy = old_policy
@@ -135,6 +138,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         """Set new policy."""
         self.policy = new_policy
         self.policy_target = deep_copy_module(self.policy)
+        self.pathwise_loss.policy = self.policy
         self.post_init()
 
     def get_value_prediction(self, observation):
@@ -188,17 +192,6 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             score = discount_sum(log_p * adv, self.gamma)
 
         return Loss(policy_loss=-score)
-
-    def pathwise_actor_loss(self, observation):
-        """Get the path-wise policy loss for policy gradients."""
-        state = observation.state
-        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        action = self.policy.action_scale * pi.rsample().clamp(-1, 1)
-        with DisableGradient(self.critic_target):
-            q = self.critic_target(state, action)
-            if isinstance(self.critic_target, NNEnsembleQFunction):
-                q = q[..., 0]
-        return Loss(policy_loss=-q)
 
     def actor_loss(self, observation):
         """Get actor loss.

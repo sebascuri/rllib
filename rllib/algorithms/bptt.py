@@ -1,13 +1,11 @@
 """Back-Propagation Through Time Algorithm."""
-from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.value_estimation import mc_return
+
+from rllib.value_function.model_based_q_function import ModelBasedQFunction
 
 from .abstract_algorithm import AbstractAlgorithm
-from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
-class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
+class BPTT(AbstractAlgorithm):
     """Back-Propagation Through Time Algorithm.
 
     References
@@ -15,29 +13,39 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
     Deisenroth, M., & Rasmussen, C. E. (2011).
     PILCO: A model-based and data-efficient approach to policy search. ICML.
 
-    Parmas, P., Rasmussen, C. E., Peters, J., & Doya, K. (2018).
-    PIPPS: Flexible model-based policy search robust to the curse of chaos. ICML.
 
     Clavera, I., Fu, V., & Abbeel, P. (2020).
     Model-Augmented Actor-Critic: Backpropagating through Paths. ICLR.
     """
 
-    num_samples: int
-
-    def __init__(self, *args, **kwargs):
-        AbstractAlgorithm.__init__(self, *args, **kwargs)
-        AbstractMBAlgorithm.__init__(self, *args, **kwargs)
+    def __init__(
+        self,
+        dynamical_model,
+        reward_model,
+        num_steps=1,
+        termination_model=None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.pathwise_loss.critic = ModelBasedQFunction(
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            termination_model=termination_model,
+            num_samples=self.num_samples,
+            num_steps=num_steps,
+            policy=self.policy,
+            value_function=self.critic_target,
+            gamma=self.gamma,
+            reward_transformer=self.reward_transformer,
+            entropy_regularization=self.entropy_loss.eta.item(),
+        )
 
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""
-        sim_observation = self.simulate(observation.state, self.policy)
-        with DisableGradient(self.value_target):
-            v = mc_return(
-                sim_observation,
-                gamma=self.gamma,
-                value_function=self.value_target,
-                reward_transformer=self.reward_transformer,
-                reduction="min",
-            )
-        bptt_loss = Loss(policy_loss=-v).reduce(self.criterion.reduction)
-        return bptt_loss
+        return self.pathwise_loss(observation).reduce(self.criterion.reduction)
+
+    def update(self):
+        """Update algorithm parameters."""
+        super().update()
+        self.pathwise_loss.critic.entropy_regularization = self.entropy_loss.eta.item()

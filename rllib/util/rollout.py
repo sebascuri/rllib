@@ -305,7 +305,13 @@ def rollout_model(
 
     assert max_steps > 0
     for i in range(max_steps):
-        pi = tensor_to_distribution(policy(state), **policy.dist_params)
+        if policy is not None:
+            pi = tensor_to_distribution(policy(state), **policy.dist_params)
+            action_scale = policy.action_scale
+        else:
+            assert max_steps == 1
+            pi, action_scale = None, 1.0
+
         if i == 0 and initial_action is not None:
             action = initial_action
         else:
@@ -323,7 +329,7 @@ def rollout_model(
             termination_model=termination_model,
             state=state,
             action=action,
-            action_scale=policy.action_scale,
+            action_scale=action_scale,
             done=done,
             pi=pi,
         )

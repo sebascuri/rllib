@@ -22,16 +22,12 @@ class BPTTAgent(ModelBasedAgent):
         reward_model,
         criterion=loss.MSELoss,
         termination_model=None,
-        epsilon_mean=0.0,
-        epsilon_var=0.0,
-        regularization=True,
         num_steps=1,
         num_samples=15,
-        algorithm=BPTT,
         *args,
         **kwargs,
     ):
-        algorithm = algorithm(
+        algorithm = BPTT(
             policy=policy,
             critic=critic,
             dynamical_model=dynamical_model,
@@ -40,9 +36,6 @@ class BPTTAgent(ModelBasedAgent):
             criterion=criterion(reduction="mean"),
             num_steps=num_steps,
             num_samples=num_samples,
-            epsilon_mean=epsilon_mean,
-            epsilon_var=epsilon_var,
-            regularization=regularization,
             *args,
             **kwargs,
         )
@@ -55,6 +48,7 @@ class BPTTAgent(ModelBasedAgent):
             *args,
             **kwargs,
         )
+        self.algorithm.gamma = self.gamma
 
         self.optimizer = type(self.optimizer)(
             [
@@ -66,11 +60,10 @@ class BPTTAgent(ModelBasedAgent):
         )
 
     @classmethod
-    def default(cls, environment, num_iter=50, lr=3e-4, *args, **kwargs):
+    def default(cls, environment, num_iter=200, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
         critic = NNValueFunction.default(environment)
         policy = NNPolicy.default(environment)
-
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
         return super().default(

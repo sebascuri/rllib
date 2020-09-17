@@ -1,5 +1,7 @@
 """Deterministic Policy Gradient Algorithm."""
 
+from rllib.policy.utilities import DistParams
+
 from .abstract_algorithm import AbstractAlgorithm
 
 
@@ -46,4 +48,5 @@ class DPG(AbstractAlgorithm):
 
     def actor_loss(self, observation):
         """Get Actor Loss."""
-        return self.pathwise_actor_loss(observation).reduce(self.criterion.reduction)
+        with DistParams(self.policy, add_noise=False):
+            return self.pathwise_loss(observation).reduce(self.criterion.reduction)

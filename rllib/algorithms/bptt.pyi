@@ -1,5 +1,7 @@
-from .abstract_algorithm import AbstractAlgorithm
-from .abstract_mb_algorithm import AbstractMBAlgorithm
+from rllib.value_function import AbstractValueFunction
 
-class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
-    num_samples: int
+from .abstract_algorithm import AbstractAlgorithm
+
+class BPTT(AbstractAlgorithm):
+    critic: AbstractValueFunction
+    critic_target: AbstractValueFunction
