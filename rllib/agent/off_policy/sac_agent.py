@@ -4,7 +4,7 @@ from itertools import chain
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
-from rllib.algorithms.sac import SoftActorCritic
+from rllib.algorithms.sac import SAC
 from rllib.policy import NNPolicy
 from rllib.value_function import NNEnsembleQFunction, NNQFunction
 
@@ -41,7 +41,7 @@ class SACAgent(OffPolicyAgent):
     ):
         super().__init__(*args, **kwargs)
         critic = NNEnsembleQFunction.from_q_function(q_function=critic, num_heads=2)
-        self.algorithm = SoftActorCritic(
+        self.algorithm = SAC(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="none"),

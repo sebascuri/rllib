@@ -10,7 +10,7 @@ from rllib.value_function import NNEnsembleQFunction
 from .abstract_algorithm import AbstractAlgorithm
 
 
-class SoftActorCritic(AbstractAlgorithm):
+class SAC(AbstractAlgorithm):
     r"""Implementation of Soft Actor-Critic algorithm.
 
     SAC is an off-policy policy gradient algorithm.
