@@ -21,7 +21,9 @@ gym_envs = list(registry.env_specs.keys())
 dm_envs = [f"{env}/{task}" for (env, task) in BENCHMARKING]
 
 
-def main(args, pre_train_callback=None, **kwargs):
+def main(
+    args, pre_train_agent_callback=None, pre_train_environment_callback=None, **kwargs
+):
     """Run main function with arguments."""
     # %% Set Random seeds.
     set_random_seed(args.seed)
@@ -33,11 +35,6 @@ def main(args, pre_train_callback=None, **kwargs):
         env_name, env_task = args.environment.split("/")
         environment = DMSuiteEnvironment(env_name, env_task, seed=args.seed)
 
-    try:
-        reward_model = environment.env.reward_model()
-    except AttributeError:
-        reward_model = None
-
     # %% Initialize module.
     agent_module = importlib.import_module("rllib.agent")
     agent = getattr(agent_module, f"{args.agent}Agent").default(
@@ -45,11 +42,14 @@ def main(args, pre_train_callback=None, **kwargs):
         exploration_episodes=args.exploration_episodes,
         model_learn_exploration_episodes=args.model_learn_exploration_episodes,
         base_agent_name=args.base_agent,
-        reward_model=reward_model,
         **kwargs,
     )
-    if pre_train_callback is not None:
-        pre_train_callback(agent)
+
+    # %% Custom import modules.
+    if pre_train_agent_callback is not None:
+        pre_train_agent_callback(agent, args, **kwargs)
+    if pre_train_environment_callback is not None:
+        pre_train_environment_callback(environment, args, **kwargs)
 
     # %% Train Agent.
     train_agent(
@@ -73,7 +73,8 @@ def main(args, pre_train_callback=None, **kwargs):
     agent.logger.export_to_json()  # Save statistics.
 
 
-if __name__ == "__main__":
+def get_experiment_parser():
+    """Get experiment parser."""
     parser = argparse.ArgumentParser("Run experiment on RLLib.")
     parser.add_argument(
         "environment", type=str, help="Environment name.", choices=gym_envs + dm_envs
@@ -102,5 +103,8 @@ if __name__ == "__main__":
         help="Exploration Episodes before learning the model.",
     )
     parser.add_argument("--render-test", action="store_true", default=False)
+    return parser
 
-    main(parser.parse_args(), num_steps=1, num_samples=4)
+
+if __name__ == "__main__":
+    main(get_experiment_parser().parse_args())

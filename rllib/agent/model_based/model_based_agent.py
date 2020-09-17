@@ -322,11 +322,14 @@ class ModelBasedAgent(AbstractAgent):
         if dynamical_model is None:
             dynamical_model = TransformedModel.default(environment, *args, **kwargs)
         if reward_model is None:
-            reward_model = TransformedModel.default(
-                environment,
-                model_kind="rewards",
-                transformations=dynamical_model.forward_transformations,
-            )
+            try:
+                reward_model = environment.env.reward_model()
+            except AttributeError:
+                reward_model = TransformedModel.default(
+                    environment,
+                    model_kind="rewards",
+                    transformations=dynamical_model.forward_transformations,
+                )
 
         params = list(chain(dynamical_model.parameters(), reward_model.parameters()))
         if len(params):
