@@ -34,7 +34,8 @@ class ActorCriticAgent(OnPolicyAgent):
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="mean"),
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         self.policy = self.algorithm.policy
 

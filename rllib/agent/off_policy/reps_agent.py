@@ -50,7 +50,8 @@ class REPSAgent(OffPolicyAgent):
             epsilon=epsilon,
             regularization=regularization,
             learn_policy=learn_policy,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         # Over-write optimizer.
         self.optimizer = type(self.optimizer)(

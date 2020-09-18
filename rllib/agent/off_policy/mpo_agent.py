@@ -38,7 +38,8 @@ class MPOAgent(OffPolicyAgent):
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             regularization=regularization,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         # Over-write optimizer.
         self.optimizer = type(self.optimizer)(

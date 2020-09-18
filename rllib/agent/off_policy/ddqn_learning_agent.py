@@ -1,4 +1,6 @@
 """Implementation of DQNAgent Algorithms."""
+import torch.nn.modules.loss as loss
+
 from rllib.algorithms.ddqn import DDQN
 
 from .q_learning_agent import QLearningAgent
@@ -25,11 +27,12 @@ class DDQNAgent(QLearningAgent):
     Deep reinforcement learning with double q-learning. AAAI.
     """
 
-    def __init__(self, critic, policy, *args, **kwargs):
+    def __init__(self, critic, policy, criterion=loss.MSELoss, *args, **kwargs):
         super().__init__(critic=critic, policy=policy, *args, **kwargs)
         self.algorithm = DDQN(
             policy=policy,
             critic=critic,
-            criterion=self.algorithm.criterion,
-            gamma=self.gamma,
+            criterion=criterion(reduction="none"),
+            *args,
+            **kwargs,
         )

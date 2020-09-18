@@ -38,7 +38,8 @@ class SVG0Agent(OffPolicyAgent):
             critic=critic,
             policy=policy,
             criterion=criterion(reduction="none"),
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         self.policy = self.algorithm.policy
 

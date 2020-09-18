@@ -44,7 +44,8 @@ class QLearningAgent(OffPolicyAgent):
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="none"),
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         self.policy = self.algorithm.policy
 

@@ -52,9 +52,10 @@ class DPGAgent(OffPolicyAgent):
             critic=critic,
             policy=policy,
             criterion=criterion(reduction="none"),
-            gamma=self.gamma,
             policy_noise=policy_noise,
             noise_clip=noise_clip,
+            *args,
+            **kwargs,
         )
         self.policy = self.algorithm.policy
 

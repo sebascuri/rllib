@@ -1,5 +1,5 @@
 """Implementation of TRPO Algorithm."""
-
+from torch.nn.modules import loss
 
 from rllib.algorithms.trpo import TRPO
 from rllib.value_function import NNValueFunction
@@ -24,6 +24,7 @@ class TRPOAgent(ActorCriticAgent):
         epsilon_mean=0.01,
         epsilon_var=None,
         lambda_=0.95,
+        criterion=loss.MSELoss,
         *args,
         **kwargs,
     ):
@@ -35,9 +36,10 @@ class TRPOAgent(ActorCriticAgent):
             regularization=regularization,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
-            criterion=self.algorithm.criterion,
+            criterion=criterion(reduction="mean"),
             lambda_=lambda_,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         # Over-write optimizer.
         self.optimizer = type(self.optimizer)(

@@ -43,7 +43,8 @@ class VMPOAgent(MPOAgent):
             epsilon_var=epsilon_var,
             regularization=regularization,
             top_k_fraction=top_k_fraction,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
 
         self.policy = self.algorithm.policy

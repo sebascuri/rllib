@@ -45,9 +45,10 @@ class SACAgent(OffPolicyAgent):
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="none"),
-            gamma=self.gamma,
             eta=eta,
             regularization=regularization,
+            *args,
+            **kwargs,
         )
 
         self.optimizer = type(self.optimizer)(
@@ -58,11 +59,11 @@ class SACAgent(OffPolicyAgent):
 
     @classmethod
     def default(
-        cls, environment, num_iter=50, train_frequency=50, lr=1e-3, *args, **kwargs
+        cls, environment, num_iter=50, train_frequency=50, lr=3e-4, *args, **kwargs
     ):
         """See `AbstractAgent.default'."""
-        critic = NNQFunction.default(environment, non_linearity="ReLU")
-        policy = NNPolicy.default(environment, non_linearity="ReLU")
+        critic = NNQFunction.default(environment)
+        policy = NNPolicy.default(environment)
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 

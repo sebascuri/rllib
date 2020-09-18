@@ -1,4 +1,5 @@
 """Implementation of PPO Algorithm."""
+from torch.nn.modules import loss
 
 from rllib.algorithms.ppo import PPO
 from rllib.util.early_stopping import EarlyStopping
@@ -27,6 +28,7 @@ class PPOAgent(ActorCriticAgent):
         entropy_regularization=0.01,
         monte_carlo_target=False,
         clamp_value=True,
+        criterion=loss.MSELoss,
         *args,
         **kwargs,
     ):
@@ -35,12 +37,13 @@ class PPOAgent(ActorCriticAgent):
             critic=critic,
             policy=policy,
             epsilon=epsilon,
-            criterion=self.algorithm.criterion,
+            criterion=criterion(reduction="mean"),
             entropy_regularization=entropy_regularization,
             monte_carlo_target=monte_carlo_target,
             clamp_value=clamp_value,
             lambda_=lambda_,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
 
         self.policy = self.algorithm.policy

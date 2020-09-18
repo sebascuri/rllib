@@ -11,4 +11,4 @@ register(id="MBSwimmer-v0", entry_point=f"{base}.swimmer:MBSwimmerEnv")
 register(
     id="PendulumSwingUp-v0", entry_point=f"{base}.pendulum_swing_up:PendulumSwingUpEnv"
 )
-register(id="MBWalker2d-v0", entry_point=f"{base}.hopper:MBWalker2dEnv")
+register(id="MBWalker2d-v0", entry_point=f"{base}.walker_2d:MBWalker2dEnv")

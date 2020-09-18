@@ -54,7 +54,6 @@ class SVGAgent(ModelBasedAgent):
             *args,
             **kwargs,
         )
-        self.algorithm.gamma = self.gamma
 
         self.optimizer = type(self.optimizer)(
             [

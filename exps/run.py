@@ -8,7 +8,7 @@ from gym.envs import registry
 from rllib.agent import AGENTS
 from rllib.environment import GymEnvironment
 from rllib.util.training.agent_training import evaluate_agent, train_agent
-from rllib.util.utilities import set_random_seed
+from rllib.util.utilities import RewardTransformer, set_random_seed
 
 try:
     from dm_control.suite import BENCHMARKING
@@ -40,11 +40,13 @@ def main(
     agent = getattr(agent_module, f"{args.agent}Agent").default(
         environment,
         exploration_episodes=args.exploration_episodes,
+        exploration_steps=args.exploration_steps,
         model_learn_exploration_episodes=args.model_learn_exploration_episodes,
         base_agent_name=args.base_agent,
+        reward_transformer=RewardTransformer(scale=args.reward_scale),
+        gamma=args.gamma,
         **kwargs,
     )
-
     # %% Custom import modules.
     if pre_train_agent_callback is not None:
         pre_train_agent_callback(agent, args, **kwargs)
@@ -84,6 +86,8 @@ def get_experiment_parser():
         "--base-agent", default="SAC", type=str, help="Base agent name.", choices=AGENTS
     )
     parser.add_argument("--seed", type=int, default=0, help="Random Seed.")
+    parser.add_argument("--gamma", type=float, default=0.99, help="Discount Factor.")
+    parser.add_argument("--reward-scale", type=float, default=1.0, help="Reward Scale.")
     parser.add_argument("--max-steps", type=int, default=1000, help="Maximum steps.")
     parser.add_argument("--num-train", type=int, default=200, help="Training episodes.")
     parser.add_argument("--num-test", type=int, default=5, help="Testing episodes.")
@@ -95,6 +99,12 @@ def get_experiment_parser():
         type=int,
         default=10,
         help="Exploration Episodes before learning the policy.",
+    )
+    parser.add_argument(
+        "--exploration-steps",
+        type=int,
+        default=1000,
+        help="Exploration steps before learning the policy.",
     )
     parser.add_argument(
         "--model-learn-exploration-episodes",

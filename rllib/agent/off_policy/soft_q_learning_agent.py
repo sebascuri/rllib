@@ -1,4 +1,6 @@
 """Implementation of DQNAgent Algorithms."""
+import torch.nn.modules.loss as loss
+
 from rllib.algorithms.soft_q_learning import SoftQLearning
 
 from .q_learning_agent import QLearningAgent
@@ -29,18 +31,22 @@ class SoftQLearningAgent(QLearningAgent):
     Combining policy gradient and Q-learning. ICLR.
     """
 
-    def __init__(self, critic, temperature=0.2, *args, **kwargs):
+    def __init__(
+        self, critic, temperature=0.2, criterion=loss.MSELoss, *args, **kwargs
+    ):
         kwargs.pop("policy")
         super().__init__(
             critic=critic,
             policy=None,  # type: ignore
+            criterion=criterion,
             *args,
             **kwargs,
         )
         self.algorithm = SoftQLearning(
             critic=critic,
-            criterion=self.algorithm.criterion,
+            criterion=criterion(reduction="none"),
             temperature=temperature,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         self.policy = self.algorithm.policy

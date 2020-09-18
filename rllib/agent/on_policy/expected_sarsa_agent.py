@@ -1,4 +1,5 @@
 """Implementation of Expected SARSA Agent."""
+from torch.nn.modules import loss
 
 from rllib.algorithms.esarsa import ESARSA
 
@@ -23,12 +24,13 @@ class ExpectedSARSAAgent(SARSAAgent):
     Watkins, C. J., & Dayan, P. (1992). Q-learning. Machine learning, 8(3-4), 279-292.
     """
 
-    def __init__(self, critic, policy, *args, **kwargs):
+    def __init__(self, critic, policy, criterion=loss.MSELoss, *args, **kwargs):
         super().__init__(critic=critic, policy=policy, *args, **kwargs)
         self.algorithm = ESARSA(
             critic=critic,
-            criterion=self.algorithm.criterion,
+            criterion=criterion(reduction="mean"),
             policy=policy,
-            gamma=self.gamma,
+            *args,
+            **kwargs,
         )
         self.policy = policy
