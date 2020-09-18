@@ -65,6 +65,8 @@ class ExperienceReplay(data.Dataset):
         self._num_steps = num_steps
         self.zero_observation = None
 
+        self.raw = False
+
         if self.num_steps < 0:
             raise ValueError("Number of steps must be non-negative.")
 
@@ -184,7 +186,8 @@ class ExperienceReplay(data.Dataset):
 
         """
         observation = self._get_consecutive_observations(idx, max(1, self.num_steps))
-
+        if self.raw:
+            return observation
         for transform in self.transformations:
             observation = transform(observation)
         return observation

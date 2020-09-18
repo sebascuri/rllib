@@ -3,6 +3,7 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.model.utilities import PredictionStrategy
+from rllib.util.multiprocessing import modify_parallel
 from rllib.util.training.utilities import sharpness
 from rllib.util.value_estimation import n_step_return
 from rllib.value_function import NNEnsembleQFunction
@@ -55,36 +56,46 @@ class STEVE(MVE):
 
         return Loss(critic_loss=critic_loss)
 
+    def _get_member_target(self, model_idx, state, action, critic_target):
+        """Get member target.
+
+        Notes
+        -----
+        Helper method to paralelize the calculation through processes.
+        """
+        self.dynamical_model.set_head(model_idx)
+        self.reward_model.set_head(model_idx)
+        observation = self.simulate(state, self.policy, initial_action=action)
+        n_step_returns = n_step_return(
+            observation,
+            gamma=self.gamma,
+            value_function=self.value_target,
+            reward_transformer=self.reward_transformer,
+            entropy_regularization=self.entropy_loss.eta.item(),
+            reduction="none",
+        )  # samples*batch x horizon x num_q
+        value = n_step_returns.reshape(-1, self.num_samples, self.num_steps, self.num_q)
+        critic_target[..., model_idx, :] = value.unsqueeze(1)
+
     def get_value_target(self, observation):
         """Rollout model and call base algorithm with transitions."""
         critic_target = torch.zeros(
             observation.state.shape[: -len(self.dynamical_model.dim_state)]
             + (self.num_samples, self.num_steps, self.num_models, self.num_q)
         )  # Critic target shape B x (H + 1) x M x Q
-
-        real_target_q = super().get_value_target(observation)  # TD-Target B x 1.
+        critic_target.share_memory_()
+        real_target_q = self.base_algorithm.get_value_target(observation)  # TD-Target.
 
         with PredictionStrategy(
             self.dynamical_model, self.reward_model, prediction_strategy="set_head"
         ), torch.no_grad():
             state = observation.state[..., 0, :]
             action = observation.action[..., 0, :]
-            for model_idx in range(self.num_models):  # Rollout each model.
-                self.dynamical_model.set_head(model_idx)
-                self.reward_model.set_head(model_idx)
-                observation = self.simulate(state, self.policy, initial_action=action)
-                fast_value = n_step_return(
-                    observation,
-                    gamma=self.gamma,
-                    value_function=self.value_target,
-                    reward_transformer=self.reward_transformer,
-                    entropy_regularization=self.entropy_loss.eta.item(),
-                    reduction="none",
-                )  # samples*batch x horizon x num_q
-                fv = fast_value.reshape(
-                    -1, self.num_samples, self.num_steps, self.num_q
-                )
-                critic_target[..., model_idx, :] = fv.unsqueeze(1)
+            modify_parallel(
+                self._get_member_target,
+                [(i, state, action, critic_target) for i in range(self.num_models)],
+                num_cpu=self.num_models,
+            )
 
         mean_target = critic_target.mean(dim=(2, 4, 5))  # (samples, models, qs)
         weight_target = 1 / (self.eps + critic_target.var(dim=(2, 4, 5)))

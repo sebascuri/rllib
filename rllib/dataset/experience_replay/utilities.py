@@ -76,3 +76,18 @@ def init_er_from_rollout(target_er, agent, environment, max_steps=1000):
             target_er.append(observation)
             if max_steps <= environment.time:
                 break
+
+
+class MakeRaw(object):
+    """Make an experience replay get raw observations."""
+
+    def __init__(self, experience_replay):
+        self.experience_replay = experience_replay
+
+    def __enter__(self):
+        """Enter into make-raw context."""
+        self.experience_replay.raw = True
+
+    def __exit__(self, *args):
+        """Exit make-raw context."""
+        self.experience_replay.raw = False

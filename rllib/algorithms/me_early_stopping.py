@@ -1,8 +1,10 @@
 """Model Ensemble Early Stopping Algorithm."""
+import numpy as np
 import torch
 
 from rllib.model.utilities import PredictionStrategy
 from rllib.util.early_stopping import EarlyStopping
+from rllib.util.multiprocessing import modify_parallel
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -24,10 +26,11 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
 
     def __init__(
         self,
+        policy,
         fraction=0.3,
         eval_frequency=5,
         epsilon=-1.0,
-        non_decrease_iter=float("inf"),
+        non_decrease_iter=np.inf,
         relative=True,
         *args,
         **kwargs,
@@ -41,7 +44,7 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
         self.fraction = max(1, int(fraction * num_models))
         self.eval_frequency = eval_frequency
         self.step_counts = 0
-        self.policy = None
+        self.policy = policy
         self.model_ensemble_early_stopping = [
             EarlyStopping(epsilon, non_decrease_iter, relative)
             for _ in range(num_models)
@@ -65,7 +68,13 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
         for es_algorithm in self.model_ensemble_early_stopping:
             es_algorithm.reset(hard=hard)
 
-    def update(self, state, policy):
+    def _evaluate_model(self, i, state):
+        self.dynamical_model.set_head(i)
+        self.reward_model.set_head(i)
+        observation = self.simulate(state, self.policy)
+        self.model_ensemble_early_stopping[i].update(observation.reward.sum(-1).mean())
+
+    def update(self, state):
         """Update estimation."""
         if self.eval_frequency > 0 and (self.step_counts + 1) % self.eval_frequency > 0:
             self.step_counts += 1
@@ -75,10 +84,8 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
         with torch.no_grad(), PredictionStrategy(
             self.dynamical_model, self.reward_model, prediction_strategy="set_head"
         ):
-            for i in range(self.num_models):
-                self.dynamical_model.set_head(i)
-                self.reward_model.set_head(i)
-                observation = self.simulate(state, policy)
-                self.model_ensemble_early_stopping[i].update(
-                    observation.reward.sum(-1).mean()
-                )
+            modify_parallel(
+                self._evaluate_model,
+                [(i, state) for i in range(self.num_models)],
+                num_cpu=self.num_models,
+            )

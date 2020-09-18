@@ -54,9 +54,10 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
                 reward_state=reward_state.sum().item(),
                 reward_ctrl=reward_ctrl.sum().item(),
             )
-            return reward.type(torch.get_default_dtype()).unsqueeze(-1), torch.zeros(1)
+            reward = reward.type(torch.get_default_dtype()).unsqueeze(-1)
         except AttributeError:
-            return reward, torch.zeros(1)
+            pass
+        return reward, torch.zeros_like(reward).unsqueeze(-1)
 
     def action_reward(self, action):
         """Get reward that corresponds to action."""

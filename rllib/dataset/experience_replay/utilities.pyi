@@ -1,3 +1,4 @@
+from typing import Any
 from rllib.agent import AbstractAgent
 from rllib.environment import AbstractEnvironment
 
@@ -15,3 +16,9 @@ def init_er_from_rollout(
     environment: AbstractEnvironment,
     max_steps: int = ...,
 ) -> None: ...
+
+class MakeRaw(object):
+    experience_replay: ExperienceReplay
+    def __init__(self, experience_replay: ExperienceReplay) -> None: ...
+    def __enter__(self) -> None: ...
+    def __exit__(self, *args: Any) -> None: ...

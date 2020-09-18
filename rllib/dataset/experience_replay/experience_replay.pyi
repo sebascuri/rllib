@@ -19,6 +19,7 @@ class ExperienceReplay(data.Dataset):
     data_count: int
     _num_steps: int
     zero_observation: Optional[Observation]
+    raw: bool
     def __init__(
         self,
         max_len: int,

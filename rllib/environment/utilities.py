@@ -102,7 +102,7 @@ def transitions2kernelreward(transitions, num_states, num_actions):
     reward = np.zeros((num_states, num_actions))
     for (state, action), transition in transitions.items():
         for data in transition:
-            kernel[state, action, data["next_state"]] = data["probability"]
+            kernel[state, action, data["next_state"]] += data["probability"]
             reward[state, action] += data["reward"] * data["probability"]
 
     return kernel, reward
