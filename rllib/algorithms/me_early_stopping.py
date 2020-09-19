@@ -4,7 +4,7 @@ import torch
 
 from rllib.model.utilities import PredictionStrategy
 from rllib.util.early_stopping import EarlyStopping
-from rllib.util.multiprocessing import modify_parallel
+from rllib.util.multiprocessing import run_parallel_returns
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
@@ -72,7 +72,7 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
         self.dynamical_model.set_head(i)
         self.reward_model.set_head(i)
         observation = self.simulate(state, self.policy)
-        self.model_ensemble_early_stopping[i].update(observation.reward.sum(-1).mean())
+        return observation.reward.sum(-1).mean()
 
     def update(self, state):
         """Update estimation."""
@@ -84,8 +84,9 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
         with torch.no_grad(), PredictionStrategy(
             self.dynamical_model, self.reward_model, prediction_strategy="set_head"
         ):
-            modify_parallel(
-                self._evaluate_model,
-                [(i, state) for i in range(self.num_models)],
-                num_cpu=self.num_models,
+            estimated_returns = run_parallel_returns(
+                self._evaluate_model, [(i, state) for i in range(self.num_models)]
             )
+
+        for i in range(self.num_models):
+            self.model_ensemble_early_stopping[i].update(estimated_returns[i])

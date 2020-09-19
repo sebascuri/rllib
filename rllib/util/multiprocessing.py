@@ -32,13 +32,11 @@ def run_parallel_returns(
         return None
     num_cpu = mp.cpu_count() if num_cpu is None else num_cpu
 
-    if num_cpu == 1:
+    if len(args_list) == 1:
         results = [function(*args_list[0])]
     else:
         pool = mp.Pool(processes=num_cpu, maxtasksperchild=1)
-        parallel_runs = [
-            pool.apply_async(function, args=(*args_list[i],)) for i in range(num_cpu)
-        ]
+        parallel_runs = [pool.apply_async(function, args=args) for args in args_list]
         try:
             results = [p.get(timeout=max_process_time) for p in parallel_runs]
         except Exception as e:
@@ -80,14 +78,14 @@ def modify_parallel(function, args_list, num_cpu=None):
     function.
     """
     num_cpu = mp.cpu_count() if num_cpu is None else num_cpu
-
-    if num_cpu == 1:
+    num_calls = len(args_list)
+    if num_calls == 1:
         function(*args_list[0])
     else:
         processes = []
-        for rank in range(num_cpu):
+        for rank in range(num_calls):
             p = mp.Process(target=function, args=(*args_list[rank],))
-            p.start()
             processes.append(p)
+
         for p in processes:
             p.join()

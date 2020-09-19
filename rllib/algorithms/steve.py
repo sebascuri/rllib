@@ -3,8 +3,7 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.model.utilities import PredictionStrategy
-from rllib.util.multiprocessing import modify_parallel
-from rllib.util.training.utilities import sharpness
+from rllib.util.multiprocessing import run_parallel_returns
 from rllib.util.value_estimation import n_step_return
 from rllib.value_function import NNEnsembleQFunction
 
@@ -65,48 +64,53 @@ class STEVE(MVE):
         """
         self.dynamical_model.set_head(model_idx)
         self.reward_model.set_head(model_idx)
-        observation = self.simulate(state, self.policy, initial_action=action)
-        n_step_returns = n_step_return(
+        with torch.no_grad():
+            observation = self.simulate(state, self.policy, initial_action=action)
+            n_step_returns = n_step_return(
+                observation,
+                gamma=self.gamma,
+                value_function=self.value_target,
+                reward_transformer=self.reward_transformer,
+                entropy_regularization=self.entropy_loss.eta.item(),
+                reduction="none",
+            )  # samples*batch x horizon x num_q
+            value = n_step_returns.reshape(
+                -1, 1, self.num_samples, self.num_steps, self.num_q
+            )
+        return value
+
+    def get_value_target(self, observation):
+        """Rollout model and call base algorithm with transitions."""
+        critic_target = torch.zeros(
+            observation.state.shape[: -len(self.dynamical_model.dim_state)]
+            + (self.num_samples, self.num_steps + 1, self.num_models, self.num_q)
+        )  # Critic target shape B x (H + 1) x M x Q
+        td_return = n_step_return(
             observation,
             gamma=self.gamma,
             value_function=self.value_target,
             reward_transformer=self.reward_transformer,
             entropy_regularization=self.entropy_loss.eta.item(),
             reduction="none",
-        )  # samples*batch x horizon x num_q
-        value = n_step_returns.reshape(-1, self.num_samples, self.num_steps, self.num_q)
-        critic_target[..., model_idx, :] = value.unsqueeze(1)
-
-    def get_value_target(self, observation):
-        """Rollout model and call base algorithm with transitions."""
-        critic_target = torch.zeros(
-            observation.state.shape[: -len(self.dynamical_model.dim_state)]
-            + (self.num_samples, self.num_steps, self.num_models, self.num_q)
-        )  # Critic target shape B x (H + 1) x M x Q
-        critic_target.share_memory_()
-        real_target_q = self.base_algorithm.get_value_target(observation)  # TD-Target.
+        )
+        td_samples = td_return.unsqueeze(-2).repeat_interleave(self.num_samples, -2)
+        td_model = td_samples.unsqueeze(-2).repeat_interleave(self.num_models, -2)
+        critic_target[..., -1, :, :] = td_model
 
         with PredictionStrategy(
             self.dynamical_model, self.reward_model, prediction_strategy="set_head"
         ), torch.no_grad():
             state = observation.state[..., 0, :]
             action = observation.action[..., 0, :]
-            modify_parallel(
+            value = run_parallel_returns(
                 self._get_member_target,
                 [(i, state, action, critic_target) for i in range(self.num_models)],
-                num_cpu=self.num_models,
             )
+            critic_target[..., :-1, :, :] = torch.stack(value, dim=4)
 
         mean_target = critic_target.mean(dim=(2, 4, 5))  # (samples, models, qs)
         weight_target = 1 / (self.eps + critic_target.var(dim=(2, 4, 5)))
 
         weights = weight_target / weight_target.sum(-1, keepdim=True)
-        model_target_q = (weights * mean_target).sum(-1)
-
-        sharpness_ = sharpness(self.dynamical_model, observation) + sharpness(
-            self.reward_model, observation
-        )
-        alpha = 1.0 / (1.0 + sharpness_)
-        target_q = alpha * model_target_q + (1 - alpha) * real_target_q
-
+        target_q = (weights * mean_target).sum(-1)
         return target_q

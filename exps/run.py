@@ -117,4 +117,4 @@ def get_experiment_parser():
 
 
 if __name__ == "__main__":
-    main(get_experiment_parser().parse_args())
+    main(get_experiment_parser().parse_args(), num_steps=4)

@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.multiprocessing import modify_parallel
+from rllib.util.multiprocessing import run_parallel_returns
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_actions
 from rllib.util.value_estimation import discount_sum
@@ -100,7 +100,6 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
         self.action_scale = action_scale
         self.clamp = clamp
-        self.num_cpu = num_cpu
 
     def evaluate_action_sequence(self, action_sequence, state):
         """Evaluate action sequence by performing a rollout."""
@@ -194,7 +193,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             return_.share_memory_()
 
         for _ in range(self.num_iter):
-            modify_parallel(
+            run_parallel_returns(
                 self.get_action_sequence_and_returns,
                 [
                     (state, batch_actions[rank], batch_returns[rank], rank)
