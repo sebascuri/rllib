@@ -100,6 +100,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
         self.action_scale = action_scale
         self.clamp = clamp
+        self.num_cpu = num_cpu
 
     def evaluate_action_sequence(self, action_sequence, state):
         """Evaluate action sequence by performing a rollout."""

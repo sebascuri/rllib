@@ -95,6 +95,8 @@ class STEVE(MVE):
         )
         td_samples = td_return.unsqueeze(-2).repeat_interleave(self.num_samples, -2)
         td_model = td_samples.unsqueeze(-2).repeat_interleave(self.num_models, -2)
+        if td_model.shape != critic_target[..., -1, :, :].shape:
+            td_model = td_model.unsqueeze(1)
         critic_target[..., -1, :, :] = td_model
 
         with PredictionStrategy(
