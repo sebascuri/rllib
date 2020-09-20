@@ -41,9 +41,9 @@ jobs:
     executor: python37
     environment:
       MODULE: rllib
-      OPENBLAS_NUM_THREADS: 2
-      OMP_NUM_THREADS: 2
-      MKL_NUM_THREADS: 2
+      OPENBLAS_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
     parallelism: 1  # change this with a payed plan.
     steps:
       - build
