@@ -81,5 +81,5 @@ def evaluate_agent(agent, environment, num_episodes, max_steps, render=True):
             num_episodes=num_episodes,
             render=render,
         )
-        returns = np.mean(agent.logger.get("eval_environment_return")[-num_episodes:])
+        returns = np.mean(agent.logger.get("eval_return")[-num_episodes:])
         print(f"Test Cumulative Rewards: {returns}")
