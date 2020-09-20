@@ -96,14 +96,14 @@ class KLLoss(nn.Module):
         if kl_var is None:
             kl_var = torch.zeros_like(kl_mean)
 
-        loss = self.eta_mean * kl_mean + self.eta_var * kl_var
+        reg_loss = self.eta_mean * kl_mean + self.eta_var * kl_var
         if self.regularization:
-            return Loss(regularization_loss=loss)
+            return Loss(reg_loss=reg_loss)
         else:
             eta_mean_loss = self._eta_mean() * (
                 self.epsilon_mean - kl_mean.mean().detach()
-            )
+            )  # TODO: If not regularization, this should not contain any gradient?
             eta_var_loss = self._eta_var() * (self.epsilon_var - kl_var.mean().detach())
             dual_loss = eta_mean_loss + eta_var_loss
 
-            return Loss(dual_loss=dual_loss, regularization_loss=loss)
+            return Loss(dual_loss=dual_loss, reg_loss=reg_loss)

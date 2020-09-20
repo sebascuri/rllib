@@ -6,8 +6,9 @@ import numpy as np
 import tensorboardX
 
 class Logger(object):
-    statistics: List[Dict[str, float]]
-    current: Dict[str, Tuple[int, float]]
+    statistics: List[Dict[str, float]]  # statistic[i_episode] = Summary(i_episode)
+    current: Dict[str, Tuple[int, float]]  # Dict[key, (count, value)]
+    all: Dict[str, List[float]]
     writer: Optional[tensorboardX.SummaryWriter]
     episode: int
     keys: set

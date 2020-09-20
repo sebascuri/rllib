@@ -24,7 +24,7 @@ class MVE(Dyna):
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
-        self.base_algorithm.reset_info(num_trajectories=1)
+        self.base_algorithm.reset_info()
         loss = Loss()
         loss += self.base_algorithm.actor_loss(observation)
         loss += self.model_augmented_critic_loss(observation)

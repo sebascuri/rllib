@@ -67,5 +67,5 @@ class EntropyLoss(nn.Module):
         if self.target_entropy == 0.0 and not self.regularization:
             return Loss()
         dual_loss = self._eta() * (entropy - self.target_entropy).detach()
-        regularization_loss = -self.eta * entropy
-        return Loss(dual_loss=dual_loss, regularization_loss=regularization_loss)
+        reg_loss = -self.eta * entropy
+        return Loss(dual_loss=dual_loss, reg_loss=reg_loss)

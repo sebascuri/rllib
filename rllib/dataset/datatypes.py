@@ -224,7 +224,7 @@ class Loss:
         TD-Error of critic.
     policy_loss: Tensor.
         Loss of policy optimization.
-    regularization_loss: Tensor.
+    reg_loss: Tensor.
         Either KL-divergence or entropy bonus.
     dual_loss: Tensor.
         Loss of dual minimization problem.
@@ -234,7 +234,7 @@ class Loss:
     td_error: torch.Tensor = torch.tensor(0.0)
     policy_loss: torch.Tensor = torch.tensor(0.0)
     critic_loss: torch.Tensor = torch.tensor(0.0)
-    regularization_loss: torch.Tensor = torch.tensor(0.0)
+    reg_loss: torch.Tensor = torch.tensor(0.0)
     dual_loss: torch.Tensor = torch.tensor(0.0)
 
     def __post_init__(self):
@@ -243,10 +243,7 @@ class Loss:
         Fill in the attribute `loss' by adding all other losses.
         """
         self.combined_loss = (
-            self.policy_loss
-            + self.critic_loss
-            + self.regularization_loss
-            + self.dual_loss
+            self.policy_loss + self.critic_loss + self.reg_loss + self.dual_loss
         )
 
     def __add__(self, other):

@@ -37,7 +37,7 @@ def run_parallel_returns(
     elif num_cpu <= 1:
         results = []
         for args in args_list:
-            results.append(function(args))
+            results.append(function(*args))
     else:
         pool = mp.Pool(processes=num_cpu, maxtasksperchild=1)
         parallel_runs = [pool.apply_async(function, args=args) for args in args_list]

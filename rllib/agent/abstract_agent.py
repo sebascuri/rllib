@@ -176,15 +176,14 @@ class AbstractAgent(object, metaclass=ABCMeta):
         environment_return = rewards[0] * rewards[1]
         if self.training:
             self.counters["total_episodes"] += 1
-            self.logger.end_episode(train_environment_return=environment_return)
+            self.logger.end_episode(train_return=environment_return)
         else:
-            self.logger.end_episode(eval_environment_return=environment_return)
+            self.logger.end_episode(eval_return=environment_return)
         self.logger.export_to_json()  # save at every episode.
 
         if environment_return >= max(
-            self.logger.get("train_environment_return")
-            + self.logger.get("eval_environment_return")
-        ):
+            self.logger.get("train_return") + self.logger.get("eval_return")
+        ):  # logger.get() returns a list!
             self.save(f"{self.name}_best.pkl")
 
     def end_interaction(self):

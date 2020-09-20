@@ -57,9 +57,9 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         """Get info from base algorithm."""
         return self.base_algorithm.info()
 
-    def reset_info(self, num_trajectories=1, *args, **kwargs):
+    def reset_info(self):
         """Reset info from base algorithm."""
-        return self.base_algorithm.reset_info(num_trajectories, *args, **kwargs)
+        return self.base_algorithm.reset_info()
 
     def set_policy(self, new_policy):
         """Set policy in base algorithm."""

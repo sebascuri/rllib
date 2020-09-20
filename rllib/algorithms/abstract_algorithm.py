@@ -267,21 +267,20 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
         return Loss(critic_loss=critic_loss, td_error=td_error)
 
-    def regularization_loss(self, observation):
+    def regularization_loss(self, observation, num_trajectories=1):
         """Compute regularization loss."""
         kl_mean, kl_var, entropy = self.get_kl_entropy(observation.state)
         entropy_loss = self.entropy_loss(entropy).reduce(self.criterion.reduction)
         kl_loss = self.kl_loss(kl_mean, kl_var).reduce(self.criterion.reduction)
 
-        num_t = self._info["num_trajectories"]
         self._info.update(
             eta=self.entropy_loss.eta,
             eta_mean=self.kl_loss.eta_mean,
             eta_var=self.kl_loss.eta_var,
-            kl_div=self._info["kl_div"] + (kl_mean + kl_var).mean() / num_t,
-            kl_mean=self._info["kl_mean"] + kl_mean.mean() / num_t,
-            kl_var=self._info["kl_var"] + kl_var.mean() / num_t,
-            entropy=self._info["entropy"] + entropy.mean() / num_t,
+            kl_div=self._info["kl_div"] + (kl_mean + kl_var).mean() / num_trajectories,
+            kl_mean=self._info["kl_mean"] + kl_mean.mean() / num_trajectories,
+            kl_var=self._info["kl_var"] + kl_var.mean() / num_trajectories,
+            entropy=self._info["entropy"] + entropy.mean() / num_trajectories,
         )
         return entropy_loss + kl_loss
 
@@ -304,13 +303,13 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         else:
             trajectories = observation
 
-        self.reset_info(num_trajectories=len(trajectories))
+        self.reset_info()
 
         loss = Loss()
         for trajectory in trajectories:
             loss += self.actor_loss(trajectory)
             loss += self.critic_loss(trajectory)
-            loss += self.regularization_loss(trajectory)
+            loss += self.regularization_loss(trajectory, len(trajectories))
 
         return loss / len(trajectories)
 
@@ -394,10 +393,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         return self._info
 
     @torch.jit.export
-    def reset_info(self, num_trajectories=1):
+    def reset_info(self):
         """Reset info when the iteration starts."""
         self._info.update(
-            num_trajectories=num_trajectories,
             kl_div=torch.tensor(0.0),
             kl_mean=torch.tensor(0.0),
             kl_var=torch.tensor(0.0),

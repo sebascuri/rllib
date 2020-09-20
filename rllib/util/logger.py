@@ -1,8 +1,8 @@
 """Implementation of a Logger class."""
-
 import json
 import os
 import shutil
+from collections import defaultdict
 from datetime import datetime
 
 import numpy as np
@@ -27,6 +27,8 @@ class Logger(object):
     def __init__(self, name, comment="", tensorboard=False):
         self.statistics = list()
         self.current = dict()
+        self.all = defaultdict(list)
+
         now = datetime.now()
         current_time = now.strftime("%b%d_%H-%M-%S")
         comment = comment + "_" + current_time if len(comment) else current_time
@@ -61,15 +63,20 @@ class Logger(object):
         str_ = ""
         for key in sorted(self.keys):
             values = self.get(key)
-            key = " ".join(key.split("_")).title()
-            str_ += f"{key} Last: {values[-1]:.2g}. "
-            str_ += f"Average: {np.mean(values):.2g}. "
-            str_ += f"10-Episode: {np.mean(values[-10:]):.2g}.\n"
+            str_ += " ".join(key.split("_")).title().ljust(17)
+            str_ += f"Last: {values[-1]:.2g}".ljust(15)
+            str_ += f"Avg: {np.mean(values):.2g}".ljust(15)
+            str_ += f"MAvg: {np.mean(values[-10:]):.2g}".ljust(15)
+            str_ += f"Range: ({np.min(values):.2g},{np.max(values):.2g})\n"
 
         return str_
 
     def get(self, key):
-        """Return the statistics of a specific key."""
+        """Return the statistics of a specific key.
+
+        It collects all end-of-episode data stored in statistic and returns a list with
+        such values.
+        """
         return [statistic[key] for statistic in self.statistics if key in statistic]
 
     def update(self, **kwargs):
@@ -101,6 +108,8 @@ class Logger(object):
                 new_value = old_value + (value - old_value) * (1 / new_count)
                 self.current[key] = (new_count, new_value)
 
+            self.all[key].append(value)
+
             if self.writer is not None:
                 self.writer.add_scalar(
                     f"episode_{self.episode}/{key}",
@@ -124,12 +133,12 @@ class Logger(object):
 
         for key, value in data.items():
             self.keys.add(key)
-            if (
-                isinstance(value, float) or isinstance(value, int)
-            ) and self.writer is not None:
-                self.writer.add_scalar(
-                    f"average/{key}", value, global_step=self.episode
-                )
+            if isinstance(value, float) or isinstance(value, int):
+                self.all[key].append(value)
+                if self.writer is not None:
+                    self.writer.add_scalar(
+                        f"average/{key}", value, global_step=self.episode
+                    )
 
         self.statistics.append(data)
         self.current = dict()
