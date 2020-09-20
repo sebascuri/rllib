@@ -4,7 +4,7 @@ from abc import ABCMeta
 import torch
 
 from rllib.model import AbstractModel
-from rllib.util.utilities import get_backend
+from rllib.reward.utilities import tolerance
 
 
 class StateActionReward(AbstractModel, metaclass=ABCMeta):
@@ -59,14 +59,23 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
             pass
         return reward, torch.zeros_like(reward).unsqueeze(-1)
 
+    @staticmethod
+    def action_sparse_reward(action):
+        """Get action sparse reward."""
+        return (tolerance(action, lower=-0.1, upper=0.1, margin=0.1) - 1).prod(dim=-1)
+
+    @staticmethod
+    def action_non_sparse_reward(action):
+        """Get action non-sparse rewards."""
+        return -(action ** 2).sum(-1)
+
     def action_reward(self, action):
         """Get reward that corresponds to action."""
         action = action[..., : self.dim_action[0]]  # get only true dimensions.
-        bk = get_backend(action)
         if self.sparse:
-            return bk.exp(-bk.square(action / self.action_scale).sum(-1)) - 1
+            return self.action_sparse_reward(action)
         else:
-            return -bk.square(action).sum(-1)
+            return self.action_non_sparse_reward(action / self.action_scale)
 
     def state_reward(self, state, next_state=None):
         """Get reward that corresponds to the states."""
