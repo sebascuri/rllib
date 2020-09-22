@@ -74,7 +74,7 @@ def step_model(
 
     # Check for termination.
     if termination_model is not None:
-        done += (
+        done = done + (  # "+" is a boolean "or".
             tensor_to_distribution(termination_model(state, action, next_state))
             .sample()
             .bool()
