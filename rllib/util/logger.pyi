@@ -5,6 +5,8 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 import numpy as np
 import tensorboardX
 
+def safe_make_dir(dir_name: str) -> str: ...
+
 class Logger(object):
     statistics: List[Dict[str, float]]  # statistic[i_episode] = Summary(i_episode)
     current: Dict[str, Tuple[int, float]]  # Dict[key, (count, value)]

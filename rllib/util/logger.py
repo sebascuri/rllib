@@ -10,6 +10,16 @@ import torch
 from tensorboardX import SummaryWriter
 
 
+def safe_make_dir(dir_name):
+    """Create a new directory safely."""
+    try:
+        os.makedirs(dir_name)
+    except OSError:
+        now = datetime.now()
+        dir_name = safe_make_dir(dir_name + f"-{now.microsecond}")
+    return dir_name
+
+
 class Logger(object):
     """Class that implements a logger of statistics.
 
@@ -32,17 +42,13 @@ class Logger(object):
         now = datetime.now()
         current_time = now.strftime("%b%d_%H-%M-%S")
         comment = comment + "_" + current_time if len(comment) else current_time
-        self.log_dir = f"runs/{name}/{comment}"
+        log_dir = f"runs/{name}/{comment}"
         if tensorboard:
-            self.writer = SummaryWriter(log_dir=self.log_dir)
+            self.writer = SummaryWriter(log_dir=log_dir)
+            self.log_dir = self.writer.logdir
         else:
             self.writer = None
-            try:
-                os.makedirs(self.log_dir)
-            except OSError:
-                self.log_dir = self.log_dir + f"-{now.microsecond}"
-                os.makedirs(self.log_dir)
-
+            self.log_dir = safe_make_dir(log_dir)
         self.episode = 0
         self.keys = set()
 
