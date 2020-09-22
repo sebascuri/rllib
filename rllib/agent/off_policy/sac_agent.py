@@ -35,7 +35,7 @@ class SACAgent(OffPolicyAgent):
         policy,
         criterion=loss.MSELoss,
         eta=0.2,
-        regularization=False,
+        entropy_regularization=False,
         *args,
         **kwargs,
     ):
@@ -46,7 +46,7 @@ class SACAgent(OffPolicyAgent):
             critic=critic,
             criterion=criterion(reduction="none"),
             eta=eta,
-            regularization=regularization,
+            entropy_regularization=entropy_regularization,
             *args,
             **kwargs,
         )

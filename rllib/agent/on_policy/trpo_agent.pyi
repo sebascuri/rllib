@@ -16,7 +16,7 @@ class TRPOAgent(ActorCriticAgent):
         self,
         policy: AbstractPolicy,
         critic: AbstractValueFunction,
-        regularization: bool = ...,
+        kl_regularization: bool = ...,
         epsilon_mean: Union[float, ParameterDecay] = ...,
         epsilon_var: Optional[Union[float, ParameterDecay]] = ...,
         lambda_: float = ...,

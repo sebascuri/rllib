@@ -12,7 +12,7 @@ class TRPO(GAAC):
         self,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization: bool = ...,
+        kl_regularization: bool = ...,
         lambda_: float = ...,
         monte_carlo_target: bool = ...,
         *args: Any,

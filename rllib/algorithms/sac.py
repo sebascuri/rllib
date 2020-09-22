@@ -21,9 +21,9 @@ class SAC(AbstractAlgorithm):
     Soft actor-critic algorithms and applications. arXiv.
     """
 
-    def __init__(self, eta=0.2, regularization=False, *args, **kwargs):
+    def __init__(self, eta=0.2, entropy_regularization=False, *args, **kwargs):
         super().__init__(
-            eta=eta, entropy_regularization=regularization, *args, **kwargs
+            eta=eta, entropy_regularization=entropy_regularization, *args, **kwargs
         )
         assert (
             len(self.policy.dim_action) == 1

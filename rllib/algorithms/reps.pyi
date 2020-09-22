@@ -14,8 +14,8 @@ class REPS(AbstractAlgorithm):
     learn_policy: bool
     def __init__(
         self,
-        epsilon: Union[ParameterDecay, float],
-        regularization: bool = ...,
+        eta: Union[ParameterDecay, float],
+        entropy_regularization: bool = ...,
         learn_policy: bool = ...,
         *args: Any,
         **kwargs: Any,

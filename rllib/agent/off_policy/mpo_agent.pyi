@@ -20,7 +20,7 @@ class MPOAgent(OffPolicyAgent):
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization: bool = ...,
+        kl_regularization: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

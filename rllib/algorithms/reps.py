@@ -52,19 +52,18 @@ class REPS(AbstractAlgorithm):
     """
 
     def __init__(
-        self, epsilon, regularization=False, learn_policy=True, *args, **kwargs
+        self, eta, entropy_regularization=False, learn_policy=True, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.learn_policy = learn_policy
-        if regularization:
-            eta = epsilon
+        if entropy_regularization:
             if not isinstance(eta, ParameterDecay):
                 eta = Constant(eta)
             self.eta = eta
             self.epsilon = torch.tensor(0.0)
         else:
             self.eta = Learnable(1.0, positive=True)
-            self.epsilon = torch.tensor(epsilon)
+            self.epsilon = torch.tensor(eta)
 
     def _policy_weighted_nll(self, state, action, weights):
         """Return weighted policy negative log-likelihood."""

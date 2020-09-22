@@ -10,7 +10,7 @@ class SAC(AbstractAlgorithm):
     def __init__(
         self,
         eta: Union[ParameterDecay, float] = ...,
-        regularization: bool = ...,
+        entropy_regularization: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

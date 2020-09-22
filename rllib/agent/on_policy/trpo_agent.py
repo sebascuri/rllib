@@ -20,7 +20,7 @@ class TRPOAgent(ActorCriticAgent):
         self,
         policy,
         critic,
-        regularization=False,
+        kl_regularization=False,
         epsilon_mean=0.01,
         epsilon_var=None,
         lambda_=0.95,
@@ -33,7 +33,7 @@ class TRPOAgent(ActorCriticAgent):
         self.algorithm = TRPO(
             critic=critic,
             policy=policy,
-            regularization=regularization,
+            kl_regularization=kl_regularization,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             criterion=criterion(reduction="mean"),

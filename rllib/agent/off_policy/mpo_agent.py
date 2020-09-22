@@ -23,7 +23,7 @@ class MPOAgent(OffPolicyAgent):
         epsilon=0.1,
         epsilon_mean=0.1,
         epsilon_var=0.001,
-        regularization=False,
+        kl_regularization=False,
         *args,
         **kwargs,
     ):
@@ -37,7 +37,7 @@ class MPOAgent(OffPolicyAgent):
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
-            regularization=regularization,
+            kl_regularization=kl_regularization,
             *args,
             **kwargs,
         )

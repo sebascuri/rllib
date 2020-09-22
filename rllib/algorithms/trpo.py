@@ -42,7 +42,7 @@ class TRPO(GAAC):
         self,
         epsilon_mean=0.01,
         epsilon_var=None,
-        regularization=False,
+        kl_regularization=False,
         lambda_=0.95,
         monte_carlo_target=False,
         *args,
@@ -51,7 +51,7 @@ class TRPO(GAAC):
         super().__init__(
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
-            kl_regularization=regularization,
+            kl_regularization=kl_regularization,
             lambda_=lambda_,
             *args,
             **kwargs,

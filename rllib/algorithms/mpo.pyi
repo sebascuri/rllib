@@ -16,7 +16,7 @@ class MPOLoss(nn.Module):
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization: bool = ...,
+        kl_regularization: bool = ...,
     ) -> None: ...
     @property
     def eta(self) -> Tensor: ...
@@ -30,7 +30,7 @@ class MPO(AbstractAlgorithm):
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
-        regularization: bool = ...,
+        kl_regularization: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

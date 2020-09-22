@@ -31,10 +31,10 @@ class MPOLoss(nn.Module):
     Abdolmaleki, et al. "Maximum a Posteriori Policy Optimisation." (2018). ICLR.
     """
 
-    def __init__(self, epsilon=0.1, regularization=False):
+    def __init__(self, epsilon=0.1, kl_regularization=False):
         super().__init__()
 
-        if regularization:
+        if kl_regularization:
             eta = epsilon
             if not isinstance(eta, ParameterDecay):
                 eta = Constant(eta)
@@ -130,12 +130,15 @@ class MPO(AbstractAlgorithm):
     """
 
     def __init__(
-        self, num_samples=15, epsilon=0.1, regularization=False, *args, **kwargs
+        self, num_samples=15, epsilon=0.1, kl_regularization=False, *args, **kwargs
     ):
         super().__init__(
-            num_samples=num_samples, kl_regularization=regularization, *args, **kwargs
+            num_samples=num_samples,
+            kl_regularization=kl_regularization,
+            *args,
+            **kwargs,
         )
-        self.mpo_loss = MPOLoss(epsilon, regularization)
+        self.mpo_loss = MPOLoss(epsilon, kl_regularization)
         self.post_init()
 
     def post_init(self):
