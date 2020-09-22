@@ -12,14 +12,16 @@ except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
 class MBSwimmerEnv(LocomotionEnv, SwimmerEnv):
     """Swimmer Environment."""
 
-    def __init__(self, action_cost=1e-4):
+    def __init__(self, ctrl_cost_weight=1e-4):
+        self.base_mujoco_name = "Swimmer-v3"
         LocomotionEnv.__init__(
             self,
             dim_pos=2,
-            ctrl_cost_weight=action_cost,
+            dim_action=(2,),
+            ctrl_cost_weight=ctrl_cost_weight,
             forward_reward_weight=1.0,
             healthy_reward=0.0,
         )
         SwimmerEnv.__init__(
-            self, ctrl_cost_weight=action_cost, forward_reward_weight=1.0
+            self, ctrl_cost_weight=ctrl_cost_weight, forward_reward_weight=1.0
         )

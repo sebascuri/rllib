@@ -14,7 +14,7 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
         ..math:: r = r_{state} + \alpha r_{action},
 
     where r_{state} is an environment dependent reward function (to be implemented),
-    r_{action} is the action cost, and \alpha is set by `action_cost_ratio'.
+    r_{action} is the action cost, and \alpha is set by `ctrl_cost_weight'.
 
     the action reward is given by:
        ..math:: r_{action} = - \sum_{i=1}^{d} a_i^2, in non-sparse environments.
@@ -22,7 +22,7 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
 
     Parameters
     ----------
-    action_cost_ratio: float, optional (default = 0.1)
+    ctrl_cost_weight: float, optional (default = 0.1)
         action cost ratio that weights the action to state ratio.
     sparse: bool, optional (default = False).
         flag that indicates whether the reward is sparse or global.
@@ -32,22 +32,25 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
         scale of action for sparse environments.
     """
 
-    def __init__(
-        self, action_cost_ratio=0.1, sparse=False, goal=None, action_scale=1.0
-    ):
+    def __init__(self, ctrl_cost_weight=0.1, sparse=False, goal=None, action_scale=1.0):
         super().__init__(
             goal=goal, dim_state=(), dim_action=self.dim_action, model_kind="rewards"
         )
 
         self.action_scale = action_scale
-        self.action_cost_ratio = action_cost_ratio
+        self.ctrl_cost_weight = ctrl_cost_weight
         self.sparse = sparse
 
     def forward(self, state, action, next_state=None):
         """Get reward distribution for state, action, next_state."""
+        if not isinstance(state, torch.Tensor):
+            state = torch.tensor(state, dtype=torch.get_default_dtype())
+        if not isinstance(action, torch.Tensor):
+            action = torch.tensor(action, dtype=torch.get_default_dtype())
+
         reward_ctrl = self.action_reward(action)
         reward_state = self.state_reward(state, next_state)
-        reward = reward_state + self.action_cost_ratio * reward_ctrl
+        reward = reward_state + self.ctrl_cost_weight * reward_ctrl
 
         try:
             self._info.update(

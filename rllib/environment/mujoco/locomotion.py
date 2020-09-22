@@ -28,6 +28,15 @@ class LargeStateTermination(AbstractModel):
         self.healthy_z_range = healthy_z_range
         self.healthy_angle_range = healthy_angle_range
 
+    def copy(self):
+        """Get copy of termination model."""
+        return LargeStateTermination(
+            z_dim=self.z_dim,
+            healthy_state_range=self.healthy_state_range,
+            healthy_z_range=self.healthy_state_range,
+            healthy_angle_range=self.healthy_angle_range,
+        )
+
     @staticmethod
     def in_range(state, min_max_range):
         """Check if state is in healthy range."""
@@ -50,6 +59,8 @@ class LargeStateTermination(AbstractModel):
 
     def forward(self, state, action, next_state=None):
         """Return termination model logits."""
+        if not isinstance(state, torch.Tensor):
+            return ~self.is_healthy(state)
         done = ~self.is_healthy(state)
         return (
             torch.zeros(*done.shape, 2)
@@ -62,43 +73,48 @@ class LocomotionEnv(object):
     """Base Locomotion environment. Is a hack to avoid repeated code."""
 
     def __init__(
-        self, dim_pos, ctrl_cost_weight, forward_reward_weight=1.0, healthy_reward=0.0
+        self,
+        dim_pos,
+        dim_action,
+        ctrl_cost_weight,
+        forward_reward_weight=1.0,
+        healthy_reward=0.0,
     ):
         self.dim_pos = dim_pos
         self.prev_pos = np.zeros(dim_pos)
-        self._ctrl_cost_weight = ctrl_cost_weight
-        self._forward_reward_weight = forward_reward_weight
-        self._healthy_reward = healthy_reward
+        self._reward_model = LocomotionReward(
+            dim_action=dim_action,
+            ctrl_cost_weight=ctrl_cost_weight,
+            forward_reward_weight=forward_reward_weight,
+            healthy_reward=healthy_reward,
+        )
+        self._termination_model = LargeStateTermination()
 
     def step(self, action):
         """See gym.Env.step()."""
-        this_obs = self._get_obs()
+        obs = self._get_obs()
+        reward = self._reward_model(obs, action)[0].item()
+        done = self._termination_model(obs, action)
+        if done:
+            reward = reward - self._reward_model.healthy_reward
+
         if isinstance(self, HumanoidEnv):
             self.prev_pos = mass_center(self.model, self.sim)
         else:
             self.prev_pos = self.sim.data.qpos[: self.dim_pos].copy()
         self.do_simulation(action, self.frame_skip)
 
-        ctrl_cost = self.control_cost(action)
-        x_velocity = this_obs[0]
-        forward_reward = self._forward_reward_weight * x_velocity
-
-        reward = forward_reward - ctrl_cost
-        done = False
-        info = {
-            "x_position": self.prev_pos[0],
-            "x_velocity": x_velocity,
-            "reward_run": forward_reward,
-            "reward_ctrl": -ctrl_cost,
-        }
+        next_obs = self._get_obs()
+        info = self._reward_model.info
+        info.update(x_position=self.prev_pos[0], x_velocity=obs[0])
         if self.dim_pos == 2:
             info.update(
                 y_poisition=self.prev_pos[1],
-                y_velocity=this_obs[1],
+                y_velocity=obs[1],
                 distance_from_origin=np.linalg.norm(self.prev_pos, ord=2),
             )
 
-        return self._get_obs(), reward, done, info
+        return next_obs, reward, done, info
 
     def _get_obs(self):
         position = self.sim.data.qpos.flat.copy()
@@ -129,12 +145,7 @@ class LocomotionEnv(object):
 
     def reward_model(self):
         """Get reward model."""
-        return LocomotionReward(
-            dim_action=self.action_space.shape,
-            action_cost_ratio=self._ctrl_cost_weight,
-            forward_reward_weight=self._forward_reward_weight,
-            healthy_reward=0.0,
-        )
+        return self._reward_model.copy()
 
     def termination_model(self):
         """Get default termination model."""

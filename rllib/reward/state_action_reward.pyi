@@ -1,6 +1,7 @@
 """State Action Reward Functions."""
 from abc import ABCMeta
 from typing import Optional, Tuple
+
 from torch import Tensor
 
 from rllib.dataset.datatypes import Action, Reward, State
@@ -10,10 +11,10 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
     dim_action: Tuple
     action_scale: Action
     sparse: bool
-    action_cost_ratio: float
+    ctrl_cost_weight: float
     def __init__(
         self,
-        action_cost_ratio: float = ...,
+        ctrl_cost_weight: float = ...,
         sparse: bool = ...,
         goal: Optional[State] = ...,
         action_scale: Action = ...,

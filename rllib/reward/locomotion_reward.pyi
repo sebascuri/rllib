@@ -8,7 +8,7 @@ class LocomotionReward(StateActionReward):
     def __init__(
         self,
         dim_action: Tuple[int],
-        action_cost_ratio: float,
+        ctrl_cost_weight: float,
         forward_reward_weight: float = ...,
         healthy_reward: float = ...,
     ) -> None: ...

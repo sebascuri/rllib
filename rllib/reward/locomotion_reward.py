@@ -15,14 +15,23 @@ class LocomotionReward(StateActionReward):
     def __init__(
         self,
         dim_action,
-        action_cost_ratio,
+        ctrl_cost_weight,
         forward_reward_weight=1.0,
         healthy_reward=0.0,
     ):
         self.dim_action = dim_action
-        super().__init__(action_cost_ratio=action_cost_ratio)
+        super().__init__(ctrl_cost_weight=ctrl_cost_weight)
         self.forward_reward_weight = forward_reward_weight
         self.healthy_reward = healthy_reward
+
+    def copy(self):
+        """Get copy of locomotion reward."""
+        return LocomotionReward(
+            dim_action=self.dim_action,
+            ctrl_cost_weight=self.ctrl_cost_weight,
+            forward_reward_weight=self.forward_reward_weight,
+            healthy_reward=self.healthy_reward,
+        )
 
     def state_reward(self, state, next_state=None):
         """Get reward that corresponds to the states."""

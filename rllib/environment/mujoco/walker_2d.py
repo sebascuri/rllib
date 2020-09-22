@@ -12,24 +12,24 @@ except (ModuleNotFoundError, gym.error.DependencyNotInstalled):
 class MBWalker2dEnv(LocomotionEnv, Walker2dEnv):
     """Walker2d Environment."""
 
-    def __init__(self, action_cost=1e-3):
+    def __init__(self, ctrl_cost_weight=1e-3):
+        self.base_mujoco_name = "Walker2d-v3"
+
         LocomotionEnv.__init__(
             self,
             dim_pos=1,
-            ctrl_cost_weight=action_cost,
+            dim_action=(6,),
+            ctrl_cost_weight=ctrl_cost_weight,
             forward_reward_weight=1.0,
             healthy_reward=1.0,
         )
         Walker2dEnv.__init__(
             self,
-            ctrl_cost_weight=action_cost,
+            ctrl_cost_weight=ctrl_cost_weight,
             forward_reward_weight=1.0,
             healthy_reward=1.0,
         )
-
-    def termination_model(self):
-        """Get Termination Model."""
-        return LargeStateTermination(
+        self._termination_model = LargeStateTermination(
             z_dim=1,
             healthy_angle_range=self._healthy_angle_range,
             healthy_z_range=self._healthy_z_range,

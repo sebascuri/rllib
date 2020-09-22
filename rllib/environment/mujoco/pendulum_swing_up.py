@@ -12,16 +12,18 @@ class PendulumReward(StateActionReward):
 
     dim_action = (1,)
 
-    def __init__(self, action_cost_ratio=0.001, sparse=False, *args, **kwargs):
-        super().__init__(action_cost_ratio=action_cost_ratio, sparse=sparse)
+    def __init__(self, ctrl_cost_weight=0.001, sparse=False, *args, **kwargs):
+        super().__init__(ctrl_cost_weight=ctrl_cost_weight, sparse=sparse)
+
+    def copy(self):
+        """Get copy of reward model."""
+        return PendulumReward(
+            ctrl_cost_weight=self.ctrl_cost_weight, sparse=self.sparse
+        )
 
     @staticmethod
     def state_sparse_reward(theta, omega):
         """Get sparse reward."""
-        if not isinstance(theta, torch.Tensor):
-            theta = torch.tensor(theta, dtype=torch.get_default_dtype())
-        if not isinstance(omega, torch.Tensor):
-            omega = torch.tensor(omega, dtype=torch.get_default_dtype())
         angle_tolerance = tolerance(torch.cos(theta), lower=0.95, upper=1.0, margin=0.3)
         velocity_tolerance = tolerance(omega, lower=-0.5, upper=0.5, margin=0.5)
         return angle_tolerance * velocity_tolerance
@@ -44,13 +46,16 @@ class PendulumReward(StateActionReward):
 class PendulumSwingUpEnv(PendulumEnv):
     """Pendulum Swing-up Environment."""
 
-    def __init__(self, reset_noise_scale=0.01, action_cost_ratio=0.001, sparse=False):
+    def __init__(self, reset_noise_scale=0.01, ctrl_cost_weight=0.001, sparse=False):
+        self.base_mujoco_name = "Pendulum-v0"
+
         super().__init__()
         self.reset_noise_scale = reset_noise_scale
-        self._ctrl_cost_weight = action_cost_ratio
         self.state = np.zeros(2)
         self.last_u = None
-        self.sparse = sparse
+        self._reward_model = PendulumReward(
+            ctrl_cost_weight=ctrl_cost_weight, sparse=sparse
+        )
 
     def reset(self):
         """Reset to fix initial conditions."""
@@ -64,19 +69,11 @@ class PendulumSwingUpEnv(PendulumEnv):
 
     def step(self, u):
         """Override step method of pendulum env."""
-        theta, omega = self.state
-        action = torch.tensor(u, dtype=torch.get_default_dtype())
+        reward = self._reward_model(self._get_obs(), u)[0].item()
+
         u = np.clip(u, -self.max_torque, self.max_torque)[0]
         self.last_u = u  # for rendering
-        if self.sparse:
-            ctrl_reward = PendulumReward.action_sparse_reward(action)
-            state_reward = PendulumReward.state_sparse_reward(theta, omega)
-        else:
-            ctrl_reward = PendulumReward.action_non_sparse_reward(action)
-            state_reward = PendulumReward.state_non_sparse_reward(theta, omega)
-
-        ctrl_cost = -self._ctrl_cost_weight * ctrl_reward.item()
-        state_cost = -state_reward.item()
+        theta, omega = self.state
 
         inertia = self.m * self.l ** 2 / 3.0
         omega_dot = -3 * self.g / (2 * self.l) * np.sin(theta + np.pi) + u / inertia
@@ -87,10 +84,9 @@ class PendulumSwingUpEnv(PendulumEnv):
         new_omega = np.clip(new_omega, -self.max_speed, self.max_speed)
 
         self.state = np.array([new_theta, new_omega])
-        return self._get_obs(), -(ctrl_cost + state_cost), False, {}
+        next_obs = self._get_obs()
+        return next_obs, reward, False, self._reward_model.info
 
     def reward_model(self):
         """Get reward model."""
-        return PendulumReward(
-            action_cost_ratio=self._ctrl_cost_weight, sparse=self.sparse
-        )
+        return self._reward_model.copy()
