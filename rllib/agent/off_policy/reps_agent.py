@@ -27,7 +27,7 @@ class REPSAgent(OffPolicyAgent):
         self,
         policy,
         critic,
-        eta=1.0,
+        epsilon=1.0,
         entropy_regularization=False,
         learn_policy=True,
         num_iter=200,
@@ -47,7 +47,7 @@ class REPSAgent(OffPolicyAgent):
         self.algorithm = REPS(
             policy=policy,
             critic=critic,
-            eta=eta,
+            epsilon=epsilon,
             entropy_regularization=entropy_regularization,
             learn_policy=learn_policy,
             *args,

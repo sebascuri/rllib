@@ -13,7 +13,7 @@ class REPSAgent(OffPolicyAgent):
         self,
         policy: AbstractPolicy,
         critic: AbstractValueFunction,
-        eta: Union[float, ParameterDecay] = ...,
+        epsilon: Union[float, ParameterDecay] = ...,
         entropy_regularization: bool = ...,
         learn_policy: bool = ...,
         *args: Any,
