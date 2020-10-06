@@ -95,8 +95,6 @@ class LocomotionEnv(object):
         obs = self._get_obs()
         reward = self._reward_model(obs, action)[0].item()
         done = self._termination_model(obs, action)
-        if done:
-            reward = reward - self._reward_model.healthy_reward
 
         if isinstance(self, HumanoidEnv):
             self.prev_pos = mass_center(self.model, self.sim)

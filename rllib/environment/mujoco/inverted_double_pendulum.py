@@ -31,7 +31,7 @@ class InvertedDoublePendulumReward(StateActionReward):
 
         v1, v2 = state[..., -4:-2]
         vel_penalty = 1e-3 * v1 ** 2 + 5e-3 * v2 ** 2
-        return torch.ones_like(state[..., 0]) - dist_penalty - vel_penalty
+        return 10 * torch.ones_like(state[..., 0]) - dist_penalty - vel_penalty
 
 
 class MBInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):

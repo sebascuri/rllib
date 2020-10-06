@@ -19,6 +19,8 @@ register(
 register(
     id="PendulumSwingUp-v0", entry_point=f"{base}.pendulum_swing_up:PendulumSwingUpEnv"
 )
+register(id="MBPusher-v0", entry_point=f"{base}.pusher:MBPusherEnv")
+
 register(id="MBReacher2d-v0", entry_point=f"{base}.reacher_2d:MBReacherEnv")
 register(id="MBReacher3d-v0", entry_point=f"{base}.reacher_3d:MBReacher3DEnv")
 

@@ -16,12 +16,14 @@ class ReacherReward(StateActionReward):
     dim_action = (7,)
     length_scale = 0.45
 
-    def __init__(self, ctrl_cost_weight=0.01, sparse=False):
-        super().__init__(ctrl_cost_weight, sparse)
+    def __init__(self, goal, ctrl_cost_weight=0.01, sparse=False):
+        super().__init__(ctrl_cost_weight, sparse, goal=goal)
 
     def copy(self):
         """Get copy of Reacher Reward."""
-        return ReacherReward(ctrl_cost_weight=self.ctrl_cost_weight, sparse=self.sparse)
+        return ReacherReward(
+            ctrl_cost_weight=self.ctrl_cost_weight, sparse=self.sparse, goal=self.goal
+        )
 
     def state_sparse_reward(self, dist_to_target):
         """Sparse reacher reward model."""
@@ -100,11 +102,12 @@ try:
         https://github.com/kchua/handful-of-trials
         """
 
-        def __init__(self, ctrl_cost_weight=0.01, sparse=False):
+        def __init__(self, goal_at_obs=True, ctrl_cost_weight=0.01, sparse=False):
             self._reward_model = ReacherReward(
-                ctrl_cost_weight=ctrl_cost_weight, sparse=sparse
+                ctrl_cost_weight=ctrl_cost_weight, sparse=sparse, goal=None
             )
-
+            self.goal = None
+            self.goal_at_obs = goal_at_obs
             utils.EzPickle.__init__(self)
             dir_path = os.path.dirname(os.path.realpath(__file__))
             mujoco_env.MujocoEnv.__init__(self, "%s/assets/reacher3d.xml" % dir_path, 2)
@@ -135,16 +138,25 @@ try:
             qpos[-3:] += np.random.normal(loc=0, scale=0.1, size=[3])
             qvel[-3:] = 0
             self.set_state(qpos, qvel)
+            if self.goal_at_obs:
+                self.goal = qpos[-3:]
+            else:
+                self.goal = None
             return self._get_obs()
 
         def _get_obs(self):
-            return np.concatenate(
-                [
-                    self.sim.data.qpos.flat[:-3],
-                    self.sim.data.qvel.flat[:-3],
-                    self.sim.data.qpos.flat[-3:],
-                ]
-            )
+            if self.goal_at_obs:
+                return np.concatenate(
+                    [
+                        self.sim.data.qpos.flat[:-3],
+                        self.sim.data.qvel.flat[:-3],
+                        self.sim.data.qpos.flat[-3:],
+                    ]
+                )
+            else:
+                return np.concatenate(
+                    [self.sim.data.qpos.flat[:-3], self.sim.data.qvel.flat[:-3]]
+                )
 
 
 except Exception:  # Mujoco not installed.
