@@ -112,7 +112,7 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
         agent.set_goal(environment.goal)
 
         done = False
-        i = 0
+        time_step = 0
         while not done:
             action = agent.act(state)
             observation, state, done, info = step_env(
@@ -120,10 +120,9 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
             )
             recorder.capture_frame()
 
-            if max_steps <= environment.time:
+            if max_steps <= time_step:
                 break
-            print(i)
-            i += 1
+            time_step += 1
     recorder.close()
 
 
@@ -133,6 +132,7 @@ def rollout_episode(environment, agent, max_steps, render):
     agent.set_goal(environment.goal)
     agent.start_episode()
     done = False
+    time_step = 0
     while not done:
         action = agent.act(state)
         obs, state, done, info = step_env(
@@ -147,8 +147,9 @@ def rollout_episode(environment, agent, max_steps, render):
         # Log info.
         agent.logger.update(**info)
 
-        if max_steps <= environment.time:
+        if max_steps <= time_step:
             break
+        time_step += 1
     agent.end_episode()
 
 
@@ -237,6 +238,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         done = False
         trajectory = []
         with torch.no_grad():
+            time_step = 0
             while not done:
                 pi = tensor_to_distribution(
                     policy(torch.tensor(state, dtype=torch.get_default_dtype())),
@@ -254,8 +256,9 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                     render=render,
                 )
                 trajectory.append(obs)
-                if max_steps <= environment.time:
+                if max_steps <= time_step:
                     break
+                time_step += 1
         trajectories.append(trajectory)
     return trajectories
 
