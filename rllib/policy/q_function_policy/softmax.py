@@ -1,9 +1,4 @@
 """SoftMax Policy."""
-
-import torch
-
-from rllib.util.utilities import tensor_to_distribution
-
 from ..random_policy import RandomPolicy
 from .abstract_q_function_policy import AbstractQFunctionPolicy
 
@@ -36,5 +31,5 @@ class SoftMax(AbstractQFunctionPolicy):
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
         q_val = self.q_function(state)
-        prior = tensor_to_distribution(self.prior(state)).probs
-        return torch.log(prior * torch.softmax(q_val / self.temperature, dim=-1))
+        prior = self.prior(state)
+        return prior + q_val / self.temperature
