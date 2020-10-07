@@ -33,6 +33,7 @@ class REPSAgent(OffPolicyAgent):
         num_iter=200,
         train_frequency=0,
         num_rollouts=15,
+        reset_memory_after_learn=True,
         *args,
         **kwargs,
     ):
@@ -40,6 +41,7 @@ class REPSAgent(OffPolicyAgent):
             num_iter=num_iter,
             train_frequency=train_frequency,
             num_rollouts=num_rollouts,
+            reset_memory_after_learn=reset_memory_after_learn,
             *args,
             **kwargs,
         )
@@ -72,7 +74,7 @@ class REPSAgent(OffPolicyAgent):
         if self.algorithm.learn_policy:
             self._fit_policy()
 
-        if self.train_frequency == 0:
+        if self.reset_memory_after_learn:
             self.memory.reset()  # Erase memory.
 
     def _optimize_dual(self):

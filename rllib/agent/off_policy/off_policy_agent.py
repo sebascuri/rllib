@@ -9,11 +9,19 @@ from rllib.dataset.experience_replay import ExperienceReplay
 class OffPolicyAgent(AbstractAgent):
     """Template for an on-policy algorithm."""
 
-    def __init__(self, memory, train_frequency=1, batch_size=100, *args, **kwargs):
+    def __init__(
+        self,
+        memory,
+        train_frequency=1,
+        batch_size=100,
+        reset_memory_after_learn=False,
+        *args,
+        **kwargs,
+    ):
         super().__init__(
             train_frequency=train_frequency, batch_size=batch_size, *args, **kwargs
         )
-
+        self.reset_memory_after_learn = reset_memory_after_learn
         self.memory = memory
 
     @classmethod
@@ -62,3 +70,6 @@ class OffPolicyAgent(AbstractAgent):
             return losses_
 
         self._learn_steps(closure)
+
+        if self.reset_memory_after_learn:
+            self.memory.reset()

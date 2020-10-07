@@ -9,11 +9,13 @@ class OffPolicyAgent(AbstractAgent):
 
     algorithm: AbstractAlgorithm
     memory: ExperienceReplay
+    reset_memory_after_learn: bool
     def __init__(
         self,
         memory: ExperienceReplay,
         num_iter: int = ...,
         batch_size: int = ...,
+        reset_memory_after_learn: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

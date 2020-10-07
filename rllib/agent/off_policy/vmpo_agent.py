@@ -22,6 +22,7 @@ class VMPOAgent(MPOAgent):
         top_k_fraction=0.5,
         train_frequency=0,
         num_rollouts=2,
+        reset_memory_after_learn=True,
         *args,
         **kwargs,
     ):
@@ -30,6 +31,7 @@ class VMPOAgent(MPOAgent):
             critic=critic,
             train_frequency=train_frequency,
             num_rollouts=num_rollouts,
+            reset_memory_after_learn=reset_memory_after_learn,
             *args,
             **kwargs,
         )
@@ -58,11 +60,3 @@ class VMPOAgent(MPOAgent):
         """See `AbstractAgent.default'."""
         critic = NNValueFunction.default(environment)
         return super().default(environment, critic=critic, *args, **kwargs)
-
-    def learn(self) -> None:
-        """Learn with V-MPO (On-Policy?)."""
-        super().learn()
-        if self.train_frequency == 0:
-            # If train_frequency == 0, then it is on-policy.
-            # Thus, erase memory after training.
-            self.memory.reset()
