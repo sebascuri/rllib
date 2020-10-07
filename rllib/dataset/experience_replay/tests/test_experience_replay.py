@@ -232,7 +232,7 @@ class TestExperienceReplay(object):
                     assert idx != i
                 assert weight == 1.0
 
-        i = np.random.choice(memory.valid_indexes)
+        i = np.random.choice(memory.valid_indexes).item()
         observation, idx, weight = memory[i]
         for attribute in Observation(**observation):
             assert attribute.shape[0] == max(1, num_steps)

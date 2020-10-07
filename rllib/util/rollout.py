@@ -120,9 +120,10 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
             )
             recorder.capture_frame()
 
+            time_step += 1
             if max_steps <= time_step:
                 break
-            time_step += 1
+
     recorder.close()
 
 
@@ -147,9 +148,10 @@ def rollout_episode(environment, agent, max_steps, render):
         # Log info.
         agent.logger.update(**info)
 
+        time_step += 1
         if max_steps <= time_step:
             break
-        time_step += 1
+
     agent.end_episode()
 
 
@@ -256,9 +258,11 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                     render=render,
                 )
                 trajectory.append(obs)
+
+                time_step += 1
                 if max_steps <= time_step:
                     break
-                time_step += 1
+
         trajectories.append(trajectory)
     return trajectories
 

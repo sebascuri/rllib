@@ -51,6 +51,7 @@ class ExperienceReplay(data.Dataset):
     Self-improving reactive agents based on reinforcement learning, planning and
     teaching. Machine learning.
 
+    TODO: Make this class robust, easy to use, and fast.
     """
 
     def __init__(self, max_len, transformations=None, num_steps=0):
@@ -142,7 +143,7 @@ class ExperienceReplay(data.Dataset):
 
         """
         if self.valid[idx] == 0:  # when a non-valid index is sampled.
-            idx = np.random.choice(self.valid_indexes)
+            idx = np.random.choice(self.valid_indexes).item()
 
         return asdict(self._get_observation(idx)), idx, self.weights[idx]
 
@@ -165,6 +166,12 @@ class ExperienceReplay(data.Dataset):
         )
 
     def _get_consecutive_observations(self, start_idx, num_steps):
+        if num_steps == 0 and not (
+            isinstance(start_idx, int) or isinstance(start_idx, np.int)
+        ):
+            observation = stack_list_of_tuples(self.memory[start_idx])
+            return Observation(*map(lambda x: x.unsqueeze(1), observation))
+        num_steps = max(1, num_steps)
         if start_idx + num_steps <= self.max_len:
             obs_list = self.memory[start_idx : start_idx + num_steps]
         else:  # The trajectory is split by the circular buffer.
@@ -187,7 +194,7 @@ class ExperienceReplay(data.Dataset):
         observation: Observation
 
         """
-        observation = self._get_consecutive_observations(idx, max(1, self.num_steps))
+        observation = self._get_consecutive_observations(idx, self.num_steps)
         if self.raw:
             return observation
         for transform in self.transformations:
@@ -253,8 +260,12 @@ class ExperienceReplay(data.Dataset):
     def sample_batch(self, batch_size):
         """Sample a batch of observations."""
         indices = np.random.choice(self.valid_indexes, batch_size)
-        obs, idx, weight = default_collate([self[i] for i in indices])
-        return Observation(**obs), idx, weight
+        if self.num_steps == 0:
+            obs = self._get_observation(indices)
+            return (obs, torch.tensor(indices), self.weights[indices])
+        else:
+            obs, idx, weight = default_collate([self[i] for i in indices])
+            return Observation(**obs), idx, weight
 
     @property
     def is_full(self):
