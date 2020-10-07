@@ -1,4 +1,5 @@
 """Implementation of an Experience Replay Buffer."""
+import math
 import warnings
 from dataclasses import asdict
 
@@ -99,8 +100,9 @@ class ExperienceReplay(data.Dataset):
         """Split into two data sets."""
         idx = np.arange(0, len(self))
         np.random.shuffle(idx)
-        train_idx = idx[: int(ratio * len(self))]
-        test_idx = idx[int(ratio * len(self)) :]
+        split_idx = math.ceil(ratio * len(self))
+        train_idx = idx[:split_idx]
+        test_idx = idx[split_idx:]
 
         train = type(self)(
             max_len=self.max_len, transformations=self.transformations, *args, **kwargs

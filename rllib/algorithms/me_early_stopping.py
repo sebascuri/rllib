@@ -1,4 +1,6 @@
 """Model Ensemble Early Stopping Algorithm."""
+import math
+
 import numpy as np
 import torch
 
@@ -41,7 +43,7 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
         except AttributeError:
             num_models = 1
         self.num_models = num_models
-        self.fraction = max(1, int(fraction * num_models))
+        self.fraction = math.ceil(fraction * num_models)
         self.eval_frequency = eval_frequency
         self.step_counts = 0
         self.policy = policy

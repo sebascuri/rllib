@@ -1,4 +1,5 @@
 """On-Policy Maximum a Posterior Policy Optimization algorithm."""
+import math
 
 import torch
 import torch.distributions
@@ -98,7 +99,7 @@ class VMPO(MPO):
         weight = self.get_ope_weight(state, action, observation.log_prob_action)
         advantage = weight * (value_target - value_prediction)
 
-        k = int(self.top_k_fraction * state.shape[0])
+        k = math.ceil(self.top_k_fraction * state.shape[0])
         _, idx_top_k = torch.topk(advantage.mean(-1), k=k, dim=0, largest=True)
 
         # 1-st dim in MPO action samples, as here is on-policy unsqueeze the first dim.
