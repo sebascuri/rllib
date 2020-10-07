@@ -68,7 +68,13 @@ def test_policies(environment, policy, batch_size):
         target_update_frequency=TARGET_UPDATE_FREQUENCY,
         gamma=GAMMA,
     )
-    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    train_agent(
+        agent,
+        environment,
+        num_episodes=NUM_EPISODES,
+        max_steps=MAX_STEPS,
+        plot_flag=False,
+    )
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
     agent.logger.delete_directory()  # Cleanup directory.
 
@@ -93,6 +99,12 @@ def test_tabular_interaction(agent, policy):
         gamma=GAMMA,
     )
 
-    train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, plot_flag=False)
+    train_agent(
+        agent,
+        environment,
+        num_episodes=NUM_EPISODES,
+        max_steps=MAX_STEPS,
+        plot_flag=False,
+    )
     evaluate_agent(agent, environment, 1, MAX_STEPS, render=False)
     agent.logger.delete_directory()  # Cleanup directory.

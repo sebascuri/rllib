@@ -45,10 +45,12 @@ def rollout_agent(
     max_steps: int = ...,
     render: bool = ...,
     print_frequency: int = ...,
-    plot_frequency: int = ...,
+    callback_frequency: int = ...,
     eval_frequency: int = ...,
     save_milestones: Optional[List[int]] = ...,
-    plot_callbacks: Optional[List[Callable[[AbstractAgent, int], None]]] = ...,
+    callbacks: Optional[
+        List[Callable[[AbstractAgent, AbstractEnvironment, int], None]]
+    ] = ...,
 ) -> None: ...
 def rollout_policy(
     environment: AbstractEnvironment,

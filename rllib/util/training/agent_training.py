@@ -7,50 +7,21 @@ from rllib.util.rollout import rollout_agent
 from .utilities import Evaluate
 
 
-def train_agent(
-    agent,
-    environment,
-    num_episodes,
-    max_steps,
-    plot_flag=True,
-    print_frequency=0,
-    eval_frequency=0,
-    plot_frequency=0,
-    save_milestones=None,
-    render=False,
-    plot_callbacks=None,
-):
+def train_agent(agent, environment, plot_flag=True, *args, **kwargs):
     """Train an agent in an environment.
 
     Parameters
     ----------
     agent: AbstractAgent
     environment: AbstractEnvironment
-    num_episodes: int
-    max_steps: int
     plot_flag: bool, optional.
-    print_frequency: int, optional.
-    eval_frequency: int, optional.
-    plot_frequency: int
-    save_milestones: List[int], optional.
-        List with episodes in which to save the agent.
-    render: bool, optional.
-    plot_callbacks: list, optional.
 
+    Other Parameters
+    ----------------
+    See rollout_agent.
     """
     agent.train()
-    rollout_agent(
-        environment,
-        agent,
-        num_episodes=num_episodes,
-        max_steps=max_steps,
-        print_frequency=print_frequency,
-        plot_frequency=plot_frequency,
-        eval_frequency=eval_frequency,
-        save_milestones=save_milestones,
-        render=render,
-        plot_callbacks=plot_callbacks,
-    )
+    rollout_agent(environment, agent, *args, **kwargs)
 
     if plot_flag:
         for key in agent.logger.keys:

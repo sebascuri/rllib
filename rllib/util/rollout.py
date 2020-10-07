@@ -160,10 +160,10 @@ def rollout_agent(
     max_steps=1000,
     render=False,
     print_frequency=0,
-    plot_frequency=0,
+    callback_frequency=0,
     eval_frequency=0,
     save_milestones=None,
-    plot_callbacks=None,
+    callbacks=None,
 ):
     """Conduct a rollout of an agent in an environment.
 
@@ -181,25 +181,25 @@ def rollout_agent(
         Flag that indicates whether to render the environment or not.
     print_frequency: int, optional.
         Print agent stats every `print_frequency' episodes if > 0.
-    plot_frequency: int, optional.
+    callback_frequency: int, optional.
         Plot agent callbacks every `plot_frequency' episodes if > 0.
     eval_frequency: int, optional.
         Evaluate agent every 'eval_frequency' episodes if > 0.
     save_milestones: List[int], optional.
         List with episodes in which to save the agent.
-    plot_callbacks: List[Callable[[AbstractAgent], None]], optional.
-        List of functions for plotting the agent.
+    callbacks: List[Callable[[AbstractAgent, AbstractEnvironment,int], None]], optional.
+        List of functions for evaluating/plotting the agent.
     """
     save_milestones = list() if save_milestones is None else save_milestones
-    plot_callbacks = list() if plot_callbacks is None else plot_callbacks
+    callbacks = list() if callbacks is None else callbacks
     for episode in tqdm(range(num_episodes)):
         rollout_episode(environment, agent, max_steps, render)
 
         if print_frequency and episode % print_frequency == 0:
             print(agent)
-        if plot_frequency and episode % plot_frequency == 0:
-            for plot_callback in plot_callbacks:
-                plot_callback(agent, episode)
+        if callback_frequency and episode % callback_frequency == 0:
+            for plot_callback in callbacks:
+                plot_callback(agent, environment, episode)
 
         if episode in save_milestones:
             agent.save(f"{agent.name}_{episode}.pkl")
