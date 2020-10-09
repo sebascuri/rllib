@@ -66,6 +66,26 @@ class GymEnvironment(AbstractEnvironment):
         )
         self._time = 0
 
+    def pop_wrapper(self):
+        """Pop last wrapper."""
+        self.env = self.env.env
+
+        dim_action, num_actions = parse_space(self.env.action_space)
+        dim_state, num_states = parse_space(self.env.observation_space)
+        if num_states > -1:
+            num_states += 1  # Add a terminal state.
+
+        super().__init__(
+            dim_action=dim_action,
+            dim_state=dim_state,
+            action_space=self.env.action_space,
+            observation_space=self.env.observation_space,
+            num_actions=num_actions,
+            num_states=num_states,
+            num_observations=num_states,
+        )
+        self._time = 0
+
     def step(self, action):
         """See `AbstractEnvironment.step'."""
         next_state, reward, done, info = self.env.step(action)
