@@ -105,6 +105,7 @@ def train_model(
     for _ in tqdm(range(max_iter)):
         for observation, idx, mask in train_loader:
             observation = Observation(**observation)
+            observation.action = observation.action[..., : model.dim_action[0]]
             if isinstance(model, EnsembleModel):
                 loss = train_ensemble_step(model, observation, optimizer, mask)
             elif isinstance(model, NNModel):
@@ -117,6 +118,8 @@ def train_model(
 
         for observation, idx, mask in validation_loader:
             observation = Observation(**observation)
+            observation.action = observation.action[..., : model.dim_action[0]]
+
             with torch.no_grad():
                 mse = model_mse(model, observation).item()
                 sharpness_ = sharpness(model, observation).item()
@@ -154,6 +157,7 @@ def calibrate_model(
         logger = Logger(f"{model.name}_calibration")
 
     observation = calibration_set.all_data
+    observation.action = observation.action[..., : model.dim_action[0]]
 
     with torch.no_grad():
         initial_score = calibration_score(model, observation).item()
