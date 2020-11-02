@@ -85,14 +85,26 @@ def parse_layers(layers, in_dim, non_linearity):
     nonlinearity = parse_nonlinearity(non_linearity)
     layers_ = list()
     if len(in_dim) > 1:  # Convolutional Layers.
+        w = min(in_dim[1], in_dim[2])
+        k0 = max(2 * int(np.floor(np.sqrt(w) / 2)), 2)
         layers_.append(
-            nn.Conv2d(in_channels=in_dim[0], out_channels=32, kernel_size=8, stride=4)
+            nn.Conv2d(
+                in_channels=in_dim[0],
+                out_channels=32,
+                kernel_size=k0,
+                stride=max(k0 // 2, 1),
+            )
         )
         layers_.append(nn.BatchNorm2d(32))
         layers_.append(nn.ReLU())
 
         layers_.append(
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2)
+            nn.Conv2d(
+                in_channels=32,
+                out_channels=64,
+                kernel_size=max(k0 // 2, 2),
+                stride=max(k0 // 4, 1),
+            )
         )
         layers_.append(nn.BatchNorm2d(64))
         layers_.append(nn.ReLU())
@@ -103,7 +115,11 @@ def parse_layers(layers, in_dim, non_linearity):
         layers_.append(nn.BatchNorm2d(64))
         layers_.append(nn.ReLU())
         layers_.append(View())
-        in_dim = 7 * 7 * 64
+
+        x = torch.randn(in_dim).unsqueeze(0)
+        for module in layers_:
+            x = module(x)
+        in_dim = x.shape[-1]
     else:
         in_dim = in_dim[0]
 

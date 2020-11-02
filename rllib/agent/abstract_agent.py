@@ -59,6 +59,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         tensorboard=False,
         comment="",
         training_verbose=False,
+        device="cpu",
         *args,
         **kwargs,
     ):
@@ -86,11 +87,16 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.comment = comment
         self.last_trajectory = []
         self.params = {}
+        self.device = device
 
     def set_policy(self, new_policy):
         """Set policy."""
         self.policy = new_policy
         self.algorithm.set_policy(new_policy)
+
+    def to(self, device):
+        """Send agent to device."""
+        self.algorithm.to(device=device)
 
     @classmethod
     def default(cls, environment, comment=None, gamma=0.99, *args, **kwargs):
@@ -123,7 +129,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
             policy = self.policy.random()
         else:
             if not isinstance(state, torch.Tensor):
-                state = torch.tensor(state, dtype=torch.get_default_dtype())
+                state = torch.tensor(
+                    state, dtype=torch.get_default_dtype(), device=self.device
+                )
             policy = self.policy(state)
 
         self.pi = tensor_to_distribution(policy, **self.policy.dist_params)
@@ -140,7 +148,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         if not self.policy.discrete_action:
             action = action.clamp(-1.0, 1.0)
             action = self.policy.action_scale * action
-        return action.detach().numpy()
+        return action.detach().to("cpu").numpy()
 
     def observe(self, observation):
         """Observe transition from the environment.
@@ -158,6 +166,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.logger.update(entropy=observation.entropy.item())
 
         self.last_trajectory.append(observation)
+        observation.to(self.device)
 
     def start_episode(self):
         """Start a new episode."""

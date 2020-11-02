@@ -34,6 +34,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     policy_update_frequency: int
     target_update_frequency: int
     clip_gradient_val: float
+    device: str
 
     training: bool
     _training_verbose: bool
@@ -56,6 +57,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         tensorboard: bool = ...,
         comment: str = ...,
         training_verbose: bool = ...,
+        device: str = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
