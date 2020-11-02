@@ -11,7 +11,13 @@ extras = {
         "pytest_cov>=2.7,<3",
         "mypy==0.750",
     ],
-    "envs": ["box2d-py>=2.3.5", "atari_py>=0.2.6"],
+    "envs": [
+        "box2d-py>=2.3.5",
+        "atari_py>=0.2.6",
+        "MinAtar @ git+ssh://git@github.com/kenjyoung/MinAtar@master#egg=MinAtar",
+        "seaborn>=0.9.0",
+        # "gym-minigrid>=1.0",
+    ],
     "mujoco": ["mujoco-py<2.1,>=2.0", "imageio-ffmpeg==0.4.1", "dm_control"],
     "logging": ["tensorboard>=2.0,<3"],
     "experiments": [
