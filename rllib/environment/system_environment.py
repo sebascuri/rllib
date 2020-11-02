@@ -45,7 +45,7 @@ class SystemEnvironment(AbstractEnvironment, Env):
 
     def render(self, mode="human"):
         """See `AbstractEnvironment.render'."""
-        self.system.render(mode=mode)
+        return self.system.render(mode=mode)
 
     def step(self, action):
         """See `AbstractEnvironment.step'."""

@@ -102,7 +102,7 @@ class InvertedPendulum(ODESystem):
 
         x_ddot = (
             gravity / length * bk.sin(angle)
-            + action / inertia
+            + action[..., 0] / inertia
             - friction / inertia * angular_velocity
         )
 
