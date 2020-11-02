@@ -83,5 +83,5 @@ agent = DDQNAgent(
     clip_gradient_val=1.0,
 )
 
-train_agent(agent, environment, NUM_EPISODES, MAX_STEPS)
-evaluate_agent(agent, environment, 1, MAX_STEPS)
+train_agent(agent, environment, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS)
+evaluate_agent(agent, environment, num_episodes=1, max_steps=MAX_STEPS)

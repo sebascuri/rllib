@@ -21,5 +21,12 @@ environment = GymEnvironment(ENVIRONMENT, SEED)
 
 agent = SACAgent.default(environment, eta=1.0, regularization=True, gamma=GAMMA)
 
-train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, print_frequency=1, render=True)
-evaluate_agent(agent, environment, 1, MAX_STEPS)
+train_agent(
+    agent,
+    environment,
+    num_episodes=NUM_EPISODES,
+    max_steps=MAX_STEPS,
+    print_frequency=1,
+    render=True,
+)
+evaluate_agent(agent, environment, num_episodes=1, max_steps=MAX_STEPS)

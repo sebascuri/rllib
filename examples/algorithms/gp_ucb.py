@@ -124,8 +124,8 @@ if __name__ == "__main__":
             agent,
             num_episodes=STEPS,
             max_steps=1,
-            plot_frequency=1,
-            plot_callbacks=[
+            callback_frequency=1,
+            callbacks=[
                 lambda a, step, ax=axes: plot(a, step, objective, ax)  # type: ignore
             ],
         )

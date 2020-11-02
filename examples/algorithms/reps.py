@@ -20,5 +20,5 @@ np.random.seed(SEED)
 environment = GymEnvironment(ENVIRONMENT, SEED)
 
 agent = REPSAgent.default(environment, epsilon=ETA, regularization=True, gamma=GAMMA)
-train_agent(agent, environment, NUM_EPISODES, MAX_STEPS + 1)
-evaluate_agent(agent, environment, 1, MAX_STEPS + 1)
+train_agent(agent, environment, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS + 1)
+evaluate_agent(agent, environment, num_episodes=1, max_steps=MAX_STEPS + 1)

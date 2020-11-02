@@ -23,5 +23,12 @@ environment = GymEnvironment(ENVIRONMENT, SEED)
 
 agent = MPOAgent.default(environment, gamma=GAMMA)
 
-train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, print_frequency=1, render=True)
+train_agent(
+    agent,
+    environment,
+    num_episodes=NUM_EPISODES,
+    max_steps=MAX_STEPS,
+    print_frequency=1,
+    render=True,
+)
 evaluate_agent(agent, environment, num_episodes=2, max_steps=MAX_STEPS)

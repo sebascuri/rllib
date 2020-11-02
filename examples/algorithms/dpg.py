@@ -24,5 +24,7 @@ environment = GymEnvironment(ENVIRONMENT, SEED)
 noise = ExponentialDecay(EPS_START, EPS_END, EPS_DECAY)
 agent = DPGAgent.default(environment, exploration_noise=noise, gamma=GAMMA)
 
-train_agent(agent, environment, NUM_EPISODES, MAX_STEPS, render=True)
+train_agent(
+    agent, environment, num_episodes=NUM_EPISODES, max_steps=MAX_STEPS, render=True
+)
 evaluate_agent(agent, environment, 1, MAX_STEPS)
