@@ -38,7 +38,7 @@ setup(
     license="MIT",
     python_requires=">=3.7.0",
     packages=find_packages(exclude=["docs"]),
-    include_package_data=True,
+    package_data={"rllib": ["environment/mujoco/assets/*.xml"]},
     install_requires=[
         "numpy>=1.14,<2",
         "scipy>=1.3.0,<1.4.0",
