@@ -28,12 +28,23 @@ class ActorCriticAgent(OnPolicyAgent):
 
     eps = 1e-12
 
-    def __init__(self, policy, critic, criterion=loss.MSELoss, *args, **kwargs):
+    def __init__(
+        self,
+        policy,
+        critic,
+        criterion=loss.MSELoss,
+        num_iter=8,
+        num_rollouts=4,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.algorithm = ActorCritic(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="mean"),
+            num_iter=num_iter,
+            num_rollouts=num_rollouts,
             *args,
             **kwargs,
         )
@@ -43,16 +54,18 @@ class ActorCriticAgent(OnPolicyAgent):
     def default(
         cls,
         environment,
-        num_iter=8,
-        num_rollouts=4,
+        policy=None,
+        critic=None,
         critic_lr=1e-3,
         actor_lr=3e-4,
         *args,
         **kwargs,
     ):
         """See `AbstractAgent.default'."""
-        policy = kwargs.pop("policy", NNPolicy.default(environment))
-        critic = kwargs.pop("critic", NNQFunction.default(environment))
+        if policy is None:
+            policy = NNPolicy.default(environment)
+        if critic is None:
+            critic = NNQFunction.default(environment)
 
         optimizer = Adam(
             [
@@ -66,8 +79,6 @@ class ActorCriticAgent(OnPolicyAgent):
             policy=policy,
             critic=critic,
             optimizer=optimizer,
-            num_iter=num_iter,
-            num_rollouts=num_rollouts,
             *args,
             **kwargs,
         )

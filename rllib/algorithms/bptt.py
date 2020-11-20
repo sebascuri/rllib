@@ -28,18 +28,19 @@ class BPTT(AbstractAlgorithm):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.pathwise_loss.critic = ModelBasedQFunction(
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            termination_model=termination_model,
-            num_samples=self.num_samples,
-            num_steps=num_steps,
-            policy=self.policy,
-            value_function=self.critic_target,
-            gamma=self.gamma,
-            reward_transformer=self.reward_transformer,
-            entropy_regularization=self.entropy_loss.eta.item(),
-        )
+        if num_steps > 0:
+            self.pathwise_loss.critic = ModelBasedQFunction(
+                dynamical_model=dynamical_model,
+                reward_model=reward_model,
+                termination_model=termination_model,
+                num_samples=self.num_samples,
+                num_steps=num_steps,
+                policy=self.policy,
+                value_function=self.value_function,
+                gamma=self.gamma,
+                reward_transformer=self.reward_transformer,
+                entropy_regularization=self.entropy_loss.eta.item(),
+            )
 
     def actor_loss(self, observation):
         """Use the model to compute the gradient loss."""

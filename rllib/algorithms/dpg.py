@@ -37,6 +37,7 @@ class DPG(AbstractAlgorithm):
         self.policy_target.dist_params.update(
             add_noise=True, policy_noise=policy_noise, noise_clip=noise_clip
         )
+        self.value_function.policy = self.policy
         self.value_target.policy = self.policy_target
 
     def set_policy(self, new_policy):
@@ -44,6 +45,7 @@ class DPG(AbstractAlgorithm):
         policy_target_dist_params = self.policy_target.dist_params
         super().set_policy(new_policy)
         self.policy_target.dist_params = policy_target_dist_params
+        self.value_function.policy = self.policy
         self.value_target.policy = self.policy_target
 
     def actor_loss(self, observation):

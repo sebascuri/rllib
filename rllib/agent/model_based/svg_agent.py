@@ -6,7 +6,7 @@ from torch.optim import Adam
 
 from rllib.algorithms.svg import SVG
 from rllib.policy import NNPolicy
-from rllib.value_function import NNValueFunction
+from rllib.value_function import NNEnsembleQFunction
 
 from .model_based_agent import ModelBasedAgent
 
@@ -25,7 +25,7 @@ class SVGAgent(ModelBasedAgent):
         epsilon_mean=0.0,
         epsilon_var=0.0,
         kl_regularization=True,
-        eta_mean=0.0,
+        eta=0.0,
         entropy_regularization=True,
         *args,
         **kwargs,
@@ -40,7 +40,7 @@ class SVGAgent(ModelBasedAgent):
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             kl_regularization=kl_regularization,
-            eta=eta_mean,
+            eta=eta,
             entropy_regularization=entropy_regularization,
             *args,
             **kwargs,
@@ -65,20 +65,21 @@ class SVGAgent(ModelBasedAgent):
         )
 
     @classmethod
-    def default(cls, environment, num_iter=50, lr=3e-4, *args, **kwargs):
+    def default(cls, environment, critic=None, policy=None, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        critic = NNValueFunction.default(environment)
-        policy = NNPolicy.default(environment)
+        if critic is None:
+            critic = NNEnsembleQFunction.default(environment)
+
+        if policy is None:
+            policy = NNPolicy.default(environment)
+
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
         return super().default(
             environment=environment,
             policy=policy,
             critic=critic,
-            learn_from_real=True,
             optimizer=optimizer,
-            num_iter=num_iter,
-            batch_size=100,
             *args,
             **kwargs,
         )

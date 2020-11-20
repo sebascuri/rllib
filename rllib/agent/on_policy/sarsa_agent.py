@@ -87,11 +87,23 @@ class SARSAAgent(OnPolicyAgent):
         super().learn()
 
     @classmethod
-    def default(cls, environment, lr=3e-4, *args, **kwargs):
+    def default(
+        cls,
+        environment,
+        critic=None,
+        policy=None,
+        epsilon=None,
+        lr=3e-4,
+        *args,
+        **kwargs,
+    ):
         """See `AbstractAgent.default'."""
-        critic = NNQFunction.default(environment, tau=0)
-
-        policy = EpsGreedy(critic, ExponentialDecay(start=1.0, end=0.01, decay=500))
+        if critic is None:
+            critic = NNQFunction.default(environment, tau=0)
+        if policy is None:
+            if epsilon is None:
+                epsilon = ExponentialDecay(start=1.0, end=0.01, decay=500)
+            policy = EpsGreedy(critic, epsilon)
         optimizer = Adam(critic.parameters(), lr=lr)
 
         return super().default(

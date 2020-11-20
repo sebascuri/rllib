@@ -63,7 +63,7 @@ class MVE(Dyna):
         if self.td_k:
             final_state = observation.next_state[..., -1, :]
             done = observation.done[..., -1]
-            final_value = self.base_algorithm.value_target(final_state)
+            final_value = self.base_algorithm.value_function(final_state)
 
             if final_value.ndim == observation.reward.ndim:  # It is an ensemble.
                 final_value = final_value.min(-1)[0]
@@ -82,7 +82,7 @@ class MVE(Dyna):
             sim_target = mc_return(
                 observation,
                 gamma=self.base_algorithm.gamma,
-                value_function=self.base_algorithm.value_target,
+                value_function=self.base_algorithm.value_function,
                 reward_transformer=self.base_algorithm.reward_transformer,
                 entropy_regularization=self.base_algorithm.entropy_loss.eta.item(),
                 reduction="min",

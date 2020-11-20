@@ -187,14 +187,16 @@ def mc_return(
     """
     if observation.reward.ndim == 0 or len(observation.reward) == 0:
         return 0.0
-    return n_step_return(
+    returns = n_step_return(
         observation,
         gamma=gamma,
         reward_transformer=reward_transformer,
         entropy_regularization=entropy_regularization,
         value_function=value_function,
         reduction=reduction,
-    )[..., -1]
+    )
+
+    return returns[:, -1]
 
 
 def mb_return(

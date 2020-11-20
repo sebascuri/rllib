@@ -29,10 +29,13 @@ class PPOAgent(ActorCriticAgent):
         monte_carlo_target=False,
         clamp_value=True,
         criterion=loss.MSELoss,
+        num_iter=80,
         *args,
         **kwargs,
     ):
-        super().__init__(critic=critic, policy=policy, *args, **kwargs)
+        super().__init__(
+            critic=critic, policy=policy, num_iter=num_iter, *args, **kwargs
+        )
         self.algorithm = PPO(
             critic=critic,
             policy=policy,
@@ -62,12 +65,8 @@ class PPOAgent(ActorCriticAgent):
         return False
 
     @classmethod
-    def default(cls, environment, num_iter=80, *args, **kwargs):
+    def default(cls, environment, critic=None, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        return super().default(
-            environment,
-            critic=NNValueFunction.default(environment),
-            num_iter=num_iter,
-            *args,
-            **kwargs,
-        )
+        if critic is None:
+            critic = NNValueFunction.default(environment)
+        return super().default(environment, critic=critic, *args, **kwargs)

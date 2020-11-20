@@ -24,7 +24,7 @@ class NNEnsembleValueFunction(NNValueFunction):
 
     """
 
-    def __init__(self, num_heads, *args, **kwargs):
+    def __init__(self, num_heads=2, *args, **kwargs):
         assert num_heads > 0
         self.num_heads = num_heads
 
@@ -68,7 +68,7 @@ class NNEnsembleValueFunction(NNValueFunction):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractValueFunction.default."""
-        return super().default(environment, num_heads=2)
+        return super().default(environment)
 
 
 class NNEnsembleQFunction(NNQFunction):
@@ -92,7 +92,7 @@ class NNEnsembleQFunction(NNQFunction):
         flag that indicates if head of NN has a bias term or not.
     """
 
-    def __init__(self, num_heads, *args, **kwargs):
+    def __init__(self, num_heads=2, *args, **kwargs):
         self.num_heads = num_heads
         assert num_heads > 0
         super().__init__(*args, **kwargs)
@@ -131,4 +131,4 @@ class NNEnsembleQFunction(NNQFunction):
     @classmethod
     def default(cls, environment, *args, **kwargs):
         """See AbstractQFunction.default."""
-        return super().default(environment, num_heads=2)
+        return super().default(environment)

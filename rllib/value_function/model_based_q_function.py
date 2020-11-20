@@ -3,11 +3,12 @@
 import torch
 
 from rllib.algorithms.abstract_mb_algorithm import AbstractMBAlgorithm
-from rllib.util.neural_networks.utilities import DisableGradient, EnableGradient
+from rllib.util.neural_networks.utilities import DisableGradient, unfreeze_parameters
 from rllib.util.utilities import RewardTransformer
 from rllib.util.value_estimation import mc_return
 
 from .abstract_value_function import AbstractQFunction
+from .integrate_q_value_function import IntegrateQValueFunction
 
 
 class ModelBasedQFunction(AbstractQFunction):
@@ -74,12 +75,17 @@ class ModelBasedQFunction(AbstractQFunction):
         action: Tensor, optional.
             First action of simulation.
         """
+        unfreeze_parameters(self.policy)
         with DisableGradient(
             self.sim.dynamical_model, self.sim.reward_model, self.sim.termination_model
-        ), EnableGradient(self.policy):
+        ):
             sim_observation = self.sim.simulate(state, self.policy, action)
 
-        with DisableGradient(self.value_function):
+        if isinstance(self.value_function, IntegrateQValueFunction):
+            cm = DisableGradient(self.value_function.q_function)
+        else:
+            cm = DisableGradient(self.value_function)
+        with cm:
             v = mc_return(
                 sim_observation,
                 gamma=self.gamma,

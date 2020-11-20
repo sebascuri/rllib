@@ -83,15 +83,21 @@ class DPGAgent(OffPolicyAgent):
     def default(
         cls,
         environment,
+        critic=None,
+        policy=None,
         lr=3e-4,
         deterministic=True,
         exploration_noise=None,
+        policy_update_frequency=2,
+        clip_gradient_val=10,
         *args,
         **kwargs,
     ):
         """See `AbstractAgent.default'."""
-        critic = NNQFunction.default(environment)
-        policy = NNPolicy.default(environment, deterministic=deterministic)
+        if critic is None:
+            critic = NNQFunction.default(environment)
+        if policy is None:
+            policy = NNPolicy.default(environment, deterministic=deterministic)
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
         if exploration_noise is None:
             exploration_noise = OUNoise(dim=environment.dim_action)
@@ -101,7 +107,8 @@ class DPGAgent(OffPolicyAgent):
             policy=policy,
             optimizer=optimizer,
             exploration_noise=exploration_noise,
-            policy_update_frequency=2,
+            policy_update_frequency=policy_update_frequency,
+            clip_gradient_val=clip_gradient_val,
             *args,
             **kwargs,
         )

@@ -24,10 +24,19 @@ class MPOAgent(OffPolicyAgent):
         epsilon_mean=0.1,
         epsilon_var=0.001,
         kl_regularization=False,
+        train_frequency=0,
+        num_iter=1000,
+        num_rollouts=2,
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            train_frequency=train_frequency,
+            num_iter=num_iter,
+            num_rollouts=num_rollouts,
+            *args,
+            **kwargs,
+        )
 
         self.algorithm = MPO(
             policy=policy,
@@ -49,18 +58,7 @@ class MPOAgent(OffPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls,
-        environment,
-        policy=None,
-        critic=None,
-        lr=5e-4,
-        train_frequency=0,
-        num_iter=1000,
-        num_rollouts=2,
-        *args,
-        **kwargs,
-    ):
+    def default(cls, environment, policy=None, critic=None, lr=5e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
         if critic is None:
             critic = NNQFunction.default(environment)
@@ -74,9 +72,6 @@ class MPOAgent(OffPolicyAgent):
             policy=policy,
             critic=critic,
             optimizer=optimizer,
-            train_frequency=train_frequency,
-            num_iter=num_iter,
-            num_rollouts=num_rollouts,
             *args,
             **kwargs,
         )

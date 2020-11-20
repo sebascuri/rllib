@@ -56,7 +56,8 @@ class VMPOAgent(MPOAgent):
         )
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, critic=None, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        critic = NNValueFunction.default(environment)
+        if critic is None:
+            critic = NNValueFunction.default(environment)
         return super().default(environment, critic=critic, *args, **kwargs)

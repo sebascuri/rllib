@@ -50,10 +50,24 @@ class QLearningAgent(OffPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, lr=3e-4, *args, **kwargs):
+    def default(
+        cls,
+        environment,
+        critic=None,
+        policy=None,
+        epsilon=None,
+        lr=3e-4,
+        *args,
+        **kwargs,
+    ):
         """See `AbstractAgent.default'."""
-        critic = NNQFunction.default(environment)
-        policy = EpsGreedy(critic, ExponentialDecay(1.0, 0.01, 500))
+        if critic is None:
+            critic = NNQFunction.default(environment)
+
+        if policy is None:
+            if epsilon is None:
+                epsilon = ExponentialDecay(1.0, 0.01, 500)
+            policy = EpsGreedy(critic, epsilon)
         optimizer = Adam(critic.parameters(), lr=lr)
 
         return super().default(

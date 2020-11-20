@@ -5,7 +5,7 @@ from rllib.dataset.datatypes import Loss
 from rllib.model import TransformedModel
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
-from rllib.value_function import NNEnsembleValueFunction
+from rllib.value_function import NNEnsembleQFunction, NNEnsembleValueFunction
 
 from .abstract_algorithm import AbstractAlgorithm
 
@@ -50,7 +50,10 @@ class SVG(AbstractAlgorithm):
             weight = self.get_ope_weight(state, action, observation.log_prob_action)
 
         with DisableGradient(
-            self.dynamical_model, self.reward_model, self.termination_model, self.critic
+            self.dynamical_model,
+            self.reward_model,
+            self.termination_model,
+            self.critic_target,
         ):
             # Compute re-parameterized policy sample.
             action = (action_mean + (action_chol @ eta).squeeze(-1)).clamp(-1, 1)
@@ -65,11 +68,14 @@ class SVG(AbstractAlgorithm):
 
             # Compute reward.
             r = tensor_to_distribution(self.reward_model(state, action, ns)).rsample()
+            r = r[..., 0]
 
-            next_v = self.critic_target(ns) * (1 - done)
-            if isinstance(self.critic, NNEnsembleValueFunction):
+            next_v = self.value_function(ns)
+            if isinstance(self.critic, NNEnsembleValueFunction) or isinstance(
+                self.critic, NNEnsembleQFunction
+            ):
                 next_v = next_v[..., 0]
 
-            v = r + self.gamma * next_v
+            v = r + self.gamma * next_v * (1 - done)
 
         return Loss(policy_loss=-(weight * v)).reduce(self.criterion.reduction)

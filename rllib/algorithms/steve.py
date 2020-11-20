@@ -69,7 +69,7 @@ class STEVE(MVE):
             n_step_returns = n_step_return(
                 observation,
                 gamma=self.gamma,
-                value_function=self.value_target,
+                value_function=self.value_function,
                 reward_transformer=self.reward_transformer,
                 entropy_regularization=self.entropy_loss.eta.item(),
                 reduction="none",
@@ -88,7 +88,7 @@ class STEVE(MVE):
         td_return = n_step_return(
             observation,
             gamma=self.gamma,
-            value_function=self.value_target,
+            value_function=self.value_function,
             reward_transformer=self.reward_transformer,
             entropy_regularization=self.entropy_loss.eta.item(),
             reduction="none",

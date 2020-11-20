@@ -33,8 +33,8 @@ class GAACAgent(ActorCriticAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, critic=None, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        return super().default(
-            environment, critic=NNValueFunction.default(environment), *args, **kwargs
-        )
+        if critic is None:
+            critic = NNValueFunction.default(environment)
+        return super().default(environment, critic=critic, *args, **kwargs)

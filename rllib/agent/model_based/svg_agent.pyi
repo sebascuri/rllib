@@ -25,6 +25,8 @@ class SVGAgent(ModelBasedAgent):
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         kl_regularization: bool = ...,
+        eta: Union[ParameterDecay, float] = ...,
+        entropy_regularization: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

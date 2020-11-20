@@ -25,10 +25,13 @@ class TRPOAgent(ActorCriticAgent):
         epsilon_var=None,
         lambda_=0.95,
         criterion=loss.MSELoss,
+        num_iter=80,
         *args,
         **kwargs,
     ):
-        super().__init__(policy=policy, critic=critic, *args, **kwargs)
+        super().__init__(
+            policy=policy, critic=critic, num_iter=num_iter, *args, **kwargs
+        )
 
         self.algorithm = TRPO(
             critic=critic,
@@ -50,12 +53,8 @@ class TRPOAgent(ActorCriticAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, num_iter=80, *args, **kwargs):
+    def default(cls, environment, critic=None, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        return super().default(
-            environment,
-            critic=NNValueFunction.default(environment),
-            num_iter=num_iter,
-            *args,
-            **kwargs,
-        )
+        if critic is None:
+            critic = NNValueFunction.default(environment)
+        return super().default(environment, critic=critic, *args, **kwargs)

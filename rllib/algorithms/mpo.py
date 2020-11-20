@@ -139,7 +139,6 @@ class MPO(AbstractAlgorithm):
             **kwargs,
         )
         self.mpo_loss = MPOLoss(epsilon, kl_regularization)
-        self.post_init()
 
     def post_init(self):
         """Call after initialization to initialize other modules."""

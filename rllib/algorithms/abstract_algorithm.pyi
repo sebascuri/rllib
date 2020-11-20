@@ -34,6 +34,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     pathwise_loss: Optional[PathwiseLoss]
     num_samples: int
     ope: Optional[AbstractTDTarget]
+    value_function: IntegrateQValueFunction
     value_target: IntegrateQValueFunction
     def __init__(
         self,

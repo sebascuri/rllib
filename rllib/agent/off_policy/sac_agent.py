@@ -6,7 +6,7 @@ from torch.optim import Adam
 
 from rllib.algorithms.sac import SAC
 from rllib.policy import NNPolicy
-from rllib.value_function import NNEnsembleQFunction, NNQFunction
+from rllib.value_function import NNEnsembleQFunction
 
 from .off_policy_agent import OffPolicyAgent
 
@@ -36,17 +36,20 @@ class SACAgent(OffPolicyAgent):
         criterion=loss.MSELoss,
         eta=0.2,
         entropy_regularization=False,
+        num_iter=50,
+        train_frequency=50,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        critic = NNEnsembleQFunction.from_q_function(q_function=critic, num_heads=2)
         self.algorithm = SAC(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="none"),
             eta=eta,
             entropy_regularization=entropy_regularization,
+            num_iter=num_iter,
+            train_frequency=train_frequency,
             *args,
             **kwargs,
         )
@@ -58,12 +61,12 @@ class SACAgent(OffPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(
-        cls, environment, num_iter=50, train_frequency=50, lr=3e-4, *args, **kwargs
-    ):
+    def default(cls, environment, policy=None, critic=None, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        critic = NNQFunction.default(environment)
-        policy = NNPolicy.default(environment)
+        if critic is None:
+            critic = NNEnsembleQFunction.default(environment)
+        if policy is None:
+            policy = NNPolicy.default(environment)
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
@@ -72,8 +75,6 @@ class SACAgent(OffPolicyAgent):
             critic=critic,
             policy=policy,
             optimizer=optimizer,
-            num_iter=num_iter,
-            train_frequency=train_frequency,
             *args,
             **kwargs,
         )

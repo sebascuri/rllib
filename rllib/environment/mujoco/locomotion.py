@@ -88,6 +88,7 @@ class LocomotionEnv(object):
             forward_reward_weight=forward_reward_weight,
             healthy_reward=healthy_reward,
         )
+        self.reward_range = ()
         self._termination_model = LargeStateTermination()
 
     def step(self, action):

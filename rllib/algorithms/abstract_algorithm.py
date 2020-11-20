@@ -125,6 +125,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
     def post_init(self):
         """Set derived modules after initialization."""
+        self.value_function = IntegrateQValueFunction(
+            self.critic, self.policy, num_samples=self.num_samples
+        )
         self.value_target = IntegrateQValueFunction(
             self.critic_target, self.policy, num_samples=self.num_samples
         )

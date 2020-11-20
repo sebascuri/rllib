@@ -28,7 +28,6 @@ class TD3Agent(DPGAgent):
     """
 
     def __init__(self, critic, policy, *args, **kwargs):
-        critic = NNEnsembleQFunction.from_q_function(q_function=critic, num_heads=2)
         super().__init__(critic=critic, policy=policy, *args, **kwargs)
         self.optimizer = type(self.optimizer)(
             [p for n, p in self.algorithm.named_parameters() if "target" not in n],
@@ -36,8 +35,12 @@ class TD3Agent(DPGAgent):
         )
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, critic=None, exploration_noise=None, *args, **kwargs):
         """Get Default TD3 agent."""
+        if critic is None:
+            critic = NNEnsembleQFunction.default(environment)
+        if exploration_noise is None:
+            noise = Constant(0.1)
         return super().default(
-            environment, exploration_noise=Constant(0.1), *args, **kwargs
+            environment, critic=critic, exploration_noise=noise, *args, **kwargs
         )

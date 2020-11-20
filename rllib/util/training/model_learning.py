@@ -114,7 +114,7 @@ def train_model(
                 loss = train_exact_gp_type2mll_step(model, observation, optimizer)
             else:
                 raise TypeError("Only Implemented for Ensembles and GP Models.")
-            logger.update(**{f"{model.model_kind} model-loss": loss.item()})
+            logger.update(**{f"{model.model_kind[:3]}-loss": loss.item()})
 
         for observation, idx, mask in validation_loader:
             observation = Observation(**observation)
@@ -127,9 +127,9 @@ def train_model(
 
             logger.update(
                 **{
-                    f"{model.model_kind} model-validation-mse": mse,
-                    f"{model.model_kind} model-sharpness": sharpness_,
-                    f"{model.model_kind} model-calibration_score": calibration_score_,
+                    f"{model.model_kind[:3]}-val-mse": mse,
+                    f"{model.model_kind[:3]}-sharp": sharpness_,
+                    f"{model.model_kind[:3]}-calib": calibration_score_,
                 }
             )
 
@@ -231,9 +231,9 @@ def calibrate_model(
 
     logger.update(
         **{
-            f"{model.model_kind} model-temperature": model.temperature.item(),
-            f"{model.model_kind} model-post_sharpness": sharpness_,
-            f"{model.model_kind} model-post_calibration_score": score,
+            f"{model.model_kind[:3]}-temperature": model.temperature.item(),
+            f"{model.model_kind[:3]}-post-sharp": sharpness_,
+            f"{model.model_kind[:3]}-post-calib": score,
         }
     )
 
@@ -263,9 +263,9 @@ def evaluate_model(model, observation, logger=None):
 
         logger.update(
             **{
-                f"{model.model_kind} model-eval-loss": loss,
-                f"{model.model_kind} model-eval-mse": mse,
-                f"{model.model_kind} model-eval-sharpness": sharpness_,
-                f"{model.model_kind} model-eval-calibration_score": calibration_score_,
+                f"{model.model_kind[:3]}-eval-loss": loss,
+                f"{model.model_kind[:3]}-eval-mse": mse,
+                f"{model.model_kind[:3]}-eval-sharp": sharpness_,
+                f"{model.model_kind[:3]}-eval-calib": calibration_score_,
             }
         )
