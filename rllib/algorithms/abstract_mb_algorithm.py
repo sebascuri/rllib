@@ -57,7 +57,9 @@ class AbstractMBAlgorithm(object):
         self.num_steps = num_steps
         self.num_samples = num_samples
 
-    def simulate(self, initial_state, policy, initial_action=None, logger=None):
+    def simulate(
+        self, initial_state, policy, initial_action=None, logger=None, stack_obs=True
+    ):
         """Simulate a set of particles starting from `state' and following `policy'."""
         if self.num_samples > 0:
             initial_state = repeat_along_dimension(
@@ -79,5 +81,8 @@ class AbstractMBAlgorithm(object):
             max_steps=self.num_steps,
             termination_model=self.termination_model,
         )
-        observation = stack_list_of_tuples(trajectory, dim=initial_state.ndim - 1)
-        return observation
+        if stack_obs:
+            observation = stack_list_of_tuples(trajectory, dim=initial_state.ndim - 1)
+            return observation
+        else:
+            return trajectory

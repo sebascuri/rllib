@@ -2,7 +2,7 @@
 import gpytorch
 import torch
 
-from rllib.dataset.experience_replay import StateExperienceReplay
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import DisableGradient
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -15,11 +15,6 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
     ----------
     initial_distribution: Distribution, optional.
         Initial distribution to sample from.
-    max_memory: int.
-        Maximum size of simulation dataset.
-    num_subsample: int.
-        Subsample frequency of simulation data.
-        If num_subsample=x, once every x simulated transitions will go into the dataset.
     num_initial_state_samples: int.
         Number of initial samples drawn from the initial_state dataset.
     num_initial_distribution_samples: int.
@@ -48,18 +43,14 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
     def __init__(
         self,
         initial_distribution=None,
-        max_memory=100000,
-        num_subsample=2,
         num_initial_state_samples=0,
         num_initial_distribution_samples=0,
         num_memory_samples=0,
-        refresh_interval=2,
         *args,
         **kwargs,
     ):
-        super().__init__(num_samples=0, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.initial_distribution = initial_distribution
-
         self.num_initial_state_samples = num_initial_state_samples
         self.num_initial_distribution_samples = num_initial_distribution_samples
         self.num_memory_samples = num_memory_samples
@@ -73,19 +64,12 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
             > 0
         )
 
-        self.num_subsample = num_subsample
-        self.refresh_interval = refresh_interval
-        self._idx = 0
-
-        self.dataset = StateExperienceReplay(
-            max_len=max_memory, dim_state=self.dynamical_model.dim_state
-        )
-
     def get_initial_states(self, initial_states_dataset, real_dataset):
         """Get initial states to sample from."""
         # Samples from empirical initial state distribution.
         initial_states = initial_states_dataset.sample_batch(
-            self.num_initial_state_samples
+            max(self.num_initial_state_samples, 1)
+            # hack: f
         )
 
         # Samples from initial distribution.
@@ -106,36 +90,29 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         initial_states = initial_states.unsqueeze(0)
         return initial_states
 
-    def simulate(self, state, policy, initial_action=None, logger=None):
+    def simulate(self, state, policy, initial_action=None, logger=None, stack_obs=True):
         """Simulate from initial_states."""
-        if self.refresh_interval > 0 and (self._idx + 1) % self.refresh_interval == 0:
-            self.dataset.reset()
-        self._idx += 1
-
         self.dynamical_model.eval()
         with DisableGradient(
             self.dynamical_model, self.reward_model, self.termination_model
         ), gpytorch.settings.fast_pred_var():
-            observation = super().simulate(state, policy)
+            trajectory = super().simulate(state, policy, stack_obs=False)
 
-        states = observation.state.reshape(-1, *self.dynamical_model.dim_state)
-        self.dataset.append(states[:: self.num_subsample])
-        self._log_trajectory(observation, logger)
-        return observation
+        self._log_trajectory(trajectory, logger)
+        return trajectory
 
-    def _log_trajectory(self, stacked_trajectory, logger):
+    def _log_trajectory(self, trajectory, logger):
         """Log the simulated trajectory."""
         if logger is None:
             return
-        scale = torch.diagonal(
-            stacked_trajectory.next_state_scale_tril, dim1=-1, dim2=-2
-        )
+        observation = stack_list_of_tuples(trajectory, dim=trajectory[0].state.ndim - 1)
+        scale = torch.diagonal(observation.next_state_scale_tril, dim1=-1, dim2=-2)
         logger.update(
-            sim_entropy=stacked_trajectory.entropy.mean().item(),
-            sim_return=stacked_trajectory.reward.sum(-1).mean().item(),
+            sim_entropy=observation.entropy.mean().item(),
+            sim_return=observation.reward.sum(-1).mean().item(),
             sim_scale=scale.square().sum(-1).sum(0).mean().sqrt().item(),
-            sim_max_state=stacked_trajectory.state.abs().max().item(),
-            sim_max_action=stacked_trajectory.action.abs().max().item(),
+            sim_max_state=observation.state.abs().max().item(),
+            sim_max_action=observation.action.abs().max().item(),
         )
         for key, value in self.reward_model.info.items():
             logger.update(**{f"sim_{key}": value})

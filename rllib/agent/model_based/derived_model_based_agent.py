@@ -61,10 +61,10 @@ class DerivedMBAgent(ModelBasedAgent):
         return f"{derived_name}+{base_name}Agent"
 
     @classmethod
-    def default(cls, environment, base_agent_name="SAC", *args, **kwargs):
+    def default(cls, environment, base_agent="SAC", *args, **kwargs):
         """See `AbstractAgent.default'."""
         base_agent = getattr(
-            import_module("rllib.agent"), f"{base_agent_name}Agent"
+            import_module("rllib.agent"), f"{base_agent}Agent"
         ).default(environment, *args, **kwargs)
         base_agent.logger.delete_directory()
         base_algorithm = base_agent.algorithm

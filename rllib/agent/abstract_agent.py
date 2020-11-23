@@ -199,7 +199,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         """End the interaction with the environment."""
         pass
 
-    def learn(self):
+    def learn(self, *args, **kwargs):
         """Train the agent."""
         pass
 

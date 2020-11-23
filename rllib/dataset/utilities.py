@@ -1,4 +1,6 @@
 """Utilities for dataset submodule."""
+from itertools import product
+
 import numpy as np
 import torch
 
@@ -132,3 +134,20 @@ def gather_trajectories(trajectories, gather_dim=1):
         )
     )
     return trajectory
+
+
+def unstack_observations(observation):
+    """Unstack observations in a list."""
+    in_dim = observation.reward.shape
+    observations = []
+    for indexes in product(*map(range, in_dim)):
+
+        def _extract_index(tensor):
+            try:
+                return tensor[indexes]
+            except IndexError:
+                return tensor
+
+        observations.append(Observation(*map(lambda x: _extract_index(x), observation)))
+
+    return observations

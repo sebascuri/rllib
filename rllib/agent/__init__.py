@@ -2,6 +2,7 @@ from .abstract_agent import AbstractAgent
 from .bandit import GPUCBAgent
 from .model_based import (
     BPTTAgent,
+    DataAugmentationAgent,
     DynaAgent,
     ModelBasedAgent,
     MPCAgent,
@@ -63,4 +64,5 @@ MODEL_FREE = [
 
 MODEL_BASED = ["BPTT", "MPC", "SVG"]
 MODEL_AUGMENTED = ["Dyna", "MVE", "STEVE"]
-AGENTS = MODEL_FREE + MODEL_BASED + MODEL_AUGMENTED
+DATA_AUGMENTED = ["DataAugmentation"]
+AGENTS = MODEL_FREE + MODEL_BASED + MODEL_AUGMENTED + DATA_AUGMENTED

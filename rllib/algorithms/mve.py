@@ -35,7 +35,9 @@ class MVE(Dyna):
         """Get Model-Based critic-loss."""
         with torch.no_grad():
             state, action = observation.state[..., 0, :], observation.action[..., 0, :]
-            sim_observation = self.simulate(state, self.policy, initial_action=action)
+            sim_observation = self.simulate(
+                state, self.policy, initial_action=action, stack_obs=True
+            )
 
         if not self.td_k:
             sim_observation.state = observation.state[..., :1, :]

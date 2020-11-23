@@ -41,7 +41,7 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         real_loss = self.base_algorithm.forward(observation)
         with torch.no_grad():
             state = observation.state[..., 0, :]
-            sim_observation = self.simulate(state, self.policy)
+            sim_observation = self.simulate(state, self.policy, stack_obs=True)
         sim_loss = self.base_algorithm.forward(sim_observation)
         return real_loss + sim_loss
 

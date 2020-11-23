@@ -65,7 +65,9 @@ class STEVE(MVE):
         self.dynamical_model.set_head(model_idx)
         self.reward_model.set_head(model_idx)
         with torch.no_grad():
-            observation = self.simulate(state, self.policy, initial_action=action)
+            observation = self.simulate(
+                state, self.policy, initial_action=action, stack_obs=True
+            )
             n_step_returns = n_step_return(
                 observation,
                 gamma=self.gamma,

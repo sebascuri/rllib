@@ -9,14 +9,11 @@ A model based agent has three behaviors:
 from itertools import chain
 
 import torch
-from gym.utils import colorize
 from torch.optim import Adam
-from tqdm import tqdm
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
-from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
@@ -33,10 +30,6 @@ class ModelBasedAgent(AbstractAgent):
     policy_learning_algorithm: PolicyLearningAlgorithm.
     model_learning_algorithm: ModelLearningAlgorithm
     planning_algorithm: MPCSolver.
-    simulation_algorithm: SimulationAlgorithm.
-    num_simulation_iterations: int.
-    learn_from_real: bool.
-        Flag that indicates whether or not to learn from real transitions.
     thompson_sampling: bool.
         Flag that indicates whether or not to use posterior sampling for the model.
 
@@ -62,9 +55,6 @@ class ModelBasedAgent(AbstractAgent):
         policy_learning_algorithm=None,
         model_learning_algorithm=None,
         planning_algorithm=None,
-        simulation_algorithm=None,
-        num_simulation_iterations=0,
-        learn_from_real=True,
         thompson_sampling=False,
         memory=None,
         batch_size=100,
@@ -96,7 +86,6 @@ class ModelBasedAgent(AbstractAgent):
 
         self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
-        self.simulation_algorithm = simulation_algorithm
 
         self.dynamical_model = dynamical_model
         self.reward_model = reward_model
@@ -113,11 +102,6 @@ class ModelBasedAgent(AbstractAgent):
         else:
             policy = RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
         self.policy = policy
-        self.num_simulation_iterations = num_simulation_iterations
-        self.learn_from_real = learn_from_real and self.algorithm is not None
-        self.learn_from_sim = (
-            self.num_simulation_iterations > 0 and self.algorithm is not None
-        )
         self.thompson_sampling = thompson_sampling
 
         if self.thompson_sampling:
@@ -162,7 +146,11 @@ class ModelBasedAgent(AbstractAgent):
             self.memory.append(observation)
         if self.learn_model_at_observe:
             self.model_learning_algorithm.learn(self.logger)
-        if self.train_at_observe and len(self.memory) > self.batch_size:
+        if (
+            self.train_at_observe
+            and len(self.memory) > self.batch_size
+            and self.algorithm is not None
+        ):
             self.learn()
 
     def start_episode(self):
@@ -189,89 +177,16 @@ class ModelBasedAgent(AbstractAgent):
             self.learn()
         super().end_episode()
 
-    def learn(self):
+    def learn(self, memory=None):
         """Learn a policy with the model."""
-        if self.learn_from_sim:
-            if self._training_verbose:
-                print(colorize("Optimizing Policy with Simulated Data", "yellow"))
-            self.simulate_and_learn_policy()
-
-        if self.learn_from_real:
-            if self._training_verbose:
-                print(colorize("Optimizing Policy with Real Data", "yellow"))
-            self.learn_policy_from_real_data()
-
-    def early_stop(self, losses, **kwargs):
-        """Early stop with simulation algorithm."""
-        if self.simulation_algorithm is not None:
-            with torch.no_grad():
-                self.policy.reset()  # TODO: Add goal distribution.
-                initial_states = self.simulation_algorithm.get_initial_states(
-                    self.initial_states_dataset, self.memory
-                )
-
-                self.simulation_algorithm.simulate(
-                    initial_states, self.policy, logger=self.logger
-                )
-            self.early_stopping_algorithm.update(self.logger.current["sim_return"])
-        return self.early_stopping_algorithm.stop
-
-    def simulate_and_learn_policy(self):
-        """Simulate the model and optimize the policy with the learned data.
-
-        This consists of two steps:
-            Step 1: Simulate trajectories with the model.
-            Step 2: Implement a model free RL method that optimizes the policy.
-        """
-        self.dynamical_model.eval()
-        with DisableGradient(
-            self.dynamical_model, self.reward_model, self.termination_model
-        ):
-            for _ in tqdm(range(self.num_simulation_iterations)):
-                # Step 1: Simulate the state distribution
-                with torch.no_grad():
-                    self.policy.reset()  # TODO: Add goal distribution.
-                    initial_states = self.simulation_algorithm.get_initial_states(
-                        self.initial_states_dataset, self.memory
-                    )
-
-                    self.simulation_algorithm.simulate(
-                        initial_states, self.policy, logger=self.logger
-                    )
-
-                # Step 2: Optimize policy with simulated data.
-                self.learn_policy_from_sim_data()
-
-    def learn_policy_from_sim_data(self):
-        """Learn policy using simulated transitions."""
         #
 
         def closure():
             """Gradient calculation."""
-            state = self.simulation_algorithm.dataset.sample_batch(self.batch_size)
-            observation = Observation(state=state.unsqueeze(-2))
-            self.optimizer.zero_grad()
-            losses = self.algorithm(observation.clone())
-            losses.combined_loss.mean().backward()
-
-            torch.nn.utils.clip_grad_norm_(
-                self.algorithm.parameters(), self.clip_gradient_val
-            )
-
-            return losses
-
-        with DisableGradient(
-            self.dynamical_model, self.reward_model, self.termination_model
-        ):
-            self._learn_steps(closure)
-
-    def learn_policy_from_real_data(self):
-        """Learn policy using real transitions and use the model to predict targets."""
-        #
-
-        def closure():
-            """Gradient calculation."""
-            observation, *_ = self.memory.sample_batch(self.batch_size)
+            if memory is None:
+                observation, *_ = self.memory.sample_batch(self.batch_size)
+            else:
+                observation, *_ = memory.sample_batch(self.batch_size)
             self.optimizer.zero_grad()
             losses = self.algorithm(observation.clone())
             losses.combined_loss.mean().backward()

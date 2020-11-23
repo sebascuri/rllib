@@ -73,7 +73,7 @@ class ModelEnsembleEarlyStopping(AbstractMBAlgorithm, EarlyStopping):
     def _evaluate_model(self, i, state):
         self.dynamical_model.set_head(i)
         self.reward_model.set_head(i)
-        observation = self.simulate(state, self.policy)
+        observation = self.simulate(state, self.policy, stack_obs=True)
         return observation.reward.sum(-1).mean()
 
     def update(self, state):

@@ -1,9 +1,9 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from torch import Tensor
 from torch.distributions import Distribution
 
-from rllib.dataset.datatypes import Observation
+from rllib.dataset.datatypes import Observation, Trajectory
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.policy import AbstractPolicy
 from rllib.util.logger import Logger
@@ -12,22 +12,15 @@ from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 class SimulationAlgorithm(AbstractMBAlgorithm):
     initial_distribution: Optional[Distribution]
-    num_subsample: int
     num_initial_state_samples: int
     num_initial_distribution_samples: int
     num_memory_samples: int
-    refresh_interval: int
-    _idx: int
-    dataset: StateExperienceReplay
     def __init__(
         self,
         initial_distribution: Optional[Distribution] = ...,
-        max_memory: int = ...,
-        num_subsample: int = ...,
         num_initial_state_samples: int = ...,
         num_initial_distribution_samples: int = ...,
         num_memory_samples: int = ...,
-        refresh_interval: int = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
@@ -42,7 +35,8 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         policy: AbstractPolicy,
         initial_action: Optional[Tensor] = ...,
         logger: Optional[Logger] = ...,
-    ) -> Observation: ...
+        stack_obs: bool = ...,
+    ) -> Union[Observation, Trajectory]: ...
     def _log_trajectory(
         self, stacked_trajectory: Observation, logger: Optional[Logger] = ...
     ) -> None: ...
