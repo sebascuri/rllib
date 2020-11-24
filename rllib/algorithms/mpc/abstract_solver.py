@@ -49,10 +49,10 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self,
         dynamical_model,
         reward_model,
-        horizon,
+        horizon=25,
         gamma=1.0,
         num_iter=1,
-        num_samples=None,
+        num_samples=400,
         termination_model=None,
         scale=0.3,
         terminal_reward=None,
@@ -78,8 +78,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self.gamma = gamma
 
         self.num_iter = num_iter
-        self.num_samples = 10 * horizon if not num_samples else num_samples
-        self.num_samples = self.num_samples // num_cpu
+        self.num_samples = num_samples
         self.terminal_reward = terminal_reward
         self.warm_start = warm_start
         self.default_action = default_action

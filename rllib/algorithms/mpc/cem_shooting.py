@@ -48,8 +48,8 @@ class CEMShooting(MPCSolver):
     The cross-entropy method for optimization. In Handbook of statistics
     """
 
-    def __init__(self, alpha=0.0, num_elites=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, alpha=0.0, num_iter=5, num_elites=None, *args, **kwargs):
+        super().__init__(num_iter=num_iter, *args, **kwargs)
         self.num_elites = (
             max(1, self.num_samples // 10) if not num_elites else num_elites
         )

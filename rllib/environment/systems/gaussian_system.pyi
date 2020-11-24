@@ -2,7 +2,7 @@ from rllib.dataset.datatypes import Action, State
 
 from .abstract_system import AbstractSystem
 
-class GaussianSystem(AbstractSystem):
+class GaussianNoiseSystem(AbstractSystem):
     _system: AbstractSystem
     _transition_noise_scale: float
     _measurement_noise_scale: float

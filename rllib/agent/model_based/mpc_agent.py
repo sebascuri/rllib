@@ -1,6 +1,5 @@
 """MPC Agent Implementation."""
-
-from rllib.algorithms.mpc import CEMShooting
+import importlib
 
 from .model_based_agent import ModelBasedAgent
 
@@ -22,20 +21,25 @@ class MPCAgent(ModelBasedAgent):
 
     @classmethod
     def default(
-        cls, environment, mpc_solver=None, horizon=25, num_iter=5, *args, **kwargs
+        cls,
+        environment,
+        mpc_solver=None,
+        mpc_solver_name="CEMShooting",
+        *args,
+        **kwargs,
     ):
         """See `AbstractAgent.default'."""
         agent = ModelBasedAgent.default(environment, *args, **kwargs)
         agent.logger.delete_directory()
-
+        kwargs.update(
+            dynamical_model=agent.dynamical_model,
+            reward_model=agent.reward_model,
+            termination_model=agent.termination_model,
+            gamma=agent.gamma,
+        )
         if mpc_solver is None:
-            mpc_solver = CEMShooting(
-                dynamical_model=agent.dynamical_model,
-                reward_model=agent.reward_model,
-                termination_model=agent.termination_model,
-                action_scale=environment.action_scale,
-                horizon=horizon,
-                gamma=agent.gamma,
-                num_iter=num_iter,
+            solver_module = importlib.import_module("rllib.algorithms.mpc")
+            mpc_solver = getattr(solver_module, mpc_solver_name)(
+                action_scale=environment.action_scale, *args, **kwargs
             )
         return super().default(environment, mpc_solver=mpc_solver, *args, **kwargs)

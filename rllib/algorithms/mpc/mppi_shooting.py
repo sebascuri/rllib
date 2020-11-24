@@ -24,14 +24,12 @@ class MPPIShooting(MPCSolver):
 
     """
 
-    def __init__(self, kappa=1.0, filter_coefficients=None, *args, **kwargs):
+    def __init__(self, kappa=1.0, filter_coefficients=(0.25, 0.8, 0), *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if not isinstance(kappa, ParameterDecay):
             kappa = Constant(kappa)
         self.kappa = kappa
-        if filter_coefficients is None:
-            filter_coefficients = [1.0]
         self.filter_coefficients = torch.tensor(filter_coefficients)
         self.filter_coefficients /= torch.sum(self.filter_coefficients)
 

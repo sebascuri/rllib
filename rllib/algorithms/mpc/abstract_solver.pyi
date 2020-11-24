@@ -29,7 +29,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self,
         dynamical_model: AbstractModel,
         reward_model: AbstractModel,
-        horizon: int,
+        horizon: int = ...,
         gamma: float = ...,
         scale: float = ...,
         num_iter: int = ...,
