@@ -196,7 +196,7 @@ def mc_return(
         reduction=reduction,
     )
 
-    return returns[:, -1]
+    return returns[..., -1]
 
 
 def mb_return(
