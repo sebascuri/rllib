@@ -36,6 +36,7 @@ class DataAugmentationAgent(ModelBasedAgent):
         num_initial_state_samples=0,
         refresh_interval=2,
         initial_distribution=None,
+        only_sim=False,
         *args,
         **kwargs,
     ):
@@ -59,6 +60,7 @@ class DataAugmentationAgent(ModelBasedAgent):
             transformations=self.memory.transformations,
         )
         self.refresh_interval = refresh_interval
+        self.only_sim = only_sim
 
     def simulate(self):
         """Simulate model and generate transitions. Append to the data set."""
@@ -86,12 +88,16 @@ class DataAugmentationAgent(ModelBasedAgent):
         self.dynamical_model.eval()
 
         # Step 1: Simulate the state distribution
-        if self.train_steps % (self.refresh_interval * self.num_iter) == 0:
+        if (
+            self.refresh_interval > 0
+            and self.train_steps % (self.refresh_interval * self.num_iter) == 0
+        ):
             self.sim_memory.reset()
-            self.simulate()
+        self.simulate()
 
         # Learn base algorithm with real data set.
-        super().learn()
+        if not self.only_sim:
+            super().learn()
         super().learn(memory=self.sim_memory)
 
     @property
