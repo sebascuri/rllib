@@ -38,13 +38,11 @@ class ActorCriticAgent(OnPolicyAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(num_iter=num_iter, num_rollouts=num_rollouts, *args, **kwargs)
         self.algorithm = ActorCritic(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="mean"),
-            num_iter=num_iter,
-            num_rollouts=num_rollouts,
             *args,
             **kwargs,
         )
