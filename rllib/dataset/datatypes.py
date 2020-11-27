@@ -250,6 +250,14 @@ class Loss:
         """Add two losses."""
         return Loss(*map(lambda x: x[0] + x[1], zip(self, other)))
 
+    def __sub__(self, other):
+        """Add two losses."""
+        return Loss(*map(lambda x: x[0] - x[1], zip(self, other)))
+
+    def __neg__(self):
+        """Substract two losses."""
+        return Loss(*map(lambda x: -x, self))
+
     def __mul__(self, other):
         """Multiply losses by a scalar."""
         return Loss(*map(lambda x: x * other, self))
