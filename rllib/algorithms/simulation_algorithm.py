@@ -2,7 +2,6 @@
 import gpytorch
 import torch
 
-from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import DisableGradient
 
 from .abstract_mb_algorithm import AbstractMBAlgorithm
@@ -100,21 +99,5 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         ), gpytorch.settings.fast_pred_var():
             trajectory = super().simulate(state, policy, stack_obs=stack_obs)
 
-        self._log_trajectory(trajectory, logger)
+        self._log_trajectory(trajectory)
         return trajectory
-
-    def _log_trajectory(self, trajectory, logger):
-        """Log the simulated trajectory."""
-        if logger is None:
-            return
-        observation = stack_list_of_tuples(trajectory, dim=trajectory[0].state.ndim - 1)
-        scale = torch.diagonal(observation.next_state_scale_tril, dim1=-1, dim2=-2)
-        logger.update(
-            sim_entropy=observation.entropy.mean().item(),
-            sim_return=observation.reward.sum(-1).mean().item(),
-            sim_scale=scale.square().sum(-1).sum(0).mean().sqrt().item(),
-            sim_max_state=observation.state.abs().max().item(),
-            sim_max_action=observation.action.abs().max().item(),
-        )
-        for key, value in self.reward_model.info.items():
-            logger.update(**{f"sim_{key}": value})
