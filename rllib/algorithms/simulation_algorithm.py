@@ -90,13 +90,15 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         initial_states = initial_states.unsqueeze(0)
         return initial_states
 
-    def simulate(self, state, policy, initial_action=None, logger=None, stack_obs=True):
+    def simulate(
+        self, state, policy, initial_action=None, logger=None, stack_obs=False
+    ):
         """Simulate from initial_states."""
         self.dynamical_model.eval()
         with DisableGradient(
             self.dynamical_model, self.reward_model, self.termination_model
         ), gpytorch.settings.fast_pred_var():
-            trajectory = super().simulate(state, policy, stack_obs=False)
+            trajectory = super().simulate(state, policy, stack_obs=stack_obs)
 
         self._log_trajectory(trajectory, logger)
         return trajectory

@@ -9,6 +9,7 @@ from .abstract_mb_algorithm import AbstractMBAlgorithm
 class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
     base_algorithm: AbstractAlgorithm
     base_algorithm_name: str
+    only_sim: bool
     def __init__(
         self,
         base_algorithm: AbstractAlgorithm,
@@ -17,6 +18,7 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         num_steps: int = ...,
         num_samples: int = ...,
         termination_model: Optional[AbstractModel] = ...,
+        only_sim: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

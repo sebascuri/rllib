@@ -12,7 +12,9 @@ class AbstractMBAlgorithm(object):
     reward_model: AbstractModel
     termination_model: Optional[AbstractModel]
     num_steps: int
-    num_samples: int
+    # num_samples: int
+    log_simulation: bool
+    # _info: dict
     def __init__(
         self,
         dynamical_model: AbstractModel,
@@ -20,6 +22,7 @@ class AbstractMBAlgorithm(object):
         num_steps: int = ...,
         num_samples: int = ...,
         termination_model: Optional[AbstractModel] = ...,
+        log_simulation: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
@@ -31,3 +34,5 @@ class AbstractMBAlgorithm(object):
         logger: Optional[Logger] = ...,
         stack_obs: bool = ...,
     ) -> Union[Observation, Trajectory]: ...
+    def _log_trajectory(self, trajectory: Trajectory) -> None: ...
+    def _log_observation(self, observation: Observation) -> None: ...

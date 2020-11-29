@@ -4,7 +4,6 @@ from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.abstract_solver import MPCSolver
-from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
 

@@ -15,31 +15,21 @@ class DerivedMBAgent(ModelBasedAgent):
         self,
         base_algorithm,
         derived_algorithm_,
-        dynamical_model,
-        reward_model,
         num_samples=8,
         num_steps=1,
-        termination_model=None,
+        only_sim=False,
         *args,
         **kwargs,
     ):
-        algorithm = derived_algorithm_(
-            base_algorithm=base_algorithm,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            termination_model=termination_model,
+        super().__init__(policy_learning_algorithm=base_algorithm, *args, **kwargs)
+        self.algorithm = derived_algorithm_(
+            base_algorithm=self.algorithm,
+            memory=self.memory,
+            initial_state_dataset=self.initial_states_dataset,
+            criterion=type(self.algorithm.criterion)(reduction="mean"),
             num_steps=num_steps,
             num_samples=num_samples,
-            *args,
-            **kwargs,
-        )
-        algorithm.criterion = type(algorithm.criterion)(reduction="mean")
-
-        super().__init__(
-            policy_learning_algorithm=algorithm,
-            dynamical_model=dynamical_model,
-            reward_model=reward_model,
-            termination_model=termination_model,
+            only_sim=only_sim,
             *args,
             **kwargs,
         )
@@ -57,7 +47,10 @@ class DerivedMBAgent(ModelBasedAgent):
     def name(self) -> str:
         """See `AbstractAgent.name'."""
         derived_name = self.__class__.__name__[:-5]
-        base_name = self.algorithm.base_algorithm_name
+        try:
+            base_name = self.algorithm.base_algorithm.__class__.__name__
+        except AttributeError:
+            base_name = self.algorithm.__class__.__name__
         return f"{derived_name}+{base_name}Agent"
 
     @classmethod

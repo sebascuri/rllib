@@ -16,6 +16,7 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         num_steps=1,
         num_samples=15,
         termination_model=None,
+        only_sim=False,
         *args,
         **kwargs,
     ):
@@ -35,6 +36,7 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         self.base_algorithm.criterion = type(self.base_algorithm.criterion)(
             reduction="mean"
         )
+        self.only_sim = only_sim
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
@@ -43,6 +45,8 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
             state = observation.state[..., 0, :]
             sim_observation = self.simulate(state, self.policy, stack_obs=True)
         sim_loss = self.base_algorithm.forward(sim_observation)
+        if self.only_sim:
+            return sim_loss
         return real_loss + sim_loss
 
     def update(self):
@@ -55,12 +59,13 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
 
     def info(self):
         """Get info from base algorithm."""
-        return self.base_algorithm.info()
+        return {**self.base_algorithm.info(), **self._info}
 
     def reset_info(self):
         """Reset info from base algorithm."""
-        return self.base_algorithm.reset_info()
+        self.base_algorithm.reset_info()
 
     def set_policy(self, new_policy):
         """Set policy in base algorithm."""
+        self.policy = new_policy
         self.base_algorithm.set_policy(new_policy)
