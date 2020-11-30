@@ -41,15 +41,15 @@ class SACAgent(OffPolicyAgent):
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            num_iter=num_iter, train_frequency=train_frequency, *args, **kwargs
+        )
         self.algorithm = SAC(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="none"),
             eta=eta,
             entropy_regularization=entropy_regularization,
-            num_iter=num_iter,
-            train_frequency=train_frequency,
             *args,
             **kwargs,
         )
