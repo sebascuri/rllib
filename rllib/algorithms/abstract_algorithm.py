@@ -81,6 +81,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         critic,
         eta=0.0,
         entropy_regularization=True,
+        target_entropy=None,
         epsilon_mean=0.0,
         epsilon_var=0.0,
         kl_regularization=True,
@@ -106,12 +107,14 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.kl_loss = KLLoss()
             self.pathwise_loss = None
         else:
+            if target_entropy is None:
+                target_entropy = (
+                    -self.policy.dim_action[0] if not self.policy.discrete_action else 0
+                )
             self.entropy_loss = EntropyLoss(
                 eta=eta,
                 regularization=entropy_regularization,
-                target_entropy=(
-                    -self.policy.dim_action[0] if not self.policy.discrete_action else 0
-                ),
+                target_entropy=target_entropy,
             )
             self.kl_loss = KLLoss(
                 epsilon_mean=epsilon_mean,

@@ -43,6 +43,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         critic: AbstractQFunction,
         eta: Optional[Union[ParameterDecay, float]] = ...,
         entropy_regularization: bool = ...,
+        target_entropy: Optional[float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         kl_regularization: bool = ...,
