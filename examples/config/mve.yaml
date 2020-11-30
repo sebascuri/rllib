@@ -1,0 +1,10 @@
+base_agent: SAC                   # Base agent.
+num_steps: 1                      # Number of steps to use the model.
+num_samples: 4                    # Number of parallel samples.
+gamma: 0.99                       # discount factor.
+reward_scale: 1.0                 # scale with which to multiply rewards.
+exploration_steps: 0
+exploration_episodes: 10
+model_learn_exploration_episodes: 5
+render_train: False
+render_test: False

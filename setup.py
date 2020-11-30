@@ -26,6 +26,7 @@ extras = {
         "Pillow==5.4.1",
         "pandas==0.25.0",
         "dotmap>=1.3.0,<1.4.0",
+        "pyyaml>=5.0.0",
     ],
 }
 extras["all"] = [item for group in extras.values() for item in group]
