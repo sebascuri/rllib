@@ -47,7 +47,7 @@ class PPO(TRPO):
 
     def __init__(self, epsilon=0.2, clamp_value=False, *args, **kwargs):
         super().__init__(
-            epsilon_mean=0, epsilon_var=0, regularization=True, *args, **kwargs
+            epsilon_mean=0, epsilon_var=0, kl_regularization=True, *args, **kwargs
         )
 
         if not isinstance(epsilon, ParameterDecay):

@@ -17,7 +17,7 @@ class REINFORCE(GAAC):
     ----------
     policy: AbstractPolicy
         Policy to optimize.
-    baseline: AbstractValueFunction
+    critic: AbstractValueFunction
         Baseline to reduce the variance of the gradient.
     criterion: _Loss
         Criterion to optimize the baseline.
@@ -31,5 +31,5 @@ class REINFORCE(GAAC):
     learning. Machine learning.
     """
 
-    def __init__(self, baseline, *args, **kwargs):
-        super().__init__(critic=baseline, lambda_=1, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(lambda_=1, *args, **kwargs)

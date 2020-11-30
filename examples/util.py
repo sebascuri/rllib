@@ -50,7 +50,7 @@ def init_experiment(args, **kwargs):
     agent_module = importlib.import_module("rllib.agent")
     agent = getattr(agent_module, f"{args.agent}Agent").default(
         environment,
-        reward_transformer=RewardTransformer(scale=args.reward_scale),
+        reward_transformer=RewardTransformer(scale=arg_dict.get("reward_scale", 1.0)),
         **arg_dict,
     )
     agent.logger.save_hparams(arg_dict)

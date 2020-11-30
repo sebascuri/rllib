@@ -48,6 +48,7 @@ class SARSAAgent(OnPolicyAgent):
         self,
         critic,
         policy,
+        algorithm_=SARSA,
         criterion=loss.MSELoss,
         batch_size=1,
         num_rollouts=0,
@@ -64,7 +65,7 @@ class SARSAAgent(OnPolicyAgent):
         )
         # batch_size + 1 as it will always remove the last observation before training.
 
-        self.algorithm = SARSA(
+        self.algorithm = algorithm_(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="mean"),

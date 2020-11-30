@@ -1,6 +1,4 @@
 """Implementation of REINFORCE Algorithms."""
-from torch.nn.modules import loss
-
 from rllib.algorithms.reinforce import REINFORCE
 from rllib.value_function import NNValueFunction
 
@@ -19,16 +17,8 @@ class REINFORCEAgent(ActorCriticAgent):
     connectionist reinforcement learning." Machine learning 8.3-4 (1992): 229-256.
     """
 
-    def __init__(self, policy, critic=None, criterion=loss.MSELoss, *args, **kwargs):
-        super().__init__(policy=policy, critic=critic, *args, **kwargs)
-        self.algorithm = REINFORCE(
-            policy=policy,
-            baseline=critic,
-            criterion=criterion(reduction="mean"),
-            *args,
-            **kwargs,
-        )
-        self.policy = self.algorithm.policy
+    def __init__(self, critic=None, *args, **kwargs):
+        super().__init__(algorithm_=REINFORCE, critic=critic, *args, **kwargs)
 
     @classmethod
     def default(cls, environment, critic=None, *args, **kwargs):

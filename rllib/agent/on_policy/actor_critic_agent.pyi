@@ -26,6 +26,7 @@ class ActorCriticAgent(OnPolicyAgent):
     algorithm: ActorCritic
     def __init__(
         self,
+        algorithm_: ActorCritic,
         policy: AbstractPolicy,
         critic: AbstractQFunction,
         criterion: Type[_Loss] = ...,

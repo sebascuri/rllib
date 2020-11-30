@@ -44,7 +44,8 @@ def get_experiment_parser():
     parser.add_argument(
         "--eval-frequency", type=int, default=10, help="Frequency to evaluate the mean."
     )
-
+    parser.add_argument("--render-train", action="store_true", default=False)
+    parser.add_argument("--render-test", action="store_true", default=False)
     return parser
 
 

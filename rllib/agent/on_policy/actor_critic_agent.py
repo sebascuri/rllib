@@ -32,21 +32,26 @@ class ActorCriticAgent(OnPolicyAgent):
         self,
         policy,
         critic,
+        algorithm_=ActorCritic,
         criterion=loss.MSELoss,
-        num_iter=8,
-        num_rollouts=4,
+        eta=0.001,
         *args,
         **kwargs,
     ):
-        super().__init__(num_iter=num_iter, num_rollouts=num_rollouts, *args, **kwargs)
-        self.algorithm = ActorCritic(
+        super().__init__(*args, **kwargs)
+        self.algorithm = algorithm_(
             policy=policy,
             critic=critic,
             criterion=criterion(reduction="mean"),
+            eta=eta,
             *args,
             **kwargs,
         )
         self.policy = self.algorithm.policy
+        self.optimizer = type(self.optimizer)(
+            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
+            **self.optimizer.defaults,
+        )
 
     @classmethod
     def default(
