@@ -11,7 +11,7 @@ class DerivedAlgorithm(AbstractAlgorithm, metaclass=ABCMeta):
     some methods.
     """
 
-    def __init__(self, base_algorithm):
+    def __init__(self, base_algorithm, *args, **kwargs):
         self.base_algorithm_name = base_algorithm.__class__.__name__
         super().__init__(
             **{**base_algorithm.__dict__, **dict(base_algorithm.named_modules())}
