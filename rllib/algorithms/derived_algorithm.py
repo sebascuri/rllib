@@ -5,7 +5,11 @@ from .abstract_algorithm import AbstractAlgorithm
 
 
 class DerivedAlgorithm(AbstractAlgorithm, metaclass=ABCMeta):
-    """Dyna Algorithm."""
+    """Derived Algorithm.
+
+    A derived algorithm has a base algorithm and "inherits" its properties but overrides
+    some methods.
+    """
 
     def __init__(self, base_algorithm):
         self.base_algorithm_name = base_algorithm.__class__.__name__
