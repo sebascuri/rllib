@@ -1,11 +1,11 @@
 """ModelBasedAlgorithm."""
 import torch
 
-from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
+from .derived_algorithm import DerivedAlgorithm
 
 
-class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
+class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
     """Dyna Algorithm."""
 
     def __init__(
@@ -20,10 +20,7 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         *args,
         **kwargs,
     ):
-        self.base_algorithm_name = base_algorithm.__class__.__name__
-        AbstractAlgorithm.__init__(
-            self, **{**base_algorithm.__dict__, **dict(base_algorithm.named_modules())}
-        )
+        DerivedAlgorithm.__init__(self, base_algorithm=base_algorithm)
         AbstractMBAlgorithm.__init__(
             self,
             dynamical_model,
@@ -32,7 +29,6 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
             num_samples=num_samples,
             termination_model=termination_model,
         )
-        self.base_algorithm = base_algorithm
         self.base_algorithm.criterion = type(self.base_algorithm.criterion)(
             reduction="mean"
         )
@@ -48,24 +44,3 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         if self.only_sim:
             return sim_loss
         return real_loss + sim_loss
-
-    def update(self):
-        """Update base algorithm."""
-        self.base_algorithm.update()
-
-    def reset(self):
-        """Reset base algorithm."""
-        self.base_algorithm.reset()
-
-    def info(self):
-        """Get info from base algorithm."""
-        return {**self.base_algorithm.info(), **self._info}
-
-    def reset_info(self):
-        """Reset info from base algorithm."""
-        self.base_algorithm.reset_info()
-
-    def set_policy(self, new_policy):
-        """Set policy in base algorithm."""
-        self.policy = new_policy
-        self.base_algorithm.set_policy(new_policy)
