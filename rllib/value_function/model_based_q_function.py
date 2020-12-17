@@ -38,6 +38,7 @@ class ModelBasedQFunction(AbstractQFunction):
         policy=None,
         value_function=None,
         gamma=1.0,
+        lambda_=1.0,
         reward_transformer=RewardTransformer(),
         entropy_regularization=0.0,
         *args,
@@ -60,6 +61,7 @@ class ModelBasedQFunction(AbstractQFunction):
         if policy is None:
             assert num_steps == 1, "If no policy is passed, then only one-step ahead."
         self.value_function = value_function
+        self.lambda_ = lambda_
         self.policy = policy
         self.gamma = gamma
         self.reward_transformer = reward_transformer
@@ -89,6 +91,7 @@ class ModelBasedQFunction(AbstractQFunction):
             v = mc_return(
                 sim_observation,
                 gamma=self.gamma,
+                lambda_=self.lambda_,
                 value_function=self.value_function,
                 reward_transformer=self.reward_transformer,
                 entropy_regularization=self.entropy_regularization,
