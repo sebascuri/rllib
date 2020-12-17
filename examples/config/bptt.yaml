@@ -1,14 +1,14 @@
-num_steps: 1                      # Number of steps to use the model.
+num_steps: 3                      # Number of steps to use the model.
 num_samples: 1                    # Number of parallel samples.
 gamma: 0.99                       # discount factor.
-lambda_: 0
+lambda_: 0.1
 train_frequency: 1
-num_iter: 10
+num_iter: 2
 entropy_regularization: False
 eta: 0.2
 reward_scale: 1.0                 # scale with which to multiply rewards.
 exploration_steps: 0
-exploration_episodes: 10
+exploration_episodes: 5
 model_learn_exploration_episodes: 0
 render_train: False
 render_test: False
