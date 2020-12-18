@@ -17,4 +17,4 @@ class FixedPolicyAgent(AbstractAgent):
         """See `AbstractAgent.default'."""
         if policy is None:
             policy = RandomPolicy.default(environment, *args, **kwargs)
-        return super().default(policy=policy * args, **kwargs)
+        return super().default(policy=policy, *args, **kwargs)
