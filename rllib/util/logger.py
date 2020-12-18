@@ -179,3 +179,17 @@ class Logger(object):
         Use with caution. This will erase the directory, not the object.
         """
         shutil.rmtree(self.log_dir)
+
+    def change_log_dir(self, new_log_dir):
+        """Change log directory."""
+        log_dir = f"runs/{new_log_dir}"
+        try:
+            self.delete_directory()
+        except FileNotFoundError:
+            pass
+        if self.writer is not None:
+            self.writer = SummaryWriter(log_dir=log_dir)
+            self.log_dir = self.writer.logdir
+        else:
+            self.writer = None
+            self.log_dir = safe_make_dir(log_dir)
