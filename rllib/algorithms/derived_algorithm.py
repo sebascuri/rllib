@@ -28,6 +28,7 @@ class DerivedAlgorithm(AbstractAlgorithm, metaclass=ABCMeta):
 
     def reset(self):
         """Reset base algorithm."""
+        super().reset()
         self.base_algorithm.reset()
 
     def info(self):
@@ -36,9 +37,10 @@ class DerivedAlgorithm(AbstractAlgorithm, metaclass=ABCMeta):
 
     def reset_info(self):
         """Reset info from base algorithm."""
+        super().reset_info()
         self.base_algorithm.reset_info()
 
     def set_policy(self, new_policy):
         """Set policy in base algorithm."""
-        self.policy = new_policy
+        super().set_policy(new_policy)
         self.base_algorithm.set_policy(new_policy)
