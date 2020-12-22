@@ -9,7 +9,9 @@ from .dyna import Dyna
 class MVE(Dyna):
     td_k: bool
     lambda_: float
-    def __init__(self, td_k: bool = ..., lambda_: float = ..., *args: Any, **kwargs: Any,) -> None: ...
+    def __init__(
+        self, td_k: bool = ..., lambda_: float = ..., *args: Any, **kwargs: Any,
+    ) -> None: ...
     def forward(
         self, observation: Union[Observation, List[Observation]], **kwargs: Any
     ) -> Loss: ...

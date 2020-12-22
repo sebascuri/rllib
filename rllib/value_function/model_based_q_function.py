@@ -67,6 +67,14 @@ class ModelBasedQFunction(AbstractQFunction):
         self.reward_transformer = reward_transformer
         self.entropy_regularization = entropy_regularization
 
+    def set_policy(self, new_policy):
+        """Set policy."""
+        self.policy = new_policy
+        try:
+            self.value_function.set_policy(new_policy)
+        except AttributeError:
+            pass
+
     def forward(self, state, action=torch.tensor(float("nan"))):
         """Get value at a given state-(action) through simulation.
 

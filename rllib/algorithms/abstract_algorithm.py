@@ -144,7 +144,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         """Set new policy."""
         self.policy = new_policy
         self.policy_target = deep_copy_module(self.policy)
-        self.pathwise_loss.policy = self.policy
+        self.pathwise_loss.set_policy(self.policy)
         self.post_init()
 
     def get_value_prediction(self, observation):

@@ -38,6 +38,14 @@ class PathwiseLoss(nn.Module):
         self.policy = policy
         self.critic = critic
 
+    def set_policy(self, new_policy):
+        """Set policy."""
+        self.policy = new_policy
+        try:
+            self.critic.set_policy(new_policy)
+        except AttributeError:
+            pass
+
     def forward(self, observation):
         """Compute path-wise loss."""
         if self.policy is None or self.critic is None:
