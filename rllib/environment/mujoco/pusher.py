@@ -56,11 +56,12 @@ class MBPusherEnv(PusherEnv):
 
     def reset_model(self):
         """Reset model."""
-        super().reset_model()
+        out = super().reset_model()
         if self.goal_at_obs:
             self.goal = None
         else:
             self._reward_model.set_goal(self.get_body_com("goal"))
+        return out
 
     def step(self, a):
         """See `AbstractEnvironment.step()'."""

@@ -235,6 +235,7 @@ class ModelBasedAgent(AbstractAgent):
         num_epochs=20,
         model_lr=5e-4,
         l2_reg=1e-4,
+        calibrate=True,
         *args,
         **kwargs,
     ):
@@ -265,6 +266,7 @@ class ModelBasedAgent(AbstractAgent):
                 termination_model=termination_model,
                 num_epochs=num_epochs,
                 model_optimizer=model_optimizer,
+                calibrate=calibrate,
             )
         else:
             model_learning_algorithm = None

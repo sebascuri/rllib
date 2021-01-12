@@ -1,0 +1,7 @@
+gamma: 0.99                       # discount factor
+reward_scale: 1.0                 # scale with which to multiply rewards.
+num_rollouts: 20
+exploration_steps: 0
+exploration_episodes: 10
+render_train: False
+render_test: False

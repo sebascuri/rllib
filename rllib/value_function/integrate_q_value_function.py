@@ -21,7 +21,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
         Number of states in discrete environments.
     """
 
-    def __init__(self, q_function, policy, num_samples=15, *args, **kwargs):
+    def __init__(self, q_function, policy, num_samples=4, *args, **kwargs):
         kwargs.pop("dim_state", None)
         kwargs.pop("num_states", None)
         kwargs.pop("tau", None)
@@ -35,6 +35,10 @@ class IntegrateQValueFunction(AbstractValueFunction):
         self.q_function = q_function
         self.policy = policy
         self.num_samples = num_samples
+
+    def set_policy(self, new_policy):
+        """Set policy."""
+        self.policy = new_policy
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

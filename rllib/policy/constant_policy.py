@@ -10,13 +10,14 @@ class ConstantPolicy(AbstractPolicy):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logits = torch.rand(self.num_actions)
-        self.mean = torch.randn(self.dim_action)
-        self.std = torch.randn(self.dim_action)
-
-        self.logits.requires_grad = True
-        self.mean.requires_grad = True
-        self.std.requires_grad = True
+        if self.discrete_action:
+            self.logits = torch.rand(self.num_actions)
+            self.logits.requires_grad = True
+        else:
+            self.mean = torch.randn(self.dim_action)
+            self.std = 0.3 * torch.ones(self.dim_action)
+            self.mean.requires_grad = True
+            self.std.requires_grad = True
 
     def forward(self, state):
         """Compute action distribution."""

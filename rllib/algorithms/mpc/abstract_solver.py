@@ -117,7 +117,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         returns = discount_sum(trajectory.reward, self.gamma)
 
         if self.terminal_reward:
-            terminal_reward = self.terminal_reward(trajectory.next_state[-1])
+            terminal_reward = self.terminal_reward(trajectory.next_state[..., -1, :])
             returns = returns + self.gamma ** self.horizon * terminal_reward
         return returns
 

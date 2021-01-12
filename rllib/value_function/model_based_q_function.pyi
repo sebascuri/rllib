@@ -11,6 +11,7 @@ class ModelBasedQFunction(AbstractQFunction):
     policy: Optional[AbstractPolicy]
     value_function: Optional[AbstractValueFunction]
     gamma: float
+    lambda_: float
     reward_transformer: RewardTransformer
     entropy_regularization: float
     def __init__(
@@ -23,8 +24,10 @@ class ModelBasedQFunction(AbstractQFunction):
         policy: Optional[AbstractPolicy] = ...,
         value_function: Optional[AbstractValueFunction] = ...,
         gamma: float = ...,
+        lambda_: float = ...,
         reward_transformer: RewardTransformer = ...,
         entropy_regularization: float = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
+    def set_policy(self, new_policy: AbstractPolicy) -> None: ...

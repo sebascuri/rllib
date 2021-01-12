@@ -23,6 +23,7 @@ class BPTT(AbstractAlgorithm):
         dynamical_model,
         reward_model,
         num_steps=1,
+        lambda_=1.0,
         termination_model=None,
         *args,
         **kwargs,
@@ -38,6 +39,7 @@ class BPTT(AbstractAlgorithm):
                 policy=self.policy,
                 value_function=self.value_function,
                 gamma=self.gamma,
+                lambda_=lambda_,
                 reward_transformer=self.reward_transformer,
                 entropy_regularization=self.entropy_loss.eta.item(),
             )

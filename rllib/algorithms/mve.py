@@ -18,9 +18,10 @@ class MVE(Dyna):
     arXiv.
     """
 
-    def __init__(self, td_k=False, *args, **kwargs):
+    def __init__(self, td_k=False, lambda_=1.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.td_k = td_k
+        self.lambda_ = lambda_
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
@@ -84,6 +85,7 @@ class MVE(Dyna):
             sim_target = mc_return(
                 observation,
                 gamma=self.base_algorithm.gamma,
+                lambda_=self.lambda_,
                 value_function=self.base_algorithm.value_function,
                 reward_transformer=self.base_algorithm.reward_transformer,
                 entropy_regularization=self.base_algorithm.entropy_loss.eta.item(),

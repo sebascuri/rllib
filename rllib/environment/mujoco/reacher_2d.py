@@ -25,7 +25,7 @@ class ReacherReward(StateActionReward):
 
     def state_reward(self, state, next_state=None):
         """Compute State reward."""
-        dist_to_target = state[-3:]
+        dist_to_target = state[..., -3:]
         return -torch.sqrt((dist_to_target ** 2).sum(-1))
 
 
@@ -48,8 +48,9 @@ class MBReacherEnv(ReacherEnv):
 
     def reset_model(self):
         """Reset model."""
-        super().reset_model()
+        obs = super().reset_model()
         self.goal = None
+        return obs
 
     def step(self, a):
         """See `AbstractEnvironment.step()'."""

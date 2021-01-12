@@ -160,6 +160,7 @@ def n_step_return(
 def mc_return(
     observation,
     gamma=1.0,
+    lambda_=1.0,
     reward_transformer=RewardTransformer(),
     value_function=None,
     reduction="none",
@@ -176,6 +177,8 @@ def mc_return(
         List of observations to compute the n-step return.
     gamma: float, optional.
         Discount factor.
+    lambda_: float, optional.
+        Lambda return.
     value_function: AbstractValueFunction, optional.
         Value function to bootstrap the value of the final state.
     entropy_regularization: float, optional.
@@ -195,8 +198,24 @@ def mc_return(
         value_function=value_function,
         reduction=reduction,
     )
-
-    return returns[..., -1]
+    steps = returns.shape[1]  # Batch x T x num_q
+    if steps == 1 or lambda_ == 1.0:
+        if returns.ndim == 2:
+            return returns[:, -1]
+        else:
+            return returns[..., -1, :]
+    else:
+        w = torch.cat(
+            (
+                (1 - lambda_) * lambda_ ** torch.arange(steps - 1),
+                torch.tensor([lambda_]) ** (steps - 1),
+            )
+        )
+        w = w.unsqueeze(0)
+        if returns.ndim == 2:
+            return (w * returns).sum(-1)
+        else:
+            return (w.unsqueeze(-1) * returns).sum(-2)
 
 
 def mb_return(
