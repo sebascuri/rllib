@@ -147,15 +147,12 @@ def calibrate_model(
     epsilon=0.0001,
     temperature_range=(0.1, 100.0),
     logger=None,
-    min_calibration_set_size=200,
 ):
     """Calibrate a model by scaling the temperature.
 
     First, find a suitable temperature by logarithmic search (increasing or decreasing).
     Then, find a reasonable temperature by binary search.
     """
-    if len(calibration_set) < min_calibration_set_size:
-        return
     if logger is None:
         logger = Logger(f"{model.name}_calibration")
 

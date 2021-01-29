@@ -43,7 +43,6 @@ def calibrate_model(
     epsilon: float = ...,
     temperature_range: Tuple[float, float] = ...,
     logger: Optional[Logger] = ...,
-    min_calibration_set_size: int = ...,
 ) -> None: ...
 def evaluate_model(
     model: AbstractModel, observation: Observation, logger: Optional[Logger] = ...,
