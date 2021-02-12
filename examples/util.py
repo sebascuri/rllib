@@ -1,12 +1,13 @@
 """Running utilities."""
 import importlib
+import os
 
 import yaml
 from gym.envs import registry
 
 from rllib.environment import GymEnvironment
 from rllib.util.training.agent_training import evaluate_agent, train_agent
-from rllib.util.utilities import RewardTransformer, set_random_seed
+from rllib.util.utilities import RewardTransformer, load_random_state, set_random_seed
 
 try:
     from dm_control.suite import BENCHMARKING
@@ -32,18 +33,19 @@ def init_experiment(args, **kwargs):
     """Initialize experiment."""
     arg_dict = vars(args)
     arg_dict.update(kwargs)
-    arg_dict.update(parse_config_file(args.config_file))
+    arg_dict.update(parse_config_file(args.agent_config))
     arg_dict = {k: v for k, v in arg_dict.items() if v is not None}
 
-    arg_dict.pop("environment")
+    env_config = parse_config_file(args.env_config)
+    args.max_steps = env_config.get("max_steps", 1000)
     # %% Set Random seeds.
     set_random_seed(args.seed)
 
     # %% Initialize environment.
-    if args.environment in gym_envs:
-        environment = GymEnvironment(args.environment, seed=args.seed)
+    if env_config["name"] in gym_envs:
+        environment = GymEnvironment(env_config["name"], seed=args.seed)
     else:
-        env_name, env_task = args.environment.split("/")
+        env_name, env_task = env_config["name"].split("/")
         environment = DMSuiteEnvironment(env_name, env_task, seed=args.seed)
 
     # %% Initialize module.
@@ -56,6 +58,24 @@ def init_experiment(args, **kwargs):
     agent.logger.save_hparams(arg_dict)
 
     return agent, environment
+
+
+def load_from_directory(agent, directory=None):
+    """Load an agent from a directory."""
+    if directory is None:  # find latest agent.
+        path, current_log_dir = os.path.split(agent.logger.log_dir)
+        listdir = os.listdir(path)
+        if len(listdir) < 2:
+            return
+        latest_directory = sorted(listdir)[-2]
+        directory = os.path.join(path, latest_directory)
+
+    # Load agent.
+    agent.load(f"{directory}/last.pkl")
+    agent.logger.change_log_dir(directory)
+
+    # Load random state.
+    load_random_state(directory)
 
 
 def train(agent, environment, args):
