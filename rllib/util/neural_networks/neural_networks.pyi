@@ -16,6 +16,7 @@ class FeedForwardNN(nn.Module):
     _init_scale_transformed: Tensor
     _min_scale: float
     _max_scale: float
+    log_scale: bool
     def __init__(
         self,
         in_dim: Tuple,
@@ -25,6 +26,7 @@ class FeedForwardNN(nn.Module):
         biased_head: bool = ...,
         squashed_output: bool = ...,
         initial_scale: float = ...,
+        log_scale: bool = ...,
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...
@@ -34,15 +36,7 @@ class FeedForwardNN(nn.Module):
 class DeterministicNN(FeedForwardNN):
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
 
-class CategoricalNN(FeedForwardNN):
-    def __init__(
-        self,
-        in_dim: Tuple,
-        out_dim: Tuple,
-        layers: Optional[Sequence[int]] = ...,
-        non_linearity: str = ...,
-        biased_head: bool = ...,
-    ) -> None: ...
+class CategoricalNN(FeedForwardNN): ...
 
 class HeteroGaussianNN(FeedForwardNN):
     _scale: nn.Linear
@@ -63,12 +57,9 @@ class Ensemble(HeteroGaussianNN):
         out_dim: Tuple,
         num_heads: int,
         prediction_strategy: str = ...,
-        layers: Optional[Sequence[int]] = ...,
-        non_linearity: str = ...,
-        biased_head: bool = ...,
-        squashed_output: bool = ...,
         deterministic: bool = ...,
-        initial_scale: float = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     @classmethod
     def from_feedforward(
