@@ -69,8 +69,10 @@ class MVE(Dyna):
             final_value = self.base_algorithm.value_function(final_state)
 
             if final_value.ndim == observation.reward.ndim:  # It is an ensemble.
-                final_value = final_value.min(-1)[0]
-
+                final_min = final_value.min(-1)[0]
+                final_max = final_value.max(-1)[0]
+                lambda_ = self.critic_ensemble_lambda
+                final_value = lambda_ * final_min + (1.0 - lambda_) * final_max
             tau = self.base_algorithm.entropy_loss.eta.item()
             reward = observation.reward + tau * observation.entropy
             rewards = torch.cat(

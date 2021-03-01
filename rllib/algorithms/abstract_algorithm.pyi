@@ -36,6 +36,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     ope: Optional[AbstractTDTarget]
     value_function: IntegrateQValueFunction
     value_target: IntegrateQValueFunction
+    critic_ensemble_lambda: float
     def __init__(
         self,
         gamma: float,
@@ -48,6 +49,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         kl_regularization: bool = ...,
         num_samples: int = ...,
+        critic_ensemble_lambda: float = ...,
         criterion: _Loss = ...,
         ope: Optional[AbstractTDTarget] = ...,
         reward_transformer: RewardTransformer = ...,

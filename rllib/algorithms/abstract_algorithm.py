@@ -66,10 +66,30 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         Algorithm policy.
     critic: AbstractQFunction.
         Algorithm critic.
-    criterion: nn._Loss.
-        Criterion to optimize the critic.
-    reward_transformer: RewardTransformer.
-        Transformations to optimize reward.
+    eta: float (optional).
+        Entropy regularization parameter.
+    entropy_regularization: bool (optional).
+        Flag that indicates whether to regularize the entropy or constrain it.
+    target_entropy: float (optional).
+        Target entropy for constraint version. |h - h_target| < eta.
+    epsilon_mean: float.
+        KL divergence regularization parameter for mean in continuous distributions,
+        for distribution in categorical ones.
+    epsilon_var: float.
+        KL divergence regularization parameter for variance in continuous distributions.
+    kl_regularization: bool
+        Flag that indicates whether to regularize the KL-divergence or constrain it.
+    num_samples: int.
+        Number of MC samples for MC simulation of targets.
+    ope: OPE (optional).
+        Optional off-policy estimation parameter.
+    critic_ensemble_lambda: float (optional).
+        Critic ensemble parameter, it averages the minimum and the maximum of a critic
+        ensemble as q_target = lambda * q_min + (1-lambda) * qmax
+    criterion: nn.MSELoss.
+        criterion for learning the critic.
+    reward_transformer: RewardTransformer().
+        A callable that transforms rewards.
     """
 
     eps = 1e-12
@@ -87,6 +107,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         kl_regularization=True,
         num_samples=1,
         ope=None,
+        critic_ensemble_lambda=1.0,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
         *args,
@@ -101,7 +122,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.critic_target = deep_copy_module(self.critic)
         self.criterion = criterion
         self.reward_transformer = reward_transformer
-
+        self.critic_ensemble_lambda = critic_ensemble_lambda
         if policy is None:
             self.entropy_loss = EntropyLoss()
             self.kl_loss = KLLoss()
@@ -177,7 +198,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 f"Critic Target type {type(self.critic_target)} not understood."
             )
         if isinstance(self.critic_target, NNEnsembleQFunction):
-            next_v = torch.min(next_v, dim=-1)[0]
+            next_v_min = torch.min(next_v, dim=-1)[0]
+            next_v_max = torch.max(next_v, dim=-1)[0]
+            lambda_ = self.critic_ensemble_lambda
+            next_v = lambda_ * next_v_min + (1.0 - lambda_) * next_v_max
         next_v = next_v * (1.0 - observation.done)
         return self.get_reward(observation) + self.gamma * next_v
 

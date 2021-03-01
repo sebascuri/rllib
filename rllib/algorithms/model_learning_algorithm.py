@@ -56,6 +56,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         non_decrease_iter=5,
         validation_ratio=0.1,
         calibrate=True,
+        num_steps=0,
         *args,
         **kwargs,
     ):
@@ -73,12 +74,14 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             transformations=self.dynamical_model.forward_transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
+            num_steps=num_steps,
         )
         self.validation_set = BootstrapExperienceReplay(
             max_len=max_memory,
             transformations=self.dynamical_model.forward_transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
+            num_steps=num_steps,
         )
 
         self.num_epochs = num_epochs
@@ -117,7 +120,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             if observation.action.shape[-1] > self.dynamical_model.dim_action[0]:
                 observation.action = observation.action[
                     ..., : self.dynamical_model.dim_action[0]
-                ]
+                ]  # Only get real actions.
             if np.random.rand() < self.validation_ratio:
                 self.validation_set.append(observation)
             else:
