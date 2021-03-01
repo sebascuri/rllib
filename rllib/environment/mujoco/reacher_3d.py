@@ -139,9 +139,9 @@ try:
             qvel[-3:] = 0
             self.set_state(qpos, qvel)
             if self.goal_at_obs:
-                self.goal = qpos[-3:]
-            else:
                 self.goal = None
+            else:
+                self.goal = qpos[-3:]
             return self._get_obs()
 
         def _get_obs(self):
