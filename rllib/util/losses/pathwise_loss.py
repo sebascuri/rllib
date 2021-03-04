@@ -59,4 +59,5 @@ class PathwiseLoss(nn.Module):
             if isinstance(self.critic, NNEnsembleQFunction):
                 q = q[..., 0]
 
-        return Loss(policy_loss=-q)
+        # Take mean over time coordinate.
+        return Loss(policy_loss=-q.mean(1))
