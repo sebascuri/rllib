@@ -7,13 +7,13 @@ from torch.nn.modules.loss import _Loss
 
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.policy import AbstractPolicy
+from rllib.util.losses.entropy_loss import EntropyLoss
+from rllib.util.losses.kl_loss import KLLoss
+from rllib.util.losses.pathwise_loss import PathwiseLoss
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.util.utilities import RewardTransformer
 from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
-from rllib.util.losses.entropy_loss import EntropyLoss
-from rllib.util.losses.kl_loss import KLLoss
-from rllib.util.losses.pathwise_loss import PathwiseLoss
 from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
