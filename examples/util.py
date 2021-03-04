@@ -67,7 +67,13 @@ def load_from_directory(agent, directory=None):
         listdir = os.listdir(path)
         if len(listdir) < 2:
             return
-        latest_directory = sorted(listdir)[-2]
+        environment = current_log_dir.split("_")[0]
+        latest_directory_list = sorted(
+            filter(lambda x: x.startswith(environment), listdir)
+        )
+        if len(latest_directory_list) < 2:
+            return
+        latest_directory = latest_directory_list[-2]
         directory = os.path.join(path, latest_directory)
 
     # Load agent.
