@@ -1,2 +1,2 @@
-name: HalfCheetah-v3
-max_steps: 1000
+name: MBReacher3d-v0
+max_steps: 150

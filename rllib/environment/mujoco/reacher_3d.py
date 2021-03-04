@@ -16,7 +16,7 @@ class ReacherReward(StateActionReward):
     dim_action = (7,)
     length_scale = 0.45
 
-    def __init__(self, goal, ctrl_cost_weight=0.01, sparse=False):
+    def __init__(self, goal, ctrl_cost_weight=0.001, sparse=False):
         super().__init__(ctrl_cost_weight, sparse, goal=goal)
 
     def copy(self):
@@ -102,15 +102,18 @@ try:
         https://github.com/kchua/handful-of-trials
         """
 
-        def __init__(self, goal_at_obs=True, ctrl_cost_weight=0.01, sparse=False):
+        def __init__(self, goal_at_obs=True, ctrl_cost_weight=0.001, sparse=False):
             self._reward_model = ReacherReward(
                 ctrl_cost_weight=ctrl_cost_weight, sparse=sparse, goal=None
             )
+            self.action_magnitude = 20
             self.goal = None
             self.goal_at_obs = goal_at_obs
             utils.EzPickle.__init__(self)
             dir_path = os.path.dirname(os.path.realpath(__file__))
             mujoco_env.MujocoEnv.__init__(self, "%s/assets/reacher3d.xml" % dir_path, 2)
+            self.action_space.high = np.ones_like(self.action_space.high)
+            self.action_space.low = -np.ones_like(self.action_space.low)
 
         def reward_model(self):
             """Get reward model."""
@@ -118,6 +121,7 @@ try:
 
         def step(self, action):
             """See `AbstractEnvironment.step()'."""
+            action = action * self.action_magnitude
             obs = self._get_obs()
             reward = self._reward_model(obs, action)[0].item()
             self.do_simulation(action, self.frame_skip)
