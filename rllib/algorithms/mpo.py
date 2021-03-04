@@ -89,7 +89,7 @@ class MPOLoss(nn.Module):
         weighted_log_p = torch.sum(weights * action_log_p, dim=0)
         log_likelihood = weighted_log_p
 
-        return Loss(policy_loss=-log_likelihood, dual_loss=dual_loss)
+        return Loss(policy_loss=-log_likelihood.mean(), dual_loss=dual_loss)
 
 
 class MPO(AbstractAlgorithm):

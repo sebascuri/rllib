@@ -7,6 +7,9 @@ import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util.losses.entropy_loss import EntropyLoss
+from rllib.util.losses.kl_loss import KLLoss
+from rllib.util.losses.pathwise_loss import PathwiseLoss
 from rllib.util.neural_networks import (
     deep_copy_module,
     freeze_parameters,
@@ -26,10 +29,6 @@ from rllib.value_function import (
     IntegrateQValueFunction,
 )
 from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
-
-from .entropy_loss import EntropyLoss
-from .kl_loss import KLLoss
-from .pathwise_loss import PathwiseLoss
 
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
@@ -145,18 +144,19 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.pathwise_loss = PathwiseLoss(critic=self.critic, policy=self.policy)
         self.num_samples = num_samples
         self.ope = ope
-        self.post_init()
-
-    def post_init(self):
-        """Set derived modules after initialization."""
         self.value_function = IntegrateQValueFunction(
             self.critic, self.policy, num_samples=self.num_samples
         )
         self.value_target = IntegrateQValueFunction(
             self.critic_target, self.policy, num_samples=self.num_samples
         )
+        self.post_init()
+
+    def post_init(self):
+        """Set derived modules after initialization."""
         if self.policy is not None:
-            self.pathwise_loss.policy = self.policy
+            self.value_function.policy = self.policy
+            self.value_target.policy = self.policy
             old_policy = deep_copy_module(self.policy)
             freeze_parameters(old_policy)
             self.old_policy = old_policy
@@ -300,8 +300,12 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def regularization_loss(self, observation, num_trajectories=1):
         """Compute regularization loss."""
         kl_mean, kl_var, entropy = self.get_kl_entropy(observation.state)
-        entropy_loss = self.entropy_loss(entropy).reduce(self.criterion.reduction)
-        kl_loss = self.kl_loss(kl_mean, kl_var).reduce(self.criterion.reduction)
+        entropy_loss = self.entropy_loss(entropy.squeeze(-1)).reduce(
+            self.criterion.reduction
+        )
+        kl_loss = self.kl_loss(kl_mean.squeeze(-1), kl_var.squeeze(-1)).reduce(
+            self.criterion.reduction
+        )
 
         self._info.update(
             eta=self.entropy_loss.eta,
