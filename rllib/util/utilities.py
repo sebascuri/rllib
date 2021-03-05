@@ -148,7 +148,7 @@ def tensor_to_distribution(args, **kwargs):
             )
         else:
             mean = args[0]
-        return Delta(mean, event_dim=min(1, mean.dim()))
+        return Delta(v=mean, event_dim=min(1, mean.dim()))
     else:
         if kwargs.get("tanh", False):
             d = TransformedDistribution(

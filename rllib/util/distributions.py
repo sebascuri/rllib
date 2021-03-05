@@ -12,6 +12,9 @@ from torch.nn.functional import softplus
 class Delta(gpytorch.distributions.Delta):
     """Delta Distribution."""
 
+    def __init__(self, validate_args=False, *args, **kwargs):
+        super().__init__(validate_args=validate_args, *args, **kwargs)
+
     def __str__(self):
         """Get string of Delta distribution."""
         return f"Delta loc: {self.v}"

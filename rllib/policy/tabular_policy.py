@@ -42,4 +42,5 @@ class TabularPolicy(NNPolicy):
                 one_hot_encode(new_value, num_classes=self.num_actions) + 1e-12
             )
 
-        self.nn.head.weight[:, state] = new_value
+        with torch.no_grad():
+            self.nn.head.weight[:, state] = new_value

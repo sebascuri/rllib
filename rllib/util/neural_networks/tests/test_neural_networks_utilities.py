@@ -240,7 +240,7 @@ class TestOneHotEncode(object):
     def test_correctness(self):
         tensor = torch.tensor([2])
         out_tensor = one_hot_encode(tensor, 4)
-        torch.testing.assert_allclose(out_tensor, torch.tensor([0.0, 0.0, 1.0, 0.0]))
+        torch.testing.assert_allclose(out_tensor, torch.tensor([[0.0, 0.0, 1.0, 0.0]]))
 
         tensor = torch.tensor([2, 1])
         out_tensor = one_hot_encode(tensor, 4)
@@ -252,10 +252,12 @@ class TestOneHotEncode(object):
         num_classes = 4
         tensor = torch.randint(4, torch.Size([batch_size] if batch_size else []))
         out_tensor = one_hot_encode(tensor, num_classes)
-        torch.testing.assert_allclose(
-            out_tensor.sum(dim=-1),
-            torch.ones(batch_size if batch_size else 1).squeeze(-1),
-        )
+        if batch_size:
+            torch.testing.assert_allclose(
+                out_tensor.sum(dim=-1), torch.ones(batch_size)
+            )
+        else:
+            torch.testing.assert_allclose(out_tensor.sum(dim=-1), torch.tensor(1.0))
 
     def test_indexing(self, batch_size):
         num_classes = 4

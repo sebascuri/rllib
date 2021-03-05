@@ -33,12 +33,14 @@ class TestIntegrate(object):
         torch.testing.assert_allclose(integrate(_function, d), 4.0)
 
     def test_delta(self):
-        d = Delta(torch.tensor([0.2]))
+        d = Delta(v=torch.tensor([0.2]))
 
         def _function(a):
             return 2 * a
 
-        torch.testing.assert_allclose(integrate(_function, d, num_samples=10), 0.4)
+        torch.testing.assert_allclose(
+            integrate(_function, d, num_samples=10), torch.tensor([0.4])
+        )
 
     def test_multivariate_normal(self):
         d = MultivariateNormal(torch.tensor([0.2]), scale_tril=1e-6 * torch.eye(1))
