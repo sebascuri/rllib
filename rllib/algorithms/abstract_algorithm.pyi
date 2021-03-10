@@ -23,8 +23,8 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     _info: dict
     gamma: float
     reward_transformer: RewardTransformer
-    critic: AbstractQFunction
-    critic_target: AbstractQFunction
+    critic: Optional[AbstractQFunction]
+    critic_target: Optional[AbstractQFunction]
     policy: AbstractPolicy
     policy_target: AbstractPolicy
     old_policy: AbstractPolicy
@@ -34,14 +34,14 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     pathwise_loss: Optional[PathwiseLoss]
     num_samples: int
     ope: Optional[AbstractTDTarget]
-    value_function: IntegrateQValueFunction
-    value_target: IntegrateQValueFunction
+    value_function: Optional[IntegrateQValueFunction]
+    value_target: Optional[IntegrateQValueFunction]
     critic_ensemble_lambda: float
     def __init__(
         self,
         gamma: float,
-        policy: AbstractPolicy,
-        critic: AbstractQFunction,
+        policy: Optional[AbstractPolicy],
+        critic: Optional[AbstractQFunction],
         eta: Optional[Union[ParameterDecay, float]] = ...,
         entropy_regularization: bool = ...,
         target_entropy: Optional[float] = ...,

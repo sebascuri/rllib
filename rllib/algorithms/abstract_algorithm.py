@@ -144,19 +144,23 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.pathwise_loss = PathwiseLoss(critic=self.critic, policy=self.policy)
         self.num_samples = num_samples
         self.ope = ope
-        self.value_function = IntegrateQValueFunction(
-            self.critic, self.policy, num_samples=self.num_samples
-        )
-        self.value_target = IntegrateQValueFunction(
-            self.critic_target, self.policy, num_samples=self.num_samples
-        )
+        if self.critic is None:
+            self.value_function, self.value_target = None, None
+        else:
+            self.value_function = IntegrateQValueFunction(
+                self.critic, self.policy, num_samples=self.num_samples
+            )
+            self.value_target = IntegrateQValueFunction(
+                self.critic_target, self.policy, num_samples=self.num_samples
+            )
         self.post_init()
 
     def post_init(self):
         """Set derived modules after initialization."""
         if self.policy is not None:
-            self.value_function.policy = self.policy
-            self.value_target.policy = self.policy
+            if self.critic is not None:
+                self.value_function.policy = self.policy
+                self.value_target.policy = self.policy
             old_policy = deep_copy_module(self.policy)
             freeze_parameters(old_policy)
             self.old_policy = old_policy
