@@ -159,15 +159,10 @@ class MPO(AbstractAlgorithm):
         next_v = next_v * (1.0 - observation.done)
         return self.get_reward(observation) + self.gamma * next_v
 
-    def actor_loss(self, observation):
-        """Compute actor loss."""
-        state = repeat_along_dimension(
-            observation.state, number=self.num_samples, dim=0
-        )
+    def compute_mpo_loss(self, state, action):
+        """Compute mpo loss for a given set of state/action pairs."""
         pi_dist = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        action = self.policy.action_scale * pi_dist.sample().clamp(-1.0, 1.0)
-
-        log_p, _ = self.get_log_p_and_ope_weight(state, action)
+        log_p = pi_dist.log_prob(action)
 
         q_values = self.critic_target(state, action)
 
@@ -175,5 +170,13 @@ class MPO(AbstractAlgorithm):
             self.criterion.reduction
         )
         self._info.update(mpo_eta=self.mpo_loss.eta)
-
         return mpo_loss
+
+    def actor_loss(self, observation):
+        """Compute actor loss."""
+        state = repeat_along_dimension(
+            observation.state, number=self.num_samples, dim=0
+        )
+        pi = tensor_to_distribution(self.old_policy(state), **self.policy.dist_params)
+        action = self.policy.action_scale * pi.sample().clamp(-1.0, 1.0)
+        return self.compute_mpo_loss(state, action)
