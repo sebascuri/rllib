@@ -11,19 +11,16 @@ class EntropyLoss(nn.Module):
     The method implements an entropy loss.
 
     In regularization mode, it returns a loss given by:
-    ..math :: Loss = \epsilon KL(p, q).
+    ..math :: Loss = -\eta entropy.
 
     In trust-region mode (regularization=False), it returns a loss given by:
-    ..math :: Loss = \eta() (\epsilon - KL(p, q).detach()).
+    ..math :: Loss = \eta (entropy - target_entropy).
 
-    In order to have a tighter control on the mean and variance of Normal distribution,
-    the KL-Divergence associated with the mean and the variance of a distribution are
-    computed separately. See `rllib.util.utilities.separated_kl`.
 
     Parameters
     ----------
     eta: float.
-    entropy regularization parameter.
+    target_entropy: ParameterDecay.
     regularization: bool
         Flag that indicates if the algorithm is in regularization or trust-region mode.
 
