@@ -21,6 +21,7 @@ class NNModel(AbstractModel):
         input_transform: Optional[torch.nn.Module] = ...,
         deterministic: bool = ...,
         per_coordinate: bool = ...,
+        jit_compile: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

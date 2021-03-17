@@ -26,6 +26,8 @@ class NNPolicy(AbstractPolicy):
         Neural Network non-linearity.
     input_transform: nn.Module, optional (default=None).
         Module with which to transform inputs.
+    jit_compile: bool.
+        Flag that indicates whether to compile or not the neural network.
     """
 
     def __init__(
@@ -36,6 +38,7 @@ class NNPolicy(AbstractPolicy):
         squashed_output=True,
         initial_scale=0.5,
         input_transform=None,
+        jit_compile=False,
         *args,
         **kwargs,
     ):
@@ -61,6 +64,8 @@ class NNPolicy(AbstractPolicy):
                 squashed_output=squashed_output,
                 initial_scale=initial_scale,
             )
+        if jit_compile:
+            self.nn = torch.jit.script(self.nn)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -180,12 +185,15 @@ class FelixPolicy(NNPolicy):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, jit_compile=False, *args, **kwargs):
+        super().__init__(jit_compile=jit_compile, *args, **kwargs)
         self.nn = FelixNet(
             self.nn.kwargs["in_dim"],
             self.nn.kwargs["out_dim"],
             initial_scale=kwargs.get("initial_scale", 0.5),
         )
+        if jit_compile:
+            self.nn = torch.jit.script(self.nn)
+
         if self.discrete_state or self.discrete_action:
             raise ValueError("num_states and num_actions have to be set to -1.")

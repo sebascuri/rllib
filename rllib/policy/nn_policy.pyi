@@ -20,6 +20,7 @@ class NNPolicy(AbstractPolicy):
         squashed_output: bool = ...,
         initial_scale: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        jit_compile: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
