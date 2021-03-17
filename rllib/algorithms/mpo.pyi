@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import Loss, State, Action
+from rllib.dataset.datatypes import Action, Loss, State
 from rllib.util.parameter_decay import ParameterDecay
 
 from .abstract_algorithm import AbstractAlgorithm

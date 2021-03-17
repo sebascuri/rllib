@@ -10,11 +10,7 @@ from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.losses.entropy_loss import EntropyLoss
 from rllib.util.losses.kl_loss import KLLoss
 from rllib.util.losses.pathwise_loss import PathwiseLoss
-from rllib.util.neural_networks import (
-    deep_copy_module,
-    freeze_parameters,
-    update_parameters,
-)
+from rllib.util.neural_networks import deep_copy_module, update_parameters
 from rllib.util.utilities import (
     RewardTransformer,
     get_entropy_and_log_p,
@@ -161,9 +157,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             if self.critic is not None:
                 self.value_function.policy = self.policy
                 self.value_target.policy = self.policy
-            old_policy = deep_copy_module(self.policy)
-            freeze_parameters(old_policy)
-            self.old_policy = old_policy
+            self.old_policy = deep_copy_module(self.policy)
 
     def set_policy(self, new_policy):
         """Set new policy."""
