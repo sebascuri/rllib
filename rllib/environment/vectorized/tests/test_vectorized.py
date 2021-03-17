@@ -264,3 +264,27 @@ class TestPendulum(object):
                 np.testing.assert_allclose(obs, vobs[i, j])
                 np.testing.assert_allclose(reward, vreward[i, j])
                 np.testing.assert_allclose(done, vdone[i, j])
+
+    def test_set_state_np(self):
+        venv = VectorizedPendulumEnv()
+        state, action = self.state_action
+        action = np.round(action)
+
+        venv.state = torch.tensor(state)
+        vobs, vreward, vdone, _ = venv.step(torch.tensor(action))
+        state = venv.state
+
+        venv.set_state(vobs[2:])
+        np.testing.assert_allclose(venv.state, state[2:])
+
+    def test_set_state_torch(self):
+        venv = VectorizedPendulumEnv()
+        state, action = self.state_action
+        action = np.round(action)
+
+        venv.state = torch.tensor(state)
+        vobs, vreward, vdone, _ = venv.step(torch.tensor(action))
+        state = venv.state
+
+        venv.set_state(vobs[2:])
+        np.testing.assert_allclose(venv.state, state[2:])

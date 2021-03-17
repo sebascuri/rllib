@@ -128,15 +128,15 @@ class GymEnvironment(AbstractEnvironment):
 
     @state.setter
     def state(self, value):
-        if hasattr(self.env, "state"):
-            self.env.state = value
-        elif hasattr(self.env, "s"):
-            self.env.s = value
-        elif hasattr(self.env, "set_state"):
+        if hasattr(self.env, "set_state"):
             self.env.set_state(
                 value[: len(self.env.sim.data.qpos)],
                 value[len(self.env.sim.data.qpos) :],
             )
+        elif hasattr(self.env, "state"):
+            self.env.state = value
+        elif hasattr(self.env, "s"):
+            self.env.s = value
         else:
             raise NotImplementedError("Strange state")
 

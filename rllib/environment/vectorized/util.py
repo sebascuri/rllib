@@ -15,6 +15,13 @@ class VectorizedEnv(Env, metaclass=ABCMeta):
         """Get current backend of environment."""
         return get_backend(self.state)
 
+    def atan2(self, sin, cos):
+        """Return signed angle of the sin cosine."""
+        if self.bk is np:
+            return self.bk.arctan2(sin, cos)
+        else:
+            return self.bk.atan2(sin, cos)
+
     def clip(self, val, min_val, max_val):
         """Clip between min and max values."""
         if self.bk is np:

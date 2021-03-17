@@ -35,6 +35,12 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
         done = bk.zeros_like(costs, dtype=bk.bool)
         return self._get_obs(), -costs, done, {}
 
+    def set_state(self, observation):
+        """Set state from a given observation."""
+        self.state = self.bk.zeros_like(observation[..., :2])
+        self.state[..., 0] = self.atan2(observation[..., 1], observation[..., 0])
+        self.state[..., 1] = observation[..., 2]
+
     def _get_obs(self):
         theta, theta_dot = self.state[..., 0], self.state[..., 1]
         return self.bk.stack((self.bk.cos(theta), self.bk.sin(theta), theta_dot), -1)

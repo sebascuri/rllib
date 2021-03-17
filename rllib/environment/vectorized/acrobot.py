@@ -94,6 +94,13 @@ class VectorizedAcrobotEnv(AcrobotEnv, VectorizedEnv):
             (dtheta1, dtheta2, ddtheta1, ddtheta2, bk.zeros_like(dtheta1)), -1
         )
 
+    def set_state(self, observation):
+        """Set state from a given observation."""
+        self.state = self.bk.zeros_like(observation[..., :4])
+        self.state[..., 0] = self.atan2(observation[..., 1], observation[..., 0])
+        self.state[..., 1] = self.atan2(observation[..., 1], observation[..., 0])
+        self.state[..., 2:] = observation[4:]
+
     def _get_ob(self):
         bk = self.bk
 
