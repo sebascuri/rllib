@@ -95,7 +95,7 @@ class REPS(AbstractAlgorithm):
         normalizer = torch.logsumexp(weights, dim=0)
         dual = self.eta() * (self.epsilon + normalizer) + (1.0 - self.gamma) * value
 
-        nll = self._policy_weighted_nll(state, action, weights)
+        nll = self._policy_weighted_nll(state, action, torch.exp(weights))
 
         return Loss(dual_loss=dual.mean(), policy_loss=nll, td_error=td)
 
