@@ -51,6 +51,8 @@ def get_experiment_parser():
     )
     parser.add_argument("--render-train", action="store_true", default=False)
     parser.add_argument("--render-test", action="store_true", default=False)
+    parser.add_argument("--tensorboard", action="store_true", default=False)
+
     return parser
 
 
