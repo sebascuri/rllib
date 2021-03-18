@@ -27,8 +27,8 @@ class REPSAgent(OffPolicyAgent):
         self,
         policy,
         critic,
-        eta=1.0,
-        entropy_regularization=False,
+        reps_eta=1.0,
+        relent_regularization=False,
         learn_policy=True,
         num_iter=200,
         train_frequency=0,
@@ -49,8 +49,8 @@ class REPSAgent(OffPolicyAgent):
         self.algorithm = REPS(
             policy=policy,
             critic=critic,
-            eta=eta,
-            entropy_regularization=entropy_regularization,
+            reps_eta=reps_eta,
+            relent_regularization=relent_regularization,
             learn_policy=learn_policy,
             *args,
             **kwargs,
@@ -111,7 +111,7 @@ class REPSAgent(OffPolicyAgent):
         self._learn_steps(closure)
 
     @classmethod
-    def default(cls, environment, critic=None, policy=None, lr=5e-4, *args, **kwargs):
+    def default(cls, environment, critic=None, policy=None, lr=5e-3, *args, **kwargs):
         """See `AbstractAgent.default'."""
         if critic is None:
             critic = NNValueFunction.default(environment)

@@ -2,12 +2,64 @@
 
 import torch
 import torch.distributions
+import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
 from .abstract_algorithm import AbstractAlgorithm
+
+
+class REPSLoss(nn.Module):
+    """REPS Loss."""
+
+    def __init__(self, epsilon=0.1, relent_regularization=False):
+        super().__init__()
+
+        if relent_regularization:
+            eta = epsilon
+            if not isinstance(eta, ParameterDecay):
+                eta = Constant(eta)
+
+            self._eta = eta
+
+            self.epsilon = torch.tensor(0.0)
+
+        else:  # Trust-Region: || KL(p || q) || < \epsilon
+            self._eta = Learnable(1.0, positive=True)
+            self.epsilon = torch.tensor(epsilon)
+
+    @property
+    def eta(self):
+        """Get REPS regularization parameter."""
+        return self._eta().detach()
+
+    def forward(self, action_log_p, value, target):
+        """Return primal and dual loss terms from REPS.
+
+        Parameters
+        ----------
+        action_log_p : torch.Tensor
+            A [state_batch, 1] tensor of log probabilities of the corresponding actions
+            under the policy.
+        value: torch.Tensor
+            The value function (with gradients) evaluated at V(s)
+        target: torch.Tensor
+            The value target (with gradients) evaluated at r + gamma V(s')
+        """
+        td = target - value
+        weights = td / self._eta()
+        normalizer = torch.logsumexp(weights, dim=0)
+        dual_loss = self._eta() * (self.epsilon + normalizer)
+
+        # Clamping is crucial for stability so that it does not converge to a delta.
+        weighted_log_p = torch.exp(weights).clamp_max(1e2).detach() * action_log_p
+        log_likelihood = weighted_log_p.mean()
+
+        return Loss(
+            policy_loss=-log_likelihood, dual_loss=dual_loss, td_error=td.mean()
+        )
 
 
 class REPS(AbstractAlgorithm):
@@ -52,28 +104,17 @@ class REPS(AbstractAlgorithm):
     """
 
     def __init__(
-        self, eta, entropy_regularization=False, learn_policy=True, *args, **kwargs
+        self, reps_eta, relent_regularization=False, learn_policy=True, *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.learn_policy = learn_policy
-        if entropy_regularization:
-            if not isinstance(eta, ParameterDecay):
-                eta = Constant(eta)
-            self.eta = eta
-            self.epsilon = torch.tensor(0.0)
-        else:
-            self.eta = Learnable(1.0, positive=True)
-            self.epsilon = torch.tensor(eta)
+        self.reps_loss = REPSLoss(
+            epsilon=reps_eta, relent_regularization=relent_regularization
+        )
 
-    def _policy_weighted_nll(self, state, action, weights):
-        """Return weighted policy negative log-likelihood."""
-        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        _, action_log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
-        weighted_log_p = weights.detach() * action_log_p
-
-        # Clamping is crucial for stability so that it does not converge to a delta.
-        log_likelihood = torch.mean(weighted_log_p.clamp_max(1e-3))
-        return -log_likelihood
+    def critic_loss(self, observation) -> Loss:
+        """Get the critic loss."""
+        return Loss()
 
     def get_value_target(self, observation):
         """Get value-function target."""
@@ -89,17 +130,10 @@ class REPS(AbstractAlgorithm):
 
         # For dual function we need the full gradient, not the semi gradient!
         target = self.get_value_target(observation)
-        td = target - value
 
-        weights = td / self.eta()
-        normalizer = torch.logsumexp(weights, dim=0)
-        dual = self.eta() * (self.epsilon + normalizer) + (1.0 - self.gamma) * value
+        pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
+        _, action_log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)
 
-        nll = self._policy_weighted_nll(state, action, torch.exp(weights))
-
-        return Loss(dual_loss=dual.mean(), policy_loss=nll, td_error=td)
-
-    def update(self):
-        """Update regularization parameter."""
-        super().update()
-        self.eta.update()
+        reps_loss = self.reps_loss(action_log_p, value, target)
+        self._info.update(reps_eta=self.reps_loss.eta)
+        return reps_loss + Loss(dual_loss=(1.0 - self.gamma) * value.mean())
