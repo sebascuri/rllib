@@ -270,8 +270,8 @@ class TestPendulum(object):
         state, action = self.state_action
         action = np.round(action)
 
-        venv.state = torch.tensor(state)
-        vobs, vreward, vdone, _ = venv.step(torch.tensor(action))
+        venv.state = state
+        vobs, vreward, vdone, _ = venv.step(action)
         state = venv.state
 
         venv.set_state(vobs[2:])
