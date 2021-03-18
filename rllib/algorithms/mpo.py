@@ -79,7 +79,7 @@ class MPOLoss(nn.Module):
             self.epsilon + torch.mean(normalizer) - torch.log(num_actions)
         )
         # non-parametric representation of the optimal policy.
-        weights = torch.exp(q_values - normalizer.detach())
+        weights = torch.exp(q_values - normalizer).detach()
 
         # M-step: # E-step: Solve Problem (10).
         # Fit the parametric policy to the representation form the E-step.
