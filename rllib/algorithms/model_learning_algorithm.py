@@ -126,16 +126,17 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             else:
                 self.train_set.append(observation)
 
-    def _learn(self, model, logger, calibrate=False):
+    def _learn(self, model, logger, calibrate=False, max_iter=None):
         """Learn a model."""
         print(colorize(f"Training {model.model_kind} model", "yellow"))
-
+        num_epochs = self.num_epochs if max_iter is None else None
         train_model(
             model=model,
             train_set=self.train_set,
             validation_set=self.validation_set,
             batch_size=self.batch_size,
-            num_epochs=self.num_epochs,
+            max_iter=max_iter,
+            num_epochs=num_epochs,
             optimizer=self.model_optimizer,
             logger=logger,
             epsilon=self.epsilon,
@@ -148,22 +149,34 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         ):
             calibrate_model(model, self.validation_set, self.num_epochs, logger=logger)
 
-    def learn(self, logger):
+    def learn(self, logger, max_iter=None):
         """Learn using stochastic gradient descent on marginal maximum likelihood."""
-        self._learn(self.dynamical_model.base_model, logger, calibrate=self.calibrate)
+        self._learn(
+            self.dynamical_model.base_model,
+            logger,
+            calibrate=self.calibrate,
+            max_iter=max_iter,
+        )
         if len(self.validation_set) > self.batch_size:
             validation_data = self.validation_set.all_raw
             evaluate_model(self.dynamical_model, validation_data, logger)
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
-            self._learn(self.reward_model.base_model, logger, calibrate=self.calibrate)
+            self._learn(
+                self.reward_model.base_model,
+                logger,
+                calibrate=self.calibrate,
+                max_iter=max_iter,
+            )
             if len(self.validation_set) > self.batch_size:
                 evaluate_model(self.reward_model, validation_data, logger)
 
         if self.termination_model is not None and any(
             p.requires_grad for p in self.termination_model.parameters()
         ):
-            self._learn(self.termination_model, logger, calibrate=False)
+            self._learn(
+                self.termination_model, logger, calibrate=False, max_iter=max_iter
+            )
             if len(self.validation_set) > self.batch_size:
                 evaluate_model(self.termination_model, validation_data, logger)
 
