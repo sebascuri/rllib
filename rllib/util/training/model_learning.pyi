@@ -32,6 +32,7 @@ def train_model(
     batch_size: int = ...,
     num_epochs: Optional[int] = ...,
     max_iter: int = ...,
+    min_iter: int = ...,
     epsilon: float = ...,
     non_decrease_iter: int = ...,
     logger: Optional[Logger] = ...,
