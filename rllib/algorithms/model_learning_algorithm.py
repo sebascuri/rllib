@@ -135,7 +135,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             train_set=self.train_set,
             validation_set=self.validation_set,
             batch_size=self.batch_size,
-            max_iter=self.num_epochs,
+            num_epochs=self.num_epochs,
             optimizer=self.model_optimizer,
             logger=logger,
             epsilon=self.epsilon,

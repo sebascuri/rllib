@@ -19,7 +19,7 @@ class EarlyStopping(object):
         If the algorithm did not start tracking, it will not raise the stop flag.
 
     non_decrease_iter: int.
-        Number of consequtive non-decrease calls to `stop' that will raise the flag.
+        Number of consecutive non-decrease calls to `stop' that will raise the flag.
 
     relative: bool.
         Flag that indicates whether the stopping condition is relative or absolute.
