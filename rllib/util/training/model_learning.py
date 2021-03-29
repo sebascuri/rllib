@@ -141,8 +141,7 @@ def train_model(
     if num_epochs is not None:
         max_iter = data_size * num_epochs
         min_iter = data_size * min_iter
-    else:
-        data_size = 1
+
     model.train()
     early_stopping = EarlyStopping(epsilon, non_decrease_iter=non_decrease_iter)
 
