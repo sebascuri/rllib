@@ -2,7 +2,6 @@
 import gpytorch.settings
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
@@ -56,11 +55,46 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
     return loss
 
 
+def _train_model_step(model, observation, optimizer, mask, logger):
+    if not isinstance(observation, Observation):
+        observation = Observation(**observation)
+    observation.action = observation.action[..., : model.dim_action[0]]
+    if isinstance(model, EnsembleModel):
+        loss = train_ensemble_step(model, observation, optimizer, mask)
+    elif isinstance(model, NNModel):
+        loss = train_nn_step(model, observation, optimizer)
+    elif isinstance(model, ExactGPModel):
+        loss = train_exact_gp_type2mll_step(model, observation, optimizer)
+    else:
+        raise TypeError("Only Implemented for Ensembles and GP Models.")
+    logger.update(**{f"{model.model_kind[:3]}-loss": loss.item()})
+
+
+def _validate_model_step(model, observation, logger):
+    if not isinstance(observation, Observation):
+        observation = Observation(**observation)
+    observation.action = observation.action[..., : model.dim_action[0]]
+
+    mse = model_mse(model, observation).item()
+    sharpness_ = sharpness(model, observation).item()
+    calibration_score_ = calibration_score(model, observation).item()
+
+    logger.update(
+        **{
+            f"{model.model_kind[:3]}-val-mse": mse,
+            f"{model.model_kind[:3]}-sharp": sharpness_,
+            f"{model.model_kind[:3]}-calib": calibration_score_,
+        }
+    )
+    return mse
+
+
 def train_model(
     model,
     train_set,
     optimizer,
     batch_size=100,
+    num_epochs=None,
     max_iter=100,
     epsilon=0.1,
     non_decrease_iter=float("inf"),
@@ -79,6 +113,7 @@ def train_model(
         Optimizer to call for the model.
     batch_size: int (default=1000).
         Batch size to iterate through.
+    num_epochs: int, optional.
     max_iter: int (default = 100).
         Maximum number of epochs.
     epsilon: float.
@@ -93,51 +128,28 @@ def train_model(
         Dataset to validate with.
     """
     if logger is None:
-        logger = Logger(f"{model.name}_training")
+        logger = Logger(f"{model.name}_training", tensorboard=True)
     if validation_set is None:
         validation_set = train_set
 
+    data_size = len(train_set)
+    if num_epochs is not None:
+        max_iter = data_size * num_epochs // batch_size
+        non_decrease_iter = data_size * non_decrease_iter
     model.train()
     early_stopping = EarlyStopping(epsilon, non_decrease_iter=non_decrease_iter)
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-    validation_loader = DataLoader(validation_set, batch_size=batch_size, shuffle=False)
 
     for _ in tqdm(range(max_iter)):
-        for observation, idx, mask in train_loader:
-            observation = Observation(**observation)
-            observation.action = observation.action[..., : model.dim_action[0]]
-            if isinstance(model, EnsembleModel):
-                loss = train_ensemble_step(model, observation, optimizer, mask)
-            elif isinstance(model, NNModel):
-                loss = train_nn_step(model, observation, optimizer)
-            elif isinstance(model, ExactGPModel):
-                loss = train_exact_gp_type2mll_step(model, observation, optimizer)
-            else:
-                raise TypeError("Only Implemented for Ensembles and GP Models.")
-            logger.update(**{f"{model.model_kind[:3]}-loss": loss.item()})
+        observation, idx, mask = train_set.sample_batch(batch_size)
+        _train_model_step(model, observation, optimizer, mask, logger)
 
-        for observation, idx, mask in validation_loader:
-            observation = Observation(**observation)
-            observation.action = observation.action[..., : model.dim_action[0]]
-
-            with torch.no_grad():
-                mse = model_mse(model, observation).item()
-                sharpness_ = sharpness(model, observation).item()
-                calibration_score_ = calibration_score(model, observation).item()
-
-            logger.update(
-                **{
-                    f"{model.model_kind[:3]}-val-mse": mse,
-                    f"{model.model_kind[:3]}-sharp": sharpness_,
-                    f"{model.model_kind[:3]}-calib": calibration_score_,
-                }
-            )
-
-            early_stopping.update(mse)
+        observation, idx, mask = validation_set.sample_batch(batch_size)
+        with torch.no_grad():
+            mse = _validate_model_step(model, observation, logger)
+        early_stopping.update(mse)
 
         if early_stopping.stop:
             return
-        early_stopping.reset(hard=False)  # reset to zero the moving averages.
 
 
 def calibrate_model(
