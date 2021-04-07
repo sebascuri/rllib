@@ -16,6 +16,7 @@ from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.dataset.experience_replay import (
     BootstrapExperienceReplay,
+    ExperienceReplay,
     StateExperienceReplay,
 )
 from rllib.model import EnsembleModel, TransformedModel
@@ -111,13 +112,16 @@ class ModelBasedAgent(AbstractAgent):
             self.dynamical_model.set_prediction_strategy("posterior")
 
         if memory is None:
-            if isinstance(self.dynamical_model.base_model, EnsembleModel):
-                memory = BootstrapExperienceReplay(
-                    num_bootstraps=self.dynamical_model.base_model.num_heads,
-                    max_len=100000,
-                    num_steps=0,
-                    bootstrap=True,
-                )
+            try:
+                if isinstance(self.dynamical_model.base_model, EnsembleModel):
+                    memory = BootstrapExperienceReplay(
+                        num_bootstraps=self.dynamical_model.base_model.num_heads,
+                        max_len=100000,
+                        num_steps=0,
+                        bootstrap=True,
+                    )
+            except AttributeError:
+                memory = ExperienceReplay(max_len=100000, num_steps=0)
         self.memory = memory
         self.initial_states_dataset = StateExperienceReplay(
             max_len=1000, dim_state=self.dynamical_model.dim_state
