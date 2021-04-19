@@ -41,16 +41,21 @@ class DataAugmentation(Dyna):
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
-        real_loss = self.base_algorithm(observation)
-
         batch_size = observation.reward.shape[0]
         if len(self.sim_memory) < batch_size:
-            return real_loss
+            self.init_sim_memory(min_size=batch_size)
         sim_observation = self.sim_memory.sample_batch(batch_size)[0]
         sim_loss = self.base_algorithm(sim_observation)
         if self.only_sim:
             return sim_loss
+
+        real_loss = self.base_algorithm(observation)
         return real_loss + sim_loss
+
+    def init_sim_memory(self, min_size=1000):
+        """Initialize simulation memory with a minimum size."""
+        while len(self.sim_memory) <= min_size:
+            self.simulate(state=self._sample_initial_states(), policy=self.policy)
 
     def simulate(
         self, state, policy, initial_action=None, logger=None, stack_obs=False
