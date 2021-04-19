@@ -19,7 +19,6 @@ class DataAugmentation(Dyna):
         num_initial_distribution_samples=0,
         num_memory_samples=0,
         refresh_interval=2,
-        only_sim=False,
         *args,
         **kwargs,
     ):
@@ -37,7 +36,6 @@ class DataAugmentation(Dyna):
         )
         self.refresh_interval = refresh_interval
         self.count = 0
-        self.only_sim = only_sim
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
@@ -46,10 +44,12 @@ class DataAugmentation(Dyna):
             self.init_sim_memory(min_size=batch_size)
         sim_observation = self.sim_memory.sample_batch(batch_size)[0]
         sim_loss = self.base_algorithm(sim_observation)
+        real_loss = self.base_algorithm(observation)
+
         if self.only_sim:
             return sim_loss
-
-        real_loss = self.base_algorithm(observation)
+        if self.only_real:
+            return real_loss
         return real_loss + sim_loss
 
     def init_sim_memory(self, min_size=1000):

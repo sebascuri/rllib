@@ -17,6 +17,7 @@ class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
         num_samples=15,
         termination_model=None,
         only_sim=False,
+        only_real=False,
         *args,
         **kwargs,
     ):
@@ -33,6 +34,8 @@ class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
             reduction="mean"
         )
         self.only_sim = only_sim
+        self.only_real = only_real
+        assert not only_sim or not only_real, "only one can be True."
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
@@ -43,4 +46,6 @@ class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
         sim_loss = self.base_algorithm.forward(sim_observation)
         if self.only_sim:
             return sim_loss
+        if self.only_real:
+            return real_loss
         return real_loss + sim_loss
