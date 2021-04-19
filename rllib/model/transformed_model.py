@@ -144,9 +144,22 @@ class TransformedModel(AbstractModel):
             raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
 
         # Back-transform
+        if obs.state.shape != next_state[0].shape and isinstance(
+            self.base_model, EnsembleModel
+        ):
+            state = obs.state.unsqueeze(-2).repeat_interleave(
+                self.base_model.num_heads, -2
+            )
+            action = obs.action.unsqueeze(-2).repeat_interleave(
+                self.base_model.num_heads, -2
+            )
+        else:
+            state = obs.state
+            action = obs.action
+
         obs = Observation(
-            obs.state,
-            obs.action,
+            state=state,
+            action=action,
             reward=reward[0],
             done=done,
             next_action=none,
