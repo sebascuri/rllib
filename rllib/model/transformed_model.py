@@ -40,6 +40,7 @@ class TransformedModel(AbstractModel):
         base_model=None,
         model_kind="dynamics",
         transformations=None,
+        deterministic=True,
         *args,
         **kwargs,
     ):
@@ -47,13 +48,13 @@ class TransformedModel(AbstractModel):
         if base_model is None:
             if model_kind == "dynamics":
                 base_model = EnsembleModel.default(
-                    environment, deterministic=True, *args, **kwargs
+                    environment, deterministic=deterministic, *args, **kwargs
                 )
             elif model_kind == "rewards":
                 base_model = EnsembleModel.default(
                     environment,
                     model_kind=model_kind,
-                    deterministic=True,
+                    deterministic=deterministic,
                     *args,
                     **kwargs,
                 )
