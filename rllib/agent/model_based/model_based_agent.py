@@ -262,7 +262,7 @@ class ModelBasedAgent(AbstractAgent):
                 reward_model = TransformedModel.default(
                     environment,
                     model_kind="rewards",
-                    transformations=dynamical_model.forward_transformations,
+                    transformations=dynamical_model.transformations,
                 )
         if termination_model is None:
             try:

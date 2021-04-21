@@ -71,14 +71,14 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         # Note: The transformations are shared by both data sets.
         self.train_set = BootstrapExperienceReplay(
             max_len=max_memory,
-            transformations=self.dynamical_model.forward_transformations,
+            transformations=self.dynamical_model.transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
             num_steps=num_steps,
         )
         self.validation_set = BootstrapExperienceReplay(
             max_len=max_memory,
-            transformations=self.dynamical_model.forward_transformations,
+            transformations=self.dynamical_model.transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
             num_steps=num_steps,

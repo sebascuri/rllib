@@ -30,8 +30,7 @@ class TransformedModel(AbstractModel):
             **kwargs,
         )
         self.base_model = base_model
-        self.forward_transformations = nn.ModuleList(transformations)
-        self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
+        self.transformations = nn.ModuleList(transformations)
 
     @classmethod
     def default(
@@ -96,7 +95,7 @@ class TransformedModel(AbstractModel):
         """Get epistemic scale of model."""
         none = torch.tensor(0)
         obs = Observation(state, action, none, none, none, none, none, none, none, none)
-        for transformation in self.forward_transformations:
+        for transformation in self.transformations:
             obs = transformation(obs)
 
         # Predict next-state
@@ -116,7 +115,7 @@ class TransformedModel(AbstractModel):
             next_state_scale_tril=scale,
         )
 
-        for transformation in self.reverse_transformations:
+        for transformation in reversed(list(self.transformations)):
             obs = transformation.inverse(obs)
         return obs.next_state_scale_tril
 
@@ -128,7 +127,7 @@ class TransformedModel(AbstractModel):
         obs = Observation(
             state, action, none, next_state, none, none, none, none, none, none
         )
-        for transformation in self.forward_transformations:
+        for transformation in self.transformations:
             obs = transformation(obs)
 
         # Predict next-state
@@ -172,7 +171,7 @@ class TransformedModel(AbstractModel):
             reward_scale_tril=reward[1],
         )
 
-        for transformation in self.reverse_transformations:
+        for transformation in reversed(list(self.transformations)):
             obs = transformation.inverse(obs)
 
         if self.model_kind == "dynamics":

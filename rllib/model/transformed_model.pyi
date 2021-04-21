@@ -10,8 +10,7 @@ from .abstract_model import AbstractModel
 class TransformedModel(AbstractModel):
 
     base_model: AbstractModel
-    forward_transformations: nn.ModuleList
-    reverse_transformations: nn.ModuleList
+    transformations: nn.ModuleList
     def __init__(
         self,
         base_model: AbstractModel,
