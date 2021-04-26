@@ -33,7 +33,7 @@ class ClosedLoopModel(AbstractModel):
         self.base_model = base_model
         self.policy = policy
 
-    def forward(self, state, action):
+    def forward(self, state, action=None, next_state=None):
         """Compute the next state in closed loop."""
         pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         policy_actions = pi.rsample()
@@ -41,6 +41,7 @@ class ClosedLoopModel(AbstractModel):
         if policy_actions.shape[-1] == self.dim_action[0]:
             return self.base_model(state, policy_actions)
 
+        assert action is not None
         actions = torch.cat((policy_actions, action), dim=-1)
 
         return self.base_model(state, actions)
