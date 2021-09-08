@@ -42,7 +42,9 @@ class PPOAgent(ActorCriticAgent):
             **kwargs,
         )
         self.target_kl = target_kl
-        self._early_stopping = EarlyStopping(epsilon=1.5 * target_kl, relative=False)
+        self.early_stopping_algorithm = EarlyStopping(
+            epsilon=1.5 * target_kl, relative=False
+        )
 
     def early_stop(self, losses, **kwargs):
         """Early stop the training algorithm."""

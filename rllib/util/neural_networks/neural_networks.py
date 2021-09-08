@@ -34,6 +34,7 @@ class FeedForwardNN(nn.Module):
         biased_head=True,
         squashed_output=False,
         initial_scale=0.5,
+        log_scale=False,
     ):
         super().__init__()
         self.kwargs = {
@@ -44,15 +45,24 @@ class FeedForwardNN(nn.Module):
             "biased_head": biased_head,
             "squashed_output": squashed_output,
             "initial_scale": initial_scale,
+            "log_scale": log_scale,
         }
 
         self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
         self.head = nn.Linear(in_dim, out_dim[0], bias=biased_head)
         self.squashed_output = squashed_output
-        self._init_scale_transformed = inverse_softplus(torch.tensor([initial_scale]))
-        self._min_scale = 1e-6
-        self._max_scale = 1
+        self.log_scale = log_scale
+        if self.log_scale:
+            self._init_scale_transformed = torch.log(torch.tensor([initial_scale]))
+            self._min_scale = -4
+            self._max_scale = 15
+        else:
+            self._init_scale_transformed = inverse_softplus(
+                torch.tensor([initial_scale])
+            )
+            self._min_scale = 1e-6
+            self._max_scale = 1
 
     @classmethod
     def from_other(cls, other, copy=True):
@@ -112,27 +122,13 @@ class DeterministicNN(FeedForwardNN):
 class HeteroGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal heteroscedastic Normal distribution."""
 
-    def __init__(
-        self,
-        in_dim,
-        out_dim,
-        layers=(),
-        non_linearity="Tanh",
-        biased_head=True,
-        squashed_output=False,
-        initial_scale=0.5,
-    ):
-        super().__init__(
-            in_dim,
-            out_dim,
-            layers=layers,
-            non_linearity=non_linearity,
-            biased_head=biased_head,
-            squashed_output=squashed_output,
-            initial_scale=initial_scale,
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._scale = nn.Linear(
+            in_features=self.head.in_features,
+            out_features=self.kwargs["out_dim"][0],
+            bias=self.kwargs["biased_head"],
         )
-        in_dim = self.head.in_features
-        self._scale = nn.Linear(in_dim, out_dim[0], bias=biased_head)
 
     def forward(self, x):
         """Execute forward computation of the Neural Network.
@@ -155,35 +151,26 @@ class HeteroGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        scale = nn.functional.softplus(
-            self._scale(x) + self._init_scale_transformed
-        ).clamp(self._min_scale, self._max_scale)
+        if self.log_scale:
+            log_scale = self._scale(x).clamp(self._min_scale, self._max_scale)
+            scale = torch.exp(log_scale + self._init_scale_transformed)
+        else:
+            scale = nn.functional.softplus(
+                self._scale(x) + self._init_scale_transformed
+            ).clamp(self._min_scale, self._max_scale)
         return mean, torch.diag_embed(scale)
 
 
 class HomoGaussianNN(FeedForwardNN):
     """A Module that parametrizes a diagonal homoscedastic Normal distribution."""
 
-    def __init__(
-        self,
-        in_dim,
-        out_dim,
-        layers=(),
-        non_linearity="Tanh",
-        biased_head=True,
-        squashed_output=False,
-        initial_scale=0.5,
-    ):
-        super().__init__(
-            in_dim,
-            out_dim,
-            layers=layers,
-            non_linearity=non_linearity,
-            biased_head=biased_head,
-            squashed_output=squashed_output,
-            initial_scale=initial_scale,
-        )
-        initial_scale = inverse_softplus(self._min_scale * torch.ones(out_dim))
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        out_dim = self.kwargs["out_dim"]
+        if self.log_scale:
+            initial_scale = self._min_scale * torch.ones(out_dim)
+        else:
+            initial_scale = inverse_softplus(self._min_scale * torch.ones(out_dim))
         self._scale = nn.Parameter(initial_scale, requires_grad=True)
 
     def forward(self, x):
@@ -205,28 +192,21 @@ class HomoGaussianNN(FeedForwardNN):
         if self.squashed_output:
             mean = torch.tanh(mean)
 
-        scale = nn.functional.softplus(
-            self._scale + self._init_scale_transformed
-        ).clamp(self._min_scale, self._max_scale)
+        if self.log_scale:
+            log_scale = self._scale.clamp(self._min_scale, self._max_scale)
+            scale = torch.exp(log_scale + self._init_scale_transformed)
+        else:
+            scale = nn.functional.softplus(
+                self._scale + self._init_scale_transformed
+            ).clamp(self._min_scale, self._max_scale)
+
         return mean, torch.diag_embed(scale)
 
 
 class CategoricalNN(FeedForwardNN):
     """A Module that parametrizes a Categorical distribution."""
 
-    def __init__(
-        self, in_dim, out_dim, layers=(), non_linearity="Tanh", biased_head=True
-    ):
-        super().__init__(
-            in_dim,
-            out_dim,
-            layers=layers,
-            non_linearity=non_linearity,
-            biased_head=biased_head,
-            squashed_output=False,
-        )
-        self.kwargs.pop("squashed_output")
-        self.kwargs.pop("initial_scale")
+    pass
 
 
 class Ensemble(HeteroGaussianNN):
@@ -268,22 +248,11 @@ class Ensemble(HeteroGaussianNN):
         out_dim,
         num_heads,
         prediction_strategy="moment_matching",
-        layers=(),
-        non_linearity="Tanh",
-        biased_head=True,
-        squashed_output=False,
-        initial_scale=0.5,
         deterministic=True,
+        *args,
+        **kwargs,
     ):
-        super().__init__(
-            in_dim,
-            (out_dim[0] * num_heads,),
-            layers=layers,
-            non_linearity=non_linearity,
-            biased_head=biased_head,
-            squashed_output=squashed_output,
-            initial_scale=initial_scale,
-        )
+        super().__init__(in_dim, (out_dim[0] * num_heads,), *args, **kwargs)
 
         self.kwargs.update(
             out_dim=out_dim,

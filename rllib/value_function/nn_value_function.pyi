@@ -17,6 +17,7 @@ class NNValueFunction(AbstractValueFunction):
         biased_head: bool = ...,
         non_linearity: str = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        jit_compile: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
@@ -47,6 +48,7 @@ class NNQFunction(AbstractQFunction):
         layers: Sequence[int] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
+        jit_compile: bool = ...,
         tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
     ) -> None: ...

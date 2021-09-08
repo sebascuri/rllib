@@ -24,7 +24,7 @@ def batch_size(request):
 class TestTabularValueFunction(object):
     def test_init(self):
         value_function = TabularValueFunction(num_states=4)
-        torch.testing.assert_allclose(value_function.table, 0)
+        torch.testing.assert_allclose(value_function.table, torch.zeros(1, 4))
 
     def test_compile(self):
         torch.jit.script(TabularValueFunction(num_states=4))
@@ -33,7 +33,7 @@ class TestTabularValueFunction(object):
         value_function = TabularValueFunction(num_states=4)
         value_function.set_value(2, 1.0)
         torch.testing.assert_allclose(
-            value_function.table, torch.tensor([0, 0, 1.0, 0])
+            value_function.table, torch.tensor([[0, 0, 1.0, 0]])
         )
 
     def test_forward(self, num_states, batch_size):
@@ -48,7 +48,7 @@ class TestTabularValueFunction(object):
 class TestTabularQFunction(object):
     def test_init(self):
         value_function = TabularQFunction(num_states=4, num_actions=2)
-        torch.testing.assert_allclose(value_function.table, 0)
+        torch.testing.assert_allclose(value_function.table, torch.zeros(2, 4))
 
     def test_compile(self):
         torch.jit.script(TabularQFunction(num_states=4, num_actions=2))

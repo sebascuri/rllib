@@ -13,6 +13,7 @@ class KLLoss(nn.Module):
     epsilon_mean: Tensor
     epsilon_var: Tensor
     regularization: bool
+    separated_kl: bool
     def __init__(
         self,
         epsilon_mean: Union[ParameterDecay, float] = ...,

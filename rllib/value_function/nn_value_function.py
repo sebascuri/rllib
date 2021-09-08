@@ -30,6 +30,7 @@ class NNValueFunction(AbstractValueFunction):
         biased_head=True,
         non_linearity="Tanh",
         input_transform=None,
+        jit_compile=False,
         *args,
         **kwargs,
     ):
@@ -53,6 +54,8 @@ class NNValueFunction(AbstractValueFunction):
             non_linearity=non_linearity,
             biased_head=biased_head,
         )
+        if jit_compile:
+            self.nn = torch.jit.script(self.nn)
         self.dimension = self.nn.embedding_dim
 
     @classmethod
@@ -126,6 +129,7 @@ class NNQFunction(AbstractQFunction):
         biased_head=True,
         non_linearity="Tanh",
         input_transform=None,
+        jit_compile=False,
         *args,
         **kwargs,
     ):
@@ -156,6 +160,8 @@ class NNQFunction(AbstractQFunction):
             biased_head=biased_head,
             squashed_output=False,
         )
+        if jit_compile:
+            self.nn = torch.jit.script(self.nn)
 
     @classmethod
     def default(cls, environment, *args, **kwargs):

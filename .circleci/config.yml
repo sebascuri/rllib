@@ -66,10 +66,6 @@ jobs:
           command: pydocstyle $MODULE || { exit 1; }
 
       - run:
-          name: Run Typing Tests
-          command: mypy --no-implicit-optional --ignore-missing-imports --disallow-incomplete-defs $MODULE || { exit 1; }
-
-      - run:
           name: Run Unit Tests
           no_output_timeout: 30m
           command: |

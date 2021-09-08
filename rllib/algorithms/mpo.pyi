@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 import torch.nn as nn
 from torch import Tensor
 
-from rllib.dataset.datatypes import Loss
+from rllib.dataset.datatypes import Action, Loss, State
 from rllib.util.parameter_decay import ParameterDecay
 
 from .abstract_algorithm import AbstractAlgorithm
@@ -34,4 +34,5 @@ class MPO(AbstractAlgorithm):
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
+    def compute_mpo_loss(self, state: State, action: Action) -> Loss: ...
     def reset(self) -> None: ...

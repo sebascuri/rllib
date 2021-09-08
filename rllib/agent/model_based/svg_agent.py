@@ -59,7 +59,12 @@ class SVGAgent(ModelBasedAgent):
             [
                 p
                 for name, p in self.algorithm.named_parameters()
-                if ("model" not in name and "target" not in name and p.requires_grad)
+                if (
+                    "model" not in name
+                    and "target" not in name
+                    and "old_policy" not in name
+                    and p.requires_grad
+                )
             ],
             **self.optimizer.defaults,
         )

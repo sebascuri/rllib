@@ -159,6 +159,19 @@ class Logger(object):
         """Save the statistics to a json file."""
         with open(f"{self.log_dir}/statistics.json", "w") as f:
             json.dump(self.statistics, f)
+        with open(f"{self.log_dir}/all.json", "w") as f:
+            json.dump(self.all, f)
+
+    def load_from_json(self, log_dir=None):
+        """Load the statistics from a json file."""
+        log_dir = log_dir if log_dir is not None else self.log_dir
+
+        with open(f"{log_dir}/statistics.json", "r") as f:
+            self.statistics = json.load(f)
+        with open(f"{log_dir}/all.json", "r") as f:
+            self.all = json.load(f)
+        for key in self.all.keys():
+            self.keys.add(key)
 
     def log_hparams(self, hparams, metrics=None):
         """Log hyper parameters together with a metric dictionary."""
@@ -193,3 +206,8 @@ class Logger(object):
         else:
             self.writer = None
             self.log_dir = safe_make_dir(log_dir)
+
+        try:
+            self.load_from_json()  # If json files in log_dir, then load them.
+        except FileNotFoundError:
+            pass

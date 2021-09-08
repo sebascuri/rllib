@@ -49,7 +49,11 @@ class ActorCriticAgent(OnPolicyAgent):
         )
         self.policy = self.algorithm.policy
         self.optimizer = type(self.optimizer)(
-            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
+            [
+                p
+                for n, p in self.algorithm.named_parameters()
+                if "target" not in n and "old_policy" not in n
+            ],
             **self.optimizer.defaults,
         )
 

@@ -30,6 +30,7 @@ def train_model(
     train_set: ExperienceReplay,
     optimizer: Optimizer,
     batch_size: int = ...,
+    num_epochs: Optional[int] = ...,
     max_iter: int = ...,
     epsilon: float = ...,
     non_decrease_iter: int = ...,

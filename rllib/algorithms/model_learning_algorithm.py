@@ -56,6 +56,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         non_decrease_iter=5,
         validation_ratio=0.1,
         calibrate=True,
+        num_steps=0,
         *args,
         **kwargs,
     ):
@@ -73,12 +74,14 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             transformations=self.dynamical_model.forward_transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
+            num_steps=num_steps,
         )
         self.validation_set = BootstrapExperienceReplay(
             max_len=max_memory,
             transformations=self.dynamical_model.forward_transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
+            num_steps=num_steps,
         )
 
         self.num_epochs = num_epochs
@@ -117,7 +120,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             if observation.action.shape[-1] > self.dynamical_model.dim_action[0]:
                 observation.action = observation.action[
                     ..., : self.dynamical_model.dim_action[0]
-                ]
+                ]  # Only get real actions.
             if np.random.rand() < self.validation_ratio:
                 self.validation_set.append(observation)
             else:
@@ -132,30 +135,37 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             train_set=self.train_set,
             validation_set=self.validation_set,
             batch_size=self.batch_size,
-            max_iter=self.num_epochs,
+            num_epochs=self.num_epochs,
             optimizer=self.model_optimizer,
             logger=logger,
             epsilon=self.epsilon,
             non_decrease_iter=self.non_decrease_iter,
         )
-        if calibrate and not model.deterministic:
+        if (
+            calibrate
+            and not model.deterministic
+            and len(self.validation_set) > self.batch_size
+        ):
             calibrate_model(model, self.validation_set, self.num_epochs, logger=logger)
 
     def learn(self, logger):
         """Learn using stochastic gradient descent on marginal maximum likelihood."""
         self._learn(self.dynamical_model.base_model, logger, calibrate=self.calibrate)
-        validation_data = self.validation_set.all_raw
-        evaluate_model(self.dynamical_model, validation_data, logger)
+        if len(self.validation_set) > self.batch_size:
+            validation_data = self.validation_set.all_raw
+            evaluate_model(self.dynamical_model, validation_data, logger)
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
             self._learn(self.reward_model.base_model, logger, calibrate=self.calibrate)
-            evaluate_model(self.reward_model, validation_data, logger)
+            if len(self.validation_set) > self.batch_size:
+                evaluate_model(self.reward_model, validation_data, logger)
 
         if self.termination_model is not None and any(
             p.requires_grad for p in self.termination_model.parameters()
         ):
             self._learn(self.termination_model, logger, calibrate=False)
-            evaluate_model(self.termination_model, validation_data, logger)
+            if len(self.validation_set) > self.batch_size:
+                evaluate_model(self.termination_model, validation_data, logger)
 
         if isinstance(self.dynamical_model.base_model, ExactGPModel):
             for i, gp in enumerate(self.dynamical_model.base_model.gp):

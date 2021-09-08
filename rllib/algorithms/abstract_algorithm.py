@@ -7,11 +7,10 @@ import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.neural_networks import (
-    deep_copy_module,
-    freeze_parameters,
-    update_parameters,
-)
+from rllib.util.losses.entropy_loss import EntropyLoss
+from rllib.util.losses.kl_loss import KLLoss
+from rllib.util.losses.pathwise_loss import PathwiseLoss
+from rllib.util.neural_networks import deep_copy_module, update_parameters
 from rllib.util.utilities import (
     RewardTransformer,
     get_entropy_and_log_p,
@@ -26,10 +25,6 @@ from rllib.value_function import (
     IntegrateQValueFunction,
 )
 from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
-
-from .entropy_loss import EntropyLoss
-from .kl_loss import KLLoss
-from .pathwise_loss import PathwiseLoss
 
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
@@ -66,10 +61,30 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         Algorithm policy.
     critic: AbstractQFunction.
         Algorithm critic.
-    criterion: nn._Loss.
-        Criterion to optimize the critic.
-    reward_transformer: RewardTransformer.
-        Transformations to optimize reward.
+    eta: float (optional).
+        Entropy regularization parameter.
+    entropy_regularization: bool (optional).
+        Flag that indicates whether to regularize the entropy or constrain it.
+    target_entropy: float (optional).
+        Target entropy for constraint version. |h - h_target| < eta.
+    epsilon_mean: float.
+        KL divergence regularization parameter for mean in continuous distributions,
+        for distribution in categorical ones.
+    epsilon_var: float.
+        KL divergence regularization parameter for variance in continuous distributions.
+    kl_regularization: bool
+        Flag that indicates whether to regularize the KL-divergence or constrain it.
+    num_samples: int.
+        Number of MC samples for MC simulation of targets.
+    ope: OPE (optional).
+        Optional off-policy estimation parameter.
+    critic_ensemble_lambda: float (optional).
+        Critic ensemble parameter, it averages the minimum and the maximum of a critic
+        ensemble as q_target = lambda * q_min + (1-lambda) * qmax
+    criterion: nn.MSELoss.
+        criterion for learning the critic.
+    reward_transformer: RewardTransformer().
+        A callable that transforms rewards.
     """
 
     eps = 1e-12
@@ -87,6 +102,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         kl_regularization=True,
         num_samples=1,
         ope=None,
+        critic_ensemble_lambda=1.0,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
         *args,
@@ -101,7 +117,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.critic_target = deep_copy_module(self.critic)
         self.criterion = criterion
         self.reward_transformer = reward_transformer
-
+        self.critic_ensemble_lambda = critic_ensemble_lambda
         if policy is None:
             self.entropy_loss = EntropyLoss()
             self.kl_loss = KLLoss()
@@ -124,21 +140,24 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.pathwise_loss = PathwiseLoss(critic=self.critic, policy=self.policy)
         self.num_samples = num_samples
         self.ope = ope
+        if self.critic is None:
+            self.value_function, self.value_target = None, None
+        else:
+            self.value_function = IntegrateQValueFunction(
+                self.critic, self.policy, num_samples=self.num_samples
+            )
+            self.value_target = IntegrateQValueFunction(
+                self.critic_target, self.policy, num_samples=self.num_samples
+            )
         self.post_init()
 
     def post_init(self):
         """Set derived modules after initialization."""
-        self.value_function = IntegrateQValueFunction(
-            self.critic, self.policy, num_samples=self.num_samples
-        )
-        self.value_target = IntegrateQValueFunction(
-            self.critic_target, self.policy, num_samples=self.num_samples
-        )
         if self.policy is not None:
-            self.pathwise_loss.policy = self.policy
-            old_policy = deep_copy_module(self.policy)
-            freeze_parameters(old_policy)
-            self.old_policy = old_policy
+            if self.critic is not None:
+                self.value_function.policy = self.policy
+                self.value_target.policy = self.policy
+            self.old_policy = deep_copy_module(self.policy)
 
     def set_policy(self, new_policy):
         """Set new policy."""
@@ -177,7 +196,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 f"Critic Target type {type(self.critic_target)} not understood."
             )
         if isinstance(self.critic_target, NNEnsembleQFunction):
-            next_v = torch.min(next_v, dim=-1)[0]
+            next_v_min = torch.min(next_v, dim=-1)[0]
+            next_v_max = torch.max(next_v, dim=-1)[0]
+            lambda_ = self.critic_ensemble_lambda
+            next_v = lambda_ * next_v_min + (1.0 - lambda_) * next_v_max
         next_v = next_v * (1.0 - observation.done)
         return self.get_reward(observation) + self.gamma * next_v
 
@@ -276,8 +298,12 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     def regularization_loss(self, observation, num_trajectories=1):
         """Compute regularization loss."""
         kl_mean, kl_var, entropy = self.get_kl_entropy(observation.state)
-        entropy_loss = self.entropy_loss(entropy).reduce(self.criterion.reduction)
-        kl_loss = self.kl_loss(kl_mean, kl_var).reduce(self.criterion.reduction)
+        entropy_loss = self.entropy_loss(entropy.squeeze(-1)).reduce(
+            self.criterion.reduction
+        )
+        kl_loss = self.kl_loss(kl_mean.squeeze(-1), kl_var.squeeze(-1)).reduce(
+            self.criterion.reduction
+        )
 
         self._info.update(
             eta=self.entropy_loss.eta,

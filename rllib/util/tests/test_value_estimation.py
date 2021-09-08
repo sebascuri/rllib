@@ -107,7 +107,10 @@ class TestMCReturn(object):
         )
 
         torch.testing.assert_allclose(
-            reward, r0 + r1 * gamma + r2 * gamma ** 2 + r3 * gamma ** 3 + v * gamma ** 4
+            reward,
+            torch.tensor(
+                [r0 + r1 * gamma + r2 * gamma ** 2 + r3 * gamma ** 3 + v * gamma ** 4]
+            ),
         )
         assert (
             mc_return(

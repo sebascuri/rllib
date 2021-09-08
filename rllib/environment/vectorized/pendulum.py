@@ -4,6 +4,7 @@ import numpy as np
 from gym.envs.classic_control.pendulum import PendulumEnv, angle_normalize
 
 from rllib.environment.vectorized.util import VectorizedEnv
+from rllib.util.utilities import get_backend
 
 
 class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
@@ -34,6 +35,13 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
 
         done = bk.zeros_like(costs, dtype=bk.bool)
         return self._get_obs(), -costs, done, {}
+
+    def set_state(self, observation):
+        """Set state from a given observation."""
+        bk = get_backend(observation)
+        self.state = bk.zeros_like(observation[..., :2])
+        self.state[..., 0] = self.atan2(observation[..., 1], observation[..., 0])
+        self.state[..., 1] = observation[..., 2]
 
     def _get_obs(self):
         theta, theta_dot = self.state[..., 0], self.state[..., 1]

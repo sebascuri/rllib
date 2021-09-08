@@ -7,13 +7,13 @@ from torch.nn.modules.loss import _Loss
 
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.policy import AbstractPolicy
+from rllib.util.losses.entropy_loss import EntropyLoss
+from rllib.util.losses.kl_loss import KLLoss
+from rllib.util.losses.pathwise_loss import PathwiseLoss
 from rllib.util.parameter_decay import ParameterDecay
 from rllib.util.utilities import RewardTransformer
 from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
 
-from .entropy_loss import EntropyLoss
-from .kl_loss import KLLoss
-from .pathwise_loss import PathwiseLoss
 from .policy_evaluation.abstract_td_target import AbstractTDTarget
 
 class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
@@ -23,8 +23,8 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     _info: dict
     gamma: float
     reward_transformer: RewardTransformer
-    critic: AbstractQFunction
-    critic_target: AbstractQFunction
+    critic: Optional[AbstractQFunction]
+    critic_target: Optional[AbstractQFunction]
     policy: AbstractPolicy
     policy_target: AbstractPolicy
     old_policy: AbstractPolicy
@@ -34,13 +34,14 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     pathwise_loss: Optional[PathwiseLoss]
     num_samples: int
     ope: Optional[AbstractTDTarget]
-    value_function: IntegrateQValueFunction
-    value_target: IntegrateQValueFunction
+    value_function: Optional[IntegrateQValueFunction]
+    value_target: Optional[IntegrateQValueFunction]
+    critic_ensemble_lambda: float
     def __init__(
         self,
         gamma: float,
-        policy: AbstractPolicy,
-        critic: AbstractQFunction,
+        policy: Optional[AbstractPolicy],
+        critic: Optional[AbstractQFunction],
         eta: Optional[Union[ParameterDecay, float]] = ...,
         entropy_regularization: bool = ...,
         target_entropy: Optional[float] = ...,
@@ -48,6 +49,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         kl_regularization: bool = ...,
         num_samples: int = ...,
+        critic_ensemble_lambda: float = ...,
         criterion: _Loss = ...,
         ope: Optional[AbstractTDTarget] = ...,
         reward_transformer: RewardTransformer = ...,

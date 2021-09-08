@@ -65,7 +65,7 @@ def test_iterative_policy_evaluation():
     value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor(RANDOM_VALUE), atol=0.05, rtol=EPS
+        value_function.table, torch.tensor([RANDOM_VALUE]), atol=0.05, rtol=EPS
     )
 
 
@@ -83,7 +83,7 @@ def test_linear_system_policy_evaluation():
     value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor(RANDOM_VALUE), atol=0.05, rtol=EPS
+        value_function.table, torch.tensor([RANDOM_VALUE]), atol=0.05, rtol=EPS
     )
 
 
@@ -94,7 +94,7 @@ def test_policy_iteration():
     policy, value_function = policy_iteration(environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor(OPTIMAL_VALUE), atol=0.05, rtol=EPS
+        value_function.table, torch.tensor([OPTIMAL_VALUE]), atol=0.05, rtol=EPS
     )
     pred_p = policy.table.argmax(dim=0)
     assert_policy_equality(environment, GAMMA, value_function, OPTIMAL_POLICY, pred_p)
@@ -106,7 +106,7 @@ def test_policy_iteration():
 
     torch.testing.assert_allclose(
         value_function.table,
-        torch.tensor(OPTIMAL_VALUE_WITH_TERMINAL),
+        torch.tensor([OPTIMAL_VALUE_WITH_TERMINAL]),
         atol=0.05,
         rtol=EPS,
     )
@@ -124,7 +124,7 @@ def test_value_iteration():
     policy, value_function = value_iteration(environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor(OPTIMAL_VALUE), atol=0.05, rtol=EPS
+        value_function.table, torch.tensor([OPTIMAL_VALUE]), atol=0.05, rtol=EPS
     )
     pred_p = policy.table.argmax(dim=0)
     assert_policy_equality(environment, GAMMA, value_function, OPTIMAL_POLICY, pred_p)
@@ -136,7 +136,7 @@ def test_value_iteration():
 
     torch.testing.assert_allclose(
         value_function.table,
-        torch.tensor(OPTIMAL_VALUE_WITH_TERMINAL),
+        torch.tensor([OPTIMAL_VALUE_WITH_TERMINAL]),
         atol=0.05,
         rtol=EPS,
     )

@@ -1,5 +1,6 @@
 """Tabular Value and Q Function Implementations."""
 
+import torch
 import torch.nn as nn
 
 from .nn_value_function import NNQFunction, NNValueFunction
@@ -35,7 +36,8 @@ class TabularValueFunction(NNValueFunction):
             value of state.
 
         """
-        self.nn.head.weight[0, state] = new_value
+        with torch.no_grad():
+            self.nn.head.weight[0, state] = new_value
 
 
 class TabularQFunction(NNQFunction):
@@ -73,4 +75,5 @@ class TabularQFunction(NNQFunction):
             value of state.
 
         """
-        self.nn.head.weight[action, state] = new_value
+        with torch.no_grad():
+            self.nn.head.weight[action, state] = new_value

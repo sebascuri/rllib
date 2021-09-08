@@ -42,7 +42,7 @@ class MPOAgent(OffPolicyAgent):
             policy=policy,
             critic=critic,
             num_action_samples=num_action_samples,
-            criterion=criterion(reduction="none"),
+            criterion=criterion(reduction="mean"),
             epsilon=epsilon,
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
@@ -52,7 +52,11 @@ class MPOAgent(OffPolicyAgent):
         )
         # Over-write optimizer.
         self.optimizer = type(self.optimizer)(
-            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
+            [
+                p
+                for n, p in self.algorithm.named_parameters()
+                if "target" not in n and "old_policy" not in n
+            ],
             **self.optimizer.defaults,
         )
         self.policy = self.algorithm.policy

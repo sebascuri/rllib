@@ -55,7 +55,11 @@ class SACAgent(OffPolicyAgent):
         )
 
         self.optimizer = type(self.optimizer)(
-            [p for n, p in self.algorithm.named_parameters() if "target" not in n],
+            [
+                p
+                for n, p in self.algorithm.named_parameters()
+                if "target" not in n and "old_policy" not in n
+            ],
             **self.optimizer.defaults,
         )
         self.policy = self.algorithm.policy
@@ -64,9 +68,9 @@ class SACAgent(OffPolicyAgent):
     def default(cls, environment, policy=None, critic=None, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
         if critic is None:
-            critic = NNEnsembleQFunction.default(environment)
+            critic = NNEnsembleQFunction.default(environment, jit_compile=False)
         if policy is None:
-            policy = NNPolicy.default(environment)
+            policy = NNPolicy.default(environment, jit_compile=False)
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 

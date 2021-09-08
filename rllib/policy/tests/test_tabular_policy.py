@@ -8,7 +8,7 @@ from rllib.policy import TabularPolicy
 class TestTabularPolicy(object):
     def test_init(self):
         policy = TabularPolicy(num_states=4, num_actions=2)
-        torch.testing.assert_allclose(policy.table, 1)
+        torch.testing.assert_allclose(policy.table, torch.ones(2, 4))
 
     def test_set_value(self):
         policy = TabularPolicy(num_states=4, num_actions=2)

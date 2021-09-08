@@ -13,7 +13,7 @@ from rllib.dataset.utilities import average_dataclass
 from rllib.util.early_stopping import EarlyStopping
 from rllib.util.logger import Logger
 from rllib.util.neural_networks.utilities import DisableGradient
-from rllib.util.utilities import tensor_to_distribution
+from rllib.util.utilities import save_random_state, tensor_to_distribution
 
 
 class AbstractAgent(object, metaclass=ABCMeta):
@@ -60,10 +60,15 @@ class AbstractAgent(object, metaclass=ABCMeta):
         comment="",
         training_verbose=False,
         device="cpu",
+        log_dir=None,
         *args,
         **kwargs,
     ):
-        self.logger = Logger(self.name, tensorboard=tensorboard, comment=comment)
+        self.logger = Logger(
+            self.name if log_dir is None else log_dir,
+            tensorboard=tensorboard,
+            comment=comment,
+        )
         self.early_stopping_algorithm = EarlyStopping(epsilon=early_stopping_epsilon)
 
         self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}
@@ -188,12 +193,14 @@ class AbstractAgent(object, metaclass=ABCMeta):
             self.logger.end_episode(train_return=environment_return)
         else:
             self.logger.end_episode(eval_return=environment_return)
-        self.logger.export_to_json()  # save at every episode.
+
+        # save checkpoint at every episode.
+        self.save_checkpoint()
 
         if environment_return >= max(
             self.logger.get("train_return") + self.logger.get("eval_return")
         ):  # logger.get() returns a list!
-            self.save(f"{self.name}_best.pkl")
+            self.save(f"best.pkl")
 
     def end_interaction(self):
         """End the interaction with the environment."""
@@ -284,6 +291,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def name(self):
         """Return class name."""
         return self.__class__.__name__
+
+    def save_checkpoint(self):
+        """Save a checkpoint of the agent at the end of each episode."""
+        self.logger.export_to_json()
+        self.save(f"last.pkl")
+        save_random_state(self.logger.log_dir)
 
     def save(self, filename, directory=None):
         """Save agent.

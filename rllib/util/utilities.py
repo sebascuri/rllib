@@ -1,4 +1,5 @@
 """Utilities for the rllib library."""
+import pickle
 import time
 import warnings
 
@@ -25,6 +26,24 @@ def set_random_seed(seed):
     """Set global random seed."""
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
+def save_random_state(directory):
+    """Save the simulation random state in a directory."""
+    with open(f"{directory}/random_state.pkl", "wb") as f:
+        pickle.dump({"numpy": np.random.get_state(), "torch": torch.get_rng_state()}, f)
+
+
+def load_random_state(directory):
+    """Load the simulation random state from a directory."""
+    with open(f"{directory}/random_state.pkl", "rb") as f:
+        random_states = pickle.load(f)
+
+    if "numpy" in random_states:
+        np.random.set_state(random_states["numpy"])
+
+    if "torch" in random_states:
+        torch.set_rng_state(random_states["torch"])
 
 
 def integrate(function, distribution, out_dim=None, num_samples=15):
@@ -129,7 +148,7 @@ def tensor_to_distribution(args, **kwargs):
             )
         else:
             mean = args[0]
-        return Delta(mean, event_dim=min(1, mean.dim()))
+        return Delta(v=mean, event_dim=min(1, mean.dim()))
     else:
         if kwargs.get("tanh", False):
             d = TransformedDistribution(

@@ -83,14 +83,12 @@ class TestObservation(object):
             torch.testing.assert_allclose(o.state.shape, torch.Size([]))
             torch.testing.assert_allclose(o.action.shape, torch.Size([]))
             torch.testing.assert_allclose(o.next_state.shape, torch.Size([]))
-            torch.testing.assert_allclose(o.next_action.shape, torch.Size([]))
             torch.testing.assert_allclose(o.log_prob_action, torch.tensor(1.0))
 
         else:
             torch.testing.assert_allclose(o.state.shape, torch.Size(dim_state))
             torch.testing.assert_allclose(o.action.shape, torch.Size(dim_action))
             torch.testing.assert_allclose(o.next_state.shape, torch.Size(dim_state))
-            torch.testing.assert_allclose(o.next_action.shape, torch.Size(dim_action))
             torch.testing.assert_allclose(o.log_prob_action, torch.tensor(1.0))
 
     def test_clone(self, discrete, dim_state, dim_action):

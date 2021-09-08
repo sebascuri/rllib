@@ -4,6 +4,8 @@ import gym
 import gym.wrappers
 
 from .abstract_environment import AbstractEnvironment
+from .vectorized.util import VectorizedEnv
+
 from .utilities import parse_space
 
 
@@ -117,26 +119,29 @@ class GymEnvironment(AbstractEnvironment):
     @property
     def state(self):
         """See `AbstractEnvironment.state'."""
-        if hasattr(self.env, "state"):
+        if hasattr(self.env, "_get_obs"):
+            return getattr(self.env, "_get_obs")()
+        elif hasattr(self.env, "state"):
             return self.env.state
         elif hasattr(self.env, "s"):
             return self.env.s
-        elif hasattr(self.env, "_get_obs"):
-            return getattr(self.env, "_get_obs")()
         else:
             raise NotImplementedError("Strange state")
 
     @state.setter
     def state(self, value):
-        if hasattr(self.env, "state"):
+        if hasattr(self.env, "set_state"):
+            if isinstance(self.env, VectorizedEnv):
+                self.env.set_state(value)
+            else:
+                self.env.set_state(
+                    value[: len(self.env.sim.data.qpos)],
+                    value[len(self.env.sim.data.qpos) :],
+                )
+        elif hasattr(self.env, "state"):
             self.env.state = value
         elif hasattr(self.env, "s"):
             self.env.s = value
-        elif hasattr(self.env, "set_state"):
-            self.env.set_state(
-                value[: len(self.env.sim.data.qpos)],
-                value[len(self.env.sim.data.qpos) :],
-            )
         else:
             raise NotImplementedError("Strange state")
 
