@@ -1,4 +1,5 @@
 import gym
+import gym_toytext
 import numpy as np
 import torch
 
