@@ -1,5 +1,8 @@
 """Python Script Template."""
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    pass  # If there is an import error it should not be used.
 import numpy as np
 
 from rllib.util.rollout import rollout_agent
