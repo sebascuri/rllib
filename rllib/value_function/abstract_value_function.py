@@ -25,7 +25,8 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
         Number of actions in discrete environments.
     tau: float.
         Low-pass filter parameter to update the value function.
-
+    output_dim: Tuple[int]
+        Dimensionality of outputs, useful for multi-objective RL.
     """
 
     def __init__(
@@ -35,6 +36,7 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
         num_states=-1,
         num_actions=-1,
         tau=5e-3,
+        dim_reward=(1,),
         *args,
         **kwargs,
     ):
@@ -47,6 +49,7 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
         self.num_states = num_states if num_states is not None else -1
         self.tau = tau
         self.discrete_state = self.num_states >= 0
+        self.dim_reward = dim_reward
 
     @classmethod
     def default(cls, environment, *args, **kwargs):
@@ -56,6 +59,7 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
             num_states=environment.num_states,
             dim_action=environment.dim_action,
             num_actions=environment.num_actions,
+            dim_reward=environment.dim_reward,
             *args,
             **kwargs,
         )

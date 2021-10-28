@@ -17,10 +17,11 @@ class FeedForwardNN(nn.Module):
     _min_scale: float
     _max_scale: float
     log_scale: bool
+    output_shape: Tuple[int]
     def __init__(
         self,
-        in_dim: Tuple,
-        out_dim: Tuple,
+        in_dim: Tuple[int],
+        out_dim: Tuple[int],
         layers: Optional[Sequence[int]] = ...,
         non_linearity: str = ...,
         biased_head: bool = ...,

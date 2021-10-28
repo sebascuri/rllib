@@ -74,10 +74,6 @@ class TestNNEnsembleValueFunction(object):
             biased_head=biased_head,
         )
 
-    def test_compile(self, discrete_state, dim_state, num_heads):
-        self.init(discrete_state, dim_state, num_heads)
-        torch.jit.script(self.value_function)
-
     def test_property_values(self, discrete_state, dim_state, num_heads):
         self.init(discrete_state, dim_state, num_heads)
         assert (
@@ -176,7 +172,6 @@ class TestNNEnsembleQFunction(object):
         if discrete_state and not discrete_action:
             return
         self.init(discrete_state, discrete_action, dim_state, dim_action, num_heads)
-        torch.jit.script(self.q_function)
 
     def test_init(
         self, discrete_state, discrete_action, dim_state, dim_action, num_heads

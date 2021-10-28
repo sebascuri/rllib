@@ -48,7 +48,7 @@ class NNValueFunction(AbstractValueFunction):
 
         self.nn = DeterministicNN(
             num_inputs,
-            (1,),
+            self.dim_reward,
             layers=layers,
             squashed_output=False,
             non_linearity=non_linearity,
@@ -71,18 +71,28 @@ class NNValueFunction(AbstractValueFunction):
             num_states=other.num_states,
             tau=other.tau,
             input_transform=other.input_transform,
+            dim_reward=other.dim_reward,
         )
         new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
         return new
 
     @classmethod
-    def from_nn(cls, module, dim_state, num_states=-1, tau=0.0, input_transform=None):
+    def from_nn(
+        cls,
+        module,
+        dim_state,
+        num_states=-1,
+        dim_reward=(1,),
+        tau=0.0,
+        input_transform=None,
+    ):
         """Create new Value Function from a Neural Network Implementation."""
         new = cls(
             dim_state=dim_state,
             num_states=num_states,
             tau=tau,
             input_transform=input_transform,
+            dim_reward=dim_reward,
         )
         new.nn = module
         return new
@@ -137,7 +147,7 @@ class NNQFunction(AbstractQFunction):
 
         if not self.discrete_state and not self.discrete_action:
             num_inputs = (self.dim_state[0] + self.dim_action[0],)
-            num_outputs = (1,)
+            num_outputs = self.dim_reward
         elif self.discrete_state and self.discrete_action:
             num_inputs = (self.num_states,)
             num_outputs = (self.num_actions,)
@@ -178,6 +188,7 @@ class NNQFunction(AbstractQFunction):
             num_actions=other.num_actions,
             tau=other.tau,
             input_transform=other.input_transform,
+            dim_reward=other.dim_reward,
         )
         new.nn = other.nn.__class__.from_other(other.nn, copy=copy)
         return new
@@ -192,11 +203,13 @@ class NNQFunction(AbstractQFunction):
         num_actions=-1,
         tau=0.0,
         input_transform=None,
+        dim_reward=(1,),
     ):
         """Create new Value Function from a Neural Network Implementation."""
         new = cls(
             dim_state=dim_state,
             dim_action=dim_action,
+            dim_reward=dim_reward,
             num_states=num_states,
             num_actions=num_actions,
             tau=tau,

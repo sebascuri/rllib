@@ -4,9 +4,8 @@ import gym
 import gym.wrappers
 
 from .abstract_environment import AbstractEnvironment
-from .vectorized.util import VectorizedEnv
-
 from .utilities import parse_space
+from .vectorized.util import VectorizedEnv
 
 
 class GymEnvironment(AbstractEnvironment):

@@ -1,5 +1,7 @@
 """Implementation of different Neural Networks with pytorch."""
 
+from functools import reduce
+
 import torch
 import torch.jit
 import torch.nn as nn
@@ -50,7 +52,10 @@ class FeedForwardNN(nn.Module):
 
         self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
         self.embedding_dim = in_dim + 1 if biased_head else in_dim
-        self.head = nn.Linear(in_dim, out_dim[0], bias=biased_head)
+        self.output_shape = out_dim
+        self.head = nn.Linear(
+            in_dim, reduce(lambda x, y: x * y, list(out_dim)), bias=biased_head
+        )
         self.squashed_output = squashed_output
         self.log_scale = log_scale
         if self.log_scale:
@@ -90,7 +95,7 @@ class FeedForwardNN(nn.Module):
         out = out.squeeze(0)  # Squeeze back!
         if self.squashed_output:
             return torch.tanh(out)
-        return out
+        return out.reshape(*out.shape[:-1], *self.output_shape)
 
     @torch.jit.export
     def last_layer_embeddings(self, x):

@@ -32,14 +32,14 @@ def batch_size(request):
     return request.param
 
 
-@pytest.fixture(params=[1, 16])
+@pytest.fixture(params=[(1,), (16,)])
 def in_dim(request):
-    return (request.param,)
+    return request.param
 
 
-@pytest.fixture(params=[2, 4])
+@pytest.fixture(params=[(2,), (4,)])
 def out_dim(request):
-    return (request.param,)
+    return request.param
 
 
 @pytest.fixture(params=[5, 32])
@@ -53,10 +53,6 @@ def _test_from_other(object_, class_):
     assert isinstance(other, class_)
     assert other is not object_
 
-    try:
-        other = torch.jit.script(other)
-    except:  # noqa: E722
-        pass
     other_state_dict = other.state_dict()
     for name, param in object_.named_parameters():
         if not (torch.allclose(param, torch.zeros_like(param)) or name == "_scale"):
@@ -69,10 +65,6 @@ def _test_from_other_with_copy(object_, class_):
 
     assert isinstance(other, class_)
     assert other is not object_
-    try:
-        other = torch.jit.script(other)
-    except:  # noqa: E722
-        pass
     other_state_dict = other.state_dict()
 
     for name, param in object_.named_parameters():
@@ -88,9 +80,19 @@ class TestDeterministicNN(object):
     def test_output_shape(
         self, net, in_dim, out_dim, layers, non_linearity, batch_size
     ):
-        net = torch.jit.script(
-            net(in_dim, out_dim, layers, non_linearity=non_linearity)
-        )
+        net = net(in_dim, out_dim, layers, non_linearity=non_linearity)
+        if batch_size is None:
+            t = torch.randn(in_dim)
+            o = net(t)
+            assert o.shape == torch.Size(out_dim)
+        else:
+            t = torch.randn((batch_size,) + in_dim)
+            o = net(t)
+            assert o.shape == torch.Size((batch_size,) + out_dim)
+
+    def test_multi_output_shape(self, net, in_dim, layers, non_linearity, batch_size):
+        out_dim = (2, 4)
+        net = net(in_dim, out_dim, layers, non_linearity=non_linearity)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = net(t)
@@ -101,7 +103,7 @@ class TestDeterministicNN(object):
             assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         layers = layers or list()
 
         # Check nn.parameters (+1: head)
@@ -124,7 +126,7 @@ class TestHeteroGaussianNN(object):
         return HeteroGaussianNN
 
     def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -135,7 +137,7 @@ class TestHeteroGaussianNN(object):
             assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim))
+        net = net(in_dim, out_dim)
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
@@ -150,7 +152,7 @@ class TestHeteroGaussianNN(object):
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         layers = layers or list()
 
         # Check nn.parameters (+2: mean and covariance)
@@ -179,7 +181,7 @@ class TestHomoGaussianNN(object):
         return HomoGaussianNN
 
     def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -190,7 +192,7 @@ class TestHomoGaussianNN(object):
             assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim))
+        net = net(in_dim, out_dim)
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
@@ -205,7 +207,7 @@ class TestHomoGaussianNN(object):
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         layers = layers or list()
 
         # Check nn.parameters (+1: mean and covariance has only 1 param)
@@ -233,7 +235,7 @@ class TestCategoricalNN(object):
         return CategoricalNN
 
     def test_output_shape(self, net, in_dim, out_dim, layers, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -244,7 +246,7 @@ class TestCategoricalNN(object):
             assert o.shape == torch.Size([batch_size])
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim))
+        net = net(in_dim, out_dim)
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
@@ -259,7 +261,7 @@ class TestCategoricalNN(object):
         )
 
     def test_layers(self, net, in_dim, out_dim, layers):
-        net = torch.jit.script(net(in_dim, out_dim, layers))
+        net = net(in_dim, out_dim, layers)
         layers = layers or list()
 
         # Check nn.parameters (+1: head)
@@ -415,7 +417,7 @@ class TestFelixNet(object):
         return FelixNet
 
     def test_output_shape(self, net, in_dim, out_dim, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim))
+        net = net(in_dim, out_dim)
         if batch_size is None:
             t = torch.randn(in_dim)
             o = tensor_to_distribution(net(t)).sample()
@@ -426,7 +428,7 @@ class TestFelixNet(object):
             assert o.shape == torch.Size((batch_size,) + out_dim)
 
     def test_output_properties(self, net, in_dim, out_dim, batch_size):
-        net = torch.jit.script(net(in_dim, out_dim))
+        net = net(in_dim, out_dim)
         if batch_size is None:
             t = torch.randn(in_dim)
         else:
@@ -441,7 +443,7 @@ class TestFelixNet(object):
         )
 
     def test_layers(self, net, in_dim, out_dim):
-        net = torch.jit.script(net(in_dim, out_dim))
+        net = net(in_dim, out_dim)
         layers = [64, 64]
 
         # Check nn.parameters (+2: mean and covariance have only weights)

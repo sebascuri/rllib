@@ -49,6 +49,7 @@ setup(
         "matplotlib>=3.1.0",
         "gpytorch>=1.1.1,<1.2.0",
         "tensorboardX>=2.0,<3",
+        "seaborn>=0.11,<1",
     ],
     extras_require=extras,
     classifiers=[

@@ -24,7 +24,7 @@ class LagrangianLoss(nn.Module):
 
     Parameters
     ----------
-    eta: float.
+    dual: float.
     entropy regularization parameter.
     regularization: bool
         Flag that indicates if the algorithm is in regularization or trust-region mode.

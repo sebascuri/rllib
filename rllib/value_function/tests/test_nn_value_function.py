@@ -84,10 +84,6 @@ class TestNNValueFunction(object):
             dim_state=self.dim_state, num_states=self.num_states, layers=layers
         )
 
-    def test_compile(self, discrete_state, dim_state):
-        self.init(discrete_state, dim_state)
-        torch.jit.script(self.value_function)
-
     def test_property_values(self, discrete_state, dim_state):
         self.init(discrete_state, dim_state)
         assert (
@@ -131,17 +127,15 @@ class TestNNValueFunction(object):
 
     def test_from_nn(self, discrete_state, dim_state, batch_size):
         self.init(discrete_state, dim_state)
-        value_function = torch.jit.script(
-            NNValueFunction.from_nn(
-                DeterministicNN(
-                    self.value_function.nn.kwargs["in_dim"],
-                    self.value_function.nn.kwargs["out_dim"],
-                    layers=[20, 20],
-                    biased_head=False,
-                ),
-                self.dim_state,
-                num_states=self.num_states,
-            )
+        value_function = NNValueFunction.from_nn(
+            DeterministicNN(
+                self.value_function.nn.kwargs["in_dim"],
+                self.value_function.nn.kwargs["out_dim"],
+                layers=[20, 20],
+                biased_head=False,
+            ),
+            self.dim_state,
+            num_states=self.num_states,
         )
 
         state = random_tensor(discrete_state, dim_state, batch_size)
@@ -180,12 +174,6 @@ class TestNNQFunction(object):
             num_actions=self.num_actions,
             layers=layers,
         )
-
-    def test_compile(self, discrete_state, discrete_action, dim_state, dim_action):
-        if discrete_state and not discrete_action:
-            return
-        self.init(discrete_state, discrete_action, dim_state, dim_action)
-        torch.jit.script(self.q_function)
 
     def test_init(self, discrete_state, discrete_action, dim_state, dim_action):
         if discrete_state and not discrete_action:
@@ -290,6 +278,3 @@ class TestDuelingQFunction(TestNNQFunction):
     @pytest.fixture(params=[True], scope="class")
     def discrete_action(self, request):
         return request.param
-
-    def test_compile(self, discrete_state, discrete_action, dim_state, dim_action):
-        pass

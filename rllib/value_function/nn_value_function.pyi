@@ -27,10 +27,11 @@ class NNValueFunction(AbstractValueFunction):
     def from_nn(
         cls: Type[T],
         module: torch.nn.Module,
-        dim_state: Tuple,
+        dim_state: Tuple[int],
         num_states: int = ...,
         tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        dim_reward: Tuple[int] = ...,
     ) -> T: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
     def embeddings(self, state: Tensor) -> Tensor: ...
@@ -58,12 +59,13 @@ class NNQFunction(AbstractQFunction):
     def from_nn(
         cls: Type[T],
         module: torch.nn.Module,
-        dim_state: Tuple,
-        dim_action: Tuple,
+        dim_state: Tuple[int],
+        dim_action: Tuple[int],
         num_states: int = ...,
         num_actions: int = ...,
         tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        dim_reward: Tuple[int] = ...,
     ) -> T: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
 

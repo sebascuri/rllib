@@ -37,10 +37,11 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         dim_action,
         observation_space,
         action_space,
-        dim_observation=-1,
+        dim_observation=(-1,),
         num_states=-1,
         num_actions=-1,
         num_observations=-1,
+        dim_reward=(1,),
     ):
         super().__init__()
         self.dim_action = dim_action
@@ -49,7 +50,7 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         self.num_observations = num_observations if num_observations is not None else -1
         self.num_states = num_states if num_states is not None else -1
 
-        if dim_observation == -1:
+        if dim_observation == (-1,):
             dim_observation = dim_state
         self.dim_observation = dim_observation
 
@@ -59,6 +60,7 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
         self.discrete_state = self.num_states >= 0
         self.discrete_action = self.num_actions >= 0
         self.discrete_observation = self.num_observations >= 0
+        self.dim_reward = dim_reward
 
         self.metadata = {"render.modes": []}
 

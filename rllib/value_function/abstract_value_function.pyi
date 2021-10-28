@@ -16,13 +16,15 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
     num_states: int
     tau: float
     discrete_state: bool
+    dim_reward: Tuple[int]
     def __init__(
         self,
-        dim_state: Tuple,
-        dim_action: Tuple,
+        dim_state: Tuple[int],
+        dim_action: Tuple[int],
         num_states: int = ...,
         num_actions: int = ...,
         tau: float = ...,
+        dim_reward: Tuple[int] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

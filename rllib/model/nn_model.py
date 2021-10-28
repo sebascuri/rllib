@@ -32,10 +32,12 @@ class NNModel(AbstractModel):
         input_transform=None,
         per_coordinate=False,
         jit_compile=False,
+        reward_dim=(1,),
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.reward_dim = reward_dim
         self.input_transform = input_transform
 
         out_dim = self._get_out_dim()
@@ -194,7 +196,7 @@ class NNModel(AbstractModel):
             else:
                 out_dim = self.dim_state
         else:
-            out_dim = (1,)
+            out_dim = self.reward_dim
         return out_dim
 
     def _get_in_dim(self):
