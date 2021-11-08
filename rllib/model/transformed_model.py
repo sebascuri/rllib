@@ -30,8 +30,7 @@ class TransformedModel(AbstractModel):
             **kwargs,
         )
         self.base_model = base_model
-        self.forward_transformations = nn.ModuleList(transformations)
-        self.reverse_transformations = nn.ModuleList(list(reversed(transformations)))
+        self.transformations = nn.ModuleList(transformations)
 
     @classmethod
     def default(
@@ -40,6 +39,7 @@ class TransformedModel(AbstractModel):
         base_model=None,
         model_kind="dynamics",
         transformations=None,
+        deterministic=True,
         *args,
         **kwargs,
     ):
@@ -47,13 +47,13 @@ class TransformedModel(AbstractModel):
         if base_model is None:
             if model_kind == "dynamics":
                 base_model = EnsembleModel.default(
-                    environment, deterministic=True, *args, **kwargs
+                    environment, deterministic=deterministic, *args, **kwargs
                 )
             elif model_kind == "rewards":
                 base_model = EnsembleModel.default(
                     environment,
                     model_kind=model_kind,
-                    deterministic=True,
+                    deterministic=deterministic,
                     *args,
                     **kwargs,
                 )
@@ -95,7 +95,7 @@ class TransformedModel(AbstractModel):
         """Get epistemic scale of model."""
         none = torch.tensor(0)
         obs = Observation(state, action, none, none, none, none, none, none, none, none)
-        for transformation in self.forward_transformations:
+        for transformation in self.transformations:
             obs = transformation(obs)
 
         # Predict next-state
@@ -115,7 +115,7 @@ class TransformedModel(AbstractModel):
             next_state_scale_tril=scale,
         )
 
-        for transformation in self.reverse_transformations:
+        for transformation in reversed(list(self.transformations)):
             obs = transformation.inverse(obs)
         return obs.next_state_scale_tril
 
@@ -127,7 +127,7 @@ class TransformedModel(AbstractModel):
         obs = Observation(
             state, action, none, next_state, none, none, none, none, none, none
         )
-        for transformation in self.forward_transformations:
+        for transformation in self.transformations:
             obs = transformation(obs)
 
         # Predict next-state
@@ -144,9 +144,22 @@ class TransformedModel(AbstractModel):
             raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
 
         # Back-transform
+        if obs.state.shape != next_state[0].shape and isinstance(
+            self.base_model, EnsembleModel
+        ):
+            state = obs.state.unsqueeze(-2).repeat_interleave(
+                self.base_model.num_heads, -2
+            )
+            action = obs.action.unsqueeze(-2).repeat_interleave(
+                self.base_model.num_heads, -2
+            )
+        else:
+            state = obs.state
+            action = obs.action
+
         obs = Observation(
-            obs.state,
-            obs.action,
+            state=state,
+            action=action,
             reward=reward[0],
             done=done,
             next_action=none,
@@ -158,7 +171,7 @@ class TransformedModel(AbstractModel):
             reward_scale_tril=reward[1],
         )
 
-        for transformation in self.reverse_transformations:
+        for transformation in reversed(list(self.transformations)):
             obs = transformation.inverse(obs)
 
         if self.model_kind == "dynamics":

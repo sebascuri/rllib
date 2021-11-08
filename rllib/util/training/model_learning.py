@@ -97,6 +97,7 @@ def train_model(
     num_epochs=None,
     max_iter=100,
     epsilon=0.1,
+    min_iter=1,
     non_decrease_iter=float("inf"),
     logger=None,
     validation_set=None,
@@ -114,8 +115,11 @@ def train_model(
     batch_size: int (default=1000).
         Batch size to iterate through.
     num_epochs: int, optional.
-    max_iter: int (default = 100).
         Maximum number of epochs.
+    max_iter: int (default = 100).
+        Maximum number of iterations.
+    min_iter: int (default=1).
+        Minimum number of iterations before early stopping.
     epsilon: float.
         Early stopping parameter. If epoch loss is > (1 + epsilon) of minimum loss the
         optimization process stops.
@@ -132,14 +136,16 @@ def train_model(
     if validation_set is None:
         validation_set = train_set
 
-    data_size = len(train_set)
+    data_size = len(train_set) // batch_size
+
     if num_epochs is not None:
-        max_iter = data_size * num_epochs // batch_size
-        non_decrease_iter = data_size * non_decrease_iter
+        max_iter = data_size * num_epochs
+        min_iter = data_size * min_iter
+
     model.train()
     early_stopping = EarlyStopping(epsilon, non_decrease_iter=non_decrease_iter)
 
-    for _ in tqdm(range(max_iter)):
+    for num_iter in tqdm(range(max_iter)):
         observation, idx, mask = train_set.sample_batch(batch_size)
         _train_model_step(model, observation, optimizer, mask, logger)
 
@@ -148,7 +154,11 @@ def train_model(
             mse = _validate_model_step(model, observation, logger)
         early_stopping.update(mse)
 
-        if early_stopping.stop:
+        if (
+            (num_iter + 1) % data_size == 0
+            and early_stopping.stop
+            and num_iter > min_iter
+        ):
             return
 
 

@@ -14,8 +14,12 @@ from torch.optim import Adam
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
-from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
-from rllib.model import TransformedModel
+from rllib.dataset.experience_replay import (
+    BootstrapExperienceReplay,
+    ExperienceReplay,
+    StateExperienceReplay,
+)
+from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.policy.random_policy import RandomPolicy
 from rllib.util.neural_networks.utilities import DisableGradient
@@ -108,7 +112,16 @@ class ModelBasedAgent(AbstractAgent):
             self.dynamical_model.set_prediction_strategy("posterior")
 
         if memory is None:
-            memory = ExperienceReplay(max_len=100000, num_steps=0)
+            try:
+                if isinstance(self.dynamical_model.base_model, EnsembleModel):
+                    memory = BootstrapExperienceReplay(
+                        num_bootstraps=self.dynamical_model.base_model.num_heads,
+                        max_len=100000,
+                        num_steps=0,
+                        bootstrap=True,
+                    )
+            except AttributeError:
+                memory = ExperienceReplay(max_len=100000, num_steps=0)
         self.memory = memory
         self.initial_states_dataset = StateExperienceReplay(
             max_len=1000, dim_state=self.dynamical_model.dim_state
@@ -232,7 +245,7 @@ class ModelBasedAgent(AbstractAgent):
         dynamical_model=None,
         reward_model=None,
         termination_model=None,
-        num_epochs=20,
+        num_iter=1000,
         model_lr=5e-4,
         l2_reg=1e-4,
         calibrate=True,
@@ -249,7 +262,7 @@ class ModelBasedAgent(AbstractAgent):
                 reward_model = TransformedModel.default(
                     environment,
                     model_kind="rewards",
-                    transformations=dynamical_model.forward_transformations,
+                    transformations=dynamical_model.transformations,
                 )
         if termination_model is None:
             try:
@@ -264,7 +277,7 @@ class ModelBasedAgent(AbstractAgent):
                 dynamical_model=dynamical_model,
                 reward_model=reward_model,
                 termination_model=termination_model,
-                num_epochs=num_epochs,
+                num_iter=num_iter,
                 model_optimizer=model_optimizer,
                 calibrate=calibrate,
             )

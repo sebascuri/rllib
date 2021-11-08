@@ -27,6 +27,7 @@ class DataAugmentationAgent(DerivedMBAgent):
         num_initial_state_samples=0,
         refresh_interval=2,
         initial_distribution=None,
+        memory_batch_size=None,
         *args,
         **kwargs,
     ):
@@ -37,6 +38,7 @@ class DataAugmentationAgent(DerivedMBAgent):
             num_initial_state_samples=num_initial_state_samples,
             refresh_interval=refresh_interval,
             initial_distribution=initial_distribution,
+            memory_batch_size=memory_batch_size,
             *args,
             **kwargs,
         )

@@ -327,6 +327,9 @@ class Ensemble(HeteroGaussianNN):
         elif self.prediction_strategy == "set_head_idx":  # TS-INF
             mean = out.gather(-1, self.head_idx)
             scale = torch.diag_embed(scale.gather(-1, self.head_idx))
+        elif self.prediction_strategy == "multi_head":
+            mean = out.transpose(-1, -2)
+            scale = torch.diag_embed(scale.transpose(-1, -2))
         else:
             raise NotImplementedError
 

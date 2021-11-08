@@ -18,6 +18,7 @@ class DataAugmentationAgent(ModelBasedAgent):
         refresh_interval: int = ...,
         initial_distribution: Optional[Distribution] = ...,
         only_sim: bool = ...,
+        memory_batch_size: Optional[int] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
