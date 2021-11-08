@@ -30,6 +30,6 @@ class SoftMax(AbstractQFunctionPolicy):
 
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
-        q_val = self.q_function(state)
+        q_val = self.reduction(self.q_function(state))
         prior = self.prior(state)
         return prior + q_val / self.temperature

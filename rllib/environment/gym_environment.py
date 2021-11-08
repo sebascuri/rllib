@@ -2,6 +2,8 @@
 
 import gym
 import gym.wrappers
+import numpy as np
+import torch
 
 from .abstract_environment import AbstractEnvironment
 from .utilities import parse_space
@@ -93,6 +95,21 @@ class GymEnvironment(AbstractEnvironment):
         if self.num_states > 0 and done:  # Move to terminal state.
             next_state = self.num_states - 1
         self._time += 1
+        if isinstance(reward, torch.Tensor):
+            if reward.shape[-1] != self.dim_reward[0]:
+                reward = reward.unsqueeze(-1).repeat_interleave(self.dim_reward[0], -1)
+            # if done is bool:
+            #     reward = atleast_nd(input_tensor=reward, n=1)
+            # else:
+            #     reward = atleast_nd(input_tensor=reward, n=2)
+        else:
+            reward = np.atleast_1d(reward)
+            if reward.shape[-1] != self.dim_reward[0]:
+                reward = np.tile(reward, (self.dim_reward[0], 1)).T
+            # if done is bool:
+            #     reward = np.atleast_1d(reward)
+            # else:
+            #     reward = np.atleast_2d(reward).T
         return next_state, reward, done, info
 
     def render(self, mode="human"):

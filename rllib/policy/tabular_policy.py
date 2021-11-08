@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 
-from rllib.util.neural_networks import one_hot_encode
+from rllib.util.neural_networks.utilities import one_hot_encode
 
 from .nn_policy import NNPolicy
 

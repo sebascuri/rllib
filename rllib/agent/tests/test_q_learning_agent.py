@@ -115,5 +115,5 @@ def test_tabular_interaction(agent, policy):
 
     torch.testing.assert_allclose(
         critic.table.shape,
-        torch.Size([environment.num_actions, environment.num_states]),
+        torch.Size([environment.num_actions, environment.num_states, 1]),
     )

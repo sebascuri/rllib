@@ -12,7 +12,7 @@ def get_trajectory():
             Observation(
                 state=torch.randn(4),
                 action=torch.randn(2),
-                reward=reward,
+                reward=torch.tensor([reward]),
                 next_state=torch.randn(4),
                 done=False,
             )
@@ -28,7 +28,7 @@ def test_stack_list_of_observations():
     assert stacked_trajectory.state.shape == (3, 4)
     assert stacked_trajectory.action.shape == (3, 2)
     assert stacked_trajectory.next_state.shape == (3, 4)
-    assert stacked_trajectory.reward.shape == (3,)
+    assert stacked_trajectory.reward.shape == (3, 1)
     assert stacked_trajectory.done.shape == (3,)
     for val in stacked_trajectory:
         assert val.dtype is torch.get_default_dtype()

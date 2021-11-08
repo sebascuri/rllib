@@ -5,6 +5,7 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 from rllib.util.training.utilities import Evaluate
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
@@ -70,12 +71,13 @@ def step_model(
         reward_model(state, action, next_state)
     )
     if reward_distribution.has_rsample:
-        reward = reward_distribution.rsample().squeeze(-1)
+        reward = reward_distribution.rsample()
     else:
-        reward = reward_distribution.sample().squeeze(-1)
+        reward = reward_distribution.sample()
     if done is None:
         done = torch.zeros_like(reward).bool()
-    reward *= (~done).float()
+    broadcast_done = broadcast_to_tensor(done, target_tensor=reward)
+    reward *= (~broadcast_done).float()
 
     # Check for termination.
     if termination_model is not None:

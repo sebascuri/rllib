@@ -5,7 +5,8 @@ from torch.distributions import Categorical, MultivariateNormal
 
 from rllib.policy import FelixPolicy, NNPolicy
 from rllib.util.distributions import Delta
-from rllib.util.neural_networks import HomoGaussianNN, count_vars, random_tensor
+from rllib.util.neural_networks.neural_networks import HomoGaussianNN
+from rllib.util.neural_networks.utilities import count_vars, random_tensor
 from rllib.util.utilities import tensor_to_distribution
 
 

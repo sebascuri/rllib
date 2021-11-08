@@ -1,5 +1,6 @@
 """Generalized Advantage Actor-Critic Algorithm."""
 from rllib.algorithms.policy_evaluation.gae import GAE
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 
 from .ac import ActorCritic
 
@@ -41,4 +42,6 @@ class GAAC(ActorCritic):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
         weight = self.get_ope_weight(state, action, trajectory.log_prob_action)
-        return weight * self.gae(trajectory)  # GAE returns.
+        advantage = self.gae(trajectory)
+        weight = broadcast_to_tensor(input_tensor=weight, target_tensor=advantage)
+        return weight * advantage  # GAE returns.

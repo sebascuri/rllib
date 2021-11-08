@@ -1,5 +1,7 @@
 """Advantage Actor Critic Algorithm."""
 
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
+
 from .ac import ActorCritic
 
 
@@ -27,4 +29,6 @@ class A2C(ActorCritic):
         """Estimate the returns of a trajectory."""
         state, action = trajectory.state, trajectory.action
         weight = self.get_ope_weight(state, action, trajectory.log_prob_action)
-        return weight * (self.critic(state, action) - self.value_target(state))
+        advantage = self.critic(state, action) - self.value_target(state)
+        weight = broadcast_to_tensor(input_tensor=weight, target_tensor=advantage)
+        return weight * advantage

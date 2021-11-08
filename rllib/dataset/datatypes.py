@@ -54,6 +54,7 @@ class Observation:
         cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
+        dim_reward: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
         kind: str = "zero",
@@ -93,7 +94,7 @@ class Observation:
             action = torch.randn(dim_action)
             log_prob_action = torch.tensor(1.0)
 
-        reward = torch.rand(1)[0]
+        reward = torch.rand(dim_reward)
         done = torch.round(torch.rand(()))
         if kind == "zero":
             state = 0 * state
@@ -129,6 +130,7 @@ class Observation:
         cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
+        dim_reward: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
     ) -> T:
@@ -138,6 +140,7 @@ class Observation:
             dim_action=dim_action,
             num_states=num_states,
             num_actions=num_actions,
+            dim_reward=dim_reward,
             kind="nan",
         )
 
@@ -146,6 +149,7 @@ class Observation:
         cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
+        dim_reward: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
     ) -> T:
@@ -155,6 +159,7 @@ class Observation:
             dim_action=dim_action,
             num_states=num_states,
             num_actions=num_actions,
+            dim_reward=dim_reward,
             kind="zero",
         )
 
@@ -163,6 +168,7 @@ class Observation:
         cls: Type[T],
         dim_state: Tuple = (1,),
         dim_action: Tuple = (1,),
+        dim_reward: Tuple = (1,),
         num_states: int = -1,
         num_actions: int = -1,
     ) -> T:
@@ -172,6 +178,7 @@ class Observation:
             dim_action=dim_action,
             num_states=num_states,
             num_actions=num_actions,
+            dim_reward=dim_reward,
             kind="random",
         )
 

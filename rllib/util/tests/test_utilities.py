@@ -49,7 +49,10 @@ class TestIntegrate(object):
             return 2 * a
 
         torch.testing.assert_allclose(
-            integrate(_function, d, num_samples=100), 0.4, rtol=1e-3, atol=1e-3
+            integrate(_function, d, num_samples=100),
+            torch.tensor([0.4]),
+            rtol=1e-3,
+            atol=1e-3,
         )
 
 

@@ -65,7 +65,10 @@ def test_iterative_policy_evaluation():
     value_function = iterative_policy_evaluation(policy, environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor([RANDOM_VALUE]), atol=0.05, rtol=EPS
+        value_function.table,
+        torch.tensor([RANDOM_VALUE]).unsqueeze(-1),
+        atol=0.05,
+        rtol=EPS,
     )
 
 
@@ -83,7 +86,10 @@ def test_linear_system_policy_evaluation():
     value_function = linear_system_policy_evaluation(policy, environment, GAMMA)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor([RANDOM_VALUE]), atol=0.05, rtol=EPS
+        value_function.table,
+        torch.tensor([RANDOM_VALUE]).unsqueeze(-1),
+        atol=0.05,
+        rtol=EPS,
     )
 
 
@@ -94,7 +100,10 @@ def test_policy_iteration():
     policy, value_function = policy_iteration(environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor([OPTIMAL_VALUE]), atol=0.05, rtol=EPS
+        value_function.table,
+        torch.tensor([OPTIMAL_VALUE]).unsqueeze(-1),
+        atol=0.05,
+        rtol=EPS,
     )
     pred_p = policy.table.argmax(dim=0)
     assert_policy_equality(environment, GAMMA, value_function, OPTIMAL_POLICY, pred_p)
@@ -106,7 +115,7 @@ def test_policy_iteration():
 
     torch.testing.assert_allclose(
         value_function.table,
-        torch.tensor([OPTIMAL_VALUE_WITH_TERMINAL]),
+        torch.tensor([OPTIMAL_VALUE_WITH_TERMINAL]).unsqueeze(-1),
         atol=0.05,
         rtol=EPS,
     )
@@ -124,7 +133,10 @@ def test_value_iteration():
     policy, value_function = value_iteration(environment, GAMMA, eps=EPS)
 
     torch.testing.assert_allclose(
-        value_function.table, torch.tensor([OPTIMAL_VALUE]), atol=0.05, rtol=EPS
+        value_function.table,
+        torch.tensor([OPTIMAL_VALUE]).unsqueeze(-1),
+        atol=0.05,
+        rtol=EPS,
     )
     pred_p = policy.table.argmax(dim=0)
     assert_policy_equality(environment, GAMMA, value_function, OPTIMAL_POLICY, pred_p)
@@ -136,7 +148,7 @@ def test_value_iteration():
 
     torch.testing.assert_allclose(
         value_function.table,
-        torch.tensor([OPTIMAL_VALUE_WITH_TERMINAL]),
+        torch.tensor([OPTIMAL_VALUE_WITH_TERMINAL]).unsqueeze(-1),
         atol=0.05,
         rtol=EPS,
     )
@@ -152,10 +164,13 @@ def assert_policy_equality(environment, gamma, value_function, true_opt_p, pred_
     for state in range(environment.num_states):
         environment.state = state
         next_state, reward, done, info = environment.step(pred_opt_p[state])
+        reward = torch.tensor(reward, dtype=torch.get_default_dtype())
         pred_value = reward + gamma * value_function(torch.tensor(next_state))
 
         environment.state = state
         next_state, reward, done, info = environment.step(true_opt_p[state])
+        reward = torch.tensor(reward, dtype=torch.get_default_dtype())
+
         true_value = reward + gamma * value_function(torch.tensor(next_state))
         torch.testing.assert_allclose(pred_value, true_value)
 

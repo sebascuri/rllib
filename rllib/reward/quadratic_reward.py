@@ -3,7 +3,7 @@
 import torch
 
 from rllib.model.abstract_model import AbstractModel
-from rllib.util.neural_networks import torch_quadratic
+from rllib.util.neural_networks.utilities import torch_quadratic
 
 
 class QuadraticReward(AbstractModel):

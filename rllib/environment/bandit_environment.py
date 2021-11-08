@@ -52,7 +52,12 @@ class BanditEnvironment(AbstractEnvironment):
         reward_distribution = tensor_to_distribution(
             self.reward(self.state, action, None)
         )
-        return self.state, reward_distribution.sample().numpy(), False, {}
+        return (
+            self.state,
+            np.atleast_1d(reward_distribution.sample().numpy()),
+            False,
+            {},
+        )
 
     def reset(self):
         """Reset time counter to zero."""

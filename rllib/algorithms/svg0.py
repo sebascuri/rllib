@@ -32,6 +32,7 @@ class SVG0(DPG):
         # Propagate gradient.
         with DisableGradient(self.critic):
             q = self.critic(observation.state[..., 0, :], action)
+            q = self.multi_objective_reduction(q)
             if isinstance(self.critic, NNEnsembleQFunction):
                 q = q[..., 0]
 

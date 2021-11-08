@@ -4,7 +4,7 @@ import torch
 import torch.distributions
 
 from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks import resume_learning
+from rllib.util.neural_networks.utilities import resume_learning
 from rllib.util.parameter_decay import Constant, ParameterDecay
 
 from .trpo import TRPO
@@ -65,7 +65,7 @@ class PPO(TRPO):
     def actor_loss(self, trajectory):
         """Get actor loss."""
         state, action, reward, next_state, done, *r = trajectory
-        log_p, ratio = self.get_log_p_and_ope_weight(state, action)
+        _, ratio = self.get_log_p_and_ope_weight(state, action)
 
         with torch.no_grad():
             adv = self.returns(trajectory)
@@ -73,6 +73,7 @@ class PPO(TRPO):
                 adv = (adv - adv.mean()) / (adv.std() + self.eps)
 
         # Compute surrogate loss.
+        adv = self.multi_objective_reduction(adv)
         weighted_advantage = ratio * adv
         clipped_advantage = ratio.clamp(1 - self.epsilon(), 1 + self.epsilon()) * adv
         surrogate_loss = -torch.min(weighted_advantage, clipped_advantage)

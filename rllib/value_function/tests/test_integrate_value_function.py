@@ -3,7 +3,7 @@ import torch
 import torch.testing
 
 from rllib.policy import NNPolicy
-from rllib.util.neural_networks import random_tensor
+from rllib.util.neural_networks.utilities import random_tensor
 from rllib.value_function import (
     IntegrateQValueFunction,
     NNEnsembleQFunction,
@@ -31,6 +31,11 @@ def dim_action(request):
     return request.param
 
 
+@pytest.fixture(params=[4, 1])
+def dim_reward(request):
+    return request.param
+
+
 @pytest.fixture(params=[None, 1, 5])
 def num_heads(request):
     return request.param
@@ -52,6 +57,7 @@ class TestIntegrateValueFunction(object):
         num_samples=1,
         layers=None,
         biased_head=True,
+        dim_reward=1,
     ):
         self.num_states, self.dim_state = (
             (dim_state, ()) if discrete_state else (-1, (dim_state,))
@@ -59,6 +65,7 @@ class TestIntegrateValueFunction(object):
         self.num_actions, self.dim_action = (
             (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
+        self.dim_reward = (dim_reward,)
 
         layers = layers if layers is not None else [32, 32]
 
@@ -68,6 +75,7 @@ class TestIntegrateValueFunction(object):
                 dim_action=self.dim_action,
                 num_states=self.num_states,
                 num_actions=self.num_actions,
+                dim_reward=self.dim_reward,
                 layers=layers,
                 biased_head=biased_head,
             )
@@ -77,6 +85,7 @@ class TestIntegrateValueFunction(object):
                 dim_action=self.dim_action,
                 num_states=self.num_states,
                 num_actions=self.num_actions,
+                dim_reward=self.dim_reward,
                 num_heads=num_heads,
                 layers=layers,
                 biased_head=biased_head,
@@ -115,16 +124,28 @@ class TestIntegrateValueFunction(object):
         dim_action,
         num_heads,
         batch_size,
+        dim_reward,
     ):
         if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action, num_heads)
+            self.init(
+                discrete_state,
+                discrete_action,
+                dim_state,
+                dim_action,
+                num_heads,
+                dim_reward=dim_reward,
+            )
             state = random_tensor(discrete_state, dim_state, batch_size)
             value = self.value_function(state)
 
             if num_heads:
                 assert value.shape == torch.Size(
-                    [batch_size, num_heads] if batch_size else [num_heads]
+                    [batch_size, dim_reward, num_heads]
+                    if batch_size
+                    else [dim_reward, num_heads]
                 )
             else:
-                assert value.shape == torch.Size([batch_size] if batch_size else [])
+                assert value.shape == torch.Size(
+                    [batch_size, dim_reward] if batch_size else [dim_reward]
+                )
             assert value.dtype is torch.get_default_dtype()

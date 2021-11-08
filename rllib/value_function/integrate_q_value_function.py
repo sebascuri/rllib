@@ -4,7 +4,6 @@ from rllib.policy import NNPolicy
 from rllib.util.utilities import integrate, tensor_to_distribution
 
 from .abstract_value_function import AbstractValueFunction
-from .nn_ensemble_value_function import NNEnsembleQFunction
 from .nn_value_function import NNQFunction
 
 
@@ -50,15 +49,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
     def forward(self, state):
         """Get value of the value-function at a given state."""
         pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
-        if isinstance(self.q_function, NNEnsembleQFunction):
-            out_dim = self.q_function.num_heads
-        else:
-            out_dim = None
-
         final_v = integrate(
-            lambda a: self.q_function(state, a),
-            pi,
-            out_dim=out_dim,
-            num_samples=self.num_samples,
+            lambda a: self.q_function(state, a), pi, num_samples=self.num_samples
         )
         return final_v

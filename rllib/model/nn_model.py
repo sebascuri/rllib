@@ -1,7 +1,8 @@
 """Model implemented by a Neural Network."""
 import torch
 
-from rllib.util.neural_networks import CategoricalNN, HeteroGaussianNN, one_hot_encode
+from rllib.util.neural_networks.neural_networks import CategoricalNN, HeteroGaussianNN
+from rllib.util.neural_networks.utilities import one_hot_encode
 
 from .abstract_model import AbstractModel
 

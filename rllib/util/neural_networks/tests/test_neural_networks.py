@@ -5,7 +5,7 @@ import torch.jit
 import torch.testing
 
 from rllib.util.distributions import Delta
-from rllib.util.neural_networks import (
+from rllib.util.neural_networks.neural_networks import (
     CategoricalNN,
     DeterministicNN,
     Ensemble,

@@ -42,16 +42,13 @@ class NNQFunction(AbstractQFunction):
     tau: float
     def __init__(
         self,
-        dim_state: Tuple,
-        dim_action: Tuple,
-        num_states: int = ...,
-        num_actions: int = ...,
         layers: Sequence[int] = ...,
         biased_head: bool = ...,
         non_linearity: str = ...,
         jit_compile: bool = ...,
-        tau: float = ...,
         input_transform: Optional[torch.nn.Module] = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...

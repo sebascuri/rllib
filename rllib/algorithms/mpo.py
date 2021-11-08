@@ -5,7 +5,7 @@ import torch.distributions
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks import repeat_along_dimension
+from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import tensor_to_distribution
 
@@ -156,6 +156,7 @@ class MPO(AbstractAlgorithm):
         if self.ope is not None:
             return self.ope(observation)
         next_v = self.value_target(observation.next_state)
+        next_v = self.multi_objective_reduction(next_v)
         next_v = next_v * (1.0 - observation.done)
         return self.get_reward(observation) + self.gamma * next_v
 
@@ -165,6 +166,7 @@ class MPO(AbstractAlgorithm):
         log_p = pi_dist.log_prob(action)
 
         q_values = self.critic_target(state, action)
+        q_values = self.multi_objective_reduction(q_values)
 
         mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p).reduce(
             self.criterion.reduction

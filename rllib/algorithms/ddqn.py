@@ -1,5 +1,7 @@
 """DDQN Algorithm."""
 
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
+
 from .q_learning import QLearning
 
 
@@ -23,9 +25,12 @@ class DDQN(QLearning):
 
     def get_value_target(self, observation):
         """Get q function target."""
-        next_action = self.critic(observation.next_state).argmax(dim=-1)
-        # there is no need of re-scaling because actions are discrete.
+        next_action = self.multi_objective_reduction(
+            self.critic(observation.next_state)
+        ).argmax(dim=-1)
         next_v = self.critic_target(observation.next_state, next_action)
-        next_v = next_v * (1.0 - observation.done)
+        # there is no need of re-scaling because actions are discrete.
+        not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=next_v)
+        next_v = next_v * not_done
 
         return self.get_reward(observation) + self.gamma * next_v

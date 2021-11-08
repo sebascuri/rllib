@@ -3,6 +3,7 @@
 import torch
 
 from rllib.policy import EpsGreedy
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 
 from .abstract_algorithm import AbstractAlgorithm
 
@@ -53,7 +54,8 @@ class SARSA(AbstractAlgorithm):
     def get_value_target(self, observation):
         """Get q function target."""
         next_v = self.critic_target(observation.next_state, observation.next_action)
-        next_v = next_v * (1 - observation.done)
+        not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=next_v)
+        next_v = next_v * not_done
         return self.get_reward(observation) + self.gamma * next_v
 
 

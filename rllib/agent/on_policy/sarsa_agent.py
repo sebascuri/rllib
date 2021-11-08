@@ -84,7 +84,11 @@ class SARSAAgent(OnPolicyAgent):
 
     def learn(self):
         """Remove the last observation."""
-        self.trajectories[-1].pop(-1)
+        if self.trajectories[-1][-1].done:
+            self.trajectories[-1][-1].next_action = self.trajectories[-1][-1].action
+        else:
+            self.trajectories[-1].pop(-1)
+
         super().learn()
 
     @classmethod

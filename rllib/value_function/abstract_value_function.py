@@ -25,7 +25,7 @@ class AbstractQFunction(nn.Module, metaclass=ABCMeta):
         Number of actions in discrete environments.
     tau: float.
         Low-pass filter parameter to update the value function.
-    output_dim: Tuple[int]
+    dim_reward: Tuple[int]
         Dimensionality of outputs, useful for multi-objective RL.
     """
 

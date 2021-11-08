@@ -1,4 +1,5 @@
 """Wrapper for Custom System Environments."""
+import torch
 from gym import Env
 
 from rllib.util.utilities import tensor_to_distribution
@@ -51,13 +52,9 @@ class SystemEnvironment(AbstractEnvironment, Env):
         """See `AbstractEnvironment.step'."""
         self._time += 1
         state = self.system.state  # this might be noisy.
-        reward = float("nan")
+        reward = torch.tensor([float("nan")])
         if self.reward is not None:
-            reward = (
-                tensor_to_distribution(self.reward(state, action, None))
-                .sample()
-                .squeeze(-1)
-            )
+            reward = tensor_to_distribution(self.reward(state, action, None)).sample()
 
         next_state = self.system.step(action)
         if self.termination_model is not None:

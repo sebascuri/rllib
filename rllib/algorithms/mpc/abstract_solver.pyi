@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from rllib.model import AbstractModel
+from rllib.util.multi_objective_reduction import AbstractMultiObjectiveReduction
 from rllib.value_function import AbstractValueFunction
 
 class MPCSolver(nn.Module, metaclass=ABCMeta):
@@ -25,6 +26,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     mean: Optional[Tensor]
     _scale: float
     covariance: Tensor
+    multi_objective_reduction: AbstractMultiObjectiveReduction
     def __init__(
         self,
         dynamical_model: AbstractModel,
@@ -41,6 +43,9 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         action_scale: float = ...,
         clamp: bool = ...,
         num_cpu: int = ...,
+        multi_objective_reduction: AbstractMultiObjectiveReduction = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...
     def evaluate_action_sequence(
         self, action_sequence: Tensor, state: Tensor

@@ -48,7 +48,7 @@ class MiniAtariEnv(Env):
         """Step environment."""
         reward, done = self._env.act(action)
         next_state = self._get_obs()
-        return next_state, reward, done, {}
+        return next_state, np.atleast_1d(reward), done, {}
 
     def _get_obs(self):
         return self._env.state().transpose((2, 0, 1))

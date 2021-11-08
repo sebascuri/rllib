@@ -2,7 +2,7 @@ import pytest
 from torch.distributions import Categorical, MultivariateNormal
 
 from rllib.policy import RandomPolicy
-from rllib.util.neural_networks import random_tensor
+from rllib.util.neural_networks.utilities import random_tensor
 from rllib.util.utilities import tensor_to_distribution
 
 

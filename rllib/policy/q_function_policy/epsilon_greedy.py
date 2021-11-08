@@ -2,7 +2,7 @@
 
 import torch
 
-from rllib.util.neural_networks import get_batch_size
+from rllib.util.neural_networks.utilities import get_batch_size
 
 from .abstract_q_function_policy import AbstractQFunctionPolicy
 
@@ -35,7 +35,8 @@ class EpsGreedy(AbstractQFunctionPolicy):
         greedy = (1 - self.epsilon) * torch.ones(*aux_size, self.num_actions)
 
         # Greedy part.
-        a = torch.argmax(self.q_function(state), dim=-1)
+        q_val = self.reduction(self.q_function(state))
+        a = torch.argmax(q_val, dim=-1)
         probabilities.scatter_add_(dim=-1, index=a.unsqueeze(-1), src=greedy)
 
         if not batch_size:

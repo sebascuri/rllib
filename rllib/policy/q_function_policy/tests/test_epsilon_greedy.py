@@ -15,7 +15,9 @@ def eps_start(request):
 
 @pytest.fixture
 def q_function():
-    return NNQFunction(num_actions=2, num_states=4, dim_state=(), dim_action=())
+    return NNQFunction(
+        num_actions=2, num_states=4, dim_state=(), dim_action=(), dim_reward=(1,)
+    )
 
 
 def test_epsilon(eps_start, q_function):
@@ -38,7 +40,7 @@ def test_discrete(eps_start, q_function):
     policy = EpsGreedy(q_function, eps_start)
     for _ in range(100):
         state = torch.randint(4, ())
-        action = q_function(state).argmax(dim=-1)
+        action = q_function(state)[..., 0].argmax(dim=-1)
         probs = eps_start / 2 * torch.ones(2)
         probs[action] += 1 - eps_start
 

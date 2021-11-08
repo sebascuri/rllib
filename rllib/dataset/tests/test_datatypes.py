@@ -23,10 +23,14 @@ class TestObservation(object):
     def dim_action(self, request):
         return request.param
 
+    @pytest.fixture(params=[2, 4], scope="class")
+    def dim_reward(self, request):
+        return request.param
+
     def init(self):
         state = np.random.randn(4)
         action = torch.randn(1)
-        reward = 2
+        reward = torch.rand(1)
         next_state = np.random.randn(4)
         done = False
         return state, action, reward, next_state, done
@@ -40,7 +44,7 @@ class TestObservation(object):
             torch.testing.assert_allclose(x, y)
         assert o is not Observation(state, action, reward, next_state, done)
 
-    def test_example(self, discrete, dim_state, dim_action, kind):
+    def test_example(self, discrete, dim_state, dim_action, kind, dim_reward):
         if discrete:
             num_states, num_actions = dim_state, dim_action
             dim_state, dim_action = (), ()
@@ -53,6 +57,7 @@ class TestObservation(object):
                 dim_action=dim_action,
                 num_states=num_states,
                 num_actions=num_actions,
+                dim_reward=dim_reward,
             )
         elif kind == "zero":
             o = Observation.zero_example(
@@ -60,6 +65,7 @@ class TestObservation(object):
                 dim_action=dim_action,
                 num_states=num_states,
                 num_actions=num_actions,
+                dim_reward=dim_reward,
             )
         elif kind == "random":
             o = Observation.random_example(
@@ -67,6 +73,7 @@ class TestObservation(object):
                 dim_action=dim_action,
                 num_states=num_states,
                 num_actions=num_actions,
+                dim_reward=dim_reward,
             )
         else:
             with pytest.raises(ValueError):
@@ -75,6 +82,7 @@ class TestObservation(object):
                     dim_action=dim_action,
                     num_states=num_states,
                     num_actions=num_actions,
+                    dim_reward=dim_reward,
                     kind=kind,
                 )
             return

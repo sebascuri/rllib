@@ -3,7 +3,8 @@
 import torch
 import torch.jit
 
-from rllib.util.neural_networks import DeterministicNN, one_hot_encode
+from rllib.util.neural_networks.neural_networks import DeterministicNN
+from rllib.util.neural_networks.utilities import gather_along_index, one_hot_encode
 
 from .abstract_value_function import AbstractQFunction, AbstractValueFunction
 
@@ -104,7 +105,7 @@ class NNValueFunction(AbstractValueFunction):
 
         if self.discrete_state:
             state = one_hot_encode(state, self.num_states)
-        return self.nn(state).squeeze(-1)
+        return self.nn(state)
 
     @torch.jit.export
     def embeddings(self, state):
@@ -150,10 +151,10 @@ class NNQFunction(AbstractQFunction):
             num_outputs = self.dim_reward
         elif self.discrete_state and self.discrete_action:
             num_inputs = (self.num_states,)
-            num_outputs = (self.num_actions,)
+            num_outputs = (self.num_actions,) + self.dim_reward
         elif not self.discrete_state and self.discrete_action:
             num_inputs = self.dim_state
-            num_outputs = (self.num_actions,)
+            num_outputs = (self.num_actions,) + self.dim_reward
         else:
             raise NotImplementedError("If states are discrete, so should be actions.")
 
@@ -244,23 +245,13 @@ class NNQFunction(AbstractQFunction):
             return action_value
 
         if self.discrete_action:
-            action = action.unsqueeze(-1).long()
-
-        if action.dim() < state.dim():
-            resqueeze = True
-            action = action.unsqueeze(0)
-        else:
-            resqueeze = False
+            action = action.long()
 
         if not self.discrete_action:
             state_action = torch.cat((state, action), dim=-1)
-            return self.nn(state_action).squeeze(-1)
+            return self.nn(state_action)
         else:
-            out = self.nn(state).gather(-1, action).squeeze(-1)
-            if resqueeze:
-                return out.squeeze(0)
-            else:
-                return out
+            return gather_along_index(self.nn(state), index=action, dim=-2)
 
 
 class DuelingQFunction(NNQFunction):
@@ -288,35 +279,26 @@ class DuelingQFunction(NNQFunction):
         self.average_or_max = average_or_max
 
         nn_kwargs = self.nn.kwargs
-        nn_kwargs["out_dim"] = (nn_kwargs["out_dim"][0] + 1,)
+        nn_kwargs["out_dim"] = (1 + self.num_actions,) + self.dim_reward
         self.nn = DeterministicNN(**nn_kwargs)
 
     def forward(self, state, action=torch.tensor(float("nan"))):
         """See `NNQFunction.forward()'."""
-        q_values = super().forward(state)
+        q_values = super().forward(state)  # Batch x actions x (dim_reward + 1)
         if torch.isnan(action).all():
-            return q_values[..., 1:]
+            return q_values[..., 1:, :]
         else:
-            value, advantage = q_values[..., 1], q_values[..., 1:]
+            value, advantage = q_values[..., 0, :], q_values[..., 1:, :]
 
             if self.discrete_action:
-                action = action.unsqueeze(-1).long()
+                action = action.long()
 
-            if action.dim() < state.dim():
-                resqueeze = True
-                action = action.unsqueeze(0)
-            else:
-                resqueeze = False
-
-            advantage_action = advantage.gather(-1, action).squeeze(-1)
-            if resqueeze:
-                advantage_action = advantage_action.squeeze(0)
+            advantage_action = gather_along_index(advantage, index=action, dim=-2)
 
             if self.average_or_max == "average":
-                advantage_offset = advantage.mean(dim=-1)
+                advantage_offset = advantage.mean(dim=-2)
             elif self.average_or_max == "max":
-                advantage_offset = advantage.max(dim=-1)[0]
+                advantage_offset = advantage.max(dim=-2)[0]
             else:
                 raise NotImplementedError("Only average or mean are implemented.")
-
         return value + advantage_action - advantage_offset

@@ -3,6 +3,7 @@
 import torch
 
 from rllib.policy.q_function_policy import SoftMax
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 
 from .q_learning import QLearning
 
@@ -52,8 +53,8 @@ class SoftQLearning(QLearning):
     def get_value_target(self, observation):
         """Get q function target."""
         temperature = self.policy.param()
-        next_v = temperature * torch.logsumexp(
-            self.critic_target(observation.next_state) / temperature, dim=-1
-        )
-        next_v = next_v * (1 - observation.done)
+        q_value = self.critic_target(observation.next_state)
+        next_v = temperature * torch.logsumexp(q_value / temperature, dim=-2)
+        not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=next_v)
+        next_v = next_v * not_done
         return self.get_reward(observation) + self.gamma * next_v

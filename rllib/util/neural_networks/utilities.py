@@ -615,3 +615,113 @@ class DisableOptimizer(object):
         for module in self.modules:
             if module is not None:
                 resume_learning(module)
+
+
+def broadcast_to_tensor(input_tensor, target_tensor):
+    """Broadcast an input tensor to a target tensor shape.
+
+    Parameters
+    ----------
+    input_tensor: Tensor
+    target_tensor: Tensor
+
+    Returns
+    -------
+    output_tensor: Tensor.
+
+    """
+    if input_tensor.shape == target_tensor.shape:
+        return input_tensor
+
+    # First expand index to target_tensor ndim.
+    input_tensor = atleast_nd(input_tensor, n=target_tensor.ndim)
+
+    # Then repeat along index where dimensions do not match.
+    for idx, size in enumerate(target_tensor.shape):
+        if input_tensor.shape[idx] != size:
+            input_tensor = input_tensor.repeat_interleave(size, dim=idx)
+    assert input_tensor.shape == target_tensor.shape
+    return input_tensor
+
+
+def gather_along_index(input_tensor, index, dim):
+    """Gather input tensor along index on a given dimension.
+
+    When an input_tensor is of size [B x N x k], then the index has to be of size [B].
+    If the dimension is 1, then the return shape is [B x k].
+    In this case, index has to be a long tensor with values between 0 and N - 1.
+
+    If the dimension is 2, then the return shape is [B x N].
+    In this case, index has to be a long tensor with values between 0 and k - 1.
+
+    When an input_tensor is of size [N x k] and the index is of size [N], then the
+    selection is done per row k and the dim parameter is unused, the return vector is
+    of size [N] as well.
+
+    When an input_tensor is of size [N x k] and the index is of size 1, then the return
+    vector is of size either [N] or [k], depending on the dimension used.
+
+    Parameters
+    ----------
+    input_tensor: tensor to reduce.
+    index: long tensor of indexes to reduce.
+    dim: dimension over which to reduce the tensor.
+
+    Returns
+    -------
+    output_tensor: reduced tensor.
+    """
+    if input_tensor.shape == index.shape:
+        return (
+            torch.gather(input=input_tensor, index=index, dim=dim)
+            .index_select(dim=dim, index=torch.tensor([0]))
+            .squeeze(dim=dim)
+        )
+    if input_tensor.ndim < index.ndim:
+        raise ValueError(
+            "The input tensor size has to be larger or equal to the index size."
+        )
+    index = broadcast_to_tensor(input_tensor=index, target_tensor=input_tensor)
+    return gather_along_index(input_tensor, index, dim)
+
+
+def atleast_nd(input_tensor, n=1):
+    """Make an input tensor at least `n`-dimensional.
+
+    Parameters
+    ----------
+    input_tensor: Tensor
+        Tensor to expand.
+    n: int
+        Integer of minimum number of dimensions to have.
+
+    Returns
+    -------
+    output_tensor: Tensor.
+        Expanded Tensor.
+    """
+    if input_tensor.ndim > n:
+        raise ValueError(
+            f"The size of input tensor ({input_tensor.ndim}) is larger than n ({n})"
+        )
+    while input_tensor.ndim < n:
+        input_tensor = input_tensor.unsqueeze(-1)
+    return input_tensor
+
+
+def to_torch(vector):
+    """Convert a vector to torch.
+
+    Parameters
+    ----------
+    vector: torch.Tensor, ndarray, float
+
+    Returns
+    -------
+    vector: torch.Tensor
+
+    """
+    if isinstance(vector, torch.Tensor):
+        return vector
+    else:
+        return torch.tensor(vector, dtype=torch.get_default_dtype())

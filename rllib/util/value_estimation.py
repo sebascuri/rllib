@@ -7,7 +7,10 @@ import scipy.signal
 import torch
 
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.util.neural_networks.utilities import repeat_along_dimension
+from rllib.util.neural_networks.utilities import (
+    broadcast_to_tensor,
+    repeat_along_dimension,
+)
 from rllib.util.rollout import rollout_model
 from rllib.util.utilities import RewardTransformer, get_backend
 
@@ -60,7 +63,9 @@ def discount_cumsum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
     if bk is torch and not rewards.requires_grad:
         rewards = rewards.numpy()
     if type(rewards) is np.ndarray:
-        returns = scipy.signal.lfilter([1], [1, -gamma], rewards[..., ::-1])[..., ::-1]
+        returns = scipy.signal.lfilter(
+            [1], [1, -gamma], rewards[..., ::-1, :], axis=-2
+        )[..., ::-1, :]
         returns = returns.copy()  # The copy is for future transforms to pytorch
 
         if bk is torch:
@@ -103,8 +108,13 @@ def discount_sum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
         return (
             torch.pow(gamma * torch.ones(steps), torch.arange(steps)) * rewards
         ).sum()
+    elif rewards.dim() == 2:
+        steps = rewards.shape[-2]
+        discount = torch.pow(gamma * torch.ones(steps), torch.arange(steps))
+        discount = broadcast_to_tensor(discount, target_tensor=rewards)
+        return (discount * rewards).sum(-2)
     else:
-        steps = rewards.shape[1]
+        steps = rewards.shape[-2]
         return torch.einsum(
             "i,ki...->k...",
             torch.pow(gamma * torch.ones(steps), torch.arange(steps)),
@@ -125,32 +135,34 @@ def n_step_return(
     It expects an observation with shape batch x n-step x dim.
     It returns a tensor with shape batch x n-step.
     """
-    while observation.reward.ndim < 2:
-        observation.reward = observation.reward.unsqueeze(0)
-    n_steps = observation.reward.shape[-1]
-    discount = torch.pow(torch.tensor(gamma), torch.arange(n_steps))
-    rewards = (
-        reward_transformer(observation.reward)
-        + entropy_regularization * observation.entropy
+    if observation.reward.ndim < 2:
+        return observation.reward.unsqueeze(1)
+    n_steps = observation.reward.shape[-2]
+    rewards = reward_transformer(observation.reward)
+    entropy = broadcast_to_tensor(observation.entropy, target_tensor=rewards)
+    rewards = rewards + entropy_regularization * entropy
+
+    discount = broadcast_to_tensor(
+        torch.pow(torch.tensor(gamma), torch.arange(n_steps)), target_tensor=rewards
     )
+
     discounted_rewards = rewards * discount
-    value = torch.cumsum(discounted_rewards, dim=-1)
+    value = torch.cumsum(discounted_rewards, dim=-2)
 
     if value_function is not None:
         final_value = value_function(observation.next_state)
-        not_done = 1.0 - observation.done
+        not_done = broadcast_to_tensor(
+            1.0 - observation.done[..., -1], target_tensor=final_value
+        )
         if final_value.ndim > value.ndim:
             if reduction == "min":
                 final_value = final_value.min(-1)[0]
             elif reduction == "mean":
                 final_value = final_value.mean(-1)
             elif reduction == "none":
-                num_q = final_value.shape[-1]
-                value = value.unsqueeze(-1).repeat_interleave(
-                    final_value.shape[-1], dim=-1
-                )
-                discount = discount.unsqueeze(-1).repeat_interleave(num_q, dim=-1)
-                not_done = not_done.unsqueeze(-1).repeat_interleave(num_q, dim=-1)
+                value = broadcast_to_tensor(value, target_tensor=final_value)
+                discount = broadcast_to_tensor(discount, target_tensor=final_value)
+                not_done = broadcast_to_tensor(not_done, target_tensor=final_value)
             else:
                 raise NotImplementedError(f"{reduction} not implemented.")
         value += gamma * discount * final_value * not_done
@@ -189,7 +201,7 @@ def mc_return(
 
     """
     if observation.reward.ndim == 0 or len(observation.reward) == 0:
-        return 0.0
+        return torch.tensor([0.0])
     returns = n_step_return(
         observation,
         gamma=gamma,
@@ -198,24 +210,25 @@ def mc_return(
         value_function=value_function,
         reduction=reduction,
     )
-    steps = returns.shape[1]  # Batch x T x num_q
-    if steps == 1 or lambda_ == 1.0:
-        if returns.ndim == 2:
-            return returns[:, -1]
-        else:
-            return returns[..., -1, :]
-    else:
-        w = torch.cat(
-            (
-                (1 - lambda_) * lambda_ ** torch.arange(steps - 1),
-                torch.tensor([lambda_]) ** (steps - 1),
-            )
-        )
-        w = w.unsqueeze(0)
-        if returns.ndim == 2:
-            return (w * returns).sum(-1)
-        else:
-            return (w.unsqueeze(-1) * returns).sum(-2)
+    return returns[..., -1, :]
+    # steps = returns.shape[1]  # Batch x T x num_q
+    # if steps == 1 or lambda_ == 1.0:
+    #     if returns.ndim == 2:
+    #         return returns[:, -1]
+    #     else:
+    #         return returns[..., -1, :]
+    # else:
+    #     w = torch.cat(
+    #         (
+    #             (1 - lambda_) * lambda_ ** torch.arange(steps - 1),
+    #             torch.tensor([lambda_]) ** (steps - 1),
+    #         )
+    #     )
+    #     w = w.unsqueeze(0)
+    #     if returns.ndim == 2:
+    #         return (w * returns).sum(-1)
+    #     else:
+    #         return (w.unsqueeze(-1) * returns).sum(-2)
 
 
 def mb_return(

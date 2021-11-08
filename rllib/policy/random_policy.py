@@ -1,6 +1,6 @@
 """Random policy implementation."""
 
-from rllib.util.neural_networks import get_batch_size
+from rllib.util.neural_networks.utilities import get_batch_size
 
 from .abstract_policy import AbstractPolicy
 

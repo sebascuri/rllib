@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util.multi_objective_reduction import MeanMultiObjectiveReduction
 from rllib.util.multiprocessing import run_parallel_returns
 from rllib.util.neural_networks.utilities import repeat_along_dimension
 from rllib.util.rollout import rollout_actions
@@ -61,6 +62,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         default_action="zero",
         action_scale=1.0,
         num_cpu=1,
+        multi_objective_reduction=MeanMultiObjectiveReduction(dim=-1),
         *args,
         **kwargs,
     ):
@@ -100,6 +102,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self.action_scale = action_scale
         self.clamp = clamp
         self.num_cpu = num_cpu
+        self.multi_objective_reduction = multi_objective_reduction
 
     def evaluate_action_sequence(self, action_sequence, state):
         """Evaluate action sequence by performing a rollout."""
@@ -169,7 +172,9 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             torch.manual_seed(int(1000 * time.time()))
 
         action_sequence[:] = self.get_candidate_action_sequence()
-        returns[:] = self.evaluate_action_sequence(action_sequence, state)
+        returns[:] = self.multi_objective_reduction(
+            self.evaluate_action_sequence(action_sequence, state)
+        )
 
     def forward(self, state):
         """Return action that solves the MPC problem."""

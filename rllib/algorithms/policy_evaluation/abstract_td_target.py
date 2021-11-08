@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 import torch
 import torch.nn as nn
 
-from rllib.util.neural_networks.utilities import reverse_cumsum
+from rllib.util.neural_networks.utilities import broadcast_to_tensor, reverse_cumsum
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 from rllib.value_function import AbstractValueFunction, IntegrateQValueFunction
 
@@ -99,13 +99,15 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         else:
             log_p = behavior_log_p
         correction = self.correction(log_p, behavior_log_p)
+        correction = broadcast_to_tensor(correction, target_tensor=reward)
 
         # Compute Q(state, action) and \E_\pi[Q(next_state, \pi(next_state)].
+        not_done_t = broadcast_to_tensor(1.0 - done_t, target_tensor=reward)
         if isinstance(self.critic, AbstractValueFunction):
-            this_v = self.critic(state) * (1.0 - done_t)
+            this_v = self.critic(state) * not_done_t
             next_v = self.critic(next_state)
         else:
-            this_v = self.critic(state, action) * (1.0 - done_t)
+            this_v = self.critic(state, action) * not_done_t
 
             if self.policy is not None:
                 next_v = self.value_target(next_state)
@@ -117,18 +119,20 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                         next_v.shape[-1], -1
                     )
                 next_v = torch.cat((next_v, last_v), -1)
-        next_v = next_v * (1.0 - done)
+
+        not_done = broadcast_to_tensor(1.0 - done, reward)
+        next_v = next_v * not_done
         # Compute td = r + gamma E\pi[Q(next_state, \pi(next_state)] - Q(state, action).
         td = self.td(this_v, next_v, reward, correction)
 
         # Compute correction factor_t = \Prod_{i=1,t} c_i.
-        correction_factor = torch.cumprod(correction, dim=-1)
+        correction_factor = torch.cumprod(correction, dim=1)
 
         # Compute discount_t = \gamma ** (t-1)
         discount = torch.pow(torch.tensor(self.gamma), torch.arange(n_steps))
 
         # Compute target = Q(s, a) + \sum_{i=1,t} discount_i factor_i td_i. See RETRACE.
-        target = this_v + reverse_cumsum(td * discount * correction_factor)
+        target = this_v + reverse_cumsum(td * discount * correction_factor, dim=1)
 
         return target
 

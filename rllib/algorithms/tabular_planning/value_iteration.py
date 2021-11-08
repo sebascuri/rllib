@@ -45,8 +45,11 @@ def value_iteration(model, gamma, eps=1e-6, max_iter=1000, value_function=None):
                 value_estimate = 0
                 for transition in model.transitions[(state, action)]:
                     next_state = torch.tensor(transition["next_state"]).long()
+                    reward = torch.tensor(
+                        transition["reward"], dtype=torch.get_default_dtype()
+                    )
                     value_estimate += transition["probability"] * (
-                        transition["reward"] + gamma * value_function(next_state)
+                        reward + gamma * value_function(next_state)
                     )
                 value_[action] = value_estimate
             state = torch.tensor(state).long()

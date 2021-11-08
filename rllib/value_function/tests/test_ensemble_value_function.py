@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.testing
 
-from rllib.util.neural_networks import random_tensor
+from rllib.util.neural_networks.utilities import random_tensor
 from rllib.value_function import (
     NNEnsembleQFunction,
     NNEnsembleValueFunction,
@@ -29,6 +29,11 @@ def dim_state(request):
 
 @pytest.fixture(params=[4, 2, 1])
 def dim_action(request):
+    return request.param
+
+
+@pytest.fixture(params=[4, 1])
+def dim_reward(request):
     return request.param
 
 
@@ -60,15 +65,25 @@ class StateTransform(nn.Module):
 
 
 class TestNNEnsembleValueFunction(object):
-    def init(self, discrete_state, dim_state, num_heads, layers=None, biased_head=True):
+    def init(
+        self,
+        discrete_state,
+        dim_state,
+        num_heads,
+        layers=None,
+        biased_head=True,
+        dim_reward=1,
+    ):
         self.num_states, self.dim_state = (
             (dim_state, ()) if discrete_state else (-1, (dim_state,))
         )
+        self.dim_reward = (dim_reward,)
         layers = layers if layers is not None else [32, 32]
 
         self.value_function = NNEnsembleValueFunction(
             dim_state=self.dim_state,
             num_states=self.num_states,
+            dim_reward=self.dim_reward,
             num_heads=num_heads,
             layers=layers,
             biased_head=biased_head,
@@ -82,13 +97,17 @@ class TestNNEnsembleValueFunction(object):
         assert discrete_state == self.value_function.discrete_state
         assert self.dim_state == self.value_function.dim_state
 
-    def test_forward(self, discrete_state, dim_state, num_heads, batch_size):
-        self.init(discrete_state, dim_state, num_heads)
+    def test_forward(
+        self, discrete_state, dim_state, num_heads, batch_size, dim_reward
+    ):
+        self.init(discrete_state, dim_state, num_heads, dim_reward=dim_reward)
         state = random_tensor(discrete_state, dim_state, batch_size)
         value = self.value_function(state)
 
         assert value.shape == torch.Size(
-            [batch_size, num_heads] if batch_size else [num_heads]
+            [batch_size, dim_reward, num_heads]
+            if batch_size
+            else [dim_reward, num_heads]
         )
         assert value.dtype is torch.get_default_dtype()
 
@@ -108,18 +127,21 @@ class TestNNEnsembleValueFunction(object):
         )
         assert embeddings.dtype is torch.get_default_dtype()
 
-    def test_input_transform(self, num_heads, batch_size):
+    def test_input_transform(self, num_heads, batch_size, dim_reward):
         value_function = NNEnsembleValueFunction(
             dim_state=(2,),
             num_heads=num_heads,
             layers=[64, 64],
             non_linearity="Tanh",
             input_transform=StateTransform(),
+            dim_reward=(dim_reward,),
         )
         value = value_function(random_tensor(False, 2, batch_size))
 
         assert value.shape == torch.Size(
-            [batch_size, num_heads] if batch_size else [num_heads]
+            [batch_size, dim_reward, num_heads]
+            if batch_size
+            else [dim_reward, num_heads]
         )
         assert value.dtype is torch.get_default_dtype()
 
@@ -146,6 +168,7 @@ class TestNNEnsembleQFunction(object):
         num_heads,
         layers=None,
         biased_head=True,
+        dim_reward=1,
     ):
         self.num_states, self.dim_state = (
             (dim_state, ()) if discrete_state else (-1, (dim_state,))
@@ -153,6 +176,7 @@ class TestNNEnsembleQFunction(object):
         self.num_actions, self.dim_action = (
             (dim_action, ()) if discrete_action else (-1, (dim_action,))
         )
+        self.dim_reward = (dim_reward,)
 
         layers = layers if layers is not None else [32, 32]
 
@@ -161,6 +185,7 @@ class TestNNEnsembleQFunction(object):
             dim_action=self.dim_action,
             num_states=self.num_states,
             num_actions=self.num_actions,
+            dim_reward=self.dim_reward,
             num_heads=num_heads,
             layers=layers,
             biased_head=biased_head,
@@ -210,19 +235,29 @@ class TestNNEnsembleQFunction(object):
         dim_action,
         num_heads,
         batch_size,
+        dim_reward,
     ):
         if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action, num_heads)
+            self.init(
+                discrete_state,
+                discrete_action,
+                dim_state,
+                dim_action,
+                num_heads,
+                dim_reward=dim_reward,
+            )
             state = random_tensor(discrete_state, dim_state, batch_size)
             action = random_tensor(discrete_action, dim_action, batch_size)
             value = self.q_function(state, action)
 
             assert value.shape == torch.Size(
-                [batch_size, num_heads] if batch_size else [num_heads]
+                [batch_size, dim_reward, num_heads]
+                if batch_size
+                else [dim_reward, num_heads]
             )
             assert value.dtype is torch.get_default_dtype()
 
-    def test_input_transform(self, num_heads, batch_size):
+    def test_input_transform(self, num_heads, batch_size, dim_reward):
         q_function = NNEnsembleQFunction(
             dim_state=(2,),
             dim_action=(1,),
@@ -230,12 +265,15 @@ class TestNNEnsembleQFunction(object):
             layers=[64, 64],
             non_linearity="Tanh",
             input_transform=StateTransform(),
+            dim_reward=(dim_reward,),
         )
         value = q_function(
             random_tensor(False, 2, batch_size), random_tensor(False, 1, batch_size)
         )
         assert value.shape == torch.Size(
-            [batch_size, num_heads] if batch_size else [num_heads]
+            [batch_size, dim_reward, num_heads]
+            if batch_size
+            else [dim_reward, num_heads]
         )
         assert value.dtype is torch.get_default_dtype()
 
@@ -247,9 +285,17 @@ class TestNNEnsembleQFunction(object):
         dim_action,
         num_heads,
         batch_size,
+        dim_reward,
     ):
         if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action, num_heads)
+            self.init(
+                discrete_state,
+                discrete_action,
+                dim_state,
+                dim_action,
+                num_heads,
+                dim_reward=dim_reward,
+            )
             state = random_tensor(discrete_state, dim_state, batch_size)
 
             if not discrete_action:
@@ -259,9 +305,9 @@ class TestNNEnsembleQFunction(object):
                 action_value = self.q_function(state)
 
                 assert action_value.shape == torch.Size(
-                    [batch_size, self.num_actions, num_heads]
+                    [batch_size, self.num_actions, dim_reward, num_heads]
                     if batch_size
-                    else [self.num_actions, num_heads]
+                    else [self.num_actions, dim_reward, num_heads]
                 )
 
     def test_from_q_function(

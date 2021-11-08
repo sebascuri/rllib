@@ -14,14 +14,16 @@ def t_start(request):
 
 @pytest.fixture
 def q_function():
-    return NNQFunction(num_actions=2, dim_action=(), num_states=4, dim_state=())
+    return NNQFunction(
+        num_actions=2, dim_action=(), num_states=4, dim_state=(), dim_reward=(1,)
+    )
 
 
 def test_discrete(t_start, q_function):
     policy = SoftMax(q_function, t_start)
     for _ in range(100):
         state = torch.randint(4, ())
-        logits = q_function(state)
+        logits = q_function(state)[..., 0]
         probs = torch.softmax(logits / t_start, dim=0)
         torch.testing.assert_allclose(
             tensor_to_distribution(policy(state)).probs, probs

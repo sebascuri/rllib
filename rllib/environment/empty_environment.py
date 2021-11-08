@@ -48,7 +48,7 @@ class EmptyEnvironment(AbstractEnvironment):
         info: dict
 
         """
-        return self.observation_space.sample(), 0, False, {}
+        return self.observation_space.sample(), np.array([0]), False, {}
 
     def reset(self):
         """Reset the state of the model and returns an initial observation.

@@ -69,7 +69,12 @@ try:
             self._time += 1
             dm_obs = self.env.step(action)
             reward = dm_obs.reward
-            return self._stack_observations(dm_obs.observation), reward, False, {}
+            return (
+                self._stack_observations(dm_obs.observation),
+                np.atleast_1d(reward),
+                False,
+                {},
+            )
 
         def render(self, mode="human"):
             """See `AbstractEnvironment.render'."""

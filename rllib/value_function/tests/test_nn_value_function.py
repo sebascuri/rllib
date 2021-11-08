@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 import torch.testing
 
-from rllib.util.neural_networks import DeterministicNN, count_vars, random_tensor
+from rllib.util.neural_networks.neural_networks import DeterministicNN
+from rllib.util.neural_networks.utilities import count_vars, random_tensor
 from rllib.value_function import DuelingQFunction, NNQFunction, NNValueFunction
 
 
@@ -25,6 +26,11 @@ def dim_state(request):
 
 @pytest.fixture(params=[4, 2, 1])
 def dim_action(request):
+    return request.param
+
+
+@pytest.fixture(params=[4, 1])
+def dim_reward(request):
     return request.param
 
 
@@ -71,17 +77,21 @@ def _test_from_other_with_copy(object_, class_):
 
 
 class TestNNValueFunction(object):
-    def init(self, discrete_state, dim_state):
+    def init(self, discrete_state, dim_state, dim_reward=1):
         if discrete_state:
             self.num_states = dim_state
             self.dim_state = ()
         else:
             self.num_states = -1
             self.dim_state = (dim_state,)
+        self.dim_reward = (dim_reward,)
 
         layers = [32, 32]
         self.value_function = NNValueFunction(
-            dim_state=self.dim_state, num_states=self.num_states, layers=layers
+            dim_state=self.dim_state,
+            num_states=self.num_states,
+            dim_reward=self.dim_reward,
+            layers=layers,
         )
 
     def test_property_values(self, discrete_state, dim_state):
@@ -92,12 +102,14 @@ class TestNNValueFunction(object):
         assert discrete_state == self.value_function.discrete_state
         assert self.dim_state == self.value_function.dim_state
 
-    def test_forward(self, discrete_state, dim_state, batch_size):
+    def test_forward(self, discrete_state, dim_state, dim_reward, batch_size):
         self.init(discrete_state, dim_state)
         state = random_tensor(discrete_state, dim_state, batch_size)
         value = self.value_function(state)
 
-        assert value.shape == torch.Size([batch_size] if batch_size else [])
+        assert value.shape == torch.Size(
+            (batch_size,) + self.dim_reward if batch_size else self.dim_reward
+        )
         assert value.dtype is torch.get_default_dtype()
 
     def test_embeddings(self, discrete_state, dim_state, batch_size):
@@ -108,16 +120,19 @@ class TestNNValueFunction(object):
         assert embeddings.shape == torch.Size([batch_size, 33] if batch_size else [33])
         assert embeddings.dtype is torch.get_default_dtype()
 
-    def test_input_transform(self, batch_size):
+    def test_input_transform(self, batch_size, dim_reward):
         value_function = NNValueFunction(
             dim_state=(2,),
             num_states=-1,
+            dim_reward=(dim_reward,),
             layers=[64, 64],
             non_linearity="Tanh",
             input_transform=StateTransform(),
         )
         value = value_function(random_tensor(False, 2, batch_size))
-        assert value.shape == torch.Size([batch_size] if batch_size else [])
+        assert value.shape == torch.Size(
+            [batch_size, dim_reward] if batch_size else [dim_reward]
+        )
         assert value.dtype is torch.get_default_dtype()
 
     def test_from_other(self, discrete_state, dim_state):
@@ -142,7 +157,7 @@ class TestNNValueFunction(object):
         value = value_function(state)
         embeddings = value_function.embeddings(state)
 
-        assert value.shape == torch.Size([batch_size] if batch_size else [])
+        assert value.shape == torch.Size([batch_size, 1] if batch_size else [1])
         assert embeddings.shape == torch.Size([batch_size, 20] if batch_size else [20])
         assert value.dtype is torch.get_default_dtype()
         assert embeddings.dtype is torch.get_default_dtype()
@@ -151,7 +166,9 @@ class TestNNValueFunction(object):
 class TestNNQFunction(object):
     base_class = NNQFunction
 
-    def init(self, discrete_state, discrete_action, dim_state, dim_action):
+    def init(
+        self, discrete_state, discrete_action, dim_state, dim_action, dim_reward=1
+    ):
         if discrete_state:
             self.num_states = dim_state
             self.dim_state = ()
@@ -165,13 +182,14 @@ class TestNNQFunction(object):
         else:
             self.num_actions = -1
             self.dim_action = (dim_action,)
-
+        self.dim_reward = (dim_reward,)
         layers = [32, 32]
         self.q_function = self.base_class(
             dim_state=self.dim_state,
             dim_action=self.dim_action,
             num_states=self.num_states,
             num_actions=self.num_actions,
+            dim_reward=self.dim_reward,
             layers=layers,
         )
 
@@ -191,7 +209,7 @@ class TestNNQFunction(object):
         value = q_function(
             random_tensor(False, 2, batch_size), random_tensor(False, 1, batch_size)
         )
-        assert value.shape == torch.Size([batch_size] if batch_size else [])
+        assert value.shape == torch.Size([batch_size, 1] if batch_size else [1])
         assert value.dtype is torch.get_default_dtype()
 
     def test_property_values(
@@ -212,14 +230,28 @@ class TestNNQFunction(object):
             assert self.dim_action == self.q_function.dim_action
 
     def test_forward(
-        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
+        self,
+        discrete_state,
+        discrete_action,
+        dim_state,
+        dim_action,
+        dim_reward,
+        batch_size,
     ):
         if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action)
+            self.init(
+                discrete_state=discrete_state,
+                discrete_action=discrete_action,
+                dim_state=dim_state,
+                dim_action=dim_action,
+                dim_reward=dim_reward,
+            )
             state = random_tensor(discrete_state, dim_state, batch_size)
             action = random_tensor(discrete_action, dim_action, batch_size)
             value = self.q_function(state, action)
-            assert value.shape == torch.Size([batch_size] if batch_size else [])
+            assert value.shape == torch.Size(
+                (batch_size,) + self.dim_reward if batch_size else self.dim_reward
+            )
             assert value.dtype is torch.get_default_dtype()
 
     def test_partial_q_function(
@@ -235,7 +267,9 @@ class TestNNQFunction(object):
             else:
                 action_value = self.q_function(state)
                 assert action_value.shape == torch.Size(
-                    [batch_size, self.num_actions] if batch_size else [self.num_actions]
+                    [batch_size, self.num_actions, 1]
+                    if batch_size
+                    else [self.num_actions, 1]
                 )
                 assert action_value.dtype is torch.get_default_dtype()
 
@@ -245,33 +279,13 @@ class TestNNQFunction(object):
             _test_from_other(self.q_function, NNQFunction)
             _test_from_other_with_copy(self.q_function, NNQFunction)
 
-    def test_from_nn(
-        self, discrete_state, discrete_action, dim_state, dim_action, batch_size
-    ):
-        if not (discrete_state and not discrete_action):
-            self.init(discrete_state, discrete_action, dim_state, dim_action)
-            q_function = NNQFunction.from_nn(
-                nn.Linear(
-                    self.q_function.nn.kwargs["in_dim"][0],
-                    self.q_function.nn.kwargs["out_dim"][0],
-                ),
-                self.dim_state,
-                self.dim_action,
-                num_states=self.num_states,
-                num_actions=self.num_actions,
-            )
-
-            state = random_tensor(discrete_state, dim_state, batch_size)
-            action = random_tensor(discrete_action, dim_action, batch_size)
-            value = q_function(state, action)
-            assert value.shape == torch.Size([batch_size] if batch_size else [])
-            assert value.dtype is torch.get_default_dtype()
-
 
 class TestDuelingQFunction(TestNNQFunction):
     base_class = DuelingQFunction  # type: ignore
 
-    def init(self, discrete_state, discrete_action, dim_state, dim_action):
+    def init(
+        self, discrete_state, discrete_action, dim_state, dim_action, dim_reward=1
+    ):
         super().init(discrete_state, discrete_action, dim_state, dim_action)
         self.q_function.average_or_mean = np.random.choice(["average", "mean"])
 

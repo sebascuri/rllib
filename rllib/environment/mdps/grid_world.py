@@ -56,22 +56,34 @@ class EasyGridWorld(MDP):
                 next_state = self._grid_to_state(g_next_state)
                 if state in terminal_states if terminal_states else []:
                     transitions[(state, action)].append(
-                        {"next_state": state, "reward": 0, "probability": 1.0}
+                        {
+                            "next_state": state,
+                            "reward": np.array([0]),
+                            "probability": 1.0,
+                        }
                     )
                 elif r > 0:
                     transitions[(state, action)].append(
-                        {"next_state": next_state, "reward": r, "probability": 1.0}
+                        {
+                            "next_state": next_state,
+                            "reward": np.array([r]),
+                            "probability": 1.0,
+                        }
                     )
                 else:
                     transitions[(state, action)].append(
                         {
                             "next_state": next_state,
-                            "reward": r,
+                            "reward": np.array([r]),
                             "probability": 1.0 - noise,
                         }
                     )
                     transitions[(state, action)].append(
-                        {"next_state": state, "reward": 0, "probability": noise}
+                        {
+                            "next_state": state,
+                            "reward": np.array([0]),
+                            "probability": noise,
+                        }
                     )
 
         return transitions

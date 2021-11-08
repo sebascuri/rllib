@@ -2,6 +2,8 @@
 
 import torch
 
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
+
 from .abstract_algorithm import AbstractAlgorithm
 
 
@@ -35,11 +37,22 @@ class QLearning(AbstractAlgorithm):
     Playing atari with deep reinforcement learning. NIPS.
     """
 
+    def compute_optimal_target(self, q_function, observation):
+        """Compute q target with the q function."""
+        q_value = q_function(observation.next_state)
+        q_value = self.multi_objective_reduction(q_value)
+        next_v = q_value.max(dim=-1)[0]
+        reward = self.get_reward(observation)
+        next_v = broadcast_to_tensor(next_v, target_tensor=reward)
+        not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=reward)
+        next_v = next_v * not_done
+        return reward + self.gamma * next_v
+
     def get_value_target(self, observation):
         """Get q function target."""
-        next_v = self.critic(observation.next_state).max(dim=-1)[0]
-        next_v = next_v * (1 - observation.done)
-        return self.get_reward(observation) + self.gamma * next_v
+        return self.compute_optimal_target(
+            q_function=self.critic, observation=observation
+        )
 
 
 class GradientQLearning(QLearning):

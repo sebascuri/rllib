@@ -90,14 +90,14 @@ class VMPO(MPO):
         log_p, _ = self.get_log_p_and_ope_weight(state, action)
 
         value_prediction = self.critic(state)
-
         with torch.no_grad():
             value_target = self.get_value_target(observation)
 
         # Since actions are on-policy, advantage is correct but
         # we should use IS in the off-policy case.
         weight = self.get_ope_weight(state, action, observation.log_prob_action)
-        advantage = weight * (value_target - value_prediction)
+        advantage = self.multi_objective_reduction(value_target - value_prediction)
+        advantage = weight * advantage
 
         k = math.ceil(self.top_k_fraction * state.shape[0])
         _, idx_top_k = torch.topk(advantage.mean(-1), k=k, dim=0, largest=True)

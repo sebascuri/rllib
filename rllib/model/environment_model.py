@@ -1,6 +1,8 @@
 """Model implemented by querying an environment."""
 import torch
 
+from rllib.util.neural_networks.utilities import to_torch
+
 from .abstract_model import AbstractModel
 
 
@@ -35,17 +37,14 @@ class EnvironmentModel(AbstractModel):
         self.environment.state = state
         next_state, reward, done, _ = self.environment.step(action)
         if self.model_kind == "dynamics":
-            return next_state, torch.zeros(1)
+            return to_torch(next_state), torch.zeros(1)
         elif self.model_kind == "rewards":
-            return reward, torch.zeros(1)
+            return to_torch(reward), torch.zeros(1)
         elif self.model_kind == "termination":
-            return (
-                torch.zeros(*done.shape, 2)
-                .scatter_(
-                    dim=-1, index=(~done).long().unsqueeze(-1), value=-float("inf")
-                )
-                .squeeze(-1)
-            )
+            done_prob = torch.zeros(*done.shape, 2)
+            inf = -float("inf") * torch.ones(*done.shape, 2)
+            idx = (~done).long().unsqueeze(-1)
+            return done_prob.scatter_(dim=-1, src=inf, index=idx)
         else:
             raise NotImplementedError(f"{self.model_kind} not implemented")
 

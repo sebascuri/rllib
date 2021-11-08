@@ -10,6 +10,7 @@ from torch.distributions import Categorical, MultivariateNormal, TransformedDist
 from torch.distributions.transforms import TanhTransform
 
 from rllib.util.distributions import Delta
+from rllib.util.neural_networks.utilities import broadcast_to_tensor, gather_along_index
 
 
 def get_backend(array):
@@ -61,7 +62,6 @@ def integrate(function, distribution, out_dim=None, num_samples=15):
         Function to integrate.
     distribution: Distribution.
         Distribution to integrate the function w.r.t.
-    out_dim: int, optional.
     num_samples: int.
         Number of samples in MC integration.
 
@@ -69,30 +69,26 @@ def integrate(function, distribution, out_dim=None, num_samples=15):
     -------
     integral value.
     """
-    batch_size = distribution.batch_shape
-    if out_dim is None:
-        ans = torch.zeros(batch_size)
-    else:
-        ans = torch.zeros(batch_size + (out_dim,))
-
+    del out_dim
     if distribution.has_enumerate_support:
-        for action in distribution.enumerate_support():
-            prob = distribution.probs.gather(-1, action.unsqueeze(-1))
-            f_val = function(action)
-            if out_dim is None:
-                prob = prob.squeeze(-1)
+        ans = 1.0 * torch.zeros_like(function(distribution.sample()))
+        probs = distribution.probs
+        for sample in distribution.enumerate_support():
+            f_val = function(sample)
+            prob = gather_along_index(probs, index=sample, dim=-1)
+            prob = broadcast_to_tensor(input_tensor=prob, target_tensor=f_val)
             ans += prob.detach() * f_val
-
+        return ans
     else:
-        for _ in range(num_samples):
-            if distribution.has_rsample:
-                action = distribution.rsample()
-            else:
-                action = distribution.sample()
-            f_val = function(action)
-            if f_val.ndim > ans.ndim:
-                f_val = f_val.squeeze(-1)
-            ans += f_val / num_samples
+
+        def _f_sample(dist):
+            x = dist.rsample() if dist.has_rsample else dist.sample()
+            return function(x)
+
+        ans = _f_sample(distribution)
+        for _ in range(num_samples - 1):
+            ans += _f_sample(distribution)
+        ans = ans / num_samples
     return ans
 
 

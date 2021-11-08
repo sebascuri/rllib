@@ -23,7 +23,9 @@ class TabularValueFunction(NNValueFunction):
     @property
     def table(self):
         """Get table representation of value function."""
-        return self.nn.head.weight
+        return self.nn.head.weight.T.reshape(
+            self.num_actions, self.num_states, self.dim_reward[0]
+        )
 
     def set_value(self, state, new_value):
         """Set value to value function at a given state.
@@ -37,7 +39,7 @@ class TabularValueFunction(NNValueFunction):
 
         """
         with torch.no_grad():
-            self.nn.head.weight[0, state] = new_value
+            self.nn.head.weight[:, state] = new_value
 
 
 class TabularQFunction(NNQFunction):
@@ -60,7 +62,9 @@ class TabularQFunction(NNQFunction):
     @property
     def table(self):
         """Get table representation of Q-function."""
-        return self.nn.head.weight
+        return self.nn.head.weight.reshape(
+            self.num_actions, self.num_states, self.dim_reward[0]
+        )
 
     def set_value(self, state, action, new_value):
         """Set value to q-function at a given state-action pair.
@@ -76,4 +80,8 @@ class TabularQFunction(NNQFunction):
 
         """
         with torch.no_grad():
-            self.nn.head.weight[action, state] = new_value
+            aux = self.table
+            aux[action, state, :] = new_value
+            self.nn.head.weight = torch.nn.Parameter(
+                aux.reshape(self.nn.head.weight.shape)
+            )

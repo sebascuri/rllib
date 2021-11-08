@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.jit
 
-from rllib.util.neural_networks import Ensemble
+from rllib.util.neural_networks.neural_networks import Ensemble
 
 from .nn_model import NNModel
 from .utilities import PredictionStrategy

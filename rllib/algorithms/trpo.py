@@ -3,6 +3,7 @@
 import torch
 import torch.distributions
 
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 from rllib.util.value_estimation import discount_cumsum
 
 from .gaac import GAAC
@@ -64,12 +65,14 @@ class TRPO(GAAC):
             return self.ope(observation)
         elif self.monte_carlo_target:  # Compute as \sum_returns.
             final_state = observation.next_state[-1:]
-            reward_to_go = self.critic_target(final_state) * (
-                1.0 - observation.done[-1:]
+            final_v = self.critic_target(final_state)
+            not_done = broadcast_to_tensor(
+                1.0 - observation.done[-1:], target_tensor=final_v
             )
+            reward_to_go = final_v * not_done
             value_target = discount_cumsum(
                 torch.cat((observation.reward, reward_to_go)), gamma=self.gamma
-            )[:-1]
+            )[:-1, :]
             return (value_target - value_target.mean()) / (
                 value_target.std() + self.eps
             )

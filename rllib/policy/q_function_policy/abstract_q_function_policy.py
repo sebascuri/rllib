@@ -2,6 +2,7 @@
 
 from abc import ABCMeta
 
+from rllib.util.multi_objective_reduction import GetIndexMultiObjectiveReduction
 from rllib.util.parameter_decay import Constant, ParameterDecay
 from rllib.value_function.nn_value_function import NNQFunction
 
@@ -18,7 +19,14 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, q_function, param, *args, **kwargs):
+    def __init__(
+        self,
+        q_function,
+        param,
+        reduction=GetIndexMultiObjectiveReduction(dim=-1, idx=0),
+        *args,
+        **kwargs,
+    ):
         if not q_function.discrete_action:
             raise NotImplementedError
         super().__init__(
@@ -31,6 +39,7 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
         if not isinstance(param, ParameterDecay):
             param = Constant(param)
         self.param = param
+        self.reduction = reduction
 
     def update(self):
         """Update policy parameters."""

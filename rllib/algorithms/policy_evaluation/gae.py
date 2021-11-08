@@ -2,6 +2,7 @@
 
 import torch.nn as nn
 
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 from rllib.util.value_estimation import discount_cumsum
 
 
@@ -47,7 +48,9 @@ class GAE(nn.Module):
         if self.value_function is None:
             td_error = observation.reward
         else:
-            next_v = self.value_function(next_state) * (1 - done)
+            next_v = self.value_function(next_state)
+            not_done = broadcast_to_tensor(1.0 - done, target_tensor=next_v)
+            next_v = next_v * not_done
             td_error = reward + next_v - self.value_function(state)
 
         return discount_cumsum(td_error, self.lambda_gamma)

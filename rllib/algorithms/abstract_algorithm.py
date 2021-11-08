@@ -7,10 +7,16 @@ import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss, Observation
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.policy.q_function_policy import AbstractQFunctionPolicy
 from rllib.util.losses.entropy_loss import EntropyLoss
 from rllib.util.losses.kl_loss import KLLoss
 from rllib.util.losses.pathwise_loss import PathwiseLoss
-from rllib.util.neural_networks import deep_copy_module, update_parameters
+from rllib.util.multi_objective_reduction import MeanMultiObjectiveReduction
+from rllib.util.neural_networks.utilities import (
+    broadcast_to_tensor,
+    deep_copy_module,
+    update_parameters,
+)
 from rllib.util.utilities import (
     RewardTransformer,
     get_entropy_and_log_p,
@@ -105,6 +111,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         critic_ensemble_lambda=1.0,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
+        multi_objective_reduction=MeanMultiObjectiveReduction(dim=-1),
         *args,
         **kwargs,
     ):
@@ -112,6 +119,8 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self._info = {}
         self.gamma = gamma
         self.policy = policy
+        if isinstance(policy, AbstractQFunctionPolicy):
+            self.policy.reduction = multi_objective_reduction
         self.policy_target = deep_copy_module(self.policy)
         self.critic = critic
         self.critic_target = deep_copy_module(self.critic)
@@ -137,7 +146,11 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 epsilon_var=epsilon_var,
                 regularization=kl_regularization,
             )
-            self.pathwise_loss = PathwiseLoss(critic=self.critic, policy=self.policy)
+            self.pathwise_loss = PathwiseLoss(
+                critic=self.critic,
+                policy=self.policy,
+                multi_objective_reduction=multi_objective_reduction,
+            )
         self.num_samples = num_samples
         self.ope = ope
         if self.critic is None:
@@ -149,6 +162,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.value_target = IntegrateQValueFunction(
                 self.critic_target, self.policy, num_samples=self.num_samples
             )
+        self.multi_objective_reduction = multi_objective_reduction
         self.post_init()
 
     def post_init(self):
@@ -181,7 +195,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         """Get Reward."""
         _, _, entropy = self.get_kl_entropy(observation.state)
         tau = self.entropy_loss.eta
-        return self.reward_transformer(observation.reward) + tau * entropy
+        reward = self.reward_transformer(observation.reward)
+        entropy = broadcast_to_tensor(entropy, target_tensor=reward)
+        return reward + tau * entropy
 
     def get_value_target(self, observation):
         """Get Q target from the observation."""
@@ -200,7 +216,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             next_v_max = torch.max(next_v, dim=-1)[0]
             lambda_ = self.critic_ensemble_lambda
             next_v = lambda_ * next_v_min + (1.0 - lambda_) * next_v_max
-        next_v = next_v * (1.0 - observation.done)
+
+        not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=next_v)
+        next_v = next_v * not_done
         return self.get_reward(observation) + self.gamma * next_v
 
     def score_actor_loss(self, observation, linearized=False):
@@ -213,7 +231,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             adv = self.returns(observation)
             if self.standardize_returns:
                 adv = (adv - adv.mean()) / (adv.std() + self.eps)
-
+        adv = self.multi_objective_reduction(adv)
         if linearized:
             score = ratio * adv
         else:
@@ -266,12 +284,15 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             return Loss()
 
         pred_q = self.get_value_prediction(observation)
-
+        # print(pred_q.squeeze(-1))
         # Get target_q with semi-gradients.
         with torch.no_grad():
             target_q = self.get_value_target(observation)
+            # print(pred_q.shape, target_q.shape)
+
             if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
+                # target_q2 = broadcast_to_tensor(target_q, pred_q)
                 target_q = target_q.unsqueeze(-1).repeat_interleave(
                     self.critic.num_heads, -1
                 )
@@ -288,6 +309,10 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             # Ensembles have last dimension as ensemble head; sum all ensembles.
             critic_loss = critic_loss.sum(-1)
             td_error = td_error.sum(-1)
+
+        # Take mean over reward coordinate.
+        critic_loss = critic_loss.mean(-1)
+        td_error = td_error.mean(-1)
 
         # Take mean over time coordinate.
         critic_loss = critic_loss.mean(-1)

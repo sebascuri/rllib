@@ -4,7 +4,7 @@ import torch.functional
 import torch.nn as nn
 import torch.testing
 
-from rllib.util.neural_networks import (
+from rllib.util.neural_networks.neural_networks import (
     CategoricalNN,
     DeterministicNN,
     Ensemble,

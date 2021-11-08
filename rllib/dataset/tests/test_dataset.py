@@ -8,7 +8,11 @@ from rllib.dataset.transforms import ActionNormalizer, MeanFunction, StateNormal
 
 
 @pytest.fixture(
-    params=[(10, 200, 3, 2, 4, 2), (10, 200, 3, 2, 4, 8), (10, 200, 3, 2, 4, None)]
+    params=[
+        (10, 200, 3, 2, 4, 2, 1),
+        (10, 200, 3, 2, 4, 8, 2),
+        (10, 200, 3, 2, 4, None, 2),
+    ]
 )
 def dataset(request):
     num_episodes = request.param[0]
@@ -17,6 +21,7 @@ def dataset(request):
     action_dim = request.param[3]
     batch_size = request.param[4]
     sequence_length = request.param[5]
+    reward_dim = request.param[6]
 
     transforms = [
         MeanFunction(lambda state, action: state),
@@ -35,7 +40,7 @@ def dataset(request):
                 Observation(
                     state=np.random.randn(state_dim),
                     action=np.random.randn(action_dim),
-                    reward=np.random.randn(),
+                    reward=np.random.randn(reward_dim),
                     next_state=np.random.randn(state_dim),
                     done=i == (episode_length - 1),
                 ).to_torch()
@@ -50,6 +55,7 @@ def dataset(request):
         action_dim,
         batch_size,
         sequence_length,
+        reward_dim,
     )
 
 
@@ -62,7 +68,7 @@ def test_length(dataset):
     dataset_ = dataset[0]
     num_episodes = dataset[1]
     episode_length = dataset[2]
-    sequence_length = dataset[-1]
+    sequence_length = dataset[-2]
     if sequence_length:
         assert len(dataset_) == num_episodes * episode_length // sequence_length
     else:
@@ -94,6 +100,7 @@ def test_get_item(dataset):
         action_dim,
         batch_size,
         sequence_length,
+        reward_dim,
     ) = dataset
 
     for sub_trajectory in dataset:
@@ -102,7 +109,7 @@ def test_get_item(dataset):
         assert sub_trajectory.state.shape == torch.Size([batch_len, state_dim])
         assert sub_trajectory.action.shape == torch.Size([batch_len, action_dim])
         assert sub_trajectory.next_state.shape == torch.Size([batch_len, state_dim])
-        assert sub_trajectory.reward.shape == torch.Size([batch_len])
+        assert sub_trajectory.reward.shape == torch.Size([batch_len, reward_dim])
         assert sub_trajectory.done.shape == torch.Size([batch_len])
 
 
@@ -115,6 +122,7 @@ def test_sequence_length_setter(dataset, new_seq_len):
         action_dim,
         batch_size,
         sequence_length,
+        reward_dim,
     ) = dataset
     assert dataset.sequence_length == sequence_length
 
@@ -128,7 +136,7 @@ def test_sequence_length_setter(dataset, new_seq_len):
         assert sub_trajectory.state.shape == torch.Size([batch_len, state_dim])
         assert sub_trajectory.action.shape == torch.Size([batch_len, action_dim])
         assert sub_trajectory.next_state.shape == torch.Size([batch_len, state_dim])
-        assert sub_trajectory.reward.shape == torch.Size([batch_len])
+        assert sub_trajectory.reward.shape == torch.Size([batch_len, reward_dim])
         assert sub_trajectory.done.shape == torch.Size([batch_len])
 
     assert (
@@ -147,6 +155,7 @@ def test_initial_states(dataset):
         action_dim,
         batch_size,
         sequence_length,
+        reward_dim,
     ) = dataset
 
     initial_states = dataset.initial_states

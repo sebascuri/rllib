@@ -20,6 +20,6 @@ class DQN(QLearning):
 
     def get_value_target(self, observation):
         """Get q function target."""
-        next_v = self.critic_target(observation.next_state).max(dim=-1)[0]
-        next_v = next_v * (1 - observation.done)
-        return self.get_reward(observation) + self.gamma * next_v
+        return self.compute_optimal_target(
+            q_function=self.critic_target, observation=observation
+        )

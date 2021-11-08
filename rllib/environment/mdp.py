@@ -134,7 +134,7 @@ class MDP(AbstractEnvironment, Env):
             done = False
             next_state = self.state
 
-        return next_state, reward, done, {}
+        return next_state, np.atleast_1d(reward), done, {}
 
     @staticmethod
     def check_transitions(transitions, num_states, num_actions):

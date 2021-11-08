@@ -5,6 +5,7 @@ import torch.distributions
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 from rllib.util.parameter_decay import Constant, Learnable, ParameterDecay
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
@@ -118,18 +119,19 @@ class REPS(AbstractAlgorithm):
 
     def get_value_target(self, observation):
         """Get value-function target."""
-        next_v = self.critic(observation.next_state) * (1 - observation.done)
-        return self.get_reward(observation) + self.gamma * next_v
+        next_v = self.critic(observation.next_state)
+        not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=next_v)
+        return self.get_reward(observation) + self.gamma * next_v * not_done
 
     def actor_loss(self, observation):
         """Return primal and dual loss terms from REPS."""
         state, action, reward, next_state, done, *r = observation
 
         # Compute Scaled TD-Errors
-        value = self.critic(state)
+        value = self.multi_objective_reduction(self.critic(state))
 
         # For dual function we need the full gradient, not the semi gradient!
-        target = self.get_value_target(observation)
+        target = self.multi_objective_reduction(self.get_value_target(observation))
 
         pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         _, action_log_p = get_entropy_and_log_p(pi, action, self.policy.action_scale)

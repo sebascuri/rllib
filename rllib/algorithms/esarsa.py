@@ -2,6 +2,8 @@
 
 import torch
 
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
+
 from .sarsa import SARSA
 
 
@@ -37,7 +39,9 @@ class ESARSA(SARSA):
 
     def get_value_target(self, observation):
         """Get q function target."""
-        next_v = self.value_target(observation.next_state) * (1 - observation.done)
+        next_v = self.value_target(observation.next_state)
+        not_done = broadcast_to_tensor(1 - observation.done, target_tensor=next_v)
+        next_v = next_v * not_done
         return self.get_reward(observation) + self.gamma * next_v
 
 

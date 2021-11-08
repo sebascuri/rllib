@@ -71,6 +71,7 @@ class SVG(AbstractAlgorithm):
             r = r[..., 0]
 
             next_v = self.value_function(ns)
+            next_v = self.multi_objective_reduction(next_v)
             if isinstance(self.critic, NNEnsembleValueFunction) or isinstance(
                 self.critic, NNEnsembleQFunction
             ):

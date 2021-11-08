@@ -3,7 +3,8 @@
 import torch.nn as nn
 
 from rllib.dataset.datatypes import Loss
-from rllib.util.neural_networks import DisableGradient
+from rllib.util.multi_objective_reduction import MeanMultiObjectiveReduction
+from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import tensor_to_distribution
 from rllib.value_function.nn_ensemble_value_function import NNEnsembleQFunction
 
@@ -33,10 +34,16 @@ class PathwiseLoss(nn.Module):
     Sample efficient actor-critic with experience replay. ICRL.
     """
 
-    def __init__(self, policy=None, critic=None):
+    def __init__(
+        self,
+        policy=None,
+        critic=None,
+        multi_objective_reduction=MeanMultiObjectiveReduction(dim=-1),
+    ):
         super().__init__()
         self.policy = policy
         self.critic = critic
+        self.multi_objective_reduction = multi_objective_reduction
 
     def set_policy(self, new_policy):
         """Set policy."""
@@ -59,6 +66,8 @@ class PathwiseLoss(nn.Module):
             if isinstance(self.critic, NNEnsembleQFunction):
                 q = q[..., 0]
 
+        # Take multi-objective reduction.
+        q = self.multi_objective_reduction(q)
         # Take mean over time coordinate.
         if q.dim() < 1:
             q = q.mean(dim=1)
