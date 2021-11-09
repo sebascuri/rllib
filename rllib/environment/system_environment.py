@@ -30,6 +30,7 @@ class SystemEnvironment(AbstractEnvironment, Env):
             dim_observation=system.dim_observation,
             action_space=system.action_space,
             observation_space=system.observation_space,
+            dim_reward=reward.dim_reward if reward is not None else (1,),
         )
         self.reward = reward
         self.system = system

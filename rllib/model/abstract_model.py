@@ -62,6 +62,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         goal=None,
         model_kind="dynamics",
         deterministic=False,
+        dim_reward=(1,),
         *args,
         **kwargs,
     ):
@@ -69,6 +70,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         self.dim_state = dim_state
         self.dim_action = dim_action
         self.dim_observation = dim_observation if dim_observation else dim_state
+        self.dim_reward = dim_reward
 
         self.num_states = num_states if num_states is not None else -1
         self.num_actions = num_actions if num_actions is not None else -1

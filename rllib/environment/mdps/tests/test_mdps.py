@@ -24,6 +24,7 @@ class MDPTest(object):
         else:
             module = importlib.import_module("rllib.environment.mdps")
             env = getattr(module, self.name)(**kwargs)
+        env.reset()
         return env
 
 

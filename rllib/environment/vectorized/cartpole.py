@@ -1,5 +1,6 @@
 """Vectorized Gym CartPole Environment."""
 
+import numpy as np
 from gym.envs.classic_control.cartpole import CartPoleEnv
 from gym.spaces.box import Box
 
@@ -49,6 +50,9 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         )
 
         xacc = temp - pole_length * thetaacc * cos / mass
+        if not isinstance(xacc, np.ndarray) and isinstance(x_dot, np.ndarray):
+            xacc = np.array(xacc)
+            thetaacc = np.array(thetaacc)
 
         if self.kinematics_integrator == "euler":
             x = x + self.tau * x_dot

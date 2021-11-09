@@ -290,7 +290,6 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
 
             if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
-                # target_q2 = broadcast_to_tensor(target_q, pred_q)
                 target_q = target_q.unsqueeze(-1).repeat_interleave(
                     self.critic.num_heads, -1
                 )

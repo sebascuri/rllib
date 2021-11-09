@@ -21,6 +21,7 @@ class EnvironmentModel(AbstractModel):
             dim_action=environment.dim_action,
             num_states=environment.num_states,
             num_actions=environment.num_actions,
+            dim_reward=environment.dim_reward,
             deterministic=True,
             *args,
             **kwargs,

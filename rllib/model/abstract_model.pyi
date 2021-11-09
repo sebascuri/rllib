@@ -7,9 +7,10 @@ from torch import Tensor
 from rllib.dataset.datatypes import TupleDistribution
 
 class AbstractModel(nn.Module, metaclass=ABCMeta):
-    dim_state: Tuple
-    dim_action: Tuple
-    dim_observation: Tuple
+    dim_state: Tuple[int]
+    dim_action: Tuple[int]
+    dim_observation: Tuple[int]
+    dim_reward: Tuple[int]
     num_states: int
     num_actions: int
     num_observations: int
@@ -23,9 +24,10 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     _info: Dict[str, Any]
     def __init__(
         self,
-        dim_state: Tuple,
-        dim_action: Tuple,
-        dim_observation: Tuple = ...,
+        dim_state: Tuple[int],
+        dim_action: Tuple[int],
+        dim_observation: Tuple[int] = ...,
+        dim_reward: Tuple[int] = ...,
         num_states: int = ...,
         num_actions: int = ...,
         num_observations: int = ...,

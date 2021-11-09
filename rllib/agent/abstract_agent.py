@@ -167,7 +167,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
             self.policy.update()  # update policy parameters (eps-greedy.)
             self.counters["total_steps"] += 1
             self.episode_steps[-1] += 1
-        self.logger.update(rewards=observation.reward.item())
+        for i, reward in enumerate(observation.reward):
+            self.logger.update(**{f"reward-{i}": reward.item()})
         self.logger.update(entropy=observation.entropy.item())
 
         self.last_trajectory.append(observation)
@@ -186,19 +187,25 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
     def end_episode(self):
         """End an episode."""
-        rewards = self.logger.current["rewards"]
-        environment_return = rewards[0] * rewards[1]
-        if self.training:
-            self.counters["total_episodes"] += 1
-            self.logger.end_episode(train_return=environment_return)
-        else:
-            self.logger.end_episode(eval_return=environment_return)
+        self.counters["total_episodes"] += 1
+        best_return = -float("inf")
+        end_episode_dict = {}
+        for key in filter(lambda x: x.startswith("reward"), self.logger.current.keys()):
+            index = key.split("-")[1]
+            rewards = self.logger.current[key]
+            environment_return = rewards[0] * rewards[1]
+            name = "train" if self.training else "eval"
+            end_episode_dict.update(**{f"{name}_return-{index}": environment_return})
+            if index == "0":
+                best_return = environment_return
+
+        self.logger.end_episode(**end_episode_dict)
 
         # save checkpoint at every episode.
         self.save_checkpoint()
 
-        if environment_return >= max(
-            self.logger.get("train_return") + self.logger.get("eval_return")
+        if best_return >= max(
+            self.logger.get("train_return-0") + self.logger.get("eval_return-0")
         ):  # logger.get() returns a list!
             self.save(f"best.pkl")
 

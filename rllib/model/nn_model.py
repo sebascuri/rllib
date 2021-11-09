@@ -33,12 +33,10 @@ class NNModel(AbstractModel):
         input_transform=None,
         per_coordinate=False,
         jit_compile=False,
-        reward_dim=(1,),
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.reward_dim = reward_dim
         self.input_transform = input_transform
 
         out_dim = self._get_out_dim()
@@ -196,8 +194,12 @@ class NNModel(AbstractModel):
                 out_dim = (self.num_states,)
             else:
                 out_dim = self.dim_state
+        elif self.model_kind == "rewards":
+            out_dim = self.dim_reward
+        elif self.model_kind == "termination":
+            out_dim = 1
         else:
-            out_dim = self.reward_dim
+            raise NotImplementedError(f"{self.model_kind} not implemented.")
         return out_dim
 
     def _get_in_dim(self):

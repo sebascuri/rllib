@@ -69,7 +69,7 @@ class PathwiseLoss(nn.Module):
         # Take multi-objective reduction.
         q = self.multi_objective_reduction(q)
         # Take mean over time coordinate.
-        if q.dim() < 1:
+        if q.dim() > 1:
             q = q.mean(dim=1)
 
         return Loss(policy_loss=-q)

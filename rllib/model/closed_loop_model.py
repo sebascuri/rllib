@@ -24,6 +24,7 @@ class ClosedLoopModel(AbstractModel):
         super().__init__(
             dim_state=base_model.dim_state,
             dim_action=base_model.dim_action,
+            dim_reward=base_model.dim_reward,
             num_states=base_model.num_states,
             num_actions=base_model.num_actions,
             model_kind=base_model.model_kind,
