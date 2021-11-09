@@ -9,7 +9,7 @@ extras = {
         "black>=19.10b0",
         "isort>=5.0.0",
         "pytest_cov>=2.7,<3",
-        "mypy==0.750",
+        "mypy>=0.750",
     ],
     "envs": [
         "box2d-py>=2.3.5",
@@ -43,7 +43,7 @@ setup(
     install_requires=[
         "numpy>=1.14,<2",
         "scipy>=1.3.0,<1.4.0",
-        "torch>=1.6.0",
+        "torch>=1.10.0",
         "gym>=0.15.4",
         "tqdm>=4.0.0,<5.0",
         "matplotlib>=3.1.0",

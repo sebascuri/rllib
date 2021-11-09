@@ -18,6 +18,7 @@ commands:
       - run:
           name: Install library
           command: |
+            pip install torch
             pip install --progress-bar off PyOpenGL PyOpenGL_accelerate
             pip install --progress-bar off numpy
             pip install --progress-bar off -e .[envs,test]

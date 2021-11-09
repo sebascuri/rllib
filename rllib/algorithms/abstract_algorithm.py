@@ -284,11 +284,9 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             return Loss()
 
         pred_q = self.get_value_prediction(observation)
-        # print(pred_q.squeeze(-1))
         # Get target_q with semi-gradients.
         with torch.no_grad():
             target_q = self.get_value_target(observation)
-            # print(pred_q.shape, target_q.shape)
 
             if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
