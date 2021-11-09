@@ -14,7 +14,7 @@ from rllib.policy import (  # MPCPolicy,
 
 
 @pytest.fixture(
-    params=["CartPole-v0", "Pendulum-v0", "MountainCarContinuous-v0", "Taxi-v3"]
+    params=["CartPole-v0", "Pendulum-v1", "MountainCarContinuous-v0", "Taxi-v3"]
 )
 def environment(request):
     return GymEnvironment(request.param)

@@ -1,8 +1,10 @@
 """Closed Loop Model file."""
 
-from .abstract_model import AbstractModel
-from rllib.policy.abstract_policy import AbstractPolicy
 from typing import Any
+
+from rllib.policy.abstract_policy import AbstractPolicy
+
+from .abstract_model import AbstractModel
 
 class ClosedLoopModel(AbstractModel):
     base_model: AbstractModel
@@ -12,5 +14,5 @@ class ClosedLoopModel(AbstractModel):
         base_model: AbstractModel,
         policy: AbstractPolicy,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None: ...

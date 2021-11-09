@@ -20,7 +20,7 @@ def create_er_from_episodes(discrete, max_len, num_steps, num_episodes, episode_
         env = GymEnvironment("NChain-v0")
         transformations = []
     else:
-        env = GymEnvironment("Pendulum-v0")
+        env = GymEnvironment("Pendulum-v1")
         transformations = [
             MeanFunction(lambda state_, action_: state_),
             StateNormalizer(),
