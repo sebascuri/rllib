@@ -14,7 +14,7 @@ extras = {
     "envs": [
         "box2d-py>=2.3.5",
         "atari_py>=0.2.6",
-        "MinAtar @ git+ssh://git@github.com/kenjyoung/MinAtar@master#egg=MinAtar",
+        # "MinAtar @ git+ssh://git@github.com/kenjyoung/MinAtar@master#egg=MinAtar",
         "seaborn>=0.9.0",
         "gym-legacy-toytext>=0.0.1",
     ],
