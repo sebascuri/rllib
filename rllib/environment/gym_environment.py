@@ -7,7 +7,6 @@ import torch
 
 from .abstract_environment import AbstractEnvironment
 from .utilities import parse_space
-from .vectorized.util import VectorizedEnv
 
 
 class GymEnvironment(AbstractEnvironment):
@@ -127,9 +126,7 @@ class GymEnvironment(AbstractEnvironment):
     @property
     def state(self):
         """See `AbstractEnvironment.state'."""
-        if hasattr(self.env, "_get_obs"):
-            return getattr(self.env, "_get_obs")()
-        elif hasattr(self.env, "state"):
+        if hasattr(self.env, "state"):
             return self.env.state
         elif hasattr(self.env, "s"):
             return self.env.s
@@ -139,13 +136,13 @@ class GymEnvironment(AbstractEnvironment):
     @state.setter
     def state(self, value):
         if hasattr(self.env, "set_state"):
-            if isinstance(self.env, VectorizedEnv):
-                self.env.set_state(value)
-            else:
+            if hasattr(self.env, "sim"):  # mujocopy environments.
                 self.env.set_state(
                     value[: len(self.env.sim.data.qpos)],
                     value[len(self.env.sim.data.qpos) :],
                 )
+            else:
+                self.env.set_state(value)
         elif hasattr(self.env, "state"):
             self.env.state = value
         elif hasattr(self.env, "s"):

@@ -35,7 +35,7 @@ def discrete_action_policy(request):
     return request.param
 
 
-@pytest.fixture(params=["Pendulum-v0"])
+@pytest.fixture(params=["Pendulum-v1"])
 def continuous_action_environment(request):
     return GymEnvironment(request.param)
 

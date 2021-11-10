@@ -86,6 +86,14 @@ class MDP(AbstractEnvironment, Env):
     def state(self, value):
         self._state = value
 
+    def set_state(self, state):
+        """Set the state."""
+        self.state = state
+
+    def get_state(self, state):
+        """Get the state."""
+        return self.state
+
     def reset(self):
         """Reset MDP environment."""
         self._state = self.initial_state()

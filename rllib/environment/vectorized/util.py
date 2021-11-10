@@ -15,6 +15,23 @@ class VectorizedEnv(Env, metaclass=ABCMeta):
         """Get current backend of environment."""
         return get_backend(self.state)
 
+    @property
+    def state(self):
+        """Return the state of the system."""
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        self._state = value
+
+    def set_state(self, state):
+        """Set vectorized state."""
+        self.state = state
+
+    def get_state(self):
+        """Set vectorized state."""
+        return self.state
+
     def atan2(self, sin, cos):
         """Return signed angle of the sin cosine."""
         if self.bk is np:

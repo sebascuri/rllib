@@ -16,6 +16,10 @@ class TestPendulumGymEnvironment(object):
         action = np.random.randn(dim1, dim2, 1)
         return state, action
 
+    def get_obs(self, state):
+        theta, theta_dot = state[..., 0], state[..., 1]
+        return np.stack((np.cos(theta), np.sin(theta), theta_dot), -1)
+
     def test_set_state_np(self):
         env = GymEnvironment("VPendulum-v0")
         env.reset()
@@ -26,7 +30,7 @@ class TestPendulumGymEnvironment(object):
         env.state = state
         obs, _, _, _ = env.step(action)
         state = env.state
-        np.testing.assert_allclose(obs, state)
+        np.testing.assert_allclose(obs, self.get_obs(state))
 
     def test_set_state_torch(self):
         env = GymEnvironment("VPendulum-v0")
@@ -39,4 +43,4 @@ class TestPendulumGymEnvironment(object):
         obs, _, _, _ = env.step(torch.tensor(action))
         state = env.state
 
-        np.testing.assert_allclose(obs, state)
+        np.testing.assert_allclose(obs, self.get_obs(state))

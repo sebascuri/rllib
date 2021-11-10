@@ -8,7 +8,7 @@ from rllib.dataset.datatypes import Action, Reward, State
 from rllib.model import AbstractModel
 
 class StateActionReward(AbstractModel, metaclass=ABCMeta):
-    dim_action: Tuple
+    dim_action: Tuple[int]
     action_scale: Action
     sparse: bool
     ctrl_cost_weight: float
