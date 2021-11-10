@@ -202,6 +202,7 @@ class TestPendulum(object):
 
     @property
     def state_action(self):
+        np.random.seed(0)
         dim1, dim2 = self.dims
         state = np.random.randn(dim1, dim2, 2)
         action = np.random.randn(dim1, dim2, 1)
