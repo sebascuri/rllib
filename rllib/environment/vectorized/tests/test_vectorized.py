@@ -32,7 +32,7 @@ class TestAcrobot(object):
         env.state = state
         obs, reward, done, _ = env.step(action)
         assert obs.shape == (dim1, dim2, 6)
-        assert reward.shape == (dim1, dim2)
+        assert reward.shape == (dim1, dim2, 1)
         assert done.shape == (dim1, dim2)
 
     def test_torch_shape(self):
@@ -44,7 +44,7 @@ class TestAcrobot(object):
         env.state = torch.tensor(state)
         obs, reward, done, _ = env.step(torch.tensor(action))
         assert obs.shape == (dim1, dim2, 6)
-        assert reward.shape == (dim1, dim2)
+        assert reward.shape == (dim1, dim2, 1)
         assert done.shape == (dim1, dim2)
 
     def test_torch_np_equality(self):
@@ -123,7 +123,7 @@ class TestCartPole(object):
         env.state = state
         obs, reward, done, _ = env.step(action)
         assert obs.shape == (dim1, dim2, 4)
-        assert reward.shape == (dim1, dim2)
+        assert reward.shape == (dim1, dim2, 1)
         assert done.shape == (dim1, dim2)
 
     def test_torch_shape(self):
@@ -135,7 +135,7 @@ class TestCartPole(object):
         env.state = torch.tensor(state)
         obs, reward, done, _ = env.step(torch.tensor(action))
         assert obs.shape == (dim1, dim2, 4)
-        assert reward.shape == (dim1, dim2)
+        assert reward.shape == (dim1, dim2, 1)
         assert done.shape == (dim1, dim2)
 
     def test_torch_np_equality(self):
@@ -216,7 +216,7 @@ class TestPendulum(object):
         env.state = state
         obs, reward, done, _ = env.step(action)
         assert obs.shape == (dim1, dim2, 3)
-        assert reward.shape == (dim1, dim2)
+        assert reward.shape == (dim1, dim2, 1)
         assert done.shape == (dim1, dim2)
 
     def test_torch_shape(self):
@@ -228,7 +228,7 @@ class TestPendulum(object):
         env.state = torch.tensor(state)
         obs, reward, done, _ = env.step(torch.tensor(action))
         assert obs.shape == (dim1, dim2, 3)
-        assert reward.shape == (dim1, dim2)
+        assert reward.shape == (dim1, dim2, 1)
         assert done.shape == (dim1, dim2)
 
     def test_torch_np_equality(self):
@@ -287,4 +287,4 @@ class TestPendulum(object):
         state = venv.state
 
         venv.set_state(vobs[2:])
-        np.testing.assert_allclose(venv.state, state[2:])
+        torch.testing.assert_allclose(venv.state, state[2:])

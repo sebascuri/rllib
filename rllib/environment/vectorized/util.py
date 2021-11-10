@@ -53,6 +53,13 @@ class VectorizedEnv(Env, metaclass=ABCMeta):
         else:
             return self.bk.cat(arrays, axis)
 
+    def unsqueeze(self, array, axis=-1):
+        """Unsqueeze array along axis."""
+        if self.bk is np:
+            return np.expand_dims(array, axis=axis)
+        else:
+            return array.unsqueeze(dim=axis)
+
     def rand(self, min_val, max_val):
         """Return random number between min_val and max_val."""
         if self.bk is np:

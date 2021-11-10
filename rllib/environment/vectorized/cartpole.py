@@ -72,7 +72,7 @@ class VectorizedCartPoleEnv(CartPoleEnv, VectorizedEnv):
         )
 
         reward = bk.ones(done.shape)
-        return self.state, reward, done, {}
+        return self.state, self.unsqueeze(reward, axis=-1), done, {}
 
 
 class DiscreteVectorizedCartPoleEnv(VectorizedCartPoleEnv):

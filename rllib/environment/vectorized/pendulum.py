@@ -34,7 +34,7 @@ class VectorizedPendulumEnv(PendulumEnv, VectorizedEnv):
         self.state = self.bk.stack((new_theta, new_theta_dot), -1)
 
         done = bk.zeros_like(costs, dtype=bk.bool)
-        return self._get_obs(), -costs, done, {}
+        return self._get_obs(), self.unsqueeze(-costs, axis=-1), done, {}
 
     def set_state(self, observation):
         """Set state from a given observation."""

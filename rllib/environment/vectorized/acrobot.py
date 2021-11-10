@@ -45,7 +45,7 @@ class VectorizedAcrobotEnv(AcrobotEnv, VectorizedEnv):
         terminal = self._terminal()
 
         reward = -self.bk.ones(terminal.shape) * (~terminal)
-        return self._get_ob(), reward, terminal, {}
+        return self._get_ob(), self.unsqueeze(reward, axis=-1), terminal, {}
 
     def _dsdt(self, s_augmented, t):
         m1 = self.LINK_MASS_1
