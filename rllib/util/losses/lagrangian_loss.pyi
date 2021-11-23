@@ -12,7 +12,7 @@ class LagrangianLoss(nn.Module):
     regularization: bool
     def __init__(
         self,
-        dual: Union[ParameterDecay, float] = ...,
+        dual: Union[ParameterDecay, float, Tensor] = ...,
         inequality_zero: Union[float, Tensor] = ...,
         regularization: bool = ...,
     ) -> None: ...

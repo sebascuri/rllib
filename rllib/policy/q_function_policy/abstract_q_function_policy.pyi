@@ -12,12 +12,12 @@ from ..abstract_policy import AbstractPolicy
 class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
     q_function: AbstractQFunction
     param: ParameterDecay
-    reduction: AbstractMultiObjectiveReduction
+    multi_objective_reduction: AbstractMultiObjectiveReduction
     def __init__(
         self,
         q_function: AbstractQFunction,
         param: Union[float, ParameterDecay],
-        reduction: AbstractMultiObjectiveReduction = ...,
+        multi_objective_reduction: AbstractMultiObjectiveReduction = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
