@@ -120,7 +120,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.gamma = gamma
         self.policy = policy
         if isinstance(policy, AbstractQFunctionPolicy):
-            self.policy.reduction = multi_objective_reduction
+            self.policy.multi_objective_reduction = multi_objective_reduction
         self.policy_target = deep_copy_module(self.policy)
         self.critic = critic
         self.critic_target = deep_copy_module(self.critic)
@@ -174,10 +174,27 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
             self.old_policy = deep_copy_module(self.policy)
 
     def set_policy(self, new_policy):
-        """Set new policy."""
+        """Set new policy.
+
+        This method will set the policy in the algorithm, as well as in the policy
+        target, and in the pathwise loss.
+        """
         self.policy = new_policy
         self.policy_target = deep_copy_module(self.policy)
         self.pathwise_loss.set_policy(self.policy)
+        self.post_init()
+
+    def set_multi_objective_reduction(self, new_multi_objective_reduction):
+        """Set multi-objective reduction.
+
+        This method will set the reduction in the algorithm, in the policy (if needed)
+        and in the pathwise loss.
+        """
+        self.multi_objective_reduction = new_multi_objective_reduction
+        if isinstance(self.policy, AbstractQFunctionPolicy):
+            self.policy.multi_objective_reduction = new_multi_objective_reduction
+            self.policy_target.multi_objective_reduction = new_multi_objective_reduction
+        self.pathwise_loss.multi_objective_reduction = new_multi_objective_reduction
         self.post_init()
 
     def get_value_prediction(self, observation):

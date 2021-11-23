@@ -30,7 +30,7 @@ class MellowMax(AbstractQFunctionPolicy):
 
     def forward(self, state):
         """See `AbstractQFunctionPolicy.forward'."""
-        q_value = self.reduction(self.q_function(state))
+        q_value = self.multi_objective_reduction(self.q_function(state))
 
         mm = mellow_max(q_value, self.omega).unsqueeze(-1)
         adv = q_value - mm

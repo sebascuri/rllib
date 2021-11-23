@@ -23,7 +23,7 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
         self,
         q_function,
         param,
-        reduction=GetIndexMultiObjectiveReduction(dim=-1, idx=0),
+        multi_objective_reduction=GetIndexMultiObjectiveReduction(dim=-1, idx=0),
         *args,
         **kwargs,
     ):
@@ -39,7 +39,7 @@ class AbstractQFunctionPolicy(AbstractPolicy, metaclass=ABCMeta):
         if not isinstance(param, ParameterDecay):
             param = Constant(param)
         self.param = param
-        self.reduction = reduction
+        self.multi_objective_reduction = multi_objective_reduction
 
     def update(self):
         """Update policy parameters."""

@@ -35,7 +35,7 @@ class EpsGreedy(AbstractQFunctionPolicy):
         greedy = (1 - self.epsilon) * torch.ones(*aux_size, self.num_actions)
 
         # Greedy part.
-        q_val = self.reduction(self.q_function(state))
+        q_val = self.multi_objective_reduction(self.q_function(state))
         a = torch.argmax(q_val, dim=-1)
         probabilities.scatter_add_(dim=-1, index=a.unsqueeze(-1), src=greedy)
 
