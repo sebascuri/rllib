@@ -1,5 +1,5 @@
 from typing import Any, Callable, Optional, Tuple, Union
-
+from rllib.policy import AbstractPolicy
 import numpy as np
 import torch.__spec__ as torch_mod
 from torch import Tensor
@@ -43,6 +43,7 @@ class MovingAverage(object):
     def value(self) -> float: ...
 
 def moving_average_filter(x: Array, y: Array, horizon: int) -> Array: ...
+def sample_action(policy: AbstractPolicy, state: Tensor) -> Tensor:
 
 class RewardTransformer(object):
     offset: float

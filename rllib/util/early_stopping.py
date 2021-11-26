@@ -27,18 +27,28 @@ class EarlyStopping(object):
         When absolute, the stop flag is true when average > epsilon.
     """
 
-    def __init__(self, epsilon=-1.0, non_decrease_iter=float("inf"), relative=True):
+    def __init__(
+        self,
+        epsilon=-1.0,
+        non_decrease_iter=float("inf"),
+        relative=True,
+        min_total_count=-float("inf"),
+    ):
         self.epsilon = epsilon
         self.relative = relative
         self.moving_average = []
         self.min_value = []
         self.non_decrease_iter = non_decrease_iter
         self.count = 0
+        self.total_count = 0
+        self.min_total_count = min_total_count
 
     @property
     def stop(self):
         """Return true if it is ready to early stop."""
         if self.min_value is None:
+            return False
+        if self.total_count < self.min_total_count:
             return False
         if self.epsilon < 0 and self.non_decrease_iter == float("inf"):
             # No early stopping.
@@ -84,6 +94,7 @@ class EarlyStopping(object):
 
     def update(self, *args):
         """Update values."""
+        self.total_count += 1
         if not len(self.moving_average):
             self._reset(num=len(args), hard=True)
 

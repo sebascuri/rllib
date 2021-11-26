@@ -387,3 +387,20 @@ class TimeIt(object):
     def __exit__(self, *args):
         """Print the elapsed time."""
         print(f"Elapsed time doing {self.name}: {time.time() - self.start}")
+
+
+def sample_action(policy, state):
+    """Sample an action from a policy.
+
+    Parameters
+    ----------
+    policy: AbstractPolicy.
+    state: Tensor.
+    """
+    pi = tensor_to_distribution(policy(state), **policy.dist_params)
+    if not policy.discrete_action:
+        action = pi.rsample() if pi.has_rsample else pi.sample()
+        action = policy.action_scale * action.clamp(-1.0, 1.0)
+    else:
+        action = pi.sample()
+    return action
