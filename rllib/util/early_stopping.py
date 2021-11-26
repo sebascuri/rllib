@@ -75,6 +75,11 @@ class EarlyStopping(object):
 
         return False
 
+    def restart(self):
+        """Restart the early stopping procedure."""
+        self.total_count = 0
+        self.reset(hard=True)
+
     def _reset(self, num, hard):
         self.moving_average = [MovingAverage() for _ in range(num)]
 
