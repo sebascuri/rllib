@@ -1,16 +1,16 @@
 """Multi-objective Reduction classes."""
+from abc import ABCMeta
+
 import torch
+import torch.nn as nn
 
 
-class AbstractMultiObjectiveReduction(object):
+class AbstractMultiObjectiveReduction(nn.Module, metaclass=ABCMeta):
     """Abstract class for multi-objective reduction."""
 
     def __init__(self, dim=2):
+        super().__init__()
         self.dim = dim
-
-    def __call__(self, value):
-        """Reduce the value."""
-        raise NotImplementedError
 
 
 class GetIndexMultiObjectiveReduction(AbstractMultiObjectiveReduction):
@@ -28,7 +28,7 @@ class GetIndexMultiObjectiveReduction(AbstractMultiObjectiveReduction):
             idx = torch.tensor([idx]).long()
         self.idx = idx
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         return torch.index_select(input=value, dim=self.dim, index=self.idx).squeeze(
             dim=self.dim
@@ -38,7 +38,7 @@ class GetIndexMultiObjectiveReduction(AbstractMultiObjectiveReduction):
 class MeanMultiObjectiveReduction(AbstractMultiObjectiveReduction):
     """Take mean when reducing."""
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         return value.mean(dim=self.dim)
 
@@ -46,7 +46,7 @@ class MeanMultiObjectiveReduction(AbstractMultiObjectiveReduction):
 class SumMultiObjectiveReduction(AbstractMultiObjectiveReduction):
     """Take a sum when reducing."""
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         return value.sum(dim=self.dim)
 
@@ -54,7 +54,7 @@ class SumMultiObjectiveReduction(AbstractMultiObjectiveReduction):
 class MaxMultiObjectiveReduction(AbstractMultiObjectiveReduction):
     """Take maximum when reducing."""
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         return value.max(dim=self.dim)
 
@@ -62,7 +62,7 @@ class MaxMultiObjectiveReduction(AbstractMultiObjectiveReduction):
 class MinMultiObjectiveReduction(AbstractMultiObjectiveReduction):
     """Take minimum when reducing."""
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         return value.min(dim=self.dim)
 
@@ -74,7 +74,7 @@ class WeightedMultiObjectiveReduction(AbstractMultiObjectiveReduction):
         super().__init__(*args, **kwargs)
         self.weight = weight
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         if self.dim == -1 or self.dim == value.ndim:
             return value @ self.weight
@@ -93,6 +93,6 @@ class WeightedMultiObjectiveReduction(AbstractMultiObjectiveReduction):
 class NoMultiObjectiveReduction(AbstractMultiObjectiveReduction):
     """Do not reduce at all."""
 
-    def __call__(self, value):
+    def forward(self, value):
         """Reduce the value."""
         return value

@@ -1,9 +1,10 @@
 """Multi-objective Reduction classes."""
 from typing import Any, Union
-
+import torch.nn as nn
+from abc import ABCMeta
 from torch import LongTensor, Tensor
 
-class AbstractMultiObjectiveReduction(object):
+class AbstractMultiObjectiveReduction(nn.Module, metaclass=ABCMeta):
     dim: int
     def __init__(self, dim: int = ...) -> None: ...
     def __call__(self, value: Tensor) -> Tensor: ...
