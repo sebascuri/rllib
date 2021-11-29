@@ -59,6 +59,7 @@ class MPPIShooting(MPCSolver):
 
     def get_best_action(self, action_sequence, returns):
         """Get best action by a weighted average of e^kappa returns."""
+        returns = self.multi_objective_reduction(returns)
         returns = self.kappa() * returns
         weights = torch.exp(returns - torch.max(returns))
         normalization = weights.sum()

@@ -44,6 +44,7 @@ class PolicyShooting(RandomShooting):
             termination_model=self.termination_model,
         )
         actions = trajectory.action
+        value = self.multi_objective_reduction(value)
         idx = torch.topk(value, k=self.num_elites, largest=True)[1]
 
         # Return first action and the mean over the elite samples.

@@ -85,6 +85,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self.warm_start = warm_start
         self.default_action = default_action
         self.dim_action = self.dynamical_model.dim_action[0]
+        self.dim_reward = self.reward_model.dim_reward[0]
 
         self.mean = None
         self._scale = scale
@@ -172,9 +173,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             torch.manual_seed(int(1000 * time.time()))
 
         action_sequence[:] = self.get_candidate_action_sequence()
-        returns[:] = self.multi_objective_reduction(
-            self.evaluate_action_sequence(action_sequence, state)
-        )
+        returns[:] = self.evaluate_action_sequence(action_sequence, state)
 
     def forward(self, state):
         """Return action that solves the MPC problem."""
@@ -191,7 +190,8 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             for _ in range(self.num_cpu)
         ]
         batch_returns = [
-            torch.randn(batch_shape + (self.num_samples,)) for _ in range(self.num_cpu)
+            torch.randn(batch_shape + (self.num_samples, self.dim_reward))
+            for _ in range(self.num_cpu)
         ]
         for action_, return_ in zip(batch_actions, batch_returns):
             action_.share_memory_()

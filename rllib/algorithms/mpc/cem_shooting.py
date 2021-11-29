@@ -68,6 +68,7 @@ class CEMShooting(MPCSolver):
 
     def get_best_action(self, action_sequence, returns):
         """Get best action by averaging the num_elites samples."""
+        returns = self.multi_objective_reduction(returns)
         idx = torch.topk(returns, k=self.num_elites, largest=True, dim=-1)[1]
         idx = idx.unsqueeze(0).unsqueeze(-1)  # Expand dims to action_sequence.
         idx = idx.repeat_interleave(self.horizon, 0).repeat_interleave(
