@@ -12,7 +12,7 @@ def get_target(model, observation):
     if model.model_kind == "dynamics":
         target = observation.next_state
     elif model.model_kind == "rewards":
-        target = observation.reward.unsqueeze(-1)
+        target = observation.reward
     elif model.model_kind == "termination":
         target = observation.done
     else:

@@ -95,6 +95,7 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
             dim_action=kwargs.pop("dim_action", environment.dim_action),
             num_states=kwargs.pop("num_states", environment.num_states),
             num_actions=kwargs.pop("num_actions", environment.num_actions),
+            dim_reward=kwargs.pop("dim_reward", environment.dim_reward),
             goal=environment.goal,
             *args,
             **kwargs,
