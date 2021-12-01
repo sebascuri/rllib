@@ -6,6 +6,7 @@ from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.abstract_solver import MPCSolver
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
+from rllib.policy import AbstractPolicy
 
 class ModelBasedAgent(AbstractAgent):
     model_learning_algorithm: ModelLearningAlgorithm
@@ -35,6 +36,7 @@ class ModelBasedAgent(AbstractAgent):
         model_learning_algorithm: Optional[ModelLearningAlgorithm] = ...,
         planning_algorithm: Optional[MPCSolver] = ...,
         memory: Optional[ExperienceReplay] = ...,
+        policy: Optional[AbstractPolicy] = ...,
         thompson_sampling: bool = ...,
         training_verbose: bool = ...,
         *args: Any,

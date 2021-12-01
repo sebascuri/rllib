@@ -60,6 +60,7 @@ class ModelBasedAgent(AbstractAgent):
         model_learning_algorithm=None,
         planning_algorithm=None,
         thompson_sampling=False,
+        policy=None,
         memory=None,
         batch_size=100,
         clip_grad_val=10.0,
@@ -103,7 +104,7 @@ class ModelBasedAgent(AbstractAgent):
             policy = policy_learning_algorithm.policy
         elif planning_algorithm is not None:
             policy = MPCPolicy(self.planning_algorithm)
-        else:
+        elif policy is None:
             policy = RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
         self.policy = policy
         self.thompson_sampling = thompson_sampling

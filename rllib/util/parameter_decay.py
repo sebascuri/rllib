@@ -53,7 +53,7 @@ class Learnable(ParameterDecay):
     def __init__(self, val, positive: bool = False):
         self.positive = positive
         if self.positive:
-            val = inverse_softplus(val).item()
+            val = inverse_softplus(val)
         super().__init__(val)
         self.start.requires_grad = True
         self.positive = positive
