@@ -241,9 +241,11 @@ class TestActionNormalize(object):
         return request.param
 
     def test_update(self, trajectory, preserve_origin):
-        transformer = ActionNormalizer(preserve_origin)
-
         trajectory = stack_list_of_tuples(trajectory)
+
+        transformer = ActionNormalizer(
+            dim=(trajectory.action.shape[-1],), preserve_origin=preserve_origin
+        )
 
         mean = torch.mean(trajectory.action, 0)
         var = torch.var(trajectory.action, 0)
@@ -253,9 +255,12 @@ class TestActionNormalize(object):
         torch.testing.assert_allclose(transformer._normalizer.variance, var)
 
     def test_call(self, trajectory, preserve_origin):
-        transformer = ActionNormalizer(preserve_origin)
-
         trajectory = stack_list_of_tuples(trajectory)
+
+        transformer = ActionNormalizer(
+            dim=(trajectory.action.shape[-1],), preserve_origin=preserve_origin
+        )
+
         transformer.update(trajectory)
         observation = get_observation()
         obs = observation.clone()
@@ -277,8 +282,11 @@ class TestActionNormalize(object):
         assert transformed.done == obs.done
 
     def test_inverse(self, trajectory, preserve_origin):
-        transformer = ActionNormalizer(preserve_origin)
         trajectory = stack_list_of_tuples(trajectory)
+
+        transformer = ActionNormalizer(
+            dim=(trajectory.action.shape[-1],), preserve_origin=preserve_origin
+        )
         transformer.update(trajectory)
 
         observation = get_observation()
@@ -295,9 +303,11 @@ class TestStateNormalize(object):
         return request.param
 
     def test_update(self, trajectory, preserve_origin):
-        transformer = StateNormalizer(preserve_origin)
-
         trajectory = stack_list_of_tuples(trajectory)
+
+        transformer = StateNormalizer(
+            dim=(trajectory.state.shape[-1],), preserve_origin=preserve_origin
+        )
 
         mean = torch.mean(trajectory.state, 0)
         var = torch.var(trajectory.state, 0)
@@ -307,8 +317,11 @@ class TestStateNormalize(object):
         torch.testing.assert_allclose(transformer._normalizer.variance, var)
 
     def test_call(self, trajectory, preserve_origin):
-        transformer = StateNormalizer(preserve_origin)
         trajectory = stack_list_of_tuples(trajectory)
+
+        transformer = StateNormalizer(
+            dim=(trajectory.state.shape[-1],), preserve_origin=preserve_origin
+        )
 
         transformer.update(trajectory)
         observation = get_observation()
@@ -331,9 +344,11 @@ class TestStateNormalize(object):
         assert transformed.done == obs.done
 
     def test_inverse(self, trajectory, preserve_origin):
-        transformer = StateNormalizer(preserve_origin)
-
         trajectory = stack_list_of_tuples(trajectory)
+
+        transformer = StateNormalizer(
+            dim=(trajectory.state.shape[-1],), preserve_origin=preserve_origin
+        )
 
         transformer.update(trajectory)
 

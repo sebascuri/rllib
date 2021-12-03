@@ -17,7 +17,7 @@ def test_backend():
 
 def test_update(preserve_origin):
     array = torch.randn(32, 4)
-    transformer = Normalizer(preserve_origin)
+    transformer = Normalizer(dim=(4,), preserve_origin=preserve_origin)
     transformer.update(array)
     torch.testing.assert_allclose(transformer.mean, torch.mean(array, 0))
     torch.testing.assert_allclose(transformer.variance, torch.var(array, 0))
@@ -26,7 +26,7 @@ def test_update(preserve_origin):
 def test_normalize(preserve_origin):
     array = torch.randn(32, 4)
     new_array = torch.randn(4)
-    transformer = Normalizer(preserve_origin)
+    transformer = Normalizer(dim=(4,), preserve_origin=preserve_origin)
     transformer.update(array)
     transformed_array = transformer(new_array)
 
@@ -42,7 +42,7 @@ def test_normalize(preserve_origin):
 def test_unnormalize():
     array = torch.randn(32, 4)
     new_array = torch.randn(4)
-    transformer = Normalizer(preserve_origin)
+    transformer = Normalizer(dim=(4,), preserve_origin=preserve_origin)
     transformer.update(array)
     transformed_array = transformer(new_array)
     back_array = transformer.inverse(transformed_array)
@@ -54,7 +54,7 @@ def test_sequential_update():
     torch.manual_seed(0)
     array = torch.randn(16, 4)
 
-    transformer = Normalizer()
+    transformer = Normalizer(dim=(4,), preserve_origin=preserve_origin)
     transformer.update(array)
 
     torch.testing.assert_allclose(transformer.mean, torch.mean(array, 0))
