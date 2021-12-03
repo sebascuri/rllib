@@ -289,7 +289,7 @@ def safe_cholesky(covariance_matrix, jitter=1e-6):
         Jitter to add to the covariance matrix.
     """
     try:
-        return torch.cholesky(covariance_matrix)
+        return torch.linalg.cholesky(covariance_matrix)
     except RuntimeError:
         dim = covariance_matrix.shape[-1]
         if jitter > 1:
