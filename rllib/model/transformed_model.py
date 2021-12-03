@@ -64,10 +64,10 @@ class TransformedModel(AbstractModel):
             if not base_model.discrete_state:
                 transformations = [
                     MeanFunction(DeltaState()),
-                    StateNormalizer(),
+                    StateNormalizer(dim=base_model.dim_state),
                     ActionScaler(scale=environment.action_scale),
-                    RewardNormalizer(),
-                    NextStateNormalizer(),
+                    RewardNormalizer(dim=base_model.dim_reward),
+                    NextStateNormalizer(dim=base_model.dim_state),
                 ]
             else:
                 transformations = []

@@ -14,10 +14,10 @@ class Normalizer(nn.Module):
 
     preserve_orign: bool
 
-    def __init__(self, preserve_origin=False):
+    def __init__(self, dim=(1,), preserve_origin=False):
         super().__init__()
-        self.mean = torch.zeros(1)
-        self.variance = torch.ones(1)
+        self.mean = nn.Parameter(torch.zeros(dim), requires_grad=False)
+        self.variance = nn.Parameter(torch.ones(dim), requires_grad=False)
         self.count = torch.tensor(0.0)
         self.preserve_origin = preserve_origin
 
@@ -48,18 +48,23 @@ class Normalizer(nn.Module):
         if torch.any(torch.isnan(new_var)):
             new_var = torch.zeros_like(new_var)
         new_count = torch.tensor(1.0) * torch.tensor(array.shape[0])
-        self.variance = update_var(
-            self.mean, self.variance, self.count, new_mean, new_var, new_count
+        self.variance = nn.Parameter(
+            update_var(
+                self.mean, self.variance, self.count, new_mean, new_var, new_count
+            ),
+            requires_grad=False,
         )
         # If variance is too small, clamp the variance to 1.0
         self.variance[self.variance < 1e-6] = 1.0
-        self.mean = update_mean(self.mean, self.count, new_mean, new_count)
+        self.mean = nn.Parameter(
+            update_mean(self.mean, self.count, new_mean, new_count), requires_grad=False
+        )
 
         self.count += new_count
 
 
 class StateNormalizer(AbstractTransform):
-    r"""Implementation of a transformer that normalizes the states and next states.
+    r"""Implementation of a transformer that normalizes the states.
 
     The state and next state of an observation are shifted by the mean and then are
     re-scaled with the standard deviation as:
@@ -74,9 +79,9 @@ class StateNormalizer(AbstractTransform):
 
     """
 
-    def __init__(self, preserve_origin=False):
+    def __init__(self, dim=(1,), preserve_origin=False):
         super().__init__()
-        self._normalizer = Normalizer(preserve_origin)
+        self._normalizer = Normalizer(dim=dim, preserve_origin=preserve_origin)
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
@@ -116,9 +121,9 @@ class NextStateNormalizer(AbstractTransform):
 
     """
 
-    def __init__(self, preserve_origin=False):
+    def __init__(self, dim=(1,), preserve_origin=False):
         super().__init__()
-        self._normalizer = Normalizer(preserve_origin)
+        self._normalizer = Normalizer(dim=dim, preserve_origin=preserve_origin)
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
@@ -148,9 +153,9 @@ class NextStateNormalizer(AbstractTransform):
 class RewardNormalizer(AbstractTransform):
     """Implementation of a transformer that normalizes the rewards."""
 
-    def __init__(self, preserve_origin=False):
+    def __init__(self, dim=(1,), preserve_origin=False):
         super().__init__()
-        self._normalizer = Normalizer(preserve_origin)
+        self._normalizer = Normalizer(dim=dim, preserve_origin=preserve_origin)
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
@@ -191,9 +196,9 @@ class ActionNormalizer(AbstractTransform):
 
     """
 
-    def __init__(self, preserve_origin=False):
+    def __init__(self, dim=(1,), preserve_origin=False):
         super().__init__()
-        self._normalizer = Normalizer(preserve_origin)
+        self._normalizer = Normalizer(dim=dim, preserve_origin=preserve_origin)
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
