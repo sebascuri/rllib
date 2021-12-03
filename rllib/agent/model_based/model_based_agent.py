@@ -246,7 +246,7 @@ class ModelBasedAgent(AbstractAgent):
         dynamical_model=None,
         reward_model=None,
         termination_model=None,
-        num_iter=1000,
+        num_epochs=50,
         model_lr=5e-4,
         l2_reg=1e-4,
         calibrate=True,
@@ -278,7 +278,7 @@ class ModelBasedAgent(AbstractAgent):
                 dynamical_model=dynamical_model,
                 reward_model=reward_model,
                 termination_model=termination_model,
-                num_iter=num_iter,
+                num_epochs=num_epochs,
                 model_optimizer=model_optimizer,
                 calibrate=calibrate,
             )
