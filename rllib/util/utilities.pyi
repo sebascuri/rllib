@@ -1,11 +1,12 @@
 from typing import Any, Callable, Optional, Tuple, Union
-from rllib.policy import AbstractPolicy
+
 import numpy as np
 import torch.__spec__ as torch_mod
 from torch import Tensor
 from torch.distributions import Distribution
 
 from rllib.dataset.datatypes import Array, Reward, TupleDistribution
+from rllib.policy import AbstractPolicy
 
 def get_backend(array: Array) -> Union[np, torch_mod]: ...
 def set_random_seed(seed: int) -> None: ...

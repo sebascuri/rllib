@@ -151,3 +151,51 @@ def unstack_observations(observation):
         observations.append(Observation(*map(lambda x: _extract_index(x), observation)))
 
     return observations
+
+
+def chunk(array, num_steps):
+    """Chunk an array into size of N steps.
+
+    The array of size N x k_1 x ... k_n will be reshaped to be of size
+    Batch x num_steps x k_1 x ... k_n.
+
+    Parameters
+    ----------
+    array: Array.
+        Array to reshape.
+    num_steps: int.
+        Number of steps to chunk the batch.
+
+    Returns
+    -------
+    array: Array.
+        Chunked Array.
+    """
+    batch_size = array.shape[0] // num_steps
+    return array.reshape(batch_size, num_steps, *array.shape[1:])
+
+
+def d4rl_to_observation(dataset, num_steps):
+    """Transform a d4rl dataset into an observation dataset.
+
+    Parameters
+    ----------
+    dataset: Dict.
+        Dict with dataset.
+    num_steps: int.
+        Number of steps to chunk the batch.
+
+    Returns
+    -------
+    observation: Observation
+        Dataset in observation format..
+    """
+    dataset = Observation(
+        state=chunk(dataset["observations"], num_steps),
+        action=chunk(dataset["actions"], num_steps),
+        reward=chunk(dataset["rewards"], num_steps),
+        next_state=chunk(dataset["next_observations"], num_steps),
+        done=chunk(dataset["terminals"], num_steps),
+        log_prob_action=chunk(dataset["infos/action_log_probs"], num_steps),
+    ).to_torch()
+    return dataset

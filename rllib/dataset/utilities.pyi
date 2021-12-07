@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Type, TypeVar
+from typing import Callable, Dict, List, Optional, Type, TypeVar
 
 import numpy as np
 
-from .datatypes import Observation, Trajectory
+from .datatypes import Array, Observation, Trajectory
 
 T = TypeVar("T")
 
@@ -22,3 +22,5 @@ def gather_trajectories(
     trajectories: List[Trajectory], gather_dim: int = ...
 ) -> Observation: ...
 def unstack_observations(observation: Observation) -> Trajectory: ...
+def chunk(array: Array, num_steps: int) -> Array: ...
+def d4rl_to_observation(dataset: Dict[str, Array], num_steps: int) -> Observation: ...

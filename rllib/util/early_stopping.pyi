@@ -12,7 +12,10 @@ class EarlyStopping(object):
     total_count: int
     min_total_count: int
     def __init__(
-        self, epsilon: float = ..., non_decrease_iter: int = ..., relative: bool = ...,
+        self,
+        epsilon: float = ...,
+        non_decrease_iter: int = ...,
+        relative: bool = ...,
         min_total_count: int = ...,
     ) -> None: ...
     @property

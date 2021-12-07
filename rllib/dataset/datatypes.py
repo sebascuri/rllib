@@ -7,6 +7,7 @@ import torch
 from torch import Tensor
 
 Array = Union[np.ndarray, torch.Tensor]
+Index = Union[np.ndarray, torch.Tensor, int]
 State = Union[int, float, Array]
 Action = Union[int, float, Array]
 Reward = Union[int, float, Array]
