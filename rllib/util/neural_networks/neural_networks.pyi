@@ -28,6 +28,8 @@ class FeedForwardNN(nn.Module):
         squashed_output: bool = ...,
         initial_scale: float = ...,
         log_scale: bool = ...,
+        min_scale: float = ...,
+        max_scale: float = ...,
     ) -> None: ...
     @classmethod
     def from_other(cls: Type[T], other: T, copy: bool = ...) -> T: ...

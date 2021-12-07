@@ -37,6 +37,8 @@ class FeedForwardNN(nn.Module):
         squashed_output=False,
         initial_scale=0.5,
         log_scale=False,
+        min_scale=1e-6,
+        max_scale=1,
     ):
         super().__init__()
         self.kwargs = {
@@ -48,6 +50,8 @@ class FeedForwardNN(nn.Module):
             "squashed_output": squashed_output,
             "initial_scale": initial_scale,
             "log_scale": log_scale,
+            "min_scale": min_scale,
+            "max_scale": max_scale,
         }
 
         self.hidden_layers, in_dim = parse_layers(layers, in_dim, non_linearity)
@@ -60,14 +64,14 @@ class FeedForwardNN(nn.Module):
         self.log_scale = log_scale
         if self.log_scale:
             self._init_scale_transformed = torch.log(torch.tensor([initial_scale]))
-            self._min_scale = -4
-            self._max_scale = 15
+            self._min_scale = torch.log(torch.tensor(min_scale)).item()
+            self._max_scale = torch.log(torch.tensor(max_scale)).item()
         else:
             self._init_scale_transformed = inverse_softplus(
                 torch.tensor([initial_scale])
             )
-            self._min_scale = 1e-6
-            self._max_scale = 1
+            self._min_scale = min_scale
+            self._max_scale = max_scale
 
     @classmethod
     def from_other(cls, other, copy=True):
