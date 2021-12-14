@@ -14,6 +14,11 @@ def _cast_to_iter_class(generator, class_):
         return class_(*generator)
 
 
+def map_observation(func, observation):
+    """Map observations through the function func."""
+    return Observation(*map(lambda x: func(x), observation))
+
+
 def map_and_cast(fun, iter_):
     """Map a function on a iterable and recast the resulting generator.
 
@@ -148,8 +153,7 @@ def unstack_observations(observation):
             except IndexError:
                 return tensor
 
-        observations.append(Observation(*map(lambda x: _extract_index(x), observation)))
-
+        observations.append(map_observation(_extract_index, observation))
     return observations
 
 
@@ -175,15 +179,13 @@ def chunk(array, num_steps):
     return array.reshape(batch_size, num_steps, *array.shape[1:])
 
 
-def d4rl_to_observation(dataset, num_steps):
+def d4rl_to_observation(dataset):
     """Transform a d4rl dataset into an observation dataset.
 
     Parameters
     ----------
     dataset: Dict.
         Dict with dataset.
-    num_steps: int.
-        Number of steps to chunk the batch.
 
     Returns
     -------
@@ -191,11 +193,96 @@ def d4rl_to_observation(dataset, num_steps):
         Dataset in observation format..
     """
     dataset = Observation(
-        state=chunk(dataset["observations"], num_steps),
-        action=chunk(dataset["actions"], num_steps),
-        reward=chunk(dataset["rewards"], num_steps),
-        next_state=chunk(dataset["next_observations"], num_steps),
-        done=chunk(dataset["terminals"], num_steps),
-        log_prob_action=chunk(dataset["infos/action_log_probs"], num_steps),
+        state=dataset["observations"],
+        action=dataset["actions"],
+        reward=dataset["rewards"],
+        next_state=dataset["next_observations"],
+        done=dataset["terminals"],
+        log_prob_action=dataset["infos/action_log_probs"],
     ).to_torch()
     return dataset
+
+
+def split_observations_by_done(observation):
+    """Split an observation into a list of observations."""
+    end_indexes = torch.where(observation.done)[0]
+    start_indexes = torch.cat((torch.tensor([0]), end_indexes + 1))[:-1]
+    observations = []
+
+    def _extract_index(tensor, start_index_, end_index_):
+        try:
+            return tensor[start_index_ : end_index_ + 1]
+        except IndexError:
+            return tensor
+
+    for start_index, end_index in zip(start_indexes, end_indexes):
+        observations.append(
+            map_observation(
+                lambda x: _extract_index(x, start_index, end_index), observation
+            )
+        )
+
+    return observations
+
+
+def drop_last(observation, k):
+    """Drop last k indexes from observation."""
+    #
+
+    def _extract_index(tensor):
+        try:
+            return tensor[:-k]
+        except IndexError:
+            return tensor
+
+    return map_observation(_extract_index, observation)
+
+
+def _observation_to_num_steps(observation, num_steps):
+    """Get an observation and chunk it into batches of num_steps."""
+    num_transitions = observation.state.shape[0]
+    drop_k = num_transitions % num_steps
+    if drop_k > 0:
+        # drop last k transitions.
+        observation = drop_last(observation, drop_k)
+
+    def _safe_chunk(tensor):
+        try:
+            return chunk(tensor, num_steps)
+        except IndexError:
+            return tensor
+
+    return map_observation(_safe_chunk, observation)
+
+
+def observation_to_num_steps(observation, num_steps):
+    """Convert an observation to num_steps."""
+    # split into trajectories
+    trajectory = split_observations_by_done(observation)
+
+    # convert each trajectory to num step chunks
+    chunked_trajectories = trajectory_to_num_steps(trajectory, num_steps)
+
+    # gather back trajectories into an observation.
+    return merge_observations(chunked_trajectories)
+
+
+def trajectory_to_num_steps(trajectory, num_steps):
+    """Trajectory to num_steps."""
+    chunked_observations = []
+    for observation in trajectory:
+        chunked_observations.append(_observation_to_num_steps(observation, num_steps))
+    return chunked_observations
+
+
+def merge_observations(trajectory, dim=0):
+    """Concatenate observations and return a new observation."""
+    observation = trajectory[0]
+    for new_observation in trajectory[1:]:
+        observation = Observation(
+            *[
+                torch.cat((a, b), dim=dim) if a.dim() > 0 else a
+                for a, b in zip(observation, new_observation)
+            ]
+        )
+    return observation
