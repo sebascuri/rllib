@@ -8,6 +8,7 @@ from torch.distributions import Poisson
 from torch.utils.data.dataset import Dataset
 
 from .datatypes import Observation
+from .utilities import flatten_observation
 
 
 class OfflineDataset(Dataset):
@@ -68,6 +69,7 @@ class OfflineDataset(Dataset):
     def init_transformations(self):
         """Initialize transformations."""
         observation = self.dataset.clone()
+        observation = flatten_observation(observation)
         for transformation in self.transformations:
             transformation.update(observation)
             observation = transformation(observation.clone())

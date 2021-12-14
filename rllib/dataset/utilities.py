@@ -286,3 +286,16 @@ def merge_observations(trajectory, dim=0):
             ]
         )
     return observation
+
+
+def flatten_observation(observation):
+    """Flatten an observation by reshaping the time coordinates."""
+    #
+
+    def _flatten(tensor):
+        try:
+            return tensor.reshape(-1, tensor.shape[-1])
+        except IndexError:
+            return tensor
+
+    return map_observation(func=_flatten, observation=observation)
