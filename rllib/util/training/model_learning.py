@@ -15,17 +15,19 @@ from rllib.util.utilities import tensor_to_distribution
 from .utilities import calibration_score, model_loss, model_mse, sharpness
 
 
-def train_nn_step(model, observation, optimizer, weight=1.0):
+def train_nn_step(model, observation, optimizer, weight=1.0, dynamical_model=None):
     """Train a Neural Network Model."""
     optimizer.zero_grad()
-    loss = (weight * model_loss(model, observation)).mean()
+    loss = (
+        weight * model_loss(model, observation, dynamical_model=dynamical_model)
+    ).mean()
     loss.backward()
     optimizer.step()
 
     return loss
 
 
-def train_ensemble_step(model, observation, optimizer, mask):
+def train_ensemble_step(model, observation, optimizer, mask, dynamical_model=None):
     """Train a model ensemble."""
     ensemble_loss = 0
 
@@ -34,7 +36,13 @@ def train_ensemble_step(model, observation, optimizer, mask):
     with PredictionStrategy(model, prediction_strategy="set_head"):
         for i in model_list:
             model.set_head(i)
-            loss = train_nn_step(model, observation, optimizer, weight=mask[:, i])
+            loss = train_nn_step(
+                model,
+                observation,
+                optimizer,
+                weight=mask[:, i],
+                dynamical_model=dynamical_model,
+            )
             ensemble_loss += loss / model.num_heads
 
     return ensemble_loss
@@ -55,14 +63,20 @@ def train_exact_gp_type2mll_step(model, observation, optimizer):
     return loss
 
 
-def _train_model_step(model, observation, optimizer, mask, logger):
+def _train_model_step(
+    model, observation, optimizer, mask, logger, dynamical_model=None
+):
     if not isinstance(observation, Observation):
         observation = Observation(**observation)
     observation.action = observation.action[..., : model.dim_action[0]]
     if isinstance(model, EnsembleModel):
-        loss = train_ensemble_step(model, observation, optimizer, mask)
+        loss = train_ensemble_step(
+            model, observation, optimizer, mask, dynamical_model=dynamical_model
+        )
     elif isinstance(model, NNModel):
-        loss = train_nn_step(model, observation, optimizer)
+        loss = train_nn_step(
+            model, observation, optimizer, dynamical_model=dynamical_model
+        )
     elif isinstance(model, ExactGPModel):
         loss = train_exact_gp_type2mll_step(model, observation, optimizer)
     else:
@@ -70,14 +84,16 @@ def _train_model_step(model, observation, optimizer, mask, logger):
     logger.update(**{f"{model.model_kind[:3]}-loss": loss.item()})
 
 
-def _validate_model_step(model, observation, logger):
+def _validate_model_step(model, observation, logger, dynamical_model=None):
     if not isinstance(observation, Observation):
         observation = Observation(**observation)
     observation.action = observation.action[..., : model.dim_action[0]]
 
-    mse = model_mse(model, observation).item()
-    sharpness_ = sharpness(model, observation).item()
-    calibration_score_ = calibration_score(model, observation).item()
+    mse = model_mse(model, observation, dynamical_model=dynamical_model).item()
+    sharpness_ = sharpness(model, observation, dynamical_model=dynamical_model).item()
+    calibration_score_ = calibration_score(
+        model, observation, dynamical_model=dynamical_model
+    ).item()
 
     logger.update(
         **{
@@ -101,6 +117,7 @@ def train_model(
     non_decrease_iter=float("inf"),
     logger=None,
     validation_set=None,
+    dynamical_model=None,
 ):
     """Train a Predictive Model.
 
@@ -130,6 +147,8 @@ def train_model(
         Progress logger.
     validation_set: ExperienceReplay, optional.
         Dataset to validate with.
+    dynamical_model: AbstractModel, optional.
+        Model to propagate predictions with.
     """
     if logger is None:
         logger = Logger(f"{model.name}_training", tensorboard=True)
@@ -147,11 +166,15 @@ def train_model(
 
     for num_iter in tqdm(range(max_iter)):
         observation, idx, mask = train_set.sample_batch(batch_size)
-        _train_model_step(model, observation, optimizer, mask, logger)
+        _train_model_step(
+            model, observation, optimizer, mask, logger, dynamical_model=dynamical_model
+        )
 
         observation, idx, mask = validation_set.sample_batch(batch_size)
         with torch.no_grad():
-            mse = _validate_model_step(model, observation, logger)
+            mse = _validate_model_step(
+                model, observation, logger, dynamical_model=dynamical_model
+            )
         early_stopping.update(mse)
 
         if (
@@ -260,7 +283,7 @@ def calibrate_model(
     )
 
 
-def evaluate_model(model, observation, logger=None):
+def evaluate_model(model, observation, logger=None, dynamical_model=None):
     """Train a Predictive Model.
 
     Parameters
@@ -271,6 +294,8 @@ def evaluate_model(model, observation, logger=None):
         Observation to evaluate..
     logger: Logger, optional.
         Progress logger.
+    dynamical_model: AbstractModel, optional.
+        Model to propagate predictions with.
     """
     if logger is None:
         logger = Logger(f"{model.name}_evaluation")
@@ -278,10 +303,18 @@ def evaluate_model(model, observation, logger=None):
     model.eval()
 
     with torch.no_grad():
-        loss = model_loss(model, observation).mean().item()
-        mse = model_mse(model, observation).item()
-        sharpness_ = sharpness(model, observation).item()
-        calibration_score_ = calibration_score(model, observation).item()
+        loss = (
+            model_loss(model, observation, dynamical_model=dynamical_model)
+            .mean()
+            .item()
+        )
+        mse = model_mse(model, observation, dynamical_model=dynamical_model).item()
+        sharpness_ = sharpness(
+            model, observation, dynamical_model=dynamical_model
+        ).item()
+        calibration_score_ = calibration_score(
+            model, observation, dynamical_model=dynamical_model
+        ).item()
 
         logger.update(
             **{

@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.distributions import Categorical
 
 from rllib.util.neural_networks.utilities import one_hot_encode
+from rllib.util.utilities import tensor_to_distribution
 
 
 def get_target(model, observation):
@@ -18,6 +19,21 @@ def get_target(model, observation):
     else:
         raise NotImplementedError
     return target
+
+
+def get_prediction(model, observation, dynamical_model=None):
+    """Get prediction from a model."""
+    state, action = observation.state, observation.action
+    if dynamical_model is None or state.shape[1] == 1:
+        prediction = model(state, action)
+    else:
+        prediction = rollout_predictions(
+            dynamical_model=dynamical_model,
+            model=model,
+            initial_state=state[..., 0, :],
+            action_sequence=action.transpose(0, 1),
+        )
+    return prediction
 
 
 def gaussian_cdf(x, mean, chol_std):
@@ -40,7 +56,7 @@ def calibration_count(target, mean, chol_std, buckets):
     return count
 
 
-def calibration_score(model, observation, bins=10):
+def calibration_score(model, observation, bins=10, dynamical_model=None):
     """Get calibration score of a model.
 
     References
@@ -55,9 +71,8 @@ def calibration_score(model, observation, bins=10):
     Accurate uncertainties for deep learning using calibrated regression. ICML.
     Equation (9).
     """
-    state, action = observation.state, observation.action
     target = get_target(model, observation)
-    prediction = model(state, action)
+    prediction = get_prediction(model, observation, dynamical_model)
     if len(prediction) == 1:
         logits = prediction[0]
         probabilities = Categorical(logits=logits).probs
@@ -71,7 +86,7 @@ def calibration_score(model, observation, bins=10):
     return calibration_error
 
 
-def sharpness(model, observation):
+def sharpness(model, observation, dynamical_model=None):
     """Get prediction sharpness score.
 
     References
@@ -80,28 +95,23 @@ def sharpness(model, observation):
     Accurate uncertainties for deep learning using calibrated regression. ICML.
     Equation (10).
     """
-    mean, chol_std = model(observation.state, observation.action)
+    mean, chol_std = get_prediction(model, observation, dynamical_model)
     scale = torch.diagonal(chol_std, dim1=-1, dim2=-2)
     return scale.square().mean()
 
 
-def model_mse(model, observation):
+def model_mse(model, observation, dynamical_model=None):
     """Get model MSE."""
-    state, action = observation.state, observation.action
     target = get_target(model, observation)
-
-    mean = model(state, action)[0]
-    y = target
-
-    return ((mean - y) ** 2).mean(-1).mean()
+    mean = get_prediction(model, observation, dynamical_model)[0]
+    return ((mean - target) ** 2).mean(-1).mean()
 
 
-def model_loss(model, observation):
+def model_loss(model, observation, dynamical_model=None):
     """Get model loss."""
-    state, action = observation.state, observation.action
     target = get_target(model, observation)
+    prediction = get_prediction(model, observation, dynamical_model)
 
-    prediction = model(state, action)
     if len(prediction) == 1:  # Cross entropy loss.
         return nn.CrossEntropyLoss(reduction="none")(prediction[0], target)
 
@@ -117,7 +127,34 @@ def model_loss(model, observation):
         # log det \Sigma = 2 trace log (scale_tril)
         idx = torch.arange(mean.shape[-1])
         loss += 2 * torch.log(scale_tril[..., idx, idx]).mean(dim=-1).squeeze()
+
+    loss = loss.sum(dim=-1)  # add up time coordinates.
     return loss
+
+
+def rollout_predictions(dynamical_model, model, initial_state, action_sequence):
+    """Rollout a sequence of predictions using a dynamical model."""
+    state = initial_state
+    predictions = []
+
+    for action in action_sequence:
+        predictions.append(model(state, action))
+
+        next_state_distribution = tensor_to_distribution(dynamical_model(state, action))
+        if next_state_distribution.has_rsample:
+            next_state = next_state_distribution.rsample()
+        else:
+            next_state = next_state_distribution.sample()
+
+        state = next_state
+
+    if len(predictions[0]) == 1:
+        return (torch.stack([k[0] for k in predictions], dim=1),)
+    else:
+        return (
+            torch.stack([k[0] for k in predictions], dim=1),
+            torch.stack([k[1] for k in predictions], dim=1),
+        )
 
 
 class Evaluate(object):

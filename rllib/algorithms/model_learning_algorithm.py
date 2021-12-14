@@ -126,7 +126,9 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             else:
                 self.train_set.append(observation)
 
-    def _learn(self, model, logger, calibrate=False, max_iter=None):
+    def _learn(
+        self, model, logger, calibrate=False, max_iter=None, dynamical_model=None
+    ):
         """Learn a model."""
         print(colorize(f"Training {model.model_kind} model", "yellow"))
         num_epochs = self.num_epochs if max_iter is None else None
@@ -141,6 +143,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             logger=logger,
             epsilon=self.epsilon,
             non_decrease_iter=self.non_decrease_iter,
+            dynamical_model=dynamical_model,
         )
         if (
             calibrate
@@ -156,10 +159,16 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             logger,
             calibrate=self.calibrate,
             max_iter=max_iter,
+            dynamical_model=self.dynamical_model.base_model,
         )
         if len(self.validation_set) > self.batch_size:
             validation_data = self.validation_set.all_raw
-            evaluate_model(self.dynamical_model, validation_data, logger)
+            evaluate_model(
+                self.dynamical_model,
+                validation_data,
+                logger,
+                dynamical_model=self.dynamical_model,
+            )
 
         if any(p.requires_grad for p in self.reward_model.parameters()):
             self._learn(
@@ -167,18 +176,33 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
                 logger,
                 calibrate=self.calibrate,
                 max_iter=max_iter,
+                dynamical_model=self.dynamical_model.base_model,
             )
             if len(self.validation_set) > self.batch_size:
-                evaluate_model(self.reward_model, validation_data, logger)
+                evaluate_model(
+                    self.reward_model,
+                    validation_data,
+                    logger,
+                    dynamical_model=self.dynamical_model,
+                )
 
         if self.termination_model is not None and any(
             p.requires_grad for p in self.termination_model.parameters()
         ):
             self._learn(
-                self.termination_model, logger, calibrate=False, max_iter=max_iter
+                self.termination_model,
+                logger,
+                calibrate=False,
+                max_iter=max_iter,
+                dynamical_model=self.dynamical_model.base_model,
             )
             if len(self.validation_set) > self.batch_size:
-                evaluate_model(self.termination_model, validation_data, logger)
+                evaluate_model(
+                    self.termination_model,
+                    validation_data,
+                    logger,
+                    dynamical_model=self.dynamical_model,
+                )
 
         if isinstance(self.dynamical_model.base_model, ExactGPModel):
             for i, gp in enumerate(self.dynamical_model.base_model.gp):
