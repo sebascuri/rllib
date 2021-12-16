@@ -1,8 +1,11 @@
 
-from .abstract_model import AbstractModel
 from typing import Any
+
 from torch import Tensor
+
 from rllib.dataset.datatypes import TupleDistribution
+
+from .abstract_model import AbstractModel
 
 class EmptyModel(AbstractModel):
     """Empty model."""

@@ -4,13 +4,14 @@ import torch
 from torch import Tensor
 
 from rllib.dataset.datatypes import Action, TupleDistribution
+from rllib.util.input_transformations import AbstractTransform
 
 from .abstract_policy import AbstractPolicy
 
 T = TypeVar("T", bound="NNPolicy")
 
 class NNPolicy(AbstractPolicy):
-    input_transform: torch.nn.Module
+    input_transform: Optional[AbstractTransform]
     nn: torch.nn.Module
     def __init__(
         self,
@@ -19,7 +20,7 @@ class NNPolicy(AbstractPolicy):
         non_linearity: str = ...,
         squashed_output: bool = ...,
         initial_scale: float = ...,
-        input_transform: Optional[torch.nn.Module] = ...,
+        input_transform: Optional[AbstractTransform] = ...,
         jit_compile: bool = ...,
         *args: Any,
         **kwargs: Any,
@@ -38,7 +39,7 @@ class NNPolicy(AbstractPolicy):
         deterministic: bool = ...,
         action_scale: Action = ...,
         goal: Optional[Tensor] = ...,
-        input_transform: Optional[torch.nn.Module] = ...,
+        input_transform: Optional[AbstractTransform] = ...,
     ) -> T: ...
     def _preprocess_input_dim(self) -> Tuple: ...
     def _preprocess_state(self, state: Tensor) -> Tensor: ...

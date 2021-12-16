@@ -3,6 +3,7 @@ from typing import Callable, Dict, List, Optional, Type, TypeVar
 
 import numpy as np
 from torch import Tensor
+
 from .datatypes import Array, Observation, Trajectory
 
 T = TypeVar("T")

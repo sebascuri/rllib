@@ -43,9 +43,9 @@ class NNValueFunction(AbstractValueFunction):
             num_inputs = self.dim_state
 
         self.input_transform = input_transform
-        if hasattr(input_transform, "extra_dim"):
+        if self.input_transform is not None:
             assert len(num_inputs) == 1, "Only implemented N x 1 inputs."
-            num_inputs = (num_inputs[0] + getattr(input_transform, "extra_dim"),)
+            num_inputs = (num_inputs[0] + self.input_transform.extra_dim,)
 
         self.nn = DeterministicNN(
             num_inputs,
@@ -159,9 +159,9 @@ class NNQFunction(AbstractQFunction):
             raise NotImplementedError("If states are discrete, so should be actions.")
 
         self.input_transform = input_transform
-        if hasattr(input_transform, "extra_dim"):
+        if self.input_transform is not None:
             assert len(num_inputs) == 1, "Only implemented N x 1 inputs."
-            num_inputs = (num_inputs[0] + getattr(input_transform, "extra_dim"),)
+            num_inputs = (num_inputs[0] + self.input_transform.extra_dim,)
 
         self.nn = DeterministicNN(
             num_inputs,

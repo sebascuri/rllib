@@ -125,8 +125,8 @@ class NNPolicy(AbstractPolicy):
         else:
             in_dim = self.dim_state
 
-        if hasattr(self.input_transform, "extra_dim"):
-            in_dim = (in_dim[0] + getattr(self.input_transform, "extra_dim"),)
+        if self.input_transform is not None:
+            in_dim = (in_dim[0] + self.input_transform.extra_dim,)
 
         if self.goal is not None:
             in_dim = (in_dim[0] + self.goal.shape[-1],)
