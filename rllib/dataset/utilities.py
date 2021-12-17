@@ -238,8 +238,31 @@ def drop_last(observation, k):
     return map_observation(_extract_index, observation)
 
 
-def _observation_to_num_steps(observation, num_steps):
+def _observation_to_num_steps_with_repeat(observation, num_steps):
+    """Do something."""
+    #
+
+    def _safe_repeat(tensor):
+        try:
+            shape = torch.tensor(tensor.shape)
+            shape[0] = (shape[0] - num_steps) + 1
+            shape[1] = num_steps
+            out = torch.zeros(*shape)
+            for i in range(num_steps):
+                first_idx = i
+                last_idx = first_idx + shape[0]
+                out[:, i, :] = tensor[first_idx:last_idx, 0, :]
+            return out
+        except IndexError:
+            return tensor
+
+    return map_observation(_safe_repeat, observation)
+
+
+def _observation_to_num_steps(observation, num_steps, repeat=False):
     """Get an observation and chunk it into batches of num_steps."""
+    if repeat:
+        return _observation_to_num_steps_with_repeat(observation, num_steps)
     num_transitions = observation.state.shape[0]
     drop_k = num_transitions % num_steps
     if drop_k > 0:
@@ -255,23 +278,25 @@ def _observation_to_num_steps(observation, num_steps):
     return map_observation(_safe_chunk, observation)
 
 
-def observation_to_num_steps(observation, num_steps):
+def observation_to_num_steps(observation, num_steps, repeat=False):
     """Convert an observation to num_steps."""
     # split into trajectories
     trajectory = split_observations_by_done(observation)
 
     # convert each trajectory to num step chunks
-    chunked_trajectories = trajectory_to_num_steps(trajectory, num_steps)
+    chunked_trajectories = trajectory_to_num_steps(trajectory, num_steps, repeat=repeat)
 
     # gather back trajectories into an observation.
     return merge_observations(chunked_trajectories)
 
 
-def trajectory_to_num_steps(trajectory, num_steps):
+def trajectory_to_num_steps(trajectory, num_steps, repeat=False):
     """Trajectory to num_steps."""
     chunked_observations = []
     for observation in trajectory:
-        chunked_observations.append(_observation_to_num_steps(observation, num_steps))
+        chunked_observations.append(
+            _observation_to_num_steps(observation, num_steps, repeat=repeat)
+        )
     return chunked_observations
 
 
