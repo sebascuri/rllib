@@ -26,4 +26,4 @@ class ZeroPolicy(AbstractPolicy):
         if batch_size:
             return torch.zeros((batch_size,) + self.dim_action)
         else:
-            return self.zeros(self.dim_action)
+            return torch.zeros(self.dim_action)

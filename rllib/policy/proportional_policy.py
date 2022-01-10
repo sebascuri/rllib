@@ -40,9 +40,10 @@ class ProportionalPolicy(NNPolicy):
             raise NotImplementedError("Actions can't be discrete.")
 
     @classmethod
-    def default(cls, environment, *args, **kwargs):
+    def default(cls, environment, gain=None, *args, **kwargs):
         """See Abstract Policy default initialization method."""
-        gain = -torch.eye(environment.dim_action[0], environment.dim_state[0])
+        if gain is None:
+            gain = -torch.eye(environment.dim_action[0], environment.dim_state[0])
         return super().default(environment, gain=gain, *args, **kwargs)
 
 
