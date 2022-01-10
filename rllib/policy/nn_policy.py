@@ -8,7 +8,7 @@ from rllib.util.neural_networks.neural_networks import (
     FelixNet,
     HeteroGaussianNN,
 )
-from rllib.util.neural_networks.utilities import one_hot_encode
+from rllib.util.neural_networks.utilities import one_hot_encode, to_torch
 
 from .abstract_policy import AbstractPolicy
 
@@ -136,6 +136,7 @@ class NNPolicy(AbstractPolicy):
     @torch.jit.export
     def _preprocess_state(self, state):
         """Pre-process state before input to neural network."""
+        state = to_torch(state)
         if self.input_transform is not None:  # Apply input transform.
             state = self.input_transform(state)
 
