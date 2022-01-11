@@ -7,6 +7,7 @@ from rllib.agent import AbstractAgent
 from rllib.policy import AbstractPolicy
 from rllib.util.gaussian_processes import ExactGP, SparseGP
 from rllib.util.gaussian_processes.utilities import add_data_to_gp, bkb
+from rllib.util.neural_networks.utilities import to_torch
 from rllib.util.parameter_decay import Constant, ParameterDecay
 
 
@@ -128,7 +129,7 @@ class GPUCBAgent(AbstractAgent):
         likelihood.noise_covar.noise = 0.1 ** 2
         x0 = x[x > 0.2][[0]].unsqueeze(-1)
         _, y0, _, _ = environment.step(x0.numpy())
-        y0 = torch.tensor(y0, dtype=torch.get_default_dtype())
+        y0 = to_torch(y0)
 
         model = ExactGP(x0, y0, likelihood)
         return cls(model, x, beta=2.0, noisy=False, *args, **kwargs)

@@ -9,7 +9,7 @@ import torch.nn as nn
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.multi_objective_reduction import MeanMultiObjectiveReduction
 from rllib.util.multiprocessing import run_parallel_returns
-from rllib.util.neural_networks.utilities import repeat_along_dimension
+from rllib.util.neural_networks.utilities import repeat_along_dimension, to_torch
 from rllib.util.rollout import rollout_actions
 from rllib.util.value_estimation import discount_sum
 
@@ -93,7 +93,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             self.horizon, 1, 1
         )
         if isinstance(action_scale, np.ndarray):
-            action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
+            action_scale = to_torch(action_scale)
         elif not isinstance(action_scale, torch.Tensor):
             action_scale = torch.full((self.dim_action,), action_scale)
         if len(action_scale) < self.dim_action:

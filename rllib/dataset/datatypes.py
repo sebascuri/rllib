@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from rllib.util.neural_networks.utilities import to_torch
+
 Array = Union[np.ndarray, torch.Tensor]
 Index = Union[np.ndarray, torch.Tensor, int]
 State = Union[int, float, Array]
@@ -210,14 +212,7 @@ class Observation:
 
     def to_torch(self):
         """Transform to torch."""
-        return Observation(
-            *map(
-                lambda x: x
-                if isinstance(x, torch.Tensor)
-                else torch.tensor(x, dtype=torch.get_default_dtype()),
-                self,
-            )
-        )
+        return Observation(*map(lambda x: to_torch(x), self))
 
 
 @dataclass

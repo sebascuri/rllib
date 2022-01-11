@@ -5,7 +5,7 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
-from rllib.util.neural_networks.utilities import broadcast_to_tensor
+from rllib.util.neural_networks.utilities import broadcast_to_tensor, to_torch
 from rllib.util.training.utilities import Evaluate
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
@@ -17,8 +17,7 @@ def step_env(environment, state, action, action_scale, pi=None, render=False):
     except TypeError:
         next_state, reward, done, info = environment.step(action.item())
 
-    if not isinstance(action, torch.Tensor):
-        action = torch.tensor(action, dtype=torch.get_default_dtype())
+    action = to_torch(action)
 
     if pi is not None:
         try:
@@ -253,8 +252,7 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
             time_step = 0
             while not done:
                 pi = tensor_to_distribution(
-                    policy(torch.tensor(state, dtype=torch.get_default_dtype())),
-                    **policy.dist_params,
+                    policy(to_torch(state)), **policy.dist_params
                 )
                 action = pi.sample()
                 if not policy.discrete_action:

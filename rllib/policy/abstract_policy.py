@@ -7,6 +7,8 @@ import torch
 import torch.jit
 import torch.nn as nn
 
+from rllib.util.neural_networks.utilities import to_torch
+
 
 class AbstractPolicy(nn.Module, metaclass=ABCMeta):
     """Interface for policies to control an environment.
@@ -70,7 +72,7 @@ class AbstractPolicy(nn.Module, metaclass=ABCMeta):
         if self.discrete_action:
             action_scale = torch.tensor(1.0)
         elif isinstance(action_scale, np.ndarray):
-            action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
+            action_scale = to_torch(action_scale)
         elif not isinstance(action_scale, torch.Tensor):
             action_scale = torch.full(
                 self.dim_action, action_scale, dtype=torch.get_default_dtype()

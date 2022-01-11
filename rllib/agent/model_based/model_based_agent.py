@@ -22,7 +22,7 @@ from rllib.dataset.experience_replay import (
 from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.policy.random_policy import RandomPolicy
-from rllib.util.neural_networks.utilities import DisableGradient
+from rllib.util.neural_networks.utilities import DisableGradient, to_torch
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -135,8 +135,7 @@ class ModelBasedAgent(AbstractAgent):
         If the plan horizon > 0, then is plans with the current model.
         """
         if isinstance(self.planning_algorithm, PolicyShooting):
-            if not isinstance(state, torch.Tensor):
-                state = torch.tensor(state, dtype=torch.get_default_dtype())
+            state = to_torch(state)
             policy = tensor_to_distribution(
                 self.policy(state), **self.policy.dist_params
             )
