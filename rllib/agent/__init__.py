@@ -14,6 +14,7 @@ from .off_policy import (
     DDQNAgent,
     DPGAgent,
     DQNAgent,
+    FittedValueEvaluationAgent,
     ISERAgent,
     MPOAgent,
     QLearningAgent,

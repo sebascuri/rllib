@@ -2,6 +2,7 @@
 from .ddqn_learning_agent import DDQNAgent
 from .dpg_agent import DPGAgent
 from .dqn_learning_agent import DQNAgent
+from .fve_agent import FittedValueEvaluationAgent
 from .is_policy_er_agent import ISERAgent
 from .mpo_agent import MPOAgent
 from .q_learning_agent import QLearningAgent
