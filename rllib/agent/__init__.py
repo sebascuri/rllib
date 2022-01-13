@@ -3,6 +3,7 @@ from .bandit import GPUCBAgent
 from .model_based import (
     BPTTAgent,
     DataAugmentationAgent,
+    DerivedMBAgent,
     DynaAgent,
     ModelBasedAgent,
     MPCAgent,
@@ -46,6 +47,7 @@ MODEL_FREE = [
     "DQN",
     "ExpectedActorCritic",
     "ExpectedSARSA",
+    "FittedValueEvaluation",
     "GAAC",
     "GPUCB",
     "MPO",
