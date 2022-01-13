@@ -1,6 +1,7 @@
 """Fitted value evaluation agent."""
 
 import torch.nn.modules.loss as loss
+from torch.optim import Adam
 
 from rllib.algorithms.fitted_value_evaluation import FittedValueEvaluationAlgorithm
 from rllib.value_function import NNQFunction
@@ -31,10 +32,16 @@ class FittedValueEvaluationAgent(OffPolicyAgent):
         self.policy = self.algorithm.policy
 
     @classmethod
-    def default(cls, environment, policy, critic=None, *args, **kwargs):
+    def default(cls, environment, policy, critic=None, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
         if critic is None:
             critic = NNQFunction.default(environment)
+        optimizer = Adam(critic.parameters(), lr=lr)
         return super().default(
-            environment, policy=policy, critic=critic, *args, **kwargs
+            environment,
+            policy=policy,
+            critic=critic,
+            optimizer=optimizer,
+            *args,
+            **kwargs,
         )
