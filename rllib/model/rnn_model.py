@@ -1,19 +1,21 @@
 """Dynamics implemented by a Recurrent Neural Network."""
 import torch
+import torch.jit
 import torch.nn
+
+from rllib.dataset.datatypes import Observation
+from rllib.util.utilities import safe_cholesky
+
+from .ensemble_model import EnsembleModel
 from .nn_model import NNModel
 from .transformed_model import TransformedModel
-from .ensemble_model import EnsembleModel
-from rllib.dataset.datatypes import Observation
-import torch.jit
-from rllib.util.utilities import safe_cholesky
 
 
 class RNNModel(NNModel):
     """Abstract RNN dynamics model, used as a basis for GRU and LSTM units.
 
     Parameters
-    __________
+    ----------
     dim_hidden_state: tuple
         dimension of the hidden state
     num_layers: int
@@ -26,22 +28,31 @@ class RNNModel(NNModel):
         Module with which to transform inputs.
     """
 
-    def __init__(self, dim_hidden_state,
-                 num_layers=1,
-                 layers=(),
-                 biased_head=True,
-                 non_linearity="Swish",
-                 initial_scale=0.5,
-                 input_transform=None,
-                 jit_compile=False,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        dim_hidden_state,
+        num_layers=1,
+        layers=(),
+        biased_head=True,
+        non_linearity="Swish",
+        initial_scale=0.5,
+        input_transform=None,
+        jit_compile=False,
+        *args,
+        **kwargs,
+    ):
         self.dim_hidden_state = dim_hidden_state
         self.num_layers = num_layers
-        super().__init__(layers, biased_head,
-                         non_linearity, initial_scale,
-                         input_transform, jit_compile,
-                         *args, **kwargs)
+        super().__init__(
+            layers,
+            biased_head,
+            non_linearity,
+            initial_scale,
+            input_transform,
+            jit_compile,
+            *args,
+            **kwargs,
+        )
 
     @classmethod
     def default(cls, dim_hidden_state, environment, *args, **kwargs):
@@ -87,15 +98,15 @@ class RNNModel(NNModel):
 
 class LSTMModel(RNNModel):
     """LSTM dynamics model."""
-    def __init__(self,
-                 dim_hidden_state,
-                 num_layers=1,
-                 *args,
-                 **kwargs):
+
+    def __init__(self, dim_hidden_state, num_layers=1, *args, **kwargs):
 
         super().__init__(dim_hidden_state, num_layers, *args, **kwargs)
-        self.rnn = torch.nn.LSTM(input_size=self.dim_state + self.dim_action, hidden_size=dim_hidden_state,
-                                 num_layers=self.num_layers)
+        self.rnn = torch.nn.LSTM(
+            input_size=self.dim_state + self.dim_action,
+            hidden_size=dim_hidden_state,
+            num_layers=self.num_layers,
+        )
 
     def forward(self, state, action, next_state=None, prev_hidden_state=None):
         """Get Next-State distribution.
@@ -122,7 +133,6 @@ class LSTMModel(RNNModel):
             is received. Required for forward
             propagation of system.
         """
-
         state_action = self.state_actions_to_input_data(state, action)
         state_action = state_action.permute([1, 0, 2])
         if prev_hidden_state is None:
@@ -135,7 +145,9 @@ class LSTMModel(RNNModel):
             hidden_state, final_hidden_state, final_cell_state = self.rnn(rnn_input)
             hidden_state = hidden_state.permute([1, 0, 2])
             mean_std_dim = [nn(hidden_state) for nn in self.nn]
-            final_hidden_state = torch.cat((final_hidden_state, final_cell_state), dim=-1)
+            final_hidden_state = torch.cat(
+                (final_hidden_state, final_cell_state), dim=-1
+            )
             return self.stack_predictions(mean_std_dim), final_hidden_state
 
     @property
@@ -146,20 +158,19 @@ class LSTMModel(RNNModel):
 
 class GRUModel(RNNModel):
     """GRU dynamics model."""
-    def __init__(self,
-                 dim_hidden_state,
-                 num_layers=1,
-                 *args,
-                 **kwargs):
+
+    def __init__(self, dim_hidden_state, num_layers=1, *args, **kwargs):
 
         super().__init__(dim_hidden_state, num_layers, *args, **kwargs)
         rnn_in_dim = self._get_rnn_in_dim()
-        self.rnn = torch.nn.GRU(input_size=rnn_in_dim[0], hidden_size=dim_hidden_state[0],
-                                num_layers=self.num_layers)
+        self.rnn = torch.nn.GRU(
+            input_size=rnn_in_dim[0],
+            hidden_size=dim_hidden_state[0],
+            num_layers=self.num_layers,
+        )
 
     def forward(self, state, action, next_state=None, prev_hidden_state=None):
         """Get Next-State distribution."""
-
         state_action = self.state_actions_to_input_data(state, action)
         if prev_hidden_state is None:
             state_action = state_action.permute([1, 0, 2])
@@ -182,27 +193,31 @@ class GRUModel(RNNModel):
 
 class TransformedRNNModel(TransformedModel):
     """Transformed Model computes the next state distribution."""
+
     def __init__(self, *args, **kwargs):
         super(TransformedRNNModel, self).__init__(*args, **kwargs)
 
     @classmethod
     def default(
-            cls,
-            environment,
-            dim_hidden_state,
-            base_model=None,
-            model_kind="dynamics",
-            transformations=None,
-            deterministic=True,
-            *args,
-            **kwargs,
+        cls,
+        environment,
+        dim_hidden_state,
+        base_model=None,
+        model_kind="dynamics",
+        transformations=None,
+        deterministic=True,
+        *args,
+        **kwargs,
     ):
         """See AbstractModel.default()."""
         if base_model is None:
             if model_kind == "dynamics":
                 base_model = FullEnsembleNN.default(
-                    dim_hidden_state, environment, deterministic=deterministic,
-                    *args, **kwargs
+                    dim_hidden_state,
+                    environment,
+                    deterministic=deterministic,
+                    *args,
+                    **kwargs,
                 )
             else:
                 raise NotImplementedError
@@ -214,7 +229,9 @@ class TransformedRNNModel(TransformedModel):
 
     def forward(self, state, action, next_state=None, prev_hidden_state=None):
         """Predict next state distribution."""
-        return self.predict(state, action[..., : self.dim_action[0]], next_state, prev_hidden_state)
+        return self.predict(
+            state, action[..., : self.dim_action[0]], next_state, prev_hidden_state
+        )
 
     def predict(self, state, action, next_state=None, prev_hidden_state=None):
         """Get next_state distribution."""
@@ -234,15 +251,16 @@ class TransformedRNNModel(TransformedModel):
                 next_state = self.base_model(obs.state, obs.action, obs.next_state)
                 hidden_state = None
             else:
-                mean_next_state, std_next_state, hidden_state = self.base_model(obs.state, obs.action, obs.next_state,
-                                                                                prev_hidden_state)
+                mean_next_state, std_next_state, hidden_state = self.base_model(
+                    obs.state, obs.action, obs.next_state, prev_hidden_state
+                )
                 next_state = mean_next_state, std_next_state
         else:
             raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
 
         # Back-transform
         if obs.state.shape != next_state[0].shape and isinstance(
-                self.base_model, EnsembleModel
+            self.base_model, EnsembleModel
         ):
             state = obs.state.unsqueeze(-2).repeat_interleave(
                 self.base_model.num_heads, -2
@@ -279,25 +297,34 @@ class TransformedRNNModel(TransformedModel):
 
 class FullEnsembleNN(RNNModel):
     """Ensemble of RNNs."""
-    def __init__(self,
-                 dim_hidden_state,
-                 num_heads=5,
-                 num_layers=1,
-                 gru=True,
-                 prediction_strategy="moment_matching",
-                 *args,
-                 **kwargs):
+
+    def __init__(
+        self,
+        dim_hidden_state,
+        num_heads=5,
+        num_layers=1,
+        gru=True,
+        prediction_strategy="moment_matching",
+        *args,
+        **kwargs,
+    ):
 
         super().__init__(dim_hidden_state, num_layers, *args, **kwargs)
         if gru:
-            self.models = torch.nn.ModuleList([
-                GRUModel(dim_hidden_state, num_layers, *args, **kwargs)
-                for i in range(num_heads)])
+            self.models = torch.nn.ModuleList(
+                [
+                    GRUModel(dim_hidden_state, num_layers, *args, **kwargs)
+                    for i in range(num_heads)
+                ]
+            )
 
         else:
-            self.models = torch.nn.ModuleList([
-                LSTMModel(dim_hidden_state, num_layers, *args, **kwargs)
-                for i in range(num_heads)])
+            self.models = torch.nn.ModuleList(
+                [
+                    LSTMModel(dim_hidden_state, num_layers, *args, **kwargs)
+                    for i in range(num_heads)
+                ]
+            )
 
         self.num_heads = num_heads
         self.head_ptr = 0
@@ -306,6 +333,7 @@ class FullEnsembleNN(RNNModel):
 
     @classmethod
     def default(cls, dim_hidden_state, environment, *args, **kwargs):
+        """See AbstractModel.default()."""
         return super().default(dim_hidden_state, environment, *args, **kwargs)
 
     def forward(self, state, action, next_state=None, prev_hidden_state=None):
@@ -322,7 +350,9 @@ class FullEnsembleNN(RNNModel):
                     out_std = torch.cat((out_std, std.unsqueeze(-1)), dim=-1)
                 if self.prediction_strategy == "moment_matching":
                     mean = out_mean.mean(-1)
-                    variance = (out_std.square() + out_mean.square()).mean(-1) - mean.square()
+                    variance = (out_std.square() + out_mean.square()).mean(
+                        -1
+                    ) - mean.square()
                     scale = safe_cholesky(torch.diag_embed(variance))
                 else:
                     mean = out_mean
@@ -330,12 +360,21 @@ class FullEnsembleNN(RNNModel):
             elif self.prediction_strategy == "sample_head":  # TS-1
                 head_ptr = torch.randint(self.num_heads, (1,))
                 mean, scale = self.models[head_ptr].forward(state, action, next_state)
-            elif self.prediction_strategy in ["set_head", "posterior"]:  # Thompson sampling
-                mean, scale = self.models[self.head_ptr].forward(state, action, next_state)
+            elif self.prediction_strategy in [
+                "set_head",
+                "posterior",
+            ]:  # Thompson sampling
+                mean, scale = self.models[self.head_ptr].forward(
+                    state, action, next_state
+                )
             elif self.prediction_strategy == "set_head_idx":  # TS-INF
-                mean, scale = self.models[self.head_idx].forward(state, action, next_state)
+                mean, scale = self.models[self.head_idx].forward(
+                    state, action, next_state
+                )
             elif self.prediction_strategy == "sample_multiple_head":
-                head_idx = torch.randint(self.num_heads, size=self.num_heads).unsqueeze(-1)
+                head_idx = torch.randint(self.num_heads, size=self.num_heads).unsqueeze(
+                    -1
+                )
                 mean, std = self.models[head_idx[0]].forward(state, action, next_state)
                 out_mean = mean.unsqueeze(-1)
                 out_std = torch.diagonal(std, dim1=-2, dim2=-1).unsqueeze(-1)
@@ -352,22 +391,28 @@ class FullEnsembleNN(RNNModel):
 
         else:
             if self.prediction_strategy in ["moment_matching", "multi_head"]:
-                mean, std, hidden_state = self.models[0].forward(state, action, next_state,
-                                                                 prev_hidden_state[:, :, :, 0])
+                mean, std, hidden_state = self.models[0].forward(
+                    state, action, next_state, prev_hidden_state[:, :, :, 0]
+                )
                 out_mean = mean.unsqueeze(-1)
                 out_std = torch.diagonal(std, dim1=-2, dim2=-1).unsqueeze(-1)
                 out_hidden_state = hidden_state.unsqueeze(-1)
                 for i in range(1, self.num_heads):
-                    mean, std, hidden_state = self.models[i].forward(state, action, next_state,
-                                                                     prev_hidden_state[:, :, :, i])
+                    mean, std, hidden_state = self.models[i].forward(
+                        state, action, next_state, prev_hidden_state[:, :, :, i]
+                    )
                     out_mean = torch.cat((out_mean, mean.unsqueeze(-1)), dim=-1)
                     std = torch.diagonal(std, dim1=-2, dim2=-1)
                     out_std = torch.cat((out_std, std.unsqueeze(-1)), dim=-1)
-                    out_hidden_state = torch.cat((out_hidden_state, hidden_state.unsqueeze(-1)), dim=-1)
+                    out_hidden_state = torch.cat(
+                        (out_hidden_state, hidden_state.unsqueeze(-1)), dim=-1
+                    )
                 hidden_state = out_hidden_state
                 if self.prediction_strategy == "moment_matching":
                     mean = out_mean.mean(-1)
-                    variance = (out_std.square() + out_mean.square()).mean(-1) - mean.square()
+                    variance = (out_std.square() + out_mean.square()).mean(
+                        -1
+                    ) - mean.square()
                     scale = safe_cholesky(torch.diag_embed(variance))
                 else:
                     mean = out_mean
@@ -375,27 +420,40 @@ class FullEnsembleNN(RNNModel):
                 # hidden_state = out_hidden_state.mean(-1)
             elif self.prediction_strategy == "sample_head":  # TS-1
                 head_ptr = torch.randint(self.num_heads, (1,))
-                mean, scale, hidden_state = self.models[head_ptr].forward(state, action, next_state, prev_hidden_state)
-            elif self.prediction_strategy in ["set_head", "posterior"]:  # Thompson sampling
-                mean, scale, hidden_state = self.models[self.head_ptr].forward(state, action, next_state,
-                                                                               prev_hidden_state)
+                mean, scale, hidden_state = self.models[head_ptr].forward(
+                    state, action, next_state, prev_hidden_state
+                )
+            elif self.prediction_strategy in [
+                "set_head",
+                "posterior",
+            ]:  # Thompson sampling
+                mean, scale, hidden_state = self.models[self.head_ptr].forward(
+                    state, action, next_state, prev_hidden_state
+                )
             elif self.prediction_strategy == "set_head_idx":  # TS-INF
-                mean, scale, hidden_state = self.models[self.head_idx].forward(state, action, next_state,
-                                                                               prev_hidden_state)
+                mean, scale, hidden_state = self.models[self.head_idx].forward(
+                    state, action, next_state, prev_hidden_state
+                )
             elif self.prediction_strategy == "sample_multiple_head":
-                head_idx = torch.randint(self.num_heads, size=self.num_heads).unsqueeze(-1)
-                mean, std, hidden_state = self.models[head_idx[0]].forward(state, action, next_state,
-                                                                           prev_hidden_state[:, :, :, 0])
+                head_idx = torch.randint(self.num_heads, size=self.num_heads).unsqueeze(
+                    -1
+                )
+                mean, std, hidden_state = self.models[head_idx[0]].forward(
+                    state, action, next_state, prev_hidden_state[:, :, :, 0]
+                )
                 out_mean = mean.unsqueeze(-1)
                 out_std = torch.diagonal(std, dim1=-2, dim2=-1).unsqueeze(-1)
                 out_hidden_state = hidden_state.unsqueeze(-1)
                 for i in head_idx[1:]:
-                    mean, std, hidden_state = self.models[i].forward(state, action, next_state,
-                                                                     prev_hidden_state[:, :, :, i])
+                    mean, std, hidden_state = self.models[i].forward(
+                        state, action, next_state, prev_hidden_state[:, :, :, i]
+                    )
                     out_mean = torch.cat((out_mean, mean.unsqueeze(-1)), dim=-1)
                     std = torch.diagonal(std, dim1=-2, dim2=-1)
                     out_std = torch.cat((out_std, std.unsqueeze(-1)), dim=-1)
-                    out_hidden_state = torch.cat((out_hidden_state, hidden_state.unsqueeze(-1)), dim=-1)
+                    out_hidden_state = torch.cat(
+                        (out_hidden_state, hidden_state.unsqueeze(-1)), dim=-1
+                    )
                 hidden_state = out_hidden_state
                 mean = out_mean
                 scale = out_std
@@ -404,19 +462,8 @@ class FullEnsembleNN(RNNModel):
         return mean, scale, hidden_state
 
     @torch.jit.export
-    def set_head(self, new_head: int):
-        """Set the Ensemble head.
-
-        Parameters
-        ----------
-        new_head: int
-            If new_head == num_heads, then forward returns the average of all heads.
-            If new_head < num_heads, then forward returns the output of `new_head' head.
-
-        Raises
-        ------
-        ValueError: If new_head > num_heads.
-        """
+    def set_head(self, new_head: int) -> None:
+        """Set the Ensemble head."""
         self.head_ptr = new_head
         if not (0 <= self.head_ptr < self.num_heads):
             raise ValueError("head_ptr has to be between zero and num_heads - 1.")
@@ -437,7 +484,7 @@ class FullEnsembleNN(RNNModel):
         return self.head_indexes
 
     @torch.jit.export
-    def set_prediction_strategy(self, prediction: str):
+    def set_prediction_strategy(self, prediction: str) -> None:
         """Set ensemble prediction strategy."""
         self.prediction_strategy = prediction
 
@@ -449,4 +496,6 @@ class FullEnsembleNN(RNNModel):
     @property
     def name(self):
         """Get Model name."""
-        return f"{'Deterministic' if self.deterministic else 'Probabilistic'} RNNEnsemble."
+        return (
+            f"{'Deterministic' if self.deterministic else 'Probabilistic'} RNNEnsemble."
+        )
