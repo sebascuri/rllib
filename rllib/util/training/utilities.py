@@ -6,6 +6,7 @@ from torch.distributions import Categorical
 
 from rllib.util.neural_networks.utilities import one_hot_encode
 from rllib.util.utilities import tensor_to_distribution
+from rllib.model.rnn_model import RNNModel, TransformedRNNModel
 
 
 def get_target(model, observation):
@@ -24,7 +25,8 @@ def get_target(model, observation):
 def get_prediction(model, observation, dynamical_model=None):
     """Get prediction from a model."""
     state, action = observation.state, observation.action
-    if dynamical_model is None or state.shape[1] == 1:
+    is_rnn_model = isinstance(dynamical_model, (RNNModel, TransformedRNNModel))
+    if dynamical_model is None or state.shape[1] == 1 or is_rnn_model:
         prediction = model(state, action)
     else:
         prediction = rollout_predictions(

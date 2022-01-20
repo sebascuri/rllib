@@ -14,3 +14,5 @@ from .gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
 from .linear_model import LinearModel
 from .nn_model import NNModel
 from .transformed_model import TransformedModel
+from .rnn_model import RNNModel, GRUModel, LSTMModel, TransformedRNNModel, \
+    FullEnsembleNN
