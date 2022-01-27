@@ -42,6 +42,15 @@ class Observation:
         """Iterate the properties of the observation."""
         yield from self.__dict__.values()
 
+    @property
+    def shape(self):
+        """Get the shape of the observation."""
+        with torch.no_grad():
+            if np.isnan(np.array(self.reward)):
+                return self.state.shape[:-1]
+            else:
+                return self.reward.shape[:-1]
+
     @staticmethod
     def _is_equal_nan(x, y):
         x, y = np.array(x), np.array(y)
