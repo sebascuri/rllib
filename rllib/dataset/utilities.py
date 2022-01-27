@@ -143,7 +143,9 @@ def gather_trajectories(trajectories, gather_dim=1):
 
 def unstack_observations(observation):
     """Unstack observations in a list."""
-    in_dim = observation.reward.shape
+    in_dim = observation.reward.shape[:-1]
+    # don't consider the last reward dimension.
+    # this changed after making the rewards multi-dimensional.
     observations = []
     for indexes in product(*map(range, in_dim)):
 
