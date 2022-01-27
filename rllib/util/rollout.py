@@ -283,6 +283,7 @@ def rollout_model(
     initial_action=None,
     termination_model=None,
     max_steps=1000,
+    memory=None,
 ):
     """Conduct a rollout of a policy interacting with a model.
 
@@ -302,6 +303,8 @@ def rollout_model(
         Termination condition to finish the rollout.
     max_steps: int.
         Maximum number of steps per episode.
+    memory: ExperienceReplay, optional.
+        Memory where to store the simulated transitions.
 
     Returns
     -------
@@ -349,6 +352,8 @@ def rollout_model(
             pi=pi,
         )
         trajectory.append(observation)
+        if memory is not None:
+            memory.append(observation)
 
         state = next_state
         if torch.all(done):

@@ -2,10 +2,10 @@ from typing import Any, Optional, Union
 
 from torch import Tensor
 
+from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.dataset.datatypes import Observation, Trajectory
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.util.logger import Logger
 
 class AbstractMBAlgorithm(object):
     dynamical_model: AbstractModel
@@ -31,7 +31,7 @@ class AbstractMBAlgorithm(object):
         state: Tensor,
         policy: AbstractPolicy,
         initial_action: Optional[Tensor] = ...,
-        logger: Optional[Logger] = ...,
+        memory: Optional[ExperienceReplay] = ...,
         stack_obs: bool = ...,
     ) -> Union[Observation, Trajectory]: ...
     def _log_trajectory(self, trajectory: Trajectory) -> None: ...

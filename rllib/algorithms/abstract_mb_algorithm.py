@@ -63,7 +63,7 @@ class AbstractMBAlgorithm(object):
         self._info = dict()  # type: dict
 
     def simulate(
-        self, initial_state, policy, initial_action=None, logger=None, stack_obs=True
+        self, initial_state, policy, initial_action=None, stack_obs=True, memory=None
     ):
         """Simulate a set of particles starting from `state' and following `policy'."""
         if self.num_samples > 0:
@@ -85,6 +85,7 @@ class AbstractMBAlgorithm(object):
             initial_action=initial_action,
             max_steps=self.num_steps,
             termination_model=self.termination_model,
+            memory=memory,
         )
         if not stack_obs:
             self._log_trajectory(trajectory)
