@@ -46,7 +46,7 @@ class Observation:
     def shape(self):
         """Get the shape of the observation."""
         with torch.no_grad():
-            if np.isnan(np.array(self.reward)):
+            if np.isnan(np.array(self.reward)).any():
                 return self.state.shape[:-1]
             else:
                 return self.reward.shape[:-1]
