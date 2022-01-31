@@ -5,7 +5,7 @@ from gym.wrappers.monitoring.video_recorder import VideoRecorder
 from tqdm import tqdm
 
 from rllib.dataset.datatypes import Observation
-from rllib.util.neural_networks.utilities import broadcast_to_tensor
+from rllib.util.neural_networks.utilities import broadcast_to_tensor, to_torch
 from rllib.util.training.utilities import Evaluate
 from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
 
@@ -16,9 +16,7 @@ def step_env(environment, state, action, action_scale, pi=None, render=False):
         next_state, reward, done, info = environment.step(action)
     except TypeError:
         next_state, reward, done, info = environment.step(action.item())
-
-    if not isinstance(action, torch.Tensor):
-        action = torch.tensor(action, dtype=torch.get_default_dtype())
+    action = to_torch(action)
 
     if pi is not None:
         try:
@@ -105,11 +103,6 @@ def step_model(
         log_prob_action=log_prob_action,
         next_state_scale_tril=next_state_out[-1],
     ).to_torch()
-
-    # Update state.
-    next_state = torch.zeros_like(state)
-    next_state[~done] = observation.next_state[~done]  # update next state.
-    next_state[done] = state[done]  # don't update next state.
 
     return observation, next_state, done
 
@@ -249,29 +242,26 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         state = environment.reset()
         done = False
         trajectory = []
-        with torch.no_grad():
-            time_step = 0
-            while not done:
-                pi = tensor_to_distribution(
-                    policy(torch.tensor(state, dtype=torch.get_default_dtype())),
-                    **policy.dist_params,
-                )
-                action = pi.sample()
-                if not policy.discrete_action:
-                    action = policy.action_scale * action.clamp_(-1.0, 1.0)
-                obs, state, done, info = step_env(
-                    environment=environment,
-                    state=state,
-                    action=action.detach().numpy(),
-                    action_scale=policy.action_scale,
-                    pi=pi,
-                    render=render,
-                )
-                trajectory.append(obs)
+        time_step = 0
+        while not done:
+            pi = tensor_to_distribution(policy(to_torch(state)), **policy.dist_params)
 
-                time_step += 1
-                if max_steps <= time_step:
-                    break
+            action = pi.sample()
+            if not policy.discrete_action:
+                action = policy.action_scale * action.clamp(-1.0, 1.0)
+            obs, state, done, info = step_env(
+                environment=environment,
+                state=state,
+                action=action.detach().numpy(),
+                action_scale=policy.action_scale,
+                pi=pi,
+                render=render,
+            )
+            trajectory.append(obs)
+
+            time_step += 1
+            if max_steps <= time_step:
+                break
 
         trajectories.append(trajectory)
     return trajectories
