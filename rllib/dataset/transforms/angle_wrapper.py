@@ -27,14 +27,14 @@ class AngleWrapper(AbstractTransform):
 
     def forward(self, observation):
         """See `AbstractTransform.__call__'."""
-        state = observation.state
-        angles = state[..., self._indexes]
+        state = observation.state.clone()
+        angles = state[..., self._indexes].clone()
         cos, sin = torch.cos(angles), torch.sin(angles)
         state[..., self._indexes] = torch.atan2(sin, cos)
 
-        next_state = observation.next_state
+        next_state = observation.next_state.clone()
         if observation.next_state.dim() > 0:
-            angles = next_state[..., self._indexes]
+            angles = next_state[..., self._indexes].clone()
             cos, sin = torch.cos(angles), torch.sin(angles)
             next_state[..., self._indexes] = torch.atan2(sin, cos)
 
