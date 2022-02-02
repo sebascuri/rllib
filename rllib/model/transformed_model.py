@@ -80,6 +80,10 @@ class TransformedModel(AbstractModel):
         """Get info of base model."""
         return self.base_model.info
 
+    def reset(self):
+        """Reset the base model."""
+        self.base_model.reset()
+
     def sample_posterior(self):
         """Sample a posterior from the base model."""
         self.base_model.sample_posterior()
@@ -210,3 +214,8 @@ class TransformedModel(AbstractModel):
     def set_goal(self, goal):
         """Set reward model goal."""
         self.base_model.set_goal(goal)
+
+    @property
+    def is_rnn(self):
+        """Check if model is an RNN."""
+        return self.base_model.is_rnn

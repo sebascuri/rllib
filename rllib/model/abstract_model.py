@@ -111,6 +111,10 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         """Get info of model."""
         return self._info
 
+    def reset(self):
+        """Reset the internal state of the model."""
+        pass
+
     def scale(self, state, action):
         """Get epistemic variance at a given state, action pair."""
         raise NotImplementedError
@@ -149,3 +153,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         if goal is None:
             return
         self.goal = goal
+
+    @property
+    def is_rnn(self):
+        """Check if model is an RNN."""
+        return False

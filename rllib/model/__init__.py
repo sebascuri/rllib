@@ -11,8 +11,8 @@ from .abstract_model import AbstractModel
 from .ensemble_model import EnsembleModel
 from .expected_model import ExpectedModel
 from .gp_model import ExactGPModel, RandomFeatureGPModel, SparseGPModel
+from .independent_ensemble_model import IndependentEnsembleModel
 from .linear_model import LinearModel
 from .nn_model import NNModel
+from .rnn_model import RNNModel
 from .transformed_model import TransformedModel
-from .rnn_model import RNNModel, GRUModel, LSTMModel, TransformedRNNModel, \
-    FullEnsembleNN
