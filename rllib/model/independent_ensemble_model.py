@@ -122,6 +122,11 @@ class IndependentEnsembleModel(AbstractModel):
 
         return scale
 
+    def reset(self):
+        """Reset the internal state of the model."""
+        for model in self.models:
+            model.reset()
+
     @torch.jit.export
     def set_head(self, head_ptr):
         """Set ensemble head."""
