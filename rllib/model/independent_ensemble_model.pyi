@@ -3,6 +3,7 @@
 from .abstract_model import AbstractModel
 import torch
 import numpy as np
+from typing import Any
 
 
 class IndependentEnsembleModel(AbstractModel):
@@ -12,5 +13,9 @@ class IndependentEnsembleModel(AbstractModel):
     head_ptr: int
 
     def __init__(
-        self, models: torch.nn.ModuleList, prediction_strategy: str = ..., *args: Any, **kwargs: Any,
+        self,
+        models: torch.nn.ModuleList,
+        prediction_strategy: str = ...,
+        *args: Any,
+        **kwargs: Any,
     ) -> None: ...

@@ -114,12 +114,12 @@ def _sharpness(prediction):
 def model_mse(model, observation, dynamical_model=None):
     """Get model MSE."""
     target = get_target(model, observation)
-    mean = get_prediction(model, observation, dynamical_model)[0]
-    return _mse(mean, target)
+    prediction = get_prediction(model, observation, dynamical_model)
+    return _mse(prediction, target)
 
 
 def _mse(prediction, target):
-    return ((prediction - target) ** 2).mean(-1).mean()
+    return ((prediction[0] - target) ** 2).mean(-1).mean()
 
 
 def model_loss(model, observation, dynamical_model=None):
