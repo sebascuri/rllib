@@ -194,13 +194,16 @@ def d4rl_to_observation(dataset):
     observation: Observation
         Dataset in observation format..
     """
+    num_points = dataset["observations"].shape[0]
+    dim_state = dataset["observations"].shape[1]
+    dim_actions = dataset["actions"].shape[1]
     dataset = Observation(
-        state=dataset["observations"],
-        action=dataset["actions"],
-        reward=dataset["rewards"],
-        next_state=dataset["next_observations"],
-        done=dataset["terminals"],
-        log_prob_action=dataset["infos/action_log_probs"],
+        state=dataset["observations"].reshape(num_points, 1, dim_state),
+        action=dataset["actions"].reshape(num_points, 1, dim_actions),
+        reward=dataset["rewards"].reshape(num_points, 1, 1),
+        next_state=dataset["next_observations"].reshape(num_points, 1, dim_state),
+        done=dataset["terminals"].reshape(num_points, 1, 1),
+        log_prob_action=dataset["infos/action_log_probs"].reshape(num_points, 1, 1),
     ).to_torch()
     return dataset
 
@@ -273,7 +276,7 @@ def _observation_to_num_steps(observation, num_steps, repeat=False):
 
     def _safe_chunk(tensor):
         try:
-            return chunk(tensor, num_steps)
+            return chunk(tensor.squeeze(), num_steps)
         except IndexError:
             return tensor
 

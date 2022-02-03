@@ -4,9 +4,9 @@ from typing import Any
 
 from rllib.policy.abstract_policy import AbstractPolicy
 
-from .abstract_model import AbstractModel
+from .transformed_model import TransformedModel
 
-class ClosedLoopModel(AbstractModel):
+class ClosedLoopModel(TransformedModel):
     base_model: AbstractModel
     policy: AbstractPolicy
     def __init__(

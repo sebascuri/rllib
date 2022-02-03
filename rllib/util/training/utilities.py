@@ -24,10 +24,11 @@ def get_target(model, observation):
 def get_prediction(model, observation, dynamical_model=None):
     """Get prediction from a model."""
     state, action = observation.state, observation.action
-    if dynamical_model is None or state.shape[1] == 1 or state.ndim < 3:
+    if dynamical_model is None or state.shape[1] == 1 or state.ndim < 3 or model.is_rnn:
         # no dynamical model is passed, i.e., just compute one step ahead predictions.
         # state.shape[1] == 1 means that the time coordinate is 1.
         # state.ndim < 3 means that there is no time coordinate.
+        # model.is_rnn indicates that it is an rnn.
         prediction = model(state, action)
     else:
         prediction = rollout_predictions(
@@ -76,6 +77,10 @@ def calibration_score(model, observation, bins=10, dynamical_model=None):
     """
     target = get_target(model, observation)
     prediction = get_prediction(model, observation, dynamical_model)
+    return _calibration_score(prediction, target, bins=bins)
+
+
+def _calibration_score(prediction, target, bins=10):
     if len(prediction) == 1:
         logits = prediction[0]
         probabilities = Categorical(logits=logits).probs
@@ -98,7 +103,13 @@ def sharpness(model, observation, dynamical_model=None):
     Accurate uncertainties for deep learning using calibrated regression. ICML.
     Equation (10).
     """
-    mean, chol_std = get_prediction(model, observation, dynamical_model)
+    prediction = get_prediction(model, observation, dynamical_model)
+    return _sharpness(prediction)
+
+
+def _sharpness(prediction):
+    """TODO: Implement for discrete inputs as entropy."""
+    _, chol_std = prediction
     scale = torch.diagonal(chol_std, dim1=-1, dim2=-2)
     return scale.square().mean()
 
@@ -106,15 +117,22 @@ def sharpness(model, observation, dynamical_model=None):
 def model_mse(model, observation, dynamical_model=None):
     """Get model MSE."""
     target = get_target(model, observation)
-    mean = get_prediction(model, observation, dynamical_model)[0]
-    return ((mean - target) ** 2).mean(-1).mean()
+    prediction = get_prediction(model, observation, dynamical_model)
+    return _mse(prediction, target)
+
+
+def _mse(prediction, target):
+    return ((prediction[0] - target) ** 2).mean(-1).mean()
 
 
 def model_loss(model, observation, dynamical_model=None):
     """Get model loss."""
     target = get_target(model, observation)
     prediction = get_prediction(model, observation, dynamical_model)
+    return _loss(prediction, target)
 
+
+def _loss(prediction, target):
     if len(prediction) == 1:  # Cross entropy loss.
         return nn.CrossEntropyLoss(reduction="none")(prediction[0], target)
 
@@ -158,6 +176,20 @@ def rollout_predictions(dynamical_model, model, initial_state, action_sequence):
             torch.stack([k[0] for k in predictions], dim=1),
             torch.stack([k[1] for k in predictions], dim=1),
         )
+
+
+def get_model_validation_score(model, observation, dynamical_model=None):
+    """Get validation score."""
+    target = get_target(model, observation)
+
+    model.reset()
+    prediction = get_prediction(model, observation, dynamical_model=dynamical_model)
+
+    loss = _loss(prediction, target).mean().item()
+    mse = _mse(prediction, target).item()
+    sharpness_ = _sharpness(prediction).item()
+    calibration = _calibration_score(prediction, target).item()
+    return loss, mse, sharpness_, calibration
 
 
 class Evaluate(object):

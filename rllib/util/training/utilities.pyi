@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from torch import Tensor
 
@@ -43,6 +43,11 @@ def rollout_predictions(
     initial_state: Tensor,
     action_sequence: Tensor,
 ) -> TupleDistribution: ...
+def get_model_validation_score(
+    model: AbstractModel,
+    observation: Observation,
+    dynamical_model: Optional[AbstractModel]=...
+) -> Tuple[Tensor, Tensor, Tensor, Tensor]: ...
 
 class Evaluate(object):
     agent: AbstractAgent
