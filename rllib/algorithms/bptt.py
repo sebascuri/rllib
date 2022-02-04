@@ -34,7 +34,7 @@ class BPTT(AbstractAlgorithm):
                 dynamical_model=dynamical_model,
                 reward_model=reward_model,
                 termination_model=termination_model,
-                num_model_samples=self.num_model_samples,
+                num_particles=self.num_particles,
                 num_model_steps=num_model_steps,
                 policy=self.policy,
                 value_function=self.value_function,

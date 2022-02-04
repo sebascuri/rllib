@@ -211,24 +211,6 @@ def mc_return(
         reduction=reduction,
     )
     return returns[..., -1, :]
-    # steps = returns.shape[1]  # Batch x T x num_q
-    # if steps == 1 or lambda_ == 1.0:
-    #     if returns.ndim == 2:
-    #         return returns[:, -1]
-    #     else:
-    #         return returns[..., -1, :]
-    # else:
-    #     w = torch.cat(
-    #         (
-    #             (1 - lambda_) * lambda_ ** torch.arange(steps - 1),
-    #             torch.tensor([lambda_]) ** (steps - 1),
-    #         )
-    #     )
-    #     w = w.unsqueeze(0)
-    #     if returns.ndim == 2:
-    #         return (w * returns).sum(-1)
-    #     else:
-    #         return (w.unsqueeze(-1) * returns).sum(-2)
 
 
 def mb_return(
@@ -239,7 +221,7 @@ def mb_return(
     num_model_steps=1,
     gamma=1.0,
     value_function=None,
-    num_model_samples=1,
+    num_particles=1,
     entropy_reg=0.0,
     reward_transformer=RewardTransformer(),
     termination_model=None,
@@ -270,14 +252,16 @@ def mb_return(
         Discount factor.
     value_function: AbstractValueFunction, optional. (default=None).
         The value function used for bootstrapping, takes states as input.
-    num_model_samples: int, optional. (default=0).
-        The states are repeated `num_repeats` times in order to estimate the expected
+    num_particles: int, optional. (default=0).
+        The states are repeated `num_particles` times in order to estimate the expected
         value by MC sampling of the policy, rewards and dynamics (jointly).
     entropy_reg: float, optional. (default=0).
         Entropy regularization parameter.
     termination_model: AbstractModel, optional. (default=None).
         Callable that returns True if the transition yields a terminal state.
     reward_transformer: RewardTransformer.
+    reduction: str.
+        How to reduce the ensemble critics.
 
     Returns
     -------
@@ -300,7 +284,7 @@ def mb_return(
     Sample-based learning and search with permanent and transient memories. ICML.
     """
     # Repeat states to get a better estimate of the expected value
-    state = repeat_along_dimension(state, number=num_model_samples, dim=0)
+    state = repeat_along_dimension(state, number=num_particles, dim=0)
     trajectory = rollout_model(
         dynamical_model=dynamical_model,
         reward_model=reward_model,

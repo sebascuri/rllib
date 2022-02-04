@@ -49,7 +49,7 @@ def mb_return(
     policy: AbstractPolicy,
     num_model_steps: int = ...,
     gamma: float = ...,
-    num_model_samples: int = ...,
+    num_particles: int = ...,
     value_function: Optional[AbstractValueFunction] = ...,
     entropy_reg: float = ...,
     termination_model: Optional[AbstractModel] = ...,

@@ -15,7 +15,7 @@ class Dyna(AbstractAlgorithm, AbstractMBAlgorithm):
         dynamical_model: AbstractModel,
         reward_model: AbstractModel,
         num_model_steps: int = ...,
-        num_model_samples: int = ...,
+        num_particles: int = ...,
         termination_model: Optional[AbstractModel] = ...,
         only_sim: bool = ...,
         only_real: bool = ...,

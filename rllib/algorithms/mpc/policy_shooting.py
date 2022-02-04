@@ -39,7 +39,7 @@ class PolicyShooting(RandomShooting):
             policy=self.policy,
             num_model_steps=self.horizon,
             gamma=self.gamma,
-            num_model_samples=self.num_model_samples,
+            num_particles=self.num_particles,
             value_function=self.terminal_reward,
             termination_model=self.termination_model,
         )

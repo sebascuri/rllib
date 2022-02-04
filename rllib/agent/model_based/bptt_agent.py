@@ -23,7 +23,7 @@ class BPTTAgent(ModelBasedAgent):
         criterion=loss.MSELoss,
         termination_model=None,
         num_model_steps=1,
-        num_model_samples=15,
+        num_particles=15,
         *args,
         **kwargs,
     ):
@@ -35,7 +35,7 @@ class BPTTAgent(ModelBasedAgent):
             termination_model=termination_model,
             criterion=criterion(reduction="mean"),
             num_model_steps=num_model_steps,
-            num_model_samples=num_model_samples,
+            num_particles=num_particles,
             *args,
             **kwargs,
         )

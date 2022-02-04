@@ -33,7 +33,7 @@ class ModelBasedQFunction(AbstractQFunction):
         dynamical_model,
         reward_model,
         num_model_steps=1,
-        num_model_samples=15,
+        num_particles=15,
         termination_model=None,
         policy=None,
         value_function=None,
@@ -54,7 +54,7 @@ class ModelBasedQFunction(AbstractQFunction):
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             num_model_steps=num_model_steps,
-            num_model_samples=num_model_samples,
+            num_particles=num_particles,
             termination_model=termination_model,
         )
         assert num_model_steps > 0, "At least one-step ahead simulation."
@@ -108,6 +108,6 @@ class ModelBasedQFunction(AbstractQFunction):
                 reduction="none",
             )
 
-        v = v.reshape(self.sim.num_model_samples, state.shape[0], -1).mean(0)
+        v = v.reshape(self.sim.num_particles, state.shape[0], -1).mean(0)
         v = v[:, 0]  # In cases of ensembles return first component.
         return v

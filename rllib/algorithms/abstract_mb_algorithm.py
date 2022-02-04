@@ -21,7 +21,7 @@ class AbstractMBAlgorithm(object):
         Reward model to simulate.
     num_model_steps: int.
         Number of steps to simulate.
-    num_model_samples: int.
+    num_particles: int.
         Number of parallel samples to simulate.
     termination: Termination, optional.
         Termination condition to evaluate while simulating.
@@ -37,7 +37,7 @@ class AbstractMBAlgorithm(object):
         dynamical_model,
         reward_model,
         num_model_steps=1,
-        num_model_samples=1,
+        num_particles=1,
         termination_model=None,
         log_simulation=False,
         *args,
@@ -59,21 +59,21 @@ class AbstractMBAlgorithm(object):
 
         self.log_simulation = log_simulation
         self.num_model_steps = num_model_steps
-        self.num_model_samples = num_model_samples
+        self.num_particles = num_particles
         self._info = dict()  # type: dict
 
     def simulate(
         self, initial_state, policy, initial_action=None, stack_obs=True, memory=None
     ):
         """Simulate a set of particles starting from `state' and following `policy'."""
-        if self.num_model_samples > 0:
+        if self.num_particles > 0:
             initial_state = repeat_along_dimension(
-                initial_state, number=self.num_model_samples, dim=0
+                initial_state, number=self.num_particles, dim=0
             )
             initial_state = initial_state.reshape(-1, *self.dynamical_model.dim_state)
             if initial_action is not None:
                 initial_action = repeat_along_dimension(
-                    initial_action, number=self.num_model_samples, dim=0
+                    initial_action, number=self.num_particles, dim=0
                 )
                 initial_action = initial_action.reshape(*initial_state.shape[:-1], -1)
 

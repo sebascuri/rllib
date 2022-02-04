@@ -19,7 +19,7 @@ class ModelBasedQFunction(AbstractQFunction):
         dynamical_model: AbstractModel,
         reward_model: AbstractModel,
         num_model_steps: int = ...,
-        num_model_samples: int = ...,
+        num_particles: int = ...,
         termination_model: Optional[AbstractModel] = ...,
         policy: Optional[AbstractPolicy] = ...,
         value_function: Optional[AbstractValueFunction] = ...,
