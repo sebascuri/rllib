@@ -13,15 +13,23 @@ class RNNModel(NNModel):
         dimension of the hidden state
     num_layers: int
         Number of RNN layers
+    list, optional (default=No layers).
+        width of layers, each layer is connected with a non-linearity.
     """
 
     def __init__(
-        self, dim_hidden_state=(10,), num_layers=1, base_rnn=nn.GRU, *args, **kwargs
+        self,
+        dim_hidden_state=(10,),
+        num_layers=1,
+        base_rnn=nn.GRU,
+        layers=(),
+        *args,
+        **kwargs
     ):
         self.dim_hidden_state = dim_hidden_state
         self.num_layers = num_layers
         self.hidden_state = None
-        super().__init__(*args, **kwargs)
+        super().__init__(layers=layers, *args, **kwargs)
         self.rnn = base_rnn(
             input_size=self._get_rnn_in_dim()[0],
             hidden_size=dim_hidden_state[0],

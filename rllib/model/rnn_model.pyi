@@ -1,5 +1,4 @@
-from typing import Any, Optional, Tuple, Type, Union
-
+from typing import Any, Optional, Tuple, Type, Union, Sequence
 import torch
 
 from .nn_model import NNModel
@@ -15,6 +14,7 @@ class RNNModel(NNModel):
         dimension of the hidden state
     num_layers: int
         Number of RNN layers
+    layers:
     """
 
     dim_hidden_state: Tuple[int]
@@ -26,6 +26,7 @@ class RNNModel(NNModel):
         dim_hidden_state: Tuple[int] = ...,
         num_layers: int = ...,
         base_rnn: Type[BASE_RNN] = ...,
+        layers: Sequence[int] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
