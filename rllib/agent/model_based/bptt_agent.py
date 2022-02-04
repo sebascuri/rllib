@@ -22,8 +22,8 @@ class BPTTAgent(ModelBasedAgent):
         reward_model,
         criterion=loss.MSELoss,
         termination_model=None,
-        num_steps=1,
-        num_samples=15,
+        num_model_steps=1,
+        num_model_samples=15,
         *args,
         **kwargs,
     ):
@@ -34,8 +34,8 @@ class BPTTAgent(ModelBasedAgent):
             reward_model=reward_model,
             termination_model=termination_model,
             criterion=criterion(reduction="mean"),
-            num_steps=num_steps,
-            num_samples=num_samples,
+            num_model_steps=num_model_steps,
+            num_model_samples=num_model_samples,
             *args,
             **kwargs,
         )

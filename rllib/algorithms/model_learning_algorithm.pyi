@@ -30,7 +30,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         epsilon: float = ...,
         non_decrease_iter: int = ...,
         calibrate: bool = ...,
-        num_steps: int = ...,
+        num_memory_steps: int = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

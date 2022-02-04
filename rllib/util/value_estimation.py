@@ -236,10 +236,10 @@ def mb_return(
     dynamical_model,
     reward_model,
     policy,
-    num_steps=1,
+    num_model_steps=1,
     gamma=1.0,
     value_function=None,
-    num_samples=1,
+    num_model_samples=1,
     entropy_reg=0.0,
     reward_transformer=RewardTransformer(),
     termination_model=None,
@@ -264,13 +264,13 @@ def mb_return(
         The reward predicts a distribution over floats or ints given states and actions.
     policy: AbstractPolicy
         The policy predicts a distribution over actions given the state.
-    num_steps: int, optional. (default=1).
+    num_model_steps: int, optional. (default=1).
         Number of steps predicted with the model before (optionally) bootstrapping.
     gamma: float, optional. (default=1.).
         Discount factor.
     value_function: AbstractValueFunction, optional. (default=None).
         The value function used for bootstrapping, takes states as input.
-    num_samples: int, optional. (default=0).
+    num_model_samples: int, optional. (default=0).
         The states are repeated `num_repeats` times in order to estimate the expected
         value by MC sampling of the policy, rewards and dynamics (jointly).
     entropy_reg: float, optional. (default=0).
@@ -300,13 +300,13 @@ def mb_return(
     Sample-based learning and search with permanent and transient memories. ICML.
     """
     # Repeat states to get a better estimate of the expected value
-    state = repeat_along_dimension(state, number=num_samples, dim=0)
+    state = repeat_along_dimension(state, number=num_model_samples, dim=0)
     trajectory = rollout_model(
         dynamical_model=dynamical_model,
         reward_model=reward_model,
         policy=policy,
         initial_state=state,
-        max_steps=num_steps,
+        max_steps=num_model_steps,
         termination_model=termination_model,
     )
     observation = stack_list_of_tuples(trajectory, dim=state.ndim - 1)

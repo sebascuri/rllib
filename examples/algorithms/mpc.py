@@ -23,14 +23,14 @@ horizon = 50
 num_iter = 5
 num_samples = 400
 num_elites = 5
-num_steps = horizon
+num_model_steps = horizon
 solver = "cem_shooting"
 kappa = 1.0
-betas = [0.2, 0.8, 0]
+betas = (0.2, 0.8, 0.0)
 warm_start = True
 num_cpu = 1
 
-memory = ExperienceReplay(max_len=2000, num_steps=1)
+memory = ExperienceReplay(max_len=2000, num_memory_steps=1)
 value_function = None
 
 if solver == "random_shooting":

@@ -118,11 +118,11 @@ class ModelBasedAgent(AbstractAgent):
                     memory = BootstrapExperienceReplay(
                         num_bootstraps=self.dynamical_model.base_model.num_heads,
                         max_len=100000,
-                        num_steps=0,
+                        num_memory_steps=0,
                         bootstrap=True,
                     )
             except AttributeError:
-                memory = ExperienceReplay(max_len=100000, num_steps=0)
+                memory = ExperienceReplay(max_len=100000, num_memory_steps=0)
         self.memory = memory
         self.initial_states_dataset = StateExperienceReplay(
             max_len=1000, dim_state=self.dynamical_model.dim_state

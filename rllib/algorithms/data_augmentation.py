@@ -31,7 +31,7 @@ class DataAugmentation(Dyna):
         self.memory = memory
         self.sim_memory = ExperienceReplay(
             max_len=memory.max_len,
-            num_steps=memory.num_steps,
+            num_memory_steps=memory.num_memory_steps,
             transformations=memory.transformations,
         )
         self.model_batch_size = model_batch_size

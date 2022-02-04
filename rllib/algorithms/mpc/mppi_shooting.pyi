@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union
+from typing import Any, Iterable, Union
 
 from torch import Tensor
 
@@ -12,7 +12,7 @@ class MPPIShooting(MPCSolver):
     def __init__(
         self,
         kappa: Union[float, ParameterDecay] = ...,
-        filter_coefficients: Tuple[float] = ...,
+        filter_coefficients: Iterable[float] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

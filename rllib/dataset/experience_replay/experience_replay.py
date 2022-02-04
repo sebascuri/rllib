@@ -54,7 +54,7 @@ class ExperienceReplay(data.Dataset):
     TODO: Make this class robust, easy to use, and fast.
     """
 
-    def __init__(self, max_len, transformations=None, num_steps=0):
+    def __init__(self, max_len, transformations=None, num_memory_steps=0):
         super().__init__()
         self.max_len = max_len
         self.memory = np.empty((self.max_len,), dtype=Observation)
@@ -64,28 +64,31 @@ class ExperienceReplay(data.Dataset):
         self.data_count = 0
 
         self.transformations = transformations or list()
-        self._num_steps = num_steps
+        self._num_memory_steps = num_memory_steps
         self.zero_observation = None
 
         self.raw = False
 
-        if self.num_steps < 0:
+        if self.num_memory_steps < 0:
             raise ValueError("Number of steps must be non-negative.")
 
     @classmethod
-    def from_other(cls, other, num_steps=None):
+    def from_other(cls, other, num_memory_steps=None):
         """Create a Experience Replay from another one.
 
         All observations will be added sequentially, but only that will be copied.
         Weights will be initialized as if these were new observations.
         """
-        num_steps = other.num_steps if num_steps is None else num_steps
-        new = cls(other.max_len, other.transformations, num_steps)
+        num_memory_steps = (
+            other.num_memory_steps if num_memory_steps is None else num_memory_steps
+        )
+        new = cls(other.max_len, other.transformations, num_memory_steps)
 
         start_idx = other.ptr
         for i in range(other.max_len):
             # Start iterating at the next location.
-            # In this case, when the num_steps change, old observations are erased.
+            # In this case, when the num_memory_steps change,
+            # old observations are erased.
 
             if other.valid[(start_idx + i) % other.max_len]:
                 observation = other.memory[(start_idx + i) % other.max_len]
@@ -165,17 +168,17 @@ class ExperienceReplay(data.Dataset):
             num_actions=num_actions,
         )
 
-    def _get_consecutive_observations(self, start_idx, num_steps):
-        if num_steps == 0 and not (
+    def _get_consecutive_observations(self, start_idx, num_memory_steps):
+        if num_memory_steps == 0 and not (
             isinstance(start_idx, int) or isinstance(start_idx, np.int)
         ):
             observation = stack_list_of_tuples(self.memory[start_idx])
             return Observation(*map(lambda x: x.unsqueeze(1), observation))
-        num_steps = max(1, num_steps)
-        if start_idx + num_steps <= self.max_len:
-            obs_list = self.memory[start_idx : start_idx + num_steps]
+        num_memory_steps = max(1, num_memory_steps)
+        if start_idx + num_memory_steps <= self.max_len:
+            obs_list = self.memory[start_idx : start_idx + num_memory_steps]
         else:  # The trajectory is split by the circular buffer.
-            delta_idx = start_idx + num_steps - self.max_len
+            delta_idx = start_idx + num_memory_steps - self.max_len
             obs_list = np.concatenate(
                 (self.memory[start_idx : self.max_len], self.memory[:delta_idx])
             )
@@ -194,7 +197,7 @@ class ExperienceReplay(data.Dataset):
         observation: Observation
 
         """
-        observation = self._get_consecutive_observations(idx, self.num_steps)
+        observation = self._get_consecutive_observations(idx, self.num_memory_steps)
         if self.raw:
             return observation
         for transform in self.transformations:
@@ -211,9 +214,9 @@ class ExperienceReplay(data.Dataset):
     def end_episode(self):
         """Terminate an episode.
 
-        It appends `num_steps' invalid transitions to the replay buffer.
+        It appends `num_memory_steps' invalid transitions to the replay buffer.
         """
-        for _ in range(self.num_steps):
+        for _ in range(self.num_memory_steps):
             self.data_count += 1
 
     def append_invalid(self):
@@ -248,7 +251,7 @@ class ExperienceReplay(data.Dataset):
         self.memory[self.ptr] = observation.clone()
         self.valid[self.ptr] = 1
 
-        for i in range(self.num_steps):
+        for i in range(self.num_memory_steps):
             self.memory[(self.ptr + i + 1) % self.max_len] = self.zero_observation
             self.valid[(self.ptr + i + 1) % self.max_len] = 0
         self.data_count += 1
@@ -260,9 +263,9 @@ class ExperienceReplay(data.Dataset):
     def sample_batch(self, batch_size):
         """Sample a batch of observations."""
         indices = np.random.choice(self.valid_indexes, batch_size)
-        if self.num_steps == 0:
+        if self.num_memory_steps == 0:
             obs = self._get_observation(indices)
-            return (obs, torch.tensor(indices), self.weights[indices])
+            return obs, torch.tensor(indices), self.weights[indices]
         else:
             obs, idx, weight = default_collate([self[i] for i in indices])
             return Observation(**obs), idx, weight
@@ -303,15 +306,15 @@ class ExperienceReplay(data.Dataset):
         return torch.nonzero(self.valid, as_tuple=False).squeeze(1)
 
     @property
-    def num_steps(self):
+    def num_memory_steps(self):
         """Return the number of steps."""
-        return self._num_steps
+        return self._num_memory_steps
 
-    @num_steps.setter
-    def num_steps(self, value):
+    @num_memory_steps.setter
+    def num_memory_steps(self, value):
         """Reset the number of steps."""
-        self._num_steps = value
-        other = ExperienceReplay.from_other(self, num_steps=value)
+        self._num_memory_steps = value
+        other = ExperienceReplay.from_other(self, num_memory_steps=value)
         self.memory = other.memory
         self.valid = other.valid
         self.data_count = other.data_count

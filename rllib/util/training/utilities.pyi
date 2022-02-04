@@ -46,7 +46,7 @@ def rollout_predictions(
 def get_model_validation_score(
     model: AbstractModel,
     observation: Observation,
-    dynamical_model: Optional[AbstractModel]=...
+    dynamical_model: Optional[AbstractModel] = ...,
 ) -> Tuple[Tensor, Tensor, Tensor, Tensor]: ...
 
 class Evaluate(object):

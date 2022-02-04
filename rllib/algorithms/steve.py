@@ -77,7 +77,7 @@ class STEVE(MVE):
                 reduction="none",
             )  # samples*batch x horizon x num_q
             value = n_step_returns.reshape(
-                -1, 1, self.num_samples, self.num_steps, self.num_q
+                -1, 1, self.num_model_samples, self.num_model_steps, self.num_q
             )
         return value
 
@@ -85,7 +85,12 @@ class STEVE(MVE):
         """Rollout model and call base algorithm with transitions."""
         critic_target = torch.zeros(
             observation.state.shape[: -len(self.dynamical_model.dim_state)]
-            + (self.num_samples, self.num_steps + 1, self.num_models, self.num_q)
+            + (
+                self.num_model_samples,
+                self.num_model_steps + 1,
+                self.num_models,
+                self.num_q,
+            )
         )  # Critic target shape B x (H + 1) x M x Q
         td_return = n_step_return(
             observation,
@@ -95,7 +100,9 @@ class STEVE(MVE):
             entropy_regularization=self.entropy_loss.eta.item(),
             reduction="none",
         )
-        td_samples = td_return.unsqueeze(-2).repeat_interleave(self.num_samples, -2)
+        td_samples = td_return.unsqueeze(-2).repeat_interleave(
+            self.num_model_samples, -2
+        )
         td_model = td_samples.unsqueeze(-2).repeat_interleave(self.num_models, -2)
         if td_model.shape != critic_target[..., -1, :, :].shape:
             td_model = td_model.unsqueeze(1)

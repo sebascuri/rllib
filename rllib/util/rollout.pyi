@@ -6,10 +6,10 @@ from torch.distributions import Distribution
 
 from rllib.agent import AbstractAgent
 from rllib.dataset.datatypes import Action, Observation, State, Trajectory
+from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.environment import AbstractEnvironment
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
-from rllib.dataset.experience_replay import ExperienceReplay
 
 def step_env(
     environment: AbstractEnvironment,

@@ -56,7 +56,7 @@ class TestDerivedMBAgents(object):
         return GymEnvironment(request.param, SEED)
 
     @pytest.fixture(params=[1, 4], scope="class")
-    def num_steps(self, request):
+    def num_model_steps(self, request):
         return request.param
 
     @pytest.fixture(params=["DPG", "TD3", "SAC", "MPO", "VMPO"], scope="class")
@@ -67,11 +67,11 @@ class TestDerivedMBAgents(object):
     def extender(self, request):
         return request.param
 
-    def test_continuous_agent(self, environment, base_agent, extender, num_steps):
+    def test_continuous_agent(self, environment, base_agent, extender, num_model_steps):
         agent = extender.default(
             environment,
             base_agent_name=base_agent,
-            num_steps=num_steps,
+            num_model_steps=num_model_steps,
             num_samples=2,
             num_iter=2,
             num_epochs=2,
@@ -81,11 +81,11 @@ class TestDerivedMBAgents(object):
         )
         rollout_agent(environment, agent)
 
-    def test_mve_not_td_k(self, environment, base_agent, num_steps):
+    def test_mve_not_td_k(self, environment, base_agent, num_model_steps):
         agent = MVEAgent.default(
             environment,
             base_agent_name=base_agent,
-            num_steps=num_steps,
+            num_model_steps=num_model_steps,
             num_samples=2,
             num_iter=2,
             num_epochs=2,

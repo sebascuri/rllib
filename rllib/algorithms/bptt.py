@@ -22,20 +22,20 @@ class BPTT(AbstractAlgorithm):
         self,
         dynamical_model,
         reward_model,
-        num_steps=1,
+        num_model_steps=1,
         lambda_=1.0,
         termination_model=None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        if num_steps > 0:
+        if num_model_steps > 0:
             self.pathwise_loss.critic = ModelBasedQFunction(
                 dynamical_model=dynamical_model,
                 reward_model=reward_model,
                 termination_model=termination_model,
-                num_samples=self.num_samples,
-                num_steps=num_steps,
+                num_model_samples=self.num_model_samples,
+                num_model_steps=num_model_steps,
                 policy=self.policy,
                 value_function=self.value_function,
                 gamma=self.gamma,

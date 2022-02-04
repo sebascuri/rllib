@@ -26,11 +26,17 @@ class OffPolicyAgent(AbstractAgent):
 
     @classmethod
     def default(
-        cls, environment, memory=None, max_len=100000, num_steps=0, *args, **kwargs
+        cls,
+        environment,
+        memory=None,
+        max_len=100000,
+        num_memory_steps=0,
+        *args,
+        **kwargs,
     ):
         """See `AbstractAgent.default'."""
         if memory is None:
-            memory = ExperienceReplay(max_len=100000, num_steps=num_steps)
+            memory = ExperienceReplay(max_len=100000, num_memory_steps=num_memory_steps)
         return super().default(environment, memory=memory, *args, **kwargs)
 
     def observe(self, observation):
