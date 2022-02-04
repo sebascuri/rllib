@@ -90,7 +90,7 @@ def discount_sum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
     Parameters
     ----------
     rewards: Tensor.
-        Array of rewards. Either 1-d or 2-d. When 2-d, [trajectory x num_samples].
+        Array of rewards. Either 1-d or 2-d. When 2-d, [trajectory x num samples].
     gamma: float, optional.
         Discount factor.
     reward_transformer: RewardTransformer
@@ -283,7 +283,7 @@ def mb_return(
     -------
     return: DynaReturn
         q_target:
-            Num_samples of MC estimation of q-function target.
+            Num samples of MC estimation of q-function target.
         trajectory:
             Sample trajectory that MC estimation produces.
 

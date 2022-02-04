@@ -36,7 +36,7 @@ class MPPIShooting(MPCSolver):
     def get_candidate_action_sequence(self):
         """Get candidate actions by sampling from a multivariate normal."""
         noise_dist = MultivariateNormal(torch.zeros_like(self.mean), self.covariance)
-        noise = noise_dist.sample((self.num_samples,))
+        noise = noise_dist.sample((self.num_particles,))
 
         lag = len(self.filter_coefficients)
         for i in range(self.horizon):
@@ -48,7 +48,9 @@ class MPPIShooting(MPCSolver):
             )
             noise[:, i, ..., :] = aux / torch.sum(weights)
 
-        action_sequence = self.mean.unsqueeze(0).repeat_interleave(self.num_samples, 0)
+        action_sequence = self.mean.unsqueeze(0).repeat_interleave(
+            self.num_particles, 0
+        )
         action_sequence += noise
         action_sequence = action_sequence.permute(
             tuple(torch.arange(1, action_sequence.dim() - 1)) + (0, -1)

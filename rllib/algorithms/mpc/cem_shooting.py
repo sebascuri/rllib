@@ -24,8 +24,8 @@ class CEMShooting(MPCSolver):
         Discount factor.
     num_iter: int, optional.
         Number of iterations of CEM method.
-    num_samples: int, optional.
-        Number of samples for shooting method.
+    num_particles: int, optional.
+        Number of particles for shooting method.
     num_elites: int, optional.
         Number of elite samples to keep between iterations.
     alpha: float, optional. (default = 0.)
@@ -51,14 +51,14 @@ class CEMShooting(MPCSolver):
     def __init__(self, alpha=0.0, num_iter=5, num_elites=None, *args, **kwargs):
         super().__init__(num_iter=num_iter, *args, **kwargs)
         self.num_elites = (
-            max(1, self.num_samples // 10) if not num_elites else num_elites
+            max(1, self.num_particles // 10) if not num_elites else num_elites
         )
         self.alpha = alpha
 
     def get_candidate_action_sequence(self):
         """Get candidate actions by sampling from a multivariate normal."""
         action_distribution = MultivariateNormal(self.mean, self.covariance)
-        action_sequence = action_distribution.sample((self.num_samples,))
+        action_sequence = action_distribution.sample((self.num_particles,))
         action_sequence = action_sequence.permute(
             tuple(torch.arange(1, action_sequence.dim() - 1)) + (0, -1)
         )

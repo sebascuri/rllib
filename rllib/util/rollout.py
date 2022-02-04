@@ -371,10 +371,10 @@ def rollout_actions(
         Reward Model with which the policy interacts.
     action_sequence: Action
         Action Sequence that interacts with the environment.
-        The dimensions are [horizon x num_samples x dim_action].
+        The dimensions are [horizon x num samples x dim action].
     initial_state: State
         Starting states for the interaction.
-        The dimensions are [1 x num_samples x dim_state].
+        The dimensions are [1 x num samples x dim state].
     termination_model: Callable.
         Termination condition to finish the rollout.
 

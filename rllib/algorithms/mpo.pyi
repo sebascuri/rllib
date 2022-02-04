@@ -26,7 +26,7 @@ class MPO(AbstractAlgorithm):
     mpo_loss: MPOLoss
     def __init__(
         self,
-        num_samples: int = ...,
+        num_policy_samples: int = ...,
         epsilon: Union[ParameterDecay, float] = ...,
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,

@@ -41,8 +41,10 @@ class ActorCritic(AbstractAlgorithm):
     Off-policy actor-critic. ICML
     """
 
-    def __init__(self, num_samples=15, standardize_returns=True, *args, **kwargs):
-        super().__init__(num_samples=num_samples, *args, **kwargs)
+    def __init__(
+        self, num_policy_samples=15, standardize_returns=True, *args, **kwargs
+    ):
+        super().__init__(num_policy_samples=num_policy_samples, *args, **kwargs)
         self.standardize_returns = standardize_returns
 
     def returns(self, trajectory):

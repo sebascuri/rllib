@@ -18,8 +18,8 @@ class RandomShooting(CEMShooting):
         Horizon to solve planning problem.
     gamma: float, optional.
         Discount factor.
-    num_samples: int, optional.
-        Number of samples for shooting method.
+    num_particles: int, optional.
+        Number of particles for shooting method.
     num_elites: int, optional.
         Number of elite samples to keep between iterations.
     termination: Callable, optional.

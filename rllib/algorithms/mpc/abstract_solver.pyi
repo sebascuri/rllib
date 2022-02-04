@@ -15,7 +15,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     horizon: int
     gamma: float
     num_iter: int
-    num_samples: int
+    num_particles: int
     termination_model: Optional[AbstractModel]
     terminal_reward: AbstractValueFunction
     warm_start: bool
@@ -35,7 +35,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         gamma: float = ...,
         scale: float = ...,
         num_iter: int = ...,
-        num_samples: Optional[int] = ...,
+        num_particles: Optional[int] = ...,
         termination_model: Optional[AbstractModel] = ...,
         terminal_reward: Optional[AbstractValueFunction] = ...,
         warm_start: bool = ...,

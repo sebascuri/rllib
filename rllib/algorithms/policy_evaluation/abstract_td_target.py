@@ -69,14 +69,16 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
 
     """
 
-    def __init__(self, critic, policy=None, gamma=0.99, lambda_=1.0, num_samples=15):
+    def __init__(
+        self, critic, policy=None, gamma=0.99, lambda_=1.0, num_policy_samples=15
+    ):
         super().__init__()
         self.critic = critic
         self.policy = policy
-        self.value_target = IntegrateQValueFunction(critic, policy, num_samples)
+        self.value_target = IntegrateQValueFunction(critic, policy, num_policy_samples)
         self.gamma = gamma
         self.lambda_ = lambda_
-        self.num_samples = num_samples
+        self.num_policy_samples = num_policy_samples
 
     @abstractmethod
     def correction(self, pi_log_p, behavior_log_p):

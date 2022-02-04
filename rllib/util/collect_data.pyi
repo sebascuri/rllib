@@ -12,12 +12,12 @@ def collect_environment_transitions(
     state_dist: Distribution,
     policy: Union[Distribution, AbstractPolicy],
     environment: AbstractEnvironment,
-    num_samples: int,
+    num_transitions: int,
 ) -> List[Observation]: ...
 def collect_model_transitions(
     state_dist: Distribution,
     policy: Union[Distribution, AbstractPolicy],
     dynamical_model: AbstractModel,
     reward_model: AbstractModel,
-    num_samples: int,
+    num_transitions: int,
 ) -> List[Observation]: ...

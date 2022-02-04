@@ -14,18 +14,18 @@ class IntegrateQValueFunction(AbstractValueFunction):
         q _function.
     policy: AbstractPolicy
         q _function.
-    num_samples: int, optional (default=15).
+    num_policy_samples: int, optional (default=15).
         Number of states in discrete environments.
     """
 
     q_function: AbstractQFunction
     policy: AbstractPolicy
-    num_samples: int
+    num_policy_samples: int
     def __init__(
         self,
         q_function: AbstractQFunction,
         policy: AbstractPolicy,
-        num_samples: int = ...,
+        num_policy_samples: int = ...,
     ) -> None: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> Tensor: ...
     def set_policy(self, new_policy: AbstractPolicy) -> None: ...
