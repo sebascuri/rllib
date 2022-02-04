@@ -3,9 +3,10 @@
 from rllib.value_function.model_based_q_function import ModelBasedQFunction
 
 from .abstract_algorithm import AbstractAlgorithm
+from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
-class BPTT(AbstractAlgorithm):
+class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
     """Back-Propagation Through Time Algorithm.
 
     References
@@ -24,18 +25,26 @@ class BPTT(AbstractAlgorithm):
         reward_model,
         num_model_steps=1,
         lambda_=1.0,
-        termination_model=None,
         *args,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        AbstractAlgorithm.__init__(self, *args, **kwargs)
+        AbstractMBAlgorithm.__init__(
+            self,
+            dynamical_model,
+            reward_model,
+            num_model_steps=num_model_steps,
+            *args,
+            **kwargs,
+        )
+
         if num_model_steps > 0:
             self.pathwise_loss.critic = ModelBasedQFunction(
-                dynamical_model=dynamical_model,
-                reward_model=reward_model,
-                termination_model=termination_model,
+                dynamical_model=self.dynamical_model,
+                reward_model=self.reward_model,
+                termination_model=self.termination_model,
                 num_particles=self.num_particles,
-                num_model_steps=num_model_steps,
+                num_model_steps=self.num_model_steps,
                 policy=self.policy,
                 value_function=self.value_function,
                 gamma=self.gamma,
