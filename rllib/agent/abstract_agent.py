@@ -71,7 +71,13 @@ class AbstractAgent(object, metaclass=ABCMeta):
         )
         self.early_stopping_algorithm = EarlyStopping(epsilon=early_stopping_epsilon)
 
-        self.counters = {"total_episodes": 0, "total_steps": 0, "train_steps": 0}
+        self.counters = {
+            "total_episodes": 0,
+            "total_steps": 0,
+            "train_steps": 0,
+            "train_episodes": 0,
+            "eval_episodes": 0,
+        }
         self.episode_steps = []
 
         self.gamma = gamma
@@ -120,6 +126,8 @@ class AbstractAgent(object, metaclass=ABCMeta):
         str_ = (
             f"\n{opening}\n{self.name} & {comment}\n"
             f"Total episodes {self.total_episodes}\n"
+            f"Train episodes {self.train_episodes}\n"
+            f"Eval episodes {self.eval_episodes}\n"
             f"Total steps {self.total_steps}\n"
             f"Train steps {self.train_steps}\n"
             f"{self.logger}{opening}\n"
@@ -188,6 +196,11 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def end_episode(self):
         """End an episode."""
         self.counters["total_episodes"] += 1
+        if self.training:
+            self.counters["train_episodes"] += 1
+        else:
+            self.counters["eval_episodes"] += 1
+
         best_return = -float("inf")
         end_episode_dict = {}
         for key in filter(lambda x: x.startswith("reward"), self.logger.current.keys()):
@@ -258,8 +271,18 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.early_stopping_algorithm.reset()
 
     @property
+    def train_episodes(self):
+        """Return number of training episodes."""
+        return self.counters["train_episodes"]
+
+    @property
+    def eval_episodes(self):
+        """Return number of evaluation episodes."""
+        return self.counters["eval_episodes"]
+
+    @property
     def total_episodes(self):
-        """Return number of steps in current episode."""
+        """Return number of total episodes."""
         return self.counters["total_episodes"]
 
     @property

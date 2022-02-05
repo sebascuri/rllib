@@ -131,7 +131,9 @@ def record(environment, agent, path, num_episodes=1, max_steps=1000):
     recorder.close()
 
 
-def rollout_episode(environment, agent, max_steps, render):
+def rollout_episode(
+    environment, agent, max_steps, render, callback_frequency, callbacks
+):
     """Rollout a full episode."""
     state = environment.reset()
     agent.set_goal(environment.goal)
@@ -156,6 +158,9 @@ def rollout_episode(environment, agent, max_steps, render):
         if max_steps <= time_step:
             break
 
+    if callback_frequency and agent.total_episodes % callback_frequency == 0:
+        for callback in callbacks:
+            callback(agent, environment, agent.total_episodes)
     agent.end_episode()
 
 
@@ -199,20 +204,31 @@ def rollout_agent(
     save_milestones = list() if save_milestones is None else save_milestones
     callbacks = list() if callbacks is None else callbacks
     for episode in tqdm(range(num_episodes)):
-        rollout_episode(environment, agent, max_steps, render)
+        rollout_episode(
+            environment=environment,
+            agent=agent,
+            max_steps=max_steps,
+            render=render,
+            callback_frequency=callback_frequency,
+            callbacks=callbacks,
+        )
 
         if print_frequency and episode % print_frequency == 0:
             print(agent)
-        if callback_frequency and episode % callback_frequency == 0:
-            for plot_callback in callbacks:
-                plot_callback(agent, environment, episode)
 
         if episode in save_milestones:
             agent.save(f"{agent.name}_{episode}.pkl")
 
         if eval_frequency and episode % eval_frequency == 0:
             with Evaluate(agent):
-                rollout_episode(environment, agent, max_steps, render)
+                rollout_episode(
+                    environment=environment,
+                    agent=agent,
+                    max_steps=max_steps,
+                    render=render,
+                    callback_frequency=callback_frequency,
+                    callbacks=callbacks,
+                )
     agent.end_interaction()
 
 

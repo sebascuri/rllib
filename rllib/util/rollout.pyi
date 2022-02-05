@@ -37,7 +37,14 @@ def record(
     max_steps: int = ...,
 ) -> None: ...
 def rollout_episode(
-    environment: AbstractEnvironment, agent: AbstractAgent, max_steps: int, render: bool
+    environment: AbstractEnvironment,
+    agent: AbstractAgent,
+    max_steps: int,
+    render: bool,
+    callback_frequency: int = ...,
+    callbacks: Optional[
+        List[Callable[[AbstractAgent, AbstractEnvironment, int], None]]
+    ] = ...
 ) -> None: ...
 def rollout_agent(
     environment: AbstractEnvironment,
