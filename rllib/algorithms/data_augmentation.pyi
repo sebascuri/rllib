@@ -21,6 +21,7 @@ class DataAugmentation(Dyna):
     count: int
     def __init__(
         self,
+        sim_memory: Optional[ExperienceReplay] = ...,
         memory: Optional[ExperienceReplay] = ...,
         initial_state_dataset: Optional[StateExperienceReplay] = ...,
         initial_distribution: Optional[Distribution] = ...,

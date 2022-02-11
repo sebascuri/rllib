@@ -2,6 +2,7 @@
 import torch
 
 from rllib.dataset.datatypes import Loss
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model.utilities import PredictionStrategy
 from rllib.util.multiprocessing import run_parallel_returns
 from rllib.util.value_estimation import n_step_return
@@ -65,9 +66,10 @@ class STEVE(MVE):
         self.dynamical_model.set_head(model_idx)
         self.reward_model.set_head(model_idx)
         with torch.no_grad():
-            observation = self.simulate(
-                state, self.policy, initial_action=action, stack_obs=True
+            trajectory = self.simulation_algorithm.simulate(
+                state, self.policy, initial_action=action
             )
+            observation = stack_list_of_tuples(trajectory, dim=state.ndim - 2)
             n_step_returns = n_step_return(
                 observation,
                 gamma=self.gamma,

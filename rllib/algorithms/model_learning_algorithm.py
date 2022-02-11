@@ -4,7 +4,7 @@ from gym.utils import colorize
 
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
 from rllib.dataset.utilities import stack_list_of_tuples
-from rllib.model import ExactGPModel
+from rllib.model import ExactGPModel, TransformedModel
 from rllib.util.gaussian_processes import SparseGP
 from rllib.util.training.model_learning import (
     calibrate_model,
@@ -12,10 +12,8 @@ from rllib.util.training.model_learning import (
     train_model,
 )
 
-from .abstract_mb_algorithm import AbstractMBAlgorithm
 
-
-class ModelLearningAlgorithm(AbstractMBAlgorithm):
+class ModelLearningAlgorithm(object):
     """An algorithm for model learning.
 
     Parameters
@@ -27,15 +25,12 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
     batch_size: int.
         Batch size of optimization algorithm.
     bootstrap: bool.
-        Flag that indicates whether or not to add bootstrapping to dataset.
+        Flag that indicates whether to add bootstrapping to dataset.
     max_memory: int.
         Maximum size of dataset.
     validation_ratio: float.
         Validation set ratio.
 
-    Other Parameters
-    ----------------
-    See AbstractMBAlgorithm.
 
     Methods
     -------
@@ -47,6 +42,9 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
 
     def __init__(
         self,
+        dynamical_model,
+        reward_model,
+        termination_model=None,
         model_optimizer=None,
         num_epochs=1,
         batch_size=100,
@@ -61,6 +59,19 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        if not isinstance(dynamical_model, TransformedModel):
+            dynamical_model = TransformedModel(dynamical_model, [])
+        if not isinstance(reward_model, TransformedModel):
+            reward_model = TransformedModel(reward_model, [])
+        self.dynamical_model = dynamical_model
+        self.reward_model = reward_model
+        self.termination_model = termination_model
+
+        assert self.dynamical_model.model_kind == "dynamics"
+        assert self.reward_model.model_kind == "rewards"
+        if self.termination_model is not None:
+            assert self.termination_model.model_kind == "termination"
+
         self.model_optimizer = model_optimizer
 
         if hasattr(self.dynamical_model.base_model, "num_heads"):

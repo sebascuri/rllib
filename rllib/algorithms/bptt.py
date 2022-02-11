@@ -2,11 +2,10 @@
 
 from rllib.value_function.model_based_q_function import ModelBasedQFunction
 
-from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
 
 
-class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
+class BPTT(AbstractMBAlgorithm):
     """Back-Propagation Through Time Algorithm.
 
     References
@@ -19,26 +18,10 @@ class BPTT(AbstractAlgorithm, AbstractMBAlgorithm):
     Model-Augmented Actor-Critic: Backpropagating through Paths. ICLR.
     """
 
-    def __init__(
-        self,
-        dynamical_model,
-        reward_model,
-        num_model_steps=1,
-        lambda_=1.0,
-        *args,
-        **kwargs,
-    ):
-        AbstractAlgorithm.__init__(self, *args, **kwargs)
-        AbstractMBAlgorithm.__init__(
-            self,
-            dynamical_model,
-            reward_model,
-            num_model_steps=num_model_steps,
-            *args,
-            **kwargs,
-        )
+    def __init__(self, lambda_=1.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        if num_model_steps > 0:
+        if self.num_model_steps > 0:
             self.pathwise_loss.critic = ModelBasedQFunction(
                 dynamical_model=self.dynamical_model,
                 reward_model=self.reward_model,

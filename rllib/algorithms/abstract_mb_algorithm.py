@@ -1,13 +1,16 @@
 """ModelBasedAlgorithm."""
+from abc import ABCMeta
+
 import torch
 
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.model import TransformedModel
-from rllib.util.neural_networks.utilities import repeat_along_dimension
-from rllib.util.rollout import rollout_model
+
+from .abstract_algorithm import AbstractAlgorithm
+from .simulation_algorithm import SimulationAlgorithm
 
 
-class AbstractMBAlgorithm(object):
+class AbstractMBAlgorithm(AbstractAlgorithm, metaclass=ABCMeta):
     """Model Based Algorithm.
 
     A model based algorithm has a dynamical_model and a reward_model and, it has a
@@ -43,7 +46,7 @@ class AbstractMBAlgorithm(object):
         *args,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(*args, **kwargs)
         if not isinstance(dynamical_model, TransformedModel):
             dynamical_model = TransformedModel(dynamical_model, [])
         if not isinstance(reward_model, TransformedModel):
@@ -60,31 +63,23 @@ class AbstractMBAlgorithm(object):
         self.log_simulation = log_simulation
         self.num_model_steps = num_model_steps
         self.num_particles = num_particles
-        self._info = dict()  # type: dict
+
+        self.simulation_algorithm = SimulationAlgorithm(
+            dynamical_model=dynamical_model,
+            reward_model=reward_model,
+            termination_model=termination_model,
+            num_particles=num_particles,
+            num_model_steps=num_model_steps,
+        )
 
     def simulate(
         self, initial_state, policy, initial_action=None, stack_obs=True, memory=None
     ):
         """Simulate a set of particles starting from `state' and following `policy'."""
-        if self.num_particles > 0:
-            initial_state = repeat_along_dimension(
-                initial_state, number=self.num_particles, dim=0
-            )
-            initial_state = initial_state.reshape(-1, *self.dynamical_model.dim_state)
-            if initial_action is not None:
-                initial_action = repeat_along_dimension(
-                    initial_action, number=self.num_particles, dim=0
-                )
-                initial_action = initial_action.reshape(*initial_state.shape[:-1], -1)
-
-        trajectory = rollout_model(
-            dynamical_model=self.dynamical_model,
-            reward_model=self.reward_model,
+        trajectory = self.simulate(
+            state=initial_state,
             policy=policy,
-            initial_state=initial_state,
             initial_action=initial_action,
-            max_steps=self.num_model_steps,
-            termination_model=self.termination_model,
             memory=memory,
         )
         if not stack_obs:

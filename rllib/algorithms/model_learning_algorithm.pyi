@@ -4,12 +4,13 @@ from torch.optim.optimizer import Optimizer
 
 from rllib.dataset.datatypes import Trajectory
 from rllib.dataset.experience_replay import BootstrapExperienceReplay
-from rllib.model import AbstractModel
+from rllib.model import AbstractModel, TransformedModel
 from rllib.util.logger import Logger
 
-from .abstract_mb_algorithm import AbstractMBAlgorithm
-
-class ModelLearningAlgorithm(AbstractMBAlgorithm):
+class ModelLearningAlgorithm(object):
+    dynamical_model: TransformedModel
+    reward_model: TransformedModel
+    termination_model: Optional[AbstractModel]
     model_optimizer: Optional[Optimizer]
     num_epochs: int
     batch_size: int
@@ -21,6 +22,9 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
     validation_set: BootstrapExperienceReplay
     def __init__(
         self,
+        dynamical_model: AbstractModel,
+        reward_model: AbstractModel,
+        termination_model: Optional[AbstractModel] = ...,
         model_optimizer: Optional[Optimizer] = ...,
         num_epochs: int = ...,
         batch_size: int = ...,

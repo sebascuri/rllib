@@ -1,30 +1,31 @@
-from typing import Any, Optional, Union
+from typing import Optional
 
 from torch import Tensor
-from torch.distributions import Distribution
 
-from rllib.dataset.datatypes import Observation, Trajectory
-from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
+from rllib.dataset.datatypes import Trajectory
+from rllib.dataset.experience_replay import ExperienceReplay
+from rllib.model.abstract_model import AbstractModel
 from rllib.policy import AbstractPolicy
 
-from .abstract_mb_algorithm import AbstractMBAlgorithm
-
-class SimulationAlgorithm(AbstractMBAlgorithm):
-    initial_distribution: Optional[Distribution]
-    num_initial_state_samples: int
-    num_initial_distribution_samples: int
-    num_memory_samples: int
+class SimulationAlgorithm(object):
+    dynamical_model: AbstractModel
+    reward_model: AbstractModel
+    termination_model: Optional[AbstractModel]
+    num_particles: int
+    num_model_steps: int
     def __init__(
         self,
-        initial_distribution: Optional[Distribution] = ...,
-        num_initial_state_samples: int = ...,
-        num_initial_distribution_samples: int = ...,
-        num_memory_samples: int = ...,
-        *args: Any,
-        **kwargs: Any,
+        dynamical_model: AbstractModel,
+        reward_model: AbstractModel,
+        termination_model: Optional[AbstractModel] = ...,
+        num_particles: int = ...,
+        num_model_steps: int = ...,
     ) -> None: ...
-    def get_initial_states(
+    def simulate(
         self,
-        initial_states_dataset: StateExperienceReplay,
-        real_dataset: ExperienceReplay,
-    ) -> Tensor: ...
+        state: Tensor,
+        policy: AbstractPolicy,
+        initial_action: Optional[Tensor] = ...,
+        memory: Optional[ExperienceReplay] = ...,
+        stack_obs: bool = ...,
+    ) -> Trajectory: ...

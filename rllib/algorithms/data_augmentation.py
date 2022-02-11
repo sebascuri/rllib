@@ -11,6 +11,7 @@ class DataAugmentation(Dyna):
 
     def __init__(
         self,
+        sim_memory=None,
         memory=None,
         initial_state_dataset=None,
         initial_distribution=None,
@@ -29,11 +30,13 @@ class DataAugmentation(Dyna):
         self.num_initial_distribution_samples = num_initial_distribution_samples
         self.num_memory_samples = num_memory_samples
         self.memory = memory
-        self.sim_memory = ExperienceReplay(
-            max_len=memory.max_len,
-            num_memory_steps=memory.num_memory_steps,
-            transformations=memory.transformations,
-        )
+        if sim_memory is None:
+            sim_memory = ExperienceReplay(
+                max_len=memory.max_len,
+                num_memory_steps=memory.num_memory_steps,
+                transformations=memory.transformations,
+            )
+        self.sim_memory = sim_memory
         self.model_batch_size = model_batch_size
 
         self.refresh_interval = refresh_interval
@@ -106,7 +109,7 @@ class DataAugmentation(Dyna):
         super().update()
 
     def reset(self):
-        """Reset base algorithm."""
+        """Reset simulation memory."""
         self.count += 1
         if (self.count % self.refresh_interval) == 0:
             self.sim_memory.reset()
