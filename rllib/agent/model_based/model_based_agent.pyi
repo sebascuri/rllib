@@ -1,5 +1,7 @@
 from typing import Any, Optional
 
+from torch.distributions import Distribution
+
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
@@ -21,6 +23,13 @@ class ModelBasedAgent(AbstractAgent):
     model_learn_num_rollouts: int
     model_learn_exploration_episodes: int
     model_learn_exploration_steps: int
+    simulation_frequency: int
+    simulation_max_steps: int = ...
+    num_memory_samples: int = ...
+    num_initial_state_samples: int = ...
+    num_initial_distribution_samples: int = ...
+    initial_distribution: Optional[Distribution]
+    augment_dataset_with_sim: bool
     def __init__(
         self,
         dynamical_model: AbstractModel,
@@ -38,7 +47,13 @@ class ModelBasedAgent(AbstractAgent):
         memory: Optional[ExperienceReplay] = ...,
         policy: Optional[AbstractPolicy] = ...,
         thompson_sampling: bool = ...,
-        training_verbose: bool = ...,
+        simulation_frequency: int = ...,
+        simulation_max_steps: int = ...,
+        num_memory_samples: int = ...,
+        num_initial_state_samples: int = ...,
+        num_initial_distribution_samples: int = ...,
+        initial_distribution: Optional[Distribution] = ...,
+        augment_dataset_with_sim: bool = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

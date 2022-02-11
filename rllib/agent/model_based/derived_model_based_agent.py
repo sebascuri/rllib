@@ -24,8 +24,6 @@ class DerivedMBAgent(ModelBasedAgent):
         super().__init__(policy_learning_algorithm=base_algorithm, *args, **kwargs)
         self.algorithm = derived_algorithm_(
             base_algorithm=self.algorithm,
-            memory=self.memory,
-            initial_state_dataset=self.initial_states_dataset,
             criterion=type(self.algorithm.criterion)(reduction="mean"),
             num_model_steps=num_model_steps,
             num_particles=num_particles,

@@ -46,6 +46,7 @@ class TestBPTTAgents(object):
             num_epochs=2,
             exploration_steps=0,
             exploration_episodes=0,
+            simulation_max_steps=10,
         )
         rollout_agent(environment, agent)
 
@@ -78,6 +79,7 @@ class TestDerivedMBAgents(object):
             td_k=True,
             exploration_steps=0,
             exploration_episodes=0,
+            simulation_max_steps=10,
         )
         rollout_agent(environment, agent)
 

@@ -3,6 +3,7 @@ from typing import Any, Optional
 from torch.distributions import Distribution
 
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
+from rllib.dataset.experience_replay import ExperienceReplay
 
 from .model_based_agent import ModelBasedAgent
 
@@ -19,6 +20,7 @@ class DataAugmentationAgent(ModelBasedAgent):
         initial_distribution: Optional[Distribution] = ...,
         only_sim: bool = ...,
         memory_batch_size: Optional[int] = ...,
+        sim_memory: Optional[ExperienceReplay] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

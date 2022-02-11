@@ -1,10 +1,10 @@
 """Derived Agent."""
-from rllib.algorithms.data_augmentation import DataAugmentation
+from importlib import import_module
 
-from .derived_model_based_agent import DerivedMBAgent
+from .model_based_agent import ModelBasedAgent
 
 
-class DataAugmentationAgent(DerivedMBAgent):
+class DataAugmentationAgent(ModelBasedAgent):
     """Data Augmentation simulates data with the model and trains with such data.
 
     References
@@ -20,25 +20,29 @@ class DataAugmentationAgent(DerivedMBAgent):
     Imagination-augmented agents for deep reinforcement learning. NeuRIPS.
     """
 
-    def __init__(
-        self,
-        num_initial_distribution_samples=0,
-        num_memory_samples=16,
-        num_initial_state_samples=0,
-        refresh_interval=2,
-        initial_distribution=None,
-        memory_batch_size=None,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, base_algorithm, *args, **kwargs):
         super().__init__(
-            derived_algorithm_=DataAugmentation,
-            num_initial_distribution_samples=num_initial_distribution_samples,
-            num_memory_samples=num_memory_samples,
-            num_initial_state_samples=num_initial_state_samples,
-            refresh_interval=refresh_interval,
-            initial_distribution=initial_distribution,
-            memory_batch_size=memory_batch_size,
+            policy_learning_algorithm=base_algorithm,
+            augment_dataset_with_sim=True,
             *args,
             **kwargs,
+        )
+
+    @classmethod
+    def default(cls, environment, base_agent="SAC", *args, **kwargs):
+        """See `AbstractAgent.default'."""
+        base_agent = getattr(
+            import_module("rllib.agent"), f"{base_agent}Agent"
+        ).default(environment, *args, **kwargs)
+        base_agent.logger.delete_directory()
+        base_algorithm = base_agent.algorithm
+        kwargs.update(
+            optimizer=base_agent.optimizer,
+            num_iter=base_agent.num_iter,
+            batch_size=base_agent.batch_size,
+            train_frequency=base_agent.train_frequency,
+            num_rollouts=base_agent.num_rollouts,
+        )
+        return super().default(
+            environment=environment, base_algorithm=base_algorithm, *args, **kwargs
         )

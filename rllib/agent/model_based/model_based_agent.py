@@ -14,15 +14,13 @@ from torch.optim import Adam
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
 from rllib.algorithms.mpc.policy_shooting import PolicyShooting
-from rllib.dataset.experience_replay import (
-    BootstrapExperienceReplay,
-    ExperienceReplay,
-    StateExperienceReplay,
-)
-from rllib.model import EnsembleModel, TransformedModel
+from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
+from rllib.environment.fake_environment import FakeEnvironment
+from rllib.model import TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.policy.random_policy import RandomPolicy
 from rllib.util.neural_networks.utilities import DisableGradient, to_torch
+from rllib.util.rollout import rollout_policy
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -64,6 +62,13 @@ class ModelBasedAgent(AbstractAgent):
         memory=None,
         batch_size=100,
         clip_grad_val=10.0,
+        simulation_frequency=1,
+        simulation_max_steps=1000,
+        num_memory_samples=0,
+        num_initial_state_samples=1,
+        num_initial_distribution_samples=0,
+        initial_distribution=None,
+        augment_dataset_with_sim=False,
         *args,
         **kwargs,
     ):
@@ -113,20 +118,19 @@ class ModelBasedAgent(AbstractAgent):
             self.dynamical_model.set_prediction_strategy("posterior")
 
         if memory is None:
-            try:
-                if isinstance(self.dynamical_model.base_model, EnsembleModel):
-                    memory = BootstrapExperienceReplay(
-                        num_bootstraps=self.dynamical_model.base_model.num_heads,
-                        max_len=100000,
-                        num_memory_steps=0,
-                        bootstrap=True,
-                    )
-            except AttributeError:
-                memory = ExperienceReplay(max_len=100000, num_memory_steps=0)
+            memory = ExperienceReplay(max_len=100000, num_memory_steps=0)
         self.memory = memory
         self.initial_states_dataset = StateExperienceReplay(
             max_len=1000, dim_state=self.dynamical_model.dim_state
         )
+
+        self.simulation_frequency = simulation_frequency
+        self.simulation_max_steps = simulation_max_steps
+        self.num_memory_samples = num_memory_samples
+        self.num_initial_state_samples = num_initial_state_samples
+        self.num_initial_distribution_samples = num_initial_distribution_samples
+        self.initial_distribution = initial_distribution
+        self.augment_dataset_with_sim = augment_dataset_with_sim
 
     def act(self, state):
         """Ask the agent for an action to interact with the environment.
@@ -188,6 +192,8 @@ class ModelBasedAgent(AbstractAgent):
             self.model_learning_algorithm.learn(self.logger)
         if self.train_at_end_episode:
             self.learn()
+        if self.simulate:
+            self.simulate_policy_on_model()
         super().end_episode()
 
     def learn(self, memory=None):
@@ -214,6 +220,55 @@ class ModelBasedAgent(AbstractAgent):
         ):
             self._learn_steps(closure)
 
+    def _sample_initial_states(self):
+        """Get initial states to sample from."""
+        # Samples from experience replay empirical distribution.
+        if self.num_memory_samples > 0:
+            obs, *_ = self.memory.sample_batch(self.num_memory_samples)
+            for transform in self.memory.transformations:
+                obs = transform.inverse(obs)
+            initial_states = obs.state[:, 0, :]  # obs is an n-step return.
+            return initial_states
+        # Samples from empirical initial state distribution.
+        elif self.num_initial_state_samples > 0:
+            initial_states = self.initial_states_dataset.sample_batch(
+                self.num_initial_state_samples
+            )
+            # initial_states = torch.cat((initial_states, initial_states_), dim=0)
+            return initial_states
+        # Samples from initial distribution.
+        elif self.num_initial_distribution_samples > 0:
+            initial_states = self.initial_distribution.sample(
+                (self.num_initial_distribution_samples,)
+            )
+            return initial_states
+            # initial_states = torch.cat((initial_states, initial_states_), dim=0)
+        else:
+            raise ValueError(f"At least one has to be larger than zero.")
+        # initial_states = initial_states.unsqueeze(0)
+        # return initial_states
+
+    def simulate_policy_on_model(self):
+        """Evaluate policy on learned model."""
+        with torch.no_grad():
+            fake_env = FakeEnvironment(
+                dynamical_model=self.dynamical_model,
+                reward_model=self.reward_model,
+                termination_model=self.termination_model,
+                initial_state_fn=self._sample_initial_states,
+            )
+            trajectory = rollout_policy(
+                environment=fake_env,
+                policy=self.policy,
+                num_episodes=1,
+                max_steps=self.simulation_max_steps,
+                memory=self.memory if self.augment_dataset_with_sim else None,
+            )[0]
+            sim_returns = torch.cat([obs.reward for obs in trajectory], dim=0).sum(0)
+            self.logger.update(
+                **{f"Sim-Returns-{i}": returns for i, returns in enumerate(sim_returns)}
+            )
+
     @property
     def learn_model_at_observe(self):
         """Raise flag if learn the model after observe."""
@@ -236,6 +291,14 @@ class ModelBasedAgent(AbstractAgent):
             and self.total_episodes >= self.model_learn_exploration_episodes
             and self.model_learn_num_rollouts > 0
             and (self.total_episodes + 1) % self.model_learn_num_rollouts == 0
+        )
+
+    @property
+    def simulate(self):
+        """Flag that indicates whether to simulate."""
+        return (
+            self.simulation_frequency
+            and (self.train_episodes % self.simulation_frequency) == 0
         )
 
     @classmethod
@@ -269,7 +332,12 @@ class ModelBasedAgent(AbstractAgent):
                 termination_model = environment.env.termination_model()
             except AttributeError:
                 pass
-        params = list(chain(dynamical_model.parameters(), reward_model.parameters()))
+        params = list(
+            chain(
+                [p for p in dynamical_model.parameters() if p.requires_grad],
+                [p for p in reward_model.parameters() if p.requires_grad],
+            )
+        )
         if len(params):
             model_optimizer = Adam(params, lr=model_lr, weight_decay=l2_reg)
 
