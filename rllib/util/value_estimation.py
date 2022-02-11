@@ -142,18 +142,16 @@ def n_step_return(
     entropy = broadcast_to_tensor(observation.entropy, target_tensor=rewards)
     rewards = rewards + entropy_regularization * entropy
 
-    discount = broadcast_to_tensor(
-        torch.pow(torch.tensor(gamma), torch.arange(n_steps)), target_tensor=rewards
-    )
-
+    discount = torch.pow(torch.tensor(gamma), torch.arange(n_steps))
+    if rewards.ndim > 2:
+        discount = discount.unsqueeze(0)
+    discount = broadcast_to_tensor(discount, target_tensor=rewards)
+    not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=rewards)
     discounted_rewards = rewards * discount
     value = torch.cumsum(discounted_rewards, dim=-2)
 
     if value_function is not None:
         final_value = value_function(observation.next_state)
-        not_done = broadcast_to_tensor(
-            1.0 - observation.done[..., -1], target_tensor=final_value
-        )
         if final_value.ndim > value.ndim:
             if reduction == "min":
                 final_value = final_value.min(-1)[0]
@@ -161,10 +159,10 @@ def n_step_return(
                 final_value = final_value.mean(-1)
             elif reduction == "none":
                 value = broadcast_to_tensor(value, target_tensor=final_value)
-                discount = broadcast_to_tensor(discount, target_tensor=final_value)
-                not_done = broadcast_to_tensor(not_done, target_tensor=final_value)
             else:
                 raise NotImplementedError(f"{reduction} not implemented.")
+            discount = broadcast_to_tensor(discount, target_tensor=final_value)
+            not_done = broadcast_to_tensor(not_done, target_tensor=final_value)
         value += gamma * discount * final_value * not_done
     return value
 
@@ -210,7 +208,10 @@ def mc_return(
         value_function=value_function,
         reduction=reduction,
     )
-    return returns[..., -1, :]
+    if observation.reward.ndim > 2:
+        return returns[:, -1]
+    else:
+        return returns[-1]
 
 
 def mb_return(
