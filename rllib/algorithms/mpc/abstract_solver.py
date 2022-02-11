@@ -1,5 +1,4 @@
 """MPC Algorithms."""
-import time
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -8,7 +7,6 @@ import torch.nn as nn
 
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.multi_objective_reduction import MeanMultiObjectiveReduction
-from rllib.util.multiprocessing import run_parallel_returns
 from rllib.util.neural_networks.utilities import repeat_along_dimension, to_torch
 from rllib.util.rollout import rollout_actions
 from rllib.util.value_estimation import discount_sum
@@ -159,55 +157,16 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             self.horizon, *batch_shape, 1, 1
         )
 
-    def get_action_sequence_and_returns(
-        self, state, action_sequence, returns, process_nr=0
-    ):
-        """Get action_sequence and returns associated.
-
-        These are bundled for parallel execution.
-
-        The data inside action_sequence and returns will get modified.
-        """
-        if self.num_cpu > 1:
-            # Multi-Processing inherits random state.
-            torch.manual_seed(int(1000 * time.time()))
-
-        action_sequence[:] = self.get_candidate_action_sequence()
-        returns[:] = self.evaluate_action_sequence(action_sequence, state)
-
     def forward(self, state):
         """Return action that solves the MPC problem."""
         self.dynamical_model.eval()
         batch_shape = state.shape[:-1]
         self.initialize_actions(batch_shape)
-
         state = repeat_along_dimension(state, number=self.num_particles, dim=-2)
 
-        batch_actions = [
-            torch.randn(
-                (self.horizon,) + batch_shape + (self.num_particles, self.dim_action)
-            )
-            for _ in range(self.num_cpu)
-        ]
-        batch_returns = [
-            torch.randn(batch_shape + (self.num_particles, self.dim_reward))
-            for _ in range(self.num_cpu)
-        ]
-        for action_, return_ in zip(batch_actions, batch_returns):
-            action_.share_memory_()
-            return_.share_memory_()
-
         for _ in range(self.num_iter):
-            run_parallel_returns(
-                self.get_action_sequence_and_returns,
-                [
-                    (state, batch_actions[rank], batch_returns[rank], rank)
-                    for rank in range(self.num_cpu)
-                ],
-                num_cpu=self.num_cpu,
-            )
-            action_sequence = torch.cat(batch_actions, dim=-2)
-            returns = torch.cat(batch_returns, dim=-1)
+            action_sequence = self.get_candidate_action_sequence()
+            returns = self.evaluate_action_sequence(action_sequence, state)
             elite_actions = self.get_best_action(action_sequence, returns)
             self.update_sequence_generation(elite_actions)
 

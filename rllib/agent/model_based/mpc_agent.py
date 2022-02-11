@@ -9,6 +9,7 @@ class MPCAgent(ModelBasedAgent):
 
     def __init__(self, mpc_solver, *args, **kwargs):
         super().__init__(
+            simulation_frequency=0,
             planning_algorithm=mpc_solver,
             dynamical_model=kwargs.pop("dynamical_model", mpc_solver.dynamical_model),
             reward_model=kwargs.pop("reward_model", mpc_solver.reward_model),
