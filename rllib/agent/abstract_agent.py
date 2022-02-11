@@ -203,7 +203,9 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         best_return = -float("inf")
         end_episode_dict = {}
-        for key in filter(lambda x: x.startswith("reward"), self.logger.current.keys()):
+        for key in filter(
+            lambda x: x.startswith("reward") and "-" in x, self.logger.current.keys()
+        ):
             index = key.split("-")[1]
             rewards = self.logger.current[key]
             environment_return = rewards[0] * rewards[1]
