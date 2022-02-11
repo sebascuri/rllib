@@ -7,7 +7,11 @@ from tqdm import tqdm
 from rllib.dataset.datatypes import Observation
 from rllib.util.neural_networks.utilities import broadcast_to_tensor, to_torch
 from rllib.util.training.utilities import Evaluate
-from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
+from rllib.util.utilities import (
+    get_entropy_and_log_p,
+    sample_model,
+    tensor_to_distribution,
+)
 
 
 def step_env(environment, state, action, action_scale, pi=None, render=False):
@@ -57,22 +61,11 @@ def step_model(
 ):
     """Perform a single step in an dynamical model."""
     # Sample a next state
-    next_state_out = dynamical_model(state, action)
-    next_state_distribution = tensor_to_distribution(next_state_out)
-
-    if next_state_distribution.has_rsample:
-        next_state = next_state_distribution.rsample()
-    else:
-        next_state = next_state_distribution.sample()
+    next_state = sample_model(dynamical_model, state, action)
 
     # Sample a reward
-    reward_distribution = tensor_to_distribution(
-        reward_model(state, action, next_state)
-    )
-    if reward_distribution.has_rsample:
-        reward = reward_distribution.rsample()
-    else:
-        reward = reward_distribution.sample()
+    reward = sample_model(reward_model, state, action, next_state)
+
     if done is None:
         done = torch.zeros_like(reward).bool()
     broadcast_done = broadcast_to_tensor(done, target_tensor=reward)
@@ -80,11 +73,8 @@ def step_model(
 
     # Check for termination.
     if termination_model is not None:
-        done = done + (  # "+" is a boolean "or".
-            tensor_to_distribution(termination_model(state, action, next_state))
-            .sample()
-            .bool()
-        )
+        done_ = sample_model(termination_model, state, action, next_state).bool()
+        done = done + done_  # "+" is a boolean "or".
 
     if pi is not None:
         try:
@@ -102,7 +92,6 @@ def step_model(
         done=done.float(),
         entropy=entropy,
         log_prob_action=log_prob_action,
-        next_state_scale_tril=next_state_out[-1],
     ).to_torch()
 
     return observation, next_state, done
@@ -232,7 +221,9 @@ def rollout_agent(
     agent.end_interaction()
 
 
-def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=False):
+def rollout_policy(
+    environment, policy, num_episodes=1, max_steps=1000, render=False, memory=None
+):
     """Conduct a rollout of a policy in an environment.
 
     Parameters
@@ -247,6 +238,8 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         Maximum number of steps per episode.
     render: bool.
         Flag that indicates whether to render the environment or not.
+    memory: ExperienceReplay, optional.
+        Memory where to store the simulated transitions.
 
     Returns
     -------
@@ -274,6 +267,8 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
                 render=render,
             )
             trajectory.append(obs)
+            if memory is not None:
+                memory.append(obs)
 
             time_step += 1
             if max_steps <= time_step:
@@ -376,6 +371,7 @@ def rollout_actions(
     action_sequence,
     initial_state,
     termination_model=None,
+    memory=None,
 ):
     """Conduct a rollout of an action sequence interacting with a model.
 
@@ -393,6 +389,8 @@ def rollout_actions(
         The dimensions are [1 x num samples x dim state].
     termination_model: Callable.
         Termination condition to finish the rollout.
+    memory: ExperienceReplay, optional.
+        Memory where to store the simulated transitions.
 
     Returns
     -------
@@ -419,6 +417,8 @@ def rollout_actions(
             done=done,
         )
         trajectory.append(observation)
+        if memory is not None:
+            memory.append(observation)
 
         state = next_state
         if torch.all(done):

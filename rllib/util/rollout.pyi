@@ -44,7 +44,7 @@ def rollout_episode(
     callback_frequency: int = ...,
     callbacks: Optional[
         List[Callable[[AbstractAgent, AbstractEnvironment, int], None]]
-    ] = ...
+    ] = ...,
 ) -> None: ...
 def rollout_agent(
     environment: AbstractEnvironment,
@@ -66,6 +66,7 @@ def rollout_policy(
     num_episodes: int = ...,
     max_steps: int = ...,
     render: bool = ...,
+    memory: Optional[ExperienceReplay] = ...,
 ) -> List[Trajectory]: ...
 def rollout_model(
     dynamical_model: AbstractModel,
@@ -83,4 +84,5 @@ def rollout_actions(
     action_sequence: Action,
     initial_state: State,
     termination_model: Optional[AbstractModel] = ...,
+    memory: Optional[ExperienceReplay] = ...,
 ) -> Trajectory: ...
