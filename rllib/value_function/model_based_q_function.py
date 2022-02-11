@@ -2,7 +2,8 @@
 
 import torch
 
-from rllib.algorithms.abstract_mb_algorithm import AbstractMBAlgorithm
+from rllib.algorithms.simulation_algorithm import SimulationAlgorithm
+from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.neural_networks.utilities import DisableGradient, unfreeze_parameters
 from rllib.util.utilities import RewardTransformer
 from rllib.util.value_estimation import mc_return
@@ -50,7 +51,7 @@ class ModelBasedQFunction(AbstractQFunction):
             *args,
             **kwargs,
         )
-        self.sim = AbstractMBAlgorithm(
+        self.simulator = SimulationAlgorithm(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
             num_model_steps=num_model_steps,
@@ -89,9 +90,12 @@ class ModelBasedQFunction(AbstractQFunction):
         """
         unfreeze_parameters(self.policy)
         with DisableGradient(
-            self.sim.dynamical_model, self.sim.reward_model, self.sim.termination_model
+            self.simulator.dynamical_model,
+            self.simulator.reward_model,
+            self.simulator.termination_model,
         ):
-            sim_observation = self.sim.simulate(state, self.policy, action)
+            sim_trajectory = self.simulator.simulate(state, self.policy, action)
+        sim_observation = stack_list_of_tuples(sim_trajectory, dim=state.ndim - 2)
 
         if isinstance(self.value_function, IntegrateQValueFunction):
             cm = DisableGradient(self.value_function.q_function)
@@ -108,6 +112,11 @@ class ModelBasedQFunction(AbstractQFunction):
                 reduction="none",
             )
 
-        v = v.reshape(self.sim.num_particles, state.shape[0], -1).mean(0)
-        v = v[:, 0]  # In cases of ensembles return first component.
+        v = v.reshape(
+            self.simulator.num_particles,
+            state.shape[0],
+            self.simulator.reward_model.dim_reward[0],
+            -1,
+        ).mean(0)
+        v = v[..., 0]  # In cases of ensembles return first component.
         return v
