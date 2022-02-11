@@ -154,6 +154,16 @@ def tensor_to_distribution(args, **kwargs):
         return d
 
 
+def sample_model(model, state, action, next_state=None):
+    """Sample from a model at given state-action pairs."""
+    distribution = tensor_to_distribution(model(state, action, next_state))
+
+    if distribution.has_rsample:
+        return distribution.rsample()
+    else:
+        return distribution.sample()
+
+
 def separated_kl(p, q, log_p=torch.tensor(0.0), log_q=torch.tensor(0.0)):
     """Compute the mean and variance components of the average KL divergence.
 
