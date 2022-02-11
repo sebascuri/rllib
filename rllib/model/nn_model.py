@@ -186,7 +186,7 @@ class NNModel(AbstractModel):
     @property
     def name(self):
         """Get Model name."""
-        return f"{'Deterministic' if self.deterministic else 'Probabilistic'} Ensemble"
+        return f"{'Deterministic' if self.deterministic else 'Probabilistic'} NN"
 
     def _get_out_dim(self):
         if self.model_kind == "dynamics":

@@ -1,10 +1,13 @@
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar
 
 import torch.nn as nn
 from torch import Tensor
 
 from rllib.dataset.datatypes import TupleDistribution
+from rllib.environment.abstract_environment import AbstractEnvironment
+
+T = TypeVar("T", bound="AbstractModel")
 
 class AbstractModel(nn.Module, metaclass=ABCMeta):
     dim_state: Tuple[int]
@@ -37,6 +40,10 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
+    @classmethod
+    def default(
+        cls: Type[T], environment: AbstractEnvironment, *args: Any, **kwargs: Any
+    ) -> T: ...
     def forward(self, *args: Tensor, **kwargs: Any) -> TupleDistribution: ...
     @property
     def name(self) -> str: ...
