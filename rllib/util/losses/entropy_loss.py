@@ -65,4 +65,8 @@ class EntropyLoss(nn.Module):
             return Loss()
         dual_loss = self._eta() * (entropy - self.target_entropy).detach()
         reg_loss = -self.eta * entropy
+        if dual_loss.ndim > 1:  # average time coordinate.
+            dual_loss = dual_loss.mean(1)
+        if reg_loss.ndim > 1:  # average time coordinate.
+            reg_loss = reg_loss.mean(1)
         return Loss(dual_loss=dual_loss, reg_loss=reg_loss)

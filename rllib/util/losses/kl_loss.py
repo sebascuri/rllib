@@ -102,7 +102,10 @@ class KLLoss(nn.Module):
 
         kl_mean, kl_var = kl_mean.mean(), kl_var.mean()
         reg_loss = self.eta_mean * kl_mean + self.eta_var * kl_var
-        if self.regularization:
+        if reg_loss.ndim > 1:
+            reg_loss = reg_loss.mean(1)
+
+        if self.regularization:  # average time coordinate.
             return Loss(reg_loss=reg_loss)
         else:
             if self.separated_kl:
@@ -112,4 +115,6 @@ class KLLoss(nn.Module):
             else:
                 dual_loss = self._eta_mean() * (self.epsilon_mean - kl_mean).detach()
 
+            if dual_loss.ndim > 1:  # average time coordinate.
+                dual_loss = dual_loss.mean(1)
             return Loss(dual_loss=dual_loss, reg_loss=reg_loss)
