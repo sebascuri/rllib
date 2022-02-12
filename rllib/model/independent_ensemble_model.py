@@ -38,8 +38,6 @@ class IndependentEnsembleModel(AbstractModel):
         )
         self.prediction_strategy = prediction_strategy
         self.num_heads = len(models)
-        is_transformed = [isinstance(x, TransformedModel) for x in models]
-        assert not any(is_transformed), "Models cannot be TransformedModel."
         self.models = models
         self.head_ptr = 0
 
