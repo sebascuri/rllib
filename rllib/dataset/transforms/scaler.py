@@ -3,6 +3,8 @@
 import torch.jit
 import torch.nn as nn
 
+from rllib.util.neural_networks.utilities import to_torch
+
 from .abstract_transform import AbstractTransform
 
 
@@ -11,8 +13,7 @@ class Scaler(nn.Module):
 
     def __init__(self, scale):
         super().__init__()
-        if not isinstance(scale, torch.Tensor):
-            self._scale = torch.tensor(scale, dtype=torch.get_default_dtype())
+        self._scale = to_torch(scale)
         self._scale[self._scale == 0] = 1.0
         assert torch.all(self._scale > 0), "Scale must be positive."
 

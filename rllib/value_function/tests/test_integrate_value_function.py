@@ -54,7 +54,7 @@ class TestIntegrateValueFunction(object):
         dim_state,
         dim_action,
         num_heads,
-        num_samples=1,
+        num_policy_samples=1,
         layers=None,
         biased_head=True,
         dim_reward=1,
@@ -101,7 +101,9 @@ class TestIntegrateValueFunction(object):
         )
 
         self.value_function = IntegrateQValueFunction(
-            q_function=self.q_function, policy=self.policy, num_samples=num_samples
+            q_function=self.q_function,
+            policy=self.policy,
+            num_policy_samples=num_policy_samples,
         )
 
     def test_property_values(

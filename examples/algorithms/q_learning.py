@@ -65,7 +65,7 @@ if MEMORY == "PER":
 elif MEMORY == "EXP3":
     memory = EXP3ExperienceReplay(max_len=MEMORY_MAX_SIZE, alpha=0.001, beta=0.1)
 elif MEMORY == "ER":
-    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, num_steps=0)
+    memory = ExperienceReplay(max_len=MEMORY_MAX_SIZE, num_memory_steps=0)
 else:
     raise NotImplementedError(f"{MEMORY} not implemented.")
 

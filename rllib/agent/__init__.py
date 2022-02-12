@@ -3,6 +3,7 @@ from .bandit import GPUCBAgent
 from .model_based import (
     BPTTAgent,
     DataAugmentationAgent,
+    DerivedMBAgent,
     DynaAgent,
     ModelBasedAgent,
     MPCAgent,
@@ -14,6 +15,7 @@ from .off_policy import (
     DDQNAgent,
     DPGAgent,
     DQNAgent,
+    FittedValueEvaluationAgent,
     ISERAgent,
     MPOAgent,
     QLearningAgent,
@@ -45,6 +47,7 @@ MODEL_FREE = [
     "DQN",
     "ExpectedActorCritic",
     "ExpectedSARSA",
+    "FittedValueEvaluation",
     "GAAC",
     "GPUCB",
     "MPO",

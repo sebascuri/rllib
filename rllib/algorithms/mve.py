@@ -50,7 +50,9 @@ class MVE(Dyna):
         with torch.no_grad():
             target_q = self.get_value_target(sim_observation)
             if not self.td_k:
-                target_q = target_q.reshape(self.num_samples, *pred_q.shape[:2]).mean(0)
+                target_q = target_q.reshape(self.num_particles, *pred_q.shape[:2]).mean(
+                    0
+                )
             if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
                 target_q = target_q.unsqueeze(-1).repeat_interleave(

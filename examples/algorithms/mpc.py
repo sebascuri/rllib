@@ -21,16 +21,16 @@ termination_model = EnvironmentModel(env_model, model_kind="termination")
 GAMMA = 0.99
 horizon = 50
 num_iter = 5
-num_samples = 400
+num_particles = 400
 num_elites = 5
-num_steps = horizon
+num_model_steps = horizon
 solver = "cem_shooting"
 kappa = 1.0
-betas = [0.2, 0.8, 0]
+betas = (0.2, 0.8, 0.0)
 warm_start = True
 num_cpu = 1
 
-memory = ExperienceReplay(max_len=2000, num_steps=1)
+memory = ExperienceReplay(max_len=2000, num_memory_steps=1)
 value_function = None
 
 if solver == "random_shooting":
@@ -39,7 +39,7 @@ if solver == "random_shooting":
         reward_model=reward_model,
         horizon=horizon,
         gamma=GAMMA,
-        num_samples=num_samples,
+        num_particles=num_particles,
         num_elites=num_elites,
         termination_model=termination_model,
         terminal_reward=value_function,
@@ -54,7 +54,7 @@ elif solver == "cem_shooting":
         horizon=horizon,
         gamma=GAMMA,
         num_iter=num_iter,
-        num_samples=num_samples,
+        num_particles=num_particles,
         num_elites=num_elites,
         termination_model=termination_model,
         terminal_reward=value_function,
@@ -71,7 +71,7 @@ elif solver == "mppi_shooting":
         num_iter=num_iter,
         kappa=kappa,
         filter_coefficients=betas,
-        num_samples=num_samples,
+        num_particles=num_particles,
         termination_model=termination_model,
         terminal_reward=value_function,
         warm_start=warm_start,

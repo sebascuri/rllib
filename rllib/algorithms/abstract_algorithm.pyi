@@ -33,7 +33,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     entropy_loss: EntropyLoss
     kl_loss: KLLoss
     pathwise_loss: Optional[PathwiseLoss]
-    num_samples: int
+    num_policy_samples: int
     ope: Optional[AbstractTDTarget]
     value_function: Optional[IntegrateQValueFunction]
     value_target: Optional[IntegrateQValueFunction]
@@ -50,7 +50,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         epsilon_mean: Union[ParameterDecay, float] = ...,
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         kl_regularization: bool = ...,
-        num_samples: int = ...,
+        num_policy_samples: int = ...,
         critic_ensemble_lambda: float = ...,
         criterion: _Loss = ...,
         ope: Optional[AbstractTDTarget] = ...,

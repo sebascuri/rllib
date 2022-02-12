@@ -56,7 +56,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         non_decrease_iter=5,
         validation_ratio=0.1,
         calibrate=True,
-        num_steps=0,
+        num_memory_steps=0,
         *args,
         **kwargs,
     ):
@@ -74,14 +74,14 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
             transformations=self.dynamical_model.transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
-            num_steps=num_steps,
+            num_memory_steps=num_memory_steps,
         )
         self.validation_set = BootstrapExperienceReplay(
             max_len=max_memory,
             transformations=self.dynamical_model.transformations,
             num_bootstraps=num_heads,
             bootstrap=bootstrap,
-            num_steps=num_steps,
+            num_memory_steps=num_memory_steps,
         )
 
         self.num_epochs = num_epochs

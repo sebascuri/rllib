@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from rllib.util.neural_networks.utilities import to_torch
+
 Array = Union[np.ndarray, torch.Tensor]
 Index = Union[np.ndarray, torch.Tensor, int]
 State = Union[int, float, Array]
@@ -39,6 +41,15 @@ class Observation:
     def __iter__(self):
         """Iterate the properties of the observation."""
         yield from self.__dict__.values()
+
+    @property
+    def shape(self):
+        """Get the shape of the observation."""
+        with torch.no_grad():
+            if np.isnan(np.array(self.reward)).any():
+                return self.state.shape[:-1]
+            else:
+                return self.reward.shape[:-1]
 
     @staticmethod
     def _is_equal_nan(x, y):
@@ -210,14 +221,7 @@ class Observation:
 
     def to_torch(self):
         """Transform to torch."""
-        return Observation(
-            *map(
-                lambda x: x
-                if isinstance(x, torch.Tensor)
-                else torch.tensor(x, dtype=torch.get_default_dtype()),
-                self,
-            )
-        )
+        return Observation(*map(lambda x: to_torch(x), self))
 
 
 @dataclass

@@ -22,7 +22,7 @@ from rllib.dataset.experience_replay import (
 from rllib.model import EnsembleModel, TransformedModel
 from rllib.policy.mpc_policy import MPCPolicy
 from rllib.policy.random_policy import RandomPolicy
-from rllib.util.neural_networks.utilities import DisableGradient
+from rllib.util.neural_networks.utilities import DisableGradient, to_torch
 from rllib.util.utilities import tensor_to_distribution
 
 
@@ -118,11 +118,11 @@ class ModelBasedAgent(AbstractAgent):
                     memory = BootstrapExperienceReplay(
                         num_bootstraps=self.dynamical_model.base_model.num_heads,
                         max_len=100000,
-                        num_steps=0,
+                        num_memory_steps=0,
                         bootstrap=True,
                     )
             except AttributeError:
-                memory = ExperienceReplay(max_len=100000, num_steps=0)
+                memory = ExperienceReplay(max_len=100000, num_memory_steps=0)
         self.memory = memory
         self.initial_states_dataset = StateExperienceReplay(
             max_len=1000, dim_state=self.dynamical_model.dim_state
@@ -135,8 +135,7 @@ class ModelBasedAgent(AbstractAgent):
         If the plan horizon > 0, then is plans with the current model.
         """
         if isinstance(self.planning_algorithm, PolicyShooting):
-            if not isinstance(state, torch.Tensor):
-                state = torch.tensor(state, dtype=torch.get_default_dtype())
+            state = to_torch(state)
             policy = tensor_to_distribution(
                 self.policy(state), **self.policy.dist_params
             )

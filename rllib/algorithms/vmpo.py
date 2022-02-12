@@ -58,7 +58,7 @@ class VMPO(MPO):
         self.ope = VTrace(
             policy=self.policy,
             critic=self.critic_target,
-            num_samples=self.num_samples,
+            num_policy_samples=self.num_policy_samples,
             rho_bar=1.0,
             gamma=self.gamma,
             lambda_=1.0,

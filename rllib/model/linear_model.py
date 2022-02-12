@@ -2,6 +2,8 @@
 import torch
 from torch.distributions import MultivariateNormal
 
+from rllib.util.neural_networks.utilities import to_torch
+
 from .abstract_model import AbstractModel
 
 
@@ -9,10 +11,7 @@ class LinearModel(AbstractModel):
     """A linear Gaussian state space model."""
 
     def __init__(self, a, b, noise: MultivariateNormal = None, *args, **kwargs):
-        if not isinstance(a, torch.Tensor):
-            a = torch.tensor(a, dtype=torch.get_default_dtype())
-        if not isinstance(b, torch.Tensor):
-            b = torch.tensor(b, dtype=torch.get_default_dtype())
+        a, b = to_torch(a), to_torch(b)
 
         super().__init__(
             dim_state=a.shape[1], dim_action=b.shape[1], deterministic=noise is None
@@ -35,10 +34,7 @@ class LinearModel(AbstractModel):
 
     def forward(self, state, action, next_state=None):
         """Get next state distribution."""
-        if not isinstance(state, torch.Tensor):
-            state = torch.tensor(state, dtype=torch.get_default_dtype())
-        if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action, dtype=torch.get_default_dtype())
+        state, action = to_torch(state), to_torch(action)
 
         next_state = state @ self.a + action @ self.b
         if self.noise is None:

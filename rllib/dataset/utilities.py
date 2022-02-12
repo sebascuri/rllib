@@ -143,7 +143,9 @@ def gather_trajectories(trajectories, gather_dim=1):
 
 def unstack_observations(observation):
     """Unstack observations in a list."""
-    in_dim = observation.reward.shape
+    in_dim = observation.reward.shape[:-1]
+    # don't consider the last reward dimension.
+    # this changed after making the rewards multi-dimensional.
     observations = []
     for indexes in product(*map(range, in_dim)):
 
@@ -157,17 +159,17 @@ def unstack_observations(observation):
     return observations
 
 
-def chunk(array, num_steps):
+def chunk(array, num_memory_steps):
     """Chunk an array into size of N steps.
 
     The array of size N x k_1 x ... k_n will be reshaped to be of size
-    Batch x num_steps x k_1 x ... k_n.
+    Batch x num_memory_steps x k_1 x ... k_n.
 
     Parameters
     ----------
     array: Array.
         Array to reshape.
-    num_steps: int.
+    num_memory_steps: int.
         Number of steps to chunk the batch.
 
     Returns
@@ -175,8 +177,8 @@ def chunk(array, num_steps):
     array: Array.
         Chunked Array.
     """
-    batch_size = array.shape[0] // num_steps
-    return array.reshape(batch_size, num_steps, *array.shape[1:])
+    batch_size = array.shape[0] // num_memory_steps
+    return array.reshape(batch_size, num_memory_steps, *array.shape[1:])
 
 
 def d4rl_to_observation(dataset):
@@ -196,12 +198,12 @@ def d4rl_to_observation(dataset):
     dim_state = dataset["observations"].shape[1]
     dim_actions = dataset["actions"].shape[1]
     dataset = Observation(
-        state=dataset["observations"].reshape(num_points,1,dim_state),
-        action=dataset["actions"].reshape(num_points,1,dim_actions),
-        reward=dataset["rewards"].reshape(num_points,1,1),
-        next_state=dataset["next_observations"].reshape(num_points,1,dim_state),
-        done=dataset["terminals"].reshape(num_points,1,1),
-        log_prob_action=dataset["infos/action_log_probs"].reshape(num_points,1,1),
+        state=dataset["observations"].reshape(num_points, 1, dim_state),
+        action=dataset["actions"].reshape(num_points, 1, dim_actions),
+        reward=dataset["rewards"].reshape(num_points, 1, 1),
+        next_state=dataset["next_observations"].reshape(num_points, 1, dim_state),
+        done=dataset["terminals"].reshape(num_points, 1, 1),
+        log_prob_action=dataset["infos/action_log_probs"].reshape(num_points, 1, 1),
     ).to_torch()
     return dataset
 
@@ -241,17 +243,17 @@ def drop_last(observation, k):
     return map_observation(_extract_index, observation)
 
 
-def _observation_to_num_steps_with_repeat(observation, num_steps):
+def _observation_to_num_memory_steps_with_repeat(observation, num_memory_steps):
     """Do something."""
     #
 
     def _safe_repeat(tensor):
         try:
             shape = torch.tensor(tensor.shape)
-            shape[0] = (shape[0] - num_steps) + 1
-            shape[1] = num_steps
+            shape[0] = (shape[0] - num_memory_steps) + 1
+            shape[1] = num_memory_steps
             out = torch.zeros(*shape)
-            for i in range(num_steps):
+            for i in range(num_memory_steps):
                 first_idx = i
                 last_idx = first_idx + shape[0]
                 out[:, i, :] = tensor[first_idx:last_idx, 0, :]
@@ -262,43 +264,49 @@ def _observation_to_num_steps_with_repeat(observation, num_steps):
     return map_observation(_safe_repeat, observation)
 
 
-def _observation_to_num_steps(observation, num_steps, repeat=False):
-    """Get an observation and chunk it into batches of num_steps."""
+def _observation_to_num_memory_steps(observation, num_memory_steps, repeat=False):
+    """Get an observation and chunk it into batches of num_memory_steps."""
     if repeat:
-        return _observation_to_num_steps_with_repeat(observation, num_steps)
+        return _observation_to_num_memory_steps_with_repeat(
+            observation, num_memory_steps
+        )
     num_transitions = observation.state.shape[0]
-    drop_k = num_transitions % num_steps
+    drop_k = num_transitions % num_memory_steps
     if drop_k > 0:
         # drop last k transitions.
         observation = drop_last(observation, drop_k)
 
     def _safe_chunk(tensor):
         try:
-            return chunk(tensor.squeeze(), num_steps)
+            return chunk(tensor.squeeze(), num_memory_steps)
         except IndexError:
             return tensor
 
     return map_observation(_safe_chunk, observation)
 
 
-def observation_to_num_steps(observation, num_steps, repeat=False):
-    """Convert an observation to num_steps."""
+def observation_to_num_memory_steps(observation, num_memory_steps, repeat=False):
+    """Convert an observation to num_memory_steps."""
     # split into trajectories
     trajectory = split_observations_by_done(observation)
 
     # convert each trajectory to num step chunks
-    chunked_trajectories = trajectory_to_num_steps(trajectory, num_steps, repeat=repeat)
+    chunked_trajectories = trajectory_to_num_memory_steps(
+        trajectory, num_memory_steps, repeat=repeat
+    )
 
     # gather back trajectories into an observation.
     return merge_observations(chunked_trajectories)
 
 
-def trajectory_to_num_steps(trajectory, num_steps, repeat=False):
-    """Trajectory to num_steps."""
+def trajectory_to_num_memory_steps(trajectory, num_memory_steps, repeat=False):
+    """Trajectory to num_memory_steps."""
     chunked_observations = []
     for observation in trajectory:
         chunked_observations.append(
-            _observation_to_num_steps(observation, num_steps, repeat=repeat)
+            _observation_to_num_memory_steps(
+                observation, num_memory_steps, repeat=repeat
+            )
         )
     return chunked_observations
 

@@ -5,7 +5,7 @@ from rllib.policy import AbstractPolicy
 from rllib.util.utilities import tensor_to_distribution
 
 
-def collect_environment_transitions(state_dist, policy, environment, num_samples):
+def collect_environment_transitions(state_dist, policy, environment, num_transitions):
     """Collect transitions by interacting with an environment.
 
     Parameters
@@ -16,7 +16,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
         Policy to interact with the environment.
     environment: AbstractEnvironment.
         Environment with which to interact.
-    num_samples: int.
+    num_transitions: int.
         Number of transitions.
 
     Returns
@@ -26,7 +26,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
 
     """
     transitions = []
-    for _ in range(num_samples):
+    for _ in range(num_transitions):
         state = state_dist.sample()
         if isinstance(policy, AbstractPolicy):
             action_dist = tensor_to_distribution(policy(state), **policy.dist_params)
@@ -44,7 +44,7 @@ def collect_environment_transitions(state_dist, policy, environment, num_samples
 
 
 def collect_model_transitions(
-    state_dist, policy, dynamical_model, reward_model, num_samples
+    state_dist, policy, dynamical_model, reward_model, num_transitions
 ):
     """Collect transitions by interacting with an environment.
 
@@ -58,7 +58,7 @@ def collect_model_transitions(
         Model with which to interact.
     reward_model: AbstractReward.
         Reward model with which to interact.
-    num_samples: int.
+    num_transitions: int.
         Number of transitions.
 
     Returns
@@ -67,13 +67,13 @@ def collect_model_transitions(
         List of 1-step transitions.
 
     """
-    state = state_dist.sample((num_samples,))
+    state = state_dist.sample((num_transitions,))
     if isinstance(policy, AbstractPolicy):
         action_dist = tensor_to_distribution(policy(state), **policy.dist_params)
         action = action_dist.sample()
     else:  # action_distribution
         action_dist = policy
-        action = action_dist.sample((num_samples,))
+        action = action_dist.sample((num_transitions,))
 
     next_state = tensor_to_distribution(dynamical_model(state, action)).sample()
     reward = tensor_to_distribution(reward_model(state, action, next_state)).sample()

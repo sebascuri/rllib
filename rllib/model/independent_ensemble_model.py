@@ -26,6 +26,11 @@ class IndependentEnsembleModel(AbstractModel):
     """
 
     def __init__(self, models, prediction_strategy="moment_matching", *args, **kwargs):
+        if isinstance(models[0], TransformedModel):
+            raise NotImplementedError(
+                """Models can't be a Transformed model.
+                It is better wrap the independent ensemble model."""
+            )
         super().__init__(
             dim_state=models[0].dim_state,
             dim_action=models[0].dim_action,
@@ -89,25 +94,8 @@ class IndependentEnsembleModel(AbstractModel):
     @classmethod
     def default(cls, environment, num_heads=5, *args, **kwargs):
         """See AbstractModel.default()."""
-        first_member = TransformedModel.default(
-            environment,
-            base_model=NNModel.default(environment, *args, **kwargs),
-            *args,
-            **kwargs,
-        )
-        transformations = first_member.transformations
         models = torch.nn.ModuleList(
-            [first_member]
-            + [
-                TransformedModel.default(
-                    environment,
-                    base_model=NNModel.default(environment, *args, **kwargs),
-                    transformations=transformations,
-                    *args,
-                    **kwargs,
-                )
-                for _ in range(num_heads - 1)
-            ]
+            [NNModel.default(environment, *args, **kwargs) for _ in range(num_heads)]
         )
         return super().default(environment, models=models, *args, **kwargs)
 

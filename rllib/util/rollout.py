@@ -16,6 +16,7 @@ def step_env(environment, state, action, action_scale, pi=None, render=False):
         next_state, reward, done, info = environment.step(action)
     except TypeError:
         next_state, reward, done, info = environment.step(action.item())
+
     action = to_torch(action)
 
     if pi is not None:
@@ -245,7 +246,6 @@ def rollout_policy(environment, policy, num_episodes=1, max_steps=1000, render=F
         time_step = 0
         while not done:
             pi = tensor_to_distribution(policy(to_torch(state)), **policy.dist_params)
-
             action = pi.sample()
             if not policy.discrete_action:
                 action = policy.action_scale * action.clamp(-1.0, 1.0)
@@ -275,6 +275,7 @@ def rollout_model(
     initial_action=None,
     termination_model=None,
     max_steps=1000,
+    memory=None,
 ):
     """Conduct a rollout of a policy interacting with a model.
 
@@ -294,6 +295,8 @@ def rollout_model(
         Termination condition to finish the rollout.
     max_steps: int.
         Maximum number of steps per episode.
+    memory: ExperienceReplay, optional.
+        Memory where to store the simulated transitions.
 
     Returns
     -------
@@ -341,6 +344,8 @@ def rollout_model(
             pi=pi,
         )
         trajectory.append(observation)
+        if memory is not None:
+            memory.append(observation)
 
         state = next_state
         if torch.all(done):
@@ -366,10 +371,10 @@ def rollout_actions(
         Reward Model with which the policy interacts.
     action_sequence: Action
         Action Sequence that interacts with the environment.
-        The dimensions are [horizon x num_samples x dim_action].
+        The dimensions are [horizon x num samples x dim action].
     initial_state: State
         Starting states for the interaction.
-        The dimensions are [1 x num_samples x dim_state].
+        The dimensions are [1 x num samples x dim state].
     termination_model: Callable.
         Termination condition to finish the rollout.
 

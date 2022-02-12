@@ -20,8 +20,8 @@ class BPTTAgent(ModelBasedAgent):
         criterion: Type[_Loss],
         termination_model: Optional[AbstractModel] = ...,
         algorithm: Type[BPTT] = ...,
-        num_steps: int = ...,
-        num_samples: int = ...,
+        num_model_steps: int = ...,
+        num_model_samples: int = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

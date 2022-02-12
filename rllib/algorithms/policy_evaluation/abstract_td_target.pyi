@@ -14,7 +14,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     policy: Optional[AbstractPolicy]
     gamma: float
     lambda_: float
-    num_samples: int
+    num_policy_samples: int
     value_target: IntegrateQValueFunction
     def __init__(
         self,
@@ -22,7 +22,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         policy: Optional[AbstractPolicy] = ...,
         gamma: float = ...,
         lambda_: float = ...,
-        num_samples: int = ...,
+        num_policy_samples: int = ...,
     ) -> None: ...
     @abstractmethod
     def correction(self, pi_log_prob: Tensor, mu_log_prob: Tensor) -> Tensor: ...

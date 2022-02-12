@@ -9,7 +9,7 @@ import torch.nn as nn
 from rllib.dataset.utilities import stack_list_of_tuples
 from rllib.util.multi_objective_reduction import MeanMultiObjectiveReduction
 from rllib.util.multiprocessing import run_parallel_returns
-from rllib.util.neural_networks.utilities import repeat_along_dimension
+from rllib.util.neural_networks.utilities import repeat_along_dimension, to_torch
 from rllib.util.rollout import rollout_actions
 from rllib.util.value_estimation import discount_sum
 
@@ -33,8 +33,8 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         Scale of covariance matrix to sample.
     num_iter: int, optional.
         Number of iterations of solver method.
-    num_samples: int, optional.
-        Number of samples for shooting method.
+    num_particles: int, optional.
+        Number of particles for shooting method.
     termination_model: Callable, optional.
         Termination condition.
     terminal_reward: terminal reward model, optional.
@@ -53,7 +53,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         horizon=25,
         gamma=1.0,
         num_iter=1,
-        num_samples=400,
+        num_particles=400,
         termination_model=None,
         scale=0.3,
         terminal_reward=None,
@@ -80,7 +80,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self.gamma = gamma
 
         self.num_iter = num_iter
-        self.num_samples = num_samples
+        self.num_particles = num_particles
         self.terminal_reward = terminal_reward
         self.warm_start = warm_start
         self.default_action = default_action
@@ -93,7 +93,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
             self.horizon, 1, 1
         )
         if isinstance(action_scale, np.ndarray):
-            action_scale = torch.tensor(action_scale, dtype=torch.get_default_dtype())
+            action_scale = to_torch(action_scale)
         elif not isinstance(action_scale, torch.Tensor):
             action_scale = torch.full((self.dim_action,), action_scale)
         if len(action_scale) < self.dim_action:
@@ -181,16 +181,16 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         batch_shape = state.shape[:-1]
         self.initialize_actions(batch_shape)
 
-        state = repeat_along_dimension(state, number=self.num_samples, dim=-2)
+        state = repeat_along_dimension(state, number=self.num_particles, dim=-2)
 
         batch_actions = [
             torch.randn(
-                (self.horizon,) + batch_shape + (self.num_samples, self.dim_action)
+                (self.horizon,) + batch_shape + (self.num_particles, self.dim_action)
             )
             for _ in range(self.num_cpu)
         ]
         batch_returns = [
-            torch.randn(batch_shape + (self.num_samples, self.dim_reward))
+            torch.randn(batch_shape + (self.num_particles, self.dim_reward))
             for _ in range(self.num_cpu)
         ]
         for action_, return_ in zip(batch_actions, batch_returns):

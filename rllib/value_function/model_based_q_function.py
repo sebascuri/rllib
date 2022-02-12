@@ -32,8 +32,8 @@ class ModelBasedQFunction(AbstractQFunction):
         self,
         dynamical_model,
         reward_model,
-        num_steps=1,
-        num_samples=15,
+        num_model_steps=1,
+        num_particles=15,
         termination_model=None,
         policy=None,
         value_function=None,
@@ -53,13 +53,15 @@ class ModelBasedQFunction(AbstractQFunction):
         self.sim = AbstractMBAlgorithm(
             dynamical_model=dynamical_model,
             reward_model=reward_model,
-            num_steps=num_steps,
-            num_samples=num_samples,
+            num_model_steps=num_model_steps,
+            num_particles=num_particles,
             termination_model=termination_model,
         )
-        assert num_steps > 0, "At least one-step ahead simulation."
+        assert num_model_steps > 0, "At least one-step ahead simulation."
         if policy is None:
-            assert num_steps == 1, "If no policy is passed, then only one-step ahead."
+            assert (
+                num_model_steps == 1
+            ), "If no policy is passed, then only one-step ahead."
         self.value_function = value_function
         self.lambda_ = lambda_
         self.policy = policy
@@ -106,6 +108,6 @@ class ModelBasedQFunction(AbstractQFunction):
                 reduction="none",
             )
 
-        v = v.reshape(self.sim.num_samples, state.shape[0], -1).mean(0)
+        v = v.reshape(self.sim.num_particles, state.shape[0], -1).mean(0)
         v = v[:, 0]  # In cases of ensembles return first component.
         return v

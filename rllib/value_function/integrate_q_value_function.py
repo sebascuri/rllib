@@ -16,11 +16,11 @@ class IntegrateQValueFunction(AbstractValueFunction):
         q _function.
     policy: AbstractPolicy
         q _function.
-    num_samples: int, optional (default=15).
-        Number of states in discrete environments.
+    num_policy_samples: int, optional (default=4).
+        Number of policy samples to execute when evaluating the integral.
     """
 
-    def __init__(self, q_function, policy, num_samples=4, *args, **kwargs):
+    def __init__(self, q_function, policy, num_policy_samples=4, *args, **kwargs):
         kwargs.pop("dim_state", None)
         kwargs.pop("num_states", None)
         kwargs.pop("tau", None)
@@ -33,7 +33,7 @@ class IntegrateQValueFunction(AbstractValueFunction):
         )
         self.q_function = q_function
         self.policy = policy
-        self.num_samples = num_samples
+        self.num_policy_samples = num_policy_samples
 
     def set_policy(self, new_policy):
         """Set policy."""
@@ -50,6 +50,6 @@ class IntegrateQValueFunction(AbstractValueFunction):
         """Get value of the value-function at a given state."""
         pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         final_v = integrate(
-            lambda a: self.q_function(state, a), pi, num_samples=self.num_samples
+            lambda a: self.q_function(state, a), pi, num_samples=self.num_policy_samples
         )
         return final_v

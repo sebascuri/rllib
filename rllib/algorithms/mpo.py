@@ -117,7 +117,7 @@ class MPO(AbstractAlgorithm):
     epsilon_var: float
         The KL-divergence for the variance component in the M-step (fitting the policy).
         See `mbrl.control.separated_kl`.
-    num_samples: int.
+    num_policy_samples: int.
         Number of action samples to approximate integral.
     gamma: float
         The discount factor.
@@ -130,10 +130,15 @@ class MPO(AbstractAlgorithm):
     """
 
     def __init__(
-        self, num_samples=15, epsilon=0.1, kl_regularization=False, *args, **kwargs
+        self,
+        num_policy_samples=15,
+        epsilon=0.1,
+        kl_regularization=False,
+        *args,
+        **kwargs,
     ):
         super().__init__(
-            num_samples=num_samples,
+            num_policy_samples=num_policy_samples,
             kl_regularization=kl_regularization,
             *args,
             **kwargs,
@@ -147,7 +152,7 @@ class MPO(AbstractAlgorithm):
             policy=self.old_policy,
             critic=self.critic_target,
             gamma=self.gamma,
-            num_samples=self.num_samples,
+            num_policy_samples=self.num_policy_samples,
             lambda_=1.0,
         )
 
@@ -177,7 +182,7 @@ class MPO(AbstractAlgorithm):
     def actor_loss(self, observation):
         """Compute actor loss."""
         state = repeat_along_dimension(
-            observation.state, number=self.num_samples, dim=0
+            observation.state, number=self.num_policy_samples, dim=0
         )
         pi = tensor_to_distribution(self.old_policy(state), **self.policy.dist_params)
         action = self.policy.action_scale * pi.sample().clamp(-1.0, 1.0)

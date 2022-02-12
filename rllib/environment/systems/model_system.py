@@ -1,6 +1,6 @@
 """Implementation of a System from a Learned Model."""
-import torch
 
+from rllib.util.neural_networks.utilities import to_torch
 from rllib.util.utilities import tensor_to_distribution
 
 from .abstract_system import AbstractSystem
@@ -23,9 +23,7 @@ class ModelSystem(AbstractSystem):
 
     def step(self, action):
         """See `AbstractSystem.step'."""
-        if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action, dtype=torch.get_default_dtype())
-        state = torch.tensor(self.state, dtype=torch.get_default_dtype())
+        state, action = to_torch(self.state), to_torch(action)
         self.state = (
             tensor_to_distribution(self.dynamical_model(state, action)).sample().numpy()
         )

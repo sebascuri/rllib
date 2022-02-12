@@ -90,7 +90,7 @@ def discount_sum(rewards, gamma=1.0, reward_transformer=RewardTransformer()):
     Parameters
     ----------
     rewards: Tensor.
-        Array of rewards. Either 1-d or 2-d. When 2-d, [trajectory x num_samples].
+        Array of rewards. Either 1-d or 2-d. When 2-d, [trajectory x num samples].
     gamma: float, optional.
         Discount factor.
     reward_transformer: RewardTransformer
@@ -211,24 +211,6 @@ def mc_return(
         reduction=reduction,
     )
     return returns[..., -1, :]
-    # steps = returns.shape[1]  # Batch x T x num_q
-    # if steps == 1 or lambda_ == 1.0:
-    #     if returns.ndim == 2:
-    #         return returns[:, -1]
-    #     else:
-    #         return returns[..., -1, :]
-    # else:
-    #     w = torch.cat(
-    #         (
-    #             (1 - lambda_) * lambda_ ** torch.arange(steps - 1),
-    #             torch.tensor([lambda_]) ** (steps - 1),
-    #         )
-    #     )
-    #     w = w.unsqueeze(0)
-    #     if returns.ndim == 2:
-    #         return (w * returns).sum(-1)
-    #     else:
-    #         return (w.unsqueeze(-1) * returns).sum(-2)
 
 
 def mb_return(
@@ -236,10 +218,10 @@ def mb_return(
     dynamical_model,
     reward_model,
     policy,
-    num_steps=1,
+    num_model_steps=1,
     gamma=1.0,
     value_function=None,
-    num_samples=1,
+    num_particles=1,
     entropy_reg=0.0,
     reward_transformer=RewardTransformer(),
     termination_model=None,
@@ -264,26 +246,28 @@ def mb_return(
         The reward predicts a distribution over floats or ints given states and actions.
     policy: AbstractPolicy
         The policy predicts a distribution over actions given the state.
-    num_steps: int, optional. (default=1).
+    num_model_steps: int, optional. (default=1).
         Number of steps predicted with the model before (optionally) bootstrapping.
     gamma: float, optional. (default=1.).
         Discount factor.
     value_function: AbstractValueFunction, optional. (default=None).
         The value function used for bootstrapping, takes states as input.
-    num_samples: int, optional. (default=0).
-        The states are repeated `num_repeats` times in order to estimate the expected
+    num_particles: int, optional. (default=0).
+        The states are repeated `num_particles` times in order to estimate the expected
         value by MC sampling of the policy, rewards and dynamics (jointly).
     entropy_reg: float, optional. (default=0).
         Entropy regularization parameter.
     termination_model: AbstractModel, optional. (default=None).
         Callable that returns True if the transition yields a terminal state.
     reward_transformer: RewardTransformer.
+    reduction: str.
+        How to reduce the ensemble critics.
 
     Returns
     -------
     return: DynaReturn
         q_target:
-            Num_samples of MC estimation of q-function target.
+            Num samples of MC estimation of q-function target.
         trajectory:
             Sample trajectory that MC estimation produces.
 
@@ -300,13 +284,13 @@ def mb_return(
     Sample-based learning and search with permanent and transient memories. ICML.
     """
     # Repeat states to get a better estimate of the expected value
-    state = repeat_along_dimension(state, number=num_samples, dim=0)
+    state = repeat_along_dimension(state, number=num_particles, dim=0)
     trajectory = rollout_model(
         dynamical_model=dynamical_model,
         reward_model=reward_model,
         policy=policy,
         initial_state=state,
-        max_steps=num_steps,
+        max_steps=num_model_steps,
         termination_model=termination_model,
     )
     observation = stack_list_of_tuples(trajectory, dim=state.ndim - 1)

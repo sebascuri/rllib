@@ -26,6 +26,12 @@ class PitchControl(ODESystem):
     Reinforcement learning in feedback control. Machine learning.
 
     http://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=SystemModeling
+
+    The state is given by a 3-dimensional vector where
+    alpha: Angle of attack.
+    q: Pitch rate.
+    theta: Pitch angle.
+
     """
 
     def __init__(

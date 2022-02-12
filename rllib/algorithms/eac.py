@@ -44,7 +44,7 @@ class ExpectedActorCritic(ActorCritic):
                 - self.value_target(state)
             ).detach(),
             pi,
-            num_samples=self.num_samples,
+            num_samples=self.num_policy_samples,
         ).sum()
 
         return Loss(policy_loss=policy_loss).reduce(self.criterion.reduction)

@@ -23,8 +23,8 @@ class OfflineDataset(Dataset):
         init_transformations=True,
     ):
 
-        size, num_steps = dataset.state.shape[:2]
-        self.num_steps = num_steps
+        size, num_memory_steps = dataset.state.shape[:2]
+        self.num_memory_steps = num_memory_steps
         self.indexes = torch.arange(size)
 
         self.dataset = dataset

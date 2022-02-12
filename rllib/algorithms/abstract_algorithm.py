@@ -80,7 +80,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         KL divergence regularization parameter for variance in continuous distributions.
     kl_regularization: bool
         Flag that indicates whether to regularize the KL-divergence or constrain it.
-    num_samples: int.
+    num_policy_samples: int.
         Number of MC samples for MC simulation of targets.
     ope: OPE (optional).
         Optional off-policy estimation parameter.
@@ -106,7 +106,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         epsilon_mean=0.0,
         epsilon_var=0.0,
         kl_regularization=True,
-        num_samples=1,
+        num_policy_samples=1,
         ope=None,
         critic_ensemble_lambda=1.0,
         criterion=nn.MSELoss(reduction="mean"),
@@ -151,16 +151,18 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 policy=self.policy,
                 multi_objective_reduction=multi_objective_reduction,
             )
-        self.num_samples = num_samples
+        self.num_policy_samples = num_policy_samples
         self.ope = ope
         if self.critic is None:
             self.value_function, self.value_target = None, None
         else:
             self.value_function = IntegrateQValueFunction(
-                self.critic, self.policy, num_samples=self.num_samples
+                self.critic, self.policy, num_policy_samples=self.num_policy_samples
             )
             self.value_target = IntegrateQValueFunction(
-                self.critic_target, self.policy, num_samples=self.num_samples
+                self.critic_target,
+                self.policy,
+                num_policy_samples=self.num_policy_samples,
             )
         self.multi_objective_reduction = multi_objective_reduction
         self.post_init()

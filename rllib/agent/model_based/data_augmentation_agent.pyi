@@ -10,8 +10,8 @@ class DataAugmentationAgent(ModelBasedAgent):
     def __init__(
         self,
         base_algorithm: AbstractAlgorithm,
-        num_steps: int = ...,
-        num_samples: int = ...,
+        num_model_steps: int = ...,
+        num_model_samples: int = ...,
         num_initial_distribution_samples: int = ...,
         num_memory_samples: int = ...,
         num_initial_state_samples: int = ...,

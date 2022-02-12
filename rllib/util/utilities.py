@@ -47,7 +47,7 @@ def load_random_state(directory):
         torch.set_rng_state(random_states["torch"])
 
 
-def integrate(function, distribution, out_dim=None, num_samples=15):
+def integrate(function, distribution, num_samples=15):
     r"""Integrate a function over a distribution.
 
     Compute:
@@ -69,7 +69,6 @@ def integrate(function, distribution, out_dim=None, num_samples=15):
     -------
     integral value.
     """
-    del out_dim
     if distribution.has_enumerate_support:
         ans = 1.0 * torch.zeros_like(function(distribution.sample()))
         probs = distribution.probs

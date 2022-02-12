@@ -13,8 +13,8 @@ class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
         base_algorithm,
         dynamical_model,
         reward_model,
-        num_steps=1,
-        num_samples=15,
+        num_model_steps=1,
+        num_particles=15,
         termination_model=None,
         only_sim=False,
         only_real=False,
@@ -26,8 +26,8 @@ class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
             self,
             dynamical_model,
             reward_model,
-            num_steps=num_steps,
-            num_samples=num_samples,
+            num_model_steps=num_model_steps,
+            num_particles=num_particles,
             termination_model=termination_model,
         )
         self.base_algorithm.criterion = type(self.base_algorithm.criterion)(

@@ -90,7 +90,7 @@ class SimulationAlgorithm(AbstractMBAlgorithm):
         return initial_states
 
     def simulate(
-        self, state, policy, initial_action=None, logger=None, stack_obs=False
+        self, state, policy, initial_action=None, memory=None, stack_obs=False
     ):
         """Simulate from initial_states."""
         self.dynamical_model.eval()

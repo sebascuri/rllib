@@ -30,7 +30,7 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         epsilon: float = ...,
         non_decrease_iter: int = ...,
         calibrate: bool = ...,
-        num_steps: int = ...,
+        num_memory_steps: int = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
@@ -42,6 +42,6 @@ class ModelLearningAlgorithm(AbstractMBAlgorithm):
         logger: Logger,
         calibrate: bool = ...,
         max_iter: Optional[int] = ...,
-        dynamical_model: Optional[AbstractModel] = ...
+        dynamical_model: Optional[AbstractModel] = ...,
     ) -> None: ...
     def learn(self, logger: Logger, max_iter: Optional[int] = ...) -> None: ...

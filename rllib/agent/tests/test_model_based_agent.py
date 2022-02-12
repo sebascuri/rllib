@@ -56,7 +56,7 @@ class TestDerivedMBAgents(object):
         return GymEnvironment(request.param, SEED)
 
     @pytest.fixture(params=[1, 4], scope="class")
-    def num_steps(self, request):
+    def num_model_steps(self, request):
         return request.param
 
     @pytest.fixture(params=["DPG", "TD3", "SAC", "MPO", "VMPO"], scope="class")
@@ -67,12 +67,12 @@ class TestDerivedMBAgents(object):
     def extender(self, request):
         return request.param
 
-    def test_continuous_agent(self, environment, base_agent, extender, num_steps):
+    def test_continuous_agent(self, environment, base_agent, extender, num_model_steps):
         agent = extender.default(
             environment,
             base_agent_name=base_agent,
-            num_steps=num_steps,
-            num_samples=2,
+            num_model_steps=num_model_steps,
+            num_particles=2,
             num_iter=2,
             num_epochs=2,
             td_k=True,
@@ -81,12 +81,12 @@ class TestDerivedMBAgents(object):
         )
         rollout_agent(environment, agent)
 
-    def test_mve_not_td_k(self, environment, base_agent, num_steps):
+    def test_mve_not_td_k(self, environment, base_agent, num_model_steps):
         agent = MVEAgent.default(
             environment,
             base_agent_name=base_agent,
-            num_steps=num_steps,
-            num_samples=2,
+            num_model_steps=num_model_steps,
+            num_particles=2,
             num_iter=2,
             num_epochs=2,
             td_k=False,
@@ -101,7 +101,7 @@ class TestMPCAgent(object):
     GAMMA = 0.99
     HORIZON = 5
     NUM_ITER = 5
-    NUM_SAMPLES = 50
+    NUM_PARTICLES = 50
     NUM_ELITES = 5
     KAPPA = 1.0
     BETAS = (0.2, 0.8, 0.0)
@@ -139,7 +139,7 @@ class TestMPCAgent(object):
                 reward_model=self.reward_model,
                 horizon=self.HORIZON,
                 gamma=1.0,
-                num_samples=self.NUM_SAMPLES,
+                num_particles=self.NUM_PARTICLES,
                 num_elites=self.NUM_ELITES,
                 termination_model=self.termination_model,
                 terminal_reward=None,
@@ -154,7 +154,7 @@ class TestMPCAgent(object):
                 horizon=self.HORIZON,
                 gamma=1.0,
                 num_iter=self.NUM_ITER,
-                num_samples=self.NUM_SAMPLES,
+                num_particles=self.NUM_PARTICLES,
                 num_elites=self.NUM_ELITES,
                 termination_model=self.termination_model,
                 terminal_reward=None,
@@ -171,7 +171,7 @@ class TestMPCAgent(object):
                 num_iter=self.NUM_ITER,
                 kappa=self.KAPPA,
                 filter_coefficients=self.BETAS,
-                num_samples=self.NUM_SAMPLES,
+                num_particles=self.NUM_PARTICLES,
                 termination_model=self.termination_model,
                 terminal_reward=None,
                 warm_start=warm_start_,

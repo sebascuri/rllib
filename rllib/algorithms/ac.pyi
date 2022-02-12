@@ -11,7 +11,7 @@ class ActorCritic(AbstractAlgorithm):
     standardize_returns: bool
     def __init__(
         self,
-        num_samples: int = ...,
+        num_policy_samples: int = ...,
         standardize_returns: bool = ...,
         *args: Any,
         **kwargs: Any,

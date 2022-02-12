@@ -2,7 +2,6 @@
 import torch
 
 from rllib.dataset.experience_replay import ExperienceReplay
-from rllib.dataset.utilities import unstack_observations
 
 from .dyna import Dyna
 
@@ -32,7 +31,7 @@ class DataAugmentation(Dyna):
         self.memory = memory
         self.sim_memory = ExperienceReplay(
             max_len=memory.max_len,
-            num_steps=memory.num_steps,
+            num_memory_steps=memory.num_memory_steps,
             transformations=memory.transformations,
         )
         self.model_batch_size = model_batch_size
@@ -63,17 +62,15 @@ class DataAugmentation(Dyna):
             self.simulate(state=self._sample_initial_states(), policy=self.policy)
 
     def simulate(
-        self, state, policy, initial_action=None, logger=None, stack_obs=False
+        self, state, policy, initial_action=None, memory=None, stack_obs=False
     ):
         """Simulate from initial_states."""
         self.dynamical_model.eval()
+        memory = self.sim_memory if memory is None else memory
         with torch.no_grad():
-            trajectory = super().simulate(state, policy, stack_obs=stack_obs)
-
-        for observations in trajectory:
-            observation_samples = unstack_observations(observations)
-            for observation in observation_samples:
-                self.sim_memory.append(observation)
+            trajectory = super().simulate(
+                state, policy, stack_obs=stack_obs, memory=memory
+            )
 
         return trajectory
 

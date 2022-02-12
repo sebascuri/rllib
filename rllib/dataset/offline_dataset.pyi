@@ -15,7 +15,7 @@ T = TypeVar("T", bound="OfflineDataset")
 class OfflineDataset(Dataset):
     """Offline dataset that handles the get item."""
 
-    num_steps: int
+    num_memory_steps: int
     indexes: torch.Tensor
     dataset: Observation
     transformations: List[AbstractTransform]

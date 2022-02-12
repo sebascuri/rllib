@@ -9,8 +9,8 @@ from rllib.dataset.datatypes import Observation
 from rllib.dataset.experience_replay import ExperienceReplay
 from rllib.model.abstract_model import AbstractModel
 from rllib.model.ensemble_model import EnsembleModel
-from rllib.model.independent_ensemble_model import IndependentEnsembleModel
 from rllib.model.gp_model import ExactGPModel
+from rllib.model.independent_ensemble_model import IndependentEnsembleModel
 from rllib.model.nn_model import NNModel
 from rllib.util.logger import Logger
 

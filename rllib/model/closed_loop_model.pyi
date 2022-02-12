@@ -4,6 +4,7 @@ from typing import Any
 
 from rllib.policy.abstract_policy import AbstractPolicy
 
+from .abstract_model import AbstractModel
 from .transformed_model import TransformedModel
 
 class ClosedLoopModel(TransformedModel):

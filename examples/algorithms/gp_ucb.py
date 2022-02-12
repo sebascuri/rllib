@@ -11,14 +11,14 @@ from rllib.util.gaussian_processes import ExactGP, RandomFeatureGP, SparseGP
 from rllib.util.rollout import rollout_agent
 
 
-def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> None:
+def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_gp_samples: int) -> None:
     """Plot 1-D GP.
 
     Parameters
     ----------
     x: points to plot.
     model: GP model.
-    num_samples: number of random samples from gp.
+    num_gp_samples: number of random samples from gp.
     """
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         pred = model(x)
@@ -32,7 +32,7 @@ def plot_gp(x: torch.Tensor, model: gpytorch.models.GP, num_samples: int) -> Non
     plt.plot(x, mean, color="C0")
 
     # Plot samples.
-    for _ in range(num_samples):
+    for _ in range(num_gp_samples):
         plt.plot(x.numpy(), pred.sample().numpy())
 
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     objective = GPBanditReward(objective_function)
 
     plt.plot(X.numpy(), Y.numpy(), "*")
-    plot_gp(x, objective_function, num_samples=0)
+    plot_gp(x, objective_function, num_gp_samples=0)
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.show()

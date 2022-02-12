@@ -5,6 +5,7 @@ import torch
 
 from rllib.model import AbstractModel
 from rllib.reward.utilities import tolerance
+from rllib.util.neural_networks.utilities import to_torch
 
 
 class StateActionReward(AbstractModel, metaclass=ABCMeta):
@@ -43,10 +44,7 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
 
     def forward(self, state, action, next_state=None):
         """Get reward distribution for state, action, next_state."""
-        if not isinstance(state, torch.Tensor):
-            state = torch.tensor(state, dtype=torch.get_default_dtype())
-        if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action, dtype=torch.get_default_dtype())
+        state, action = to_torch(state), to_torch(action)
 
         reward_ctrl = self.action_reward(action)
         reward_state = self.state_reward(state, next_state)

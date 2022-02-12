@@ -45,7 +45,7 @@ class EXP3ExperienceReplay(PrioritizedExperienceReplay):
         callable that takes an observation as input and returns a modified observation.
         If they have an `update` method it will be called whenever a new trajectory
         is added to the dataset.
-    num_steps: int, optional.
+    num_memory_steps: int, optional.
         Number of steps in return vector.
 
     References

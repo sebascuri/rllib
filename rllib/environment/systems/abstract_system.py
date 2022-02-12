@@ -87,12 +87,13 @@ class AbstractSystem(object, metaclass=ABCMeta):
     def action_space(self):
         """Return action space."""
         return spaces.Box(
-            np.array([-1] * self.dim_action), np.array([1] * self.dim_action)
+            np.array([-1] * self.dim_action[0]), np.array([1] * self.dim_action[0])
         )
 
     @property
     def observation_space(self):
         """Return observation space."""
         return spaces.Box(
-            np.array([-1] * self.dim_observation), np.array([1] * self.dim_observation)
+            np.array([-1] * self.dim_observation[0]),
+            np.array([1] * self.dim_observation[0]),
         )
