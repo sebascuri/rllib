@@ -5,14 +5,12 @@ from torch.distributions import Distribution
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.abstract_algorithm import AbstractAlgorithm
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.algorithms.mpc.abstract_solver import MPCSolver
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.model import AbstractModel
 from rllib.policy import AbstractPolicy
 
 class ModelBasedAgent(AbstractAgent):
     model_learning_algorithm: ModelLearningAlgorithm
-    planning_algorithm: Optional[MPCSolver]
     dynamical_model: AbstractModel
     reward_model: AbstractModel
     termination_model: Optional[AbstractModel]
@@ -43,7 +41,6 @@ class ModelBasedAgent(AbstractAgent):
         model_learn_exploration_steps: Optional[int] = ...,
         policy_learning_algorithm: Optional[AbstractAlgorithm] = ...,
         model_learning_algorithm: Optional[ModelLearningAlgorithm] = ...,
-        planning_algorithm: Optional[MPCSolver] = ...,
         memory: Optional[ExperienceReplay] = ...,
         policy: Optional[AbstractPolicy] = ...,
         thompson_sampling: bool = ...,

@@ -12,7 +12,7 @@ from rllib.value_function import AbstractValueFunction
 class MPCSolver(nn.Module, metaclass=ABCMeta):
     dynamical_model: AbstractModel
     reward_model: AbstractModel
-    horizon: int
+    num_model_steps: int
     gamma: float
     num_iter: int
     num_particles: int
@@ -31,7 +31,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self,
         dynamical_model: AbstractModel,
         reward_model: AbstractModel,
-        horizon: int = ...,
+        num_model_steps: int = ...,
         gamma: float = ...,
         scale: float = ...,
         num_iter: int = ...,

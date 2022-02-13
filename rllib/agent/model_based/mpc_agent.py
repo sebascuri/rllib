@@ -1,14 +1,18 @@
 """MPC Agent Implementation."""
 import importlib
 
+from rllib.policy import MPCPolicy
+
 from .model_based_agent import ModelBasedAgent
 
 
 class MPCAgent(ModelBasedAgent):
     """Implementation of an agent that runs an MPC policy."""
 
-    def __init__(self, mpc_solver, *args, **kwargs):
+    def __init__(self, mpc_solver, solver_frequency=1, *args, **kwargs):
+        policy = MPCPolicy(mpc_solver, solver_frequency=solver_frequency)
         super().__init__(
+            policy=policy,
             simulation_frequency=0,
             planning_algorithm=mpc_solver,
             dynamical_model=kwargs.pop("dynamical_model", mpc_solver.dynamical_model),

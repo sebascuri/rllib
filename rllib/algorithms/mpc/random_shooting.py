@@ -14,7 +14,7 @@ class RandomShooting(CEMShooting):
     ----------
     dynamical_model: state transition model.
     reward_model: reward model.
-    horizon: int.
+    num_model_steps: int.
         Horizon to solve planning problem.
     gamma: float, optional.
         Discount factor.

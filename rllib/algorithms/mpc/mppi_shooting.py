@@ -39,7 +39,7 @@ class MPPIShooting(MPCSolver):
         noise = noise_dist.sample((self.num_particles,))
 
         lag = len(self.filter_coefficients)
-        for i in range(self.horizon):
+        for i in range(self.num_model_steps):
             weights = self.filter_coefficients[: min(i + 1, lag)]
             aux = torch.einsum(
                 "i, ki...j-> k...j",
@@ -67,7 +67,7 @@ class MPPIShooting(MPCSolver):
         normalization = weights.sum()
 
         weights = weights.unsqueeze(0).unsqueeze(-1)
-        weights = weights.repeat_interleave(self.horizon, 0).repeat_interleave(
+        weights = weights.repeat_interleave(self.num_model_steps, 0).repeat_interleave(
             self.dim_action, -1
         )
         return (weights * action_sequence).sum(dim=-2) / normalization

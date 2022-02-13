@@ -13,15 +13,12 @@ from torch.optim import Adam
 
 from rllib.agent.abstract_agent import AbstractAgent
 from rllib.algorithms.model_learning_algorithm import ModelLearningAlgorithm
-from rllib.algorithms.mpc.policy_shooting import PolicyShooting
 from rllib.dataset.experience_replay import ExperienceReplay, StateExperienceReplay
 from rllib.environment.fake_environment import FakeEnvironment
 from rllib.model import TransformedModel
-from rllib.policy.mpc_policy import MPCPolicy
 from rllib.policy.random_policy import RandomPolicy
-from rllib.util.neural_networks.utilities import DisableGradient, to_torch
+from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.rollout import rollout_policy
-from rllib.util.utilities import tensor_to_distribution
 
 
 class ModelBasedAgent(AbstractAgent):
@@ -31,7 +28,6 @@ class ModelBasedAgent(AbstractAgent):
     ----------
     policy_learning_algorithm: PolicyLearningAlgorithm.
     model_learning_algorithm: ModelLearningAlgorithm
-    planning_algorithm: MPCSolver.
     thompson_sampling: bool.
         Flag that indicates whether or not to use posterior sampling for the model.
 
@@ -56,7 +52,6 @@ class ModelBasedAgent(AbstractAgent):
         model_learn_exploration_episodes=None,
         policy_learning_algorithm=None,
         model_learning_algorithm=None,
-        planning_algorithm=None,
         thompson_sampling=False,
         policy=None,
         memory=None,
@@ -94,7 +89,6 @@ class ModelBasedAgent(AbstractAgent):
         self.model_learn_exploration_steps = model_learn_exploration_steps
         self.model_learn_exploration_episodes = model_learn_exploration_episodes
 
-        self.planning_algorithm = planning_algorithm
         self.model_learning_algorithm = model_learning_algorithm
 
         self.dynamical_model = dynamical_model
@@ -105,12 +99,12 @@ class ModelBasedAgent(AbstractAgent):
         if self.termination_model is not None:
             assert self.termination_model.model_kind == "termination"
 
-        if policy_learning_algorithm:
-            policy = policy_learning_algorithm.policy
-        elif planning_algorithm is not None:
-            policy = MPCPolicy(self.planning_algorithm)
-        elif policy is None:
-            policy = RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
+        if policy is None:
+            if policy_learning_algorithm:
+                policy = policy_learning_algorithm.policy
+            else:
+                RandomPolicy(dynamical_model.dim_state, dynamical_model.dim_action)
+
         self.policy = policy
         self.thompson_sampling = thompson_sampling
 
@@ -131,26 +125,6 @@ class ModelBasedAgent(AbstractAgent):
         self.num_initial_distribution_samples = num_initial_distribution_samples
         self.initial_distribution = initial_distribution
         self.augment_dataset_with_sim = augment_dataset_with_sim
-
-    def act(self, state):
-        """Ask the agent for an action to interact with the environment.
-
-        If the plan horizon is zero, then it just samples an action from the policy.
-        If the plan horizon > 0, then is plans with the current model.
-        """
-        if isinstance(self.planning_algorithm, PolicyShooting):
-            state = to_torch(state)
-            policy = tensor_to_distribution(
-                self.policy(state), **self.policy.dist_params
-            )
-            self.pi = policy
-            action = self.planning_algorithm(state).detach().numpy()
-        else:
-            action = super().act(state)
-
-        return action.clip(
-            -self.policy.action_scale.numpy(), self.policy.action_scale.numpy()
-        )
 
     def observe(self, observation):
         """Observe a new transition.

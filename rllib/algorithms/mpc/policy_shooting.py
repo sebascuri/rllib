@@ -37,7 +37,7 @@ class PolicyShooting(RandomShooting):
             dynamical_model=self.dynamical_model,
             reward_model=self.reward_model,
             policy=self.policy,
-            num_model_steps=self.horizon,
+            num_model_steps=self.num_model_steps,
             gamma=self.gamma,
             num_particles=self.num_particles,
             value_function=self.terminal_reward,

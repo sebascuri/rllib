@@ -101,7 +101,7 @@ class TestDerivedMBAgents(object):
 class TestMPCAgent(object):
     ENVIRONMENT = "VContinuous-CartPole-v0"
     GAMMA = 0.99
-    HORIZON = 5
+    NUM_MODEL_STEPS = 5
     NUM_ITER = 5
     NUM_PARTICLES = 50
     NUM_ELITES = 5
@@ -139,7 +139,7 @@ class TestMPCAgent(object):
             mpc_solver = RandomShooting(
                 dynamical_model=self.dynamical_model,
                 reward_model=self.reward_model,
-                horizon=self.HORIZON,
+                num_model_steps=self.NUM_MODEL_STEPS,
                 gamma=1.0,
                 num_particles=self.NUM_PARTICLES,
                 num_elites=self.NUM_ELITES,
@@ -153,7 +153,7 @@ class TestMPCAgent(object):
             mpc_solver = CEMShooting(
                 dynamical_model=self.dynamical_model,
                 reward_model=self.reward_model,
-                horizon=self.HORIZON,
+                num_model_steps=self.NUM_MODEL_STEPS,
                 gamma=1.0,
                 num_iter=self.NUM_ITER,
                 num_particles=self.NUM_PARTICLES,
@@ -168,7 +168,7 @@ class TestMPCAgent(object):
             mpc_solver = MPPIShooting(
                 dynamical_model=self.dynamical_model,
                 reward_model=self.reward_model,
-                horizon=self.HORIZON,
+                num_model_steps=self.NUM_MODEL_STEPS,
                 gamma=1.0,
                 num_iter=self.NUM_ITER,
                 kappa=self.KAPPA,

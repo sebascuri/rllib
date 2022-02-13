@@ -23,7 +23,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
     ----------
     dynamical_model: state transition model.
     reward_model: reward model.
-    horizon: int.
+    num_model_steps: int.
         Horizon to solve planning problem.
     gamma: float, optional.
         Discount factor.
@@ -48,7 +48,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self,
         dynamical_model,
         reward_model,
-        horizon=25,
+        num_model_steps=25,
         gamma=1.0,
         num_iter=1,
         num_particles=400,
@@ -74,7 +74,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         if self.termination_model is not None:
             assert self.termination_model.model_kind == "termination"
 
-        self.horizon = horizon
+        self.num_model_steps = num_model_steps
         self.gamma = gamma
 
         self.num_iter = num_iter
@@ -88,7 +88,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
         self.mean = None
         self._scale = scale
         self.covariance = (scale ** 2) * torch.eye(self.dim_action).repeat(
-            self.horizon, 1, 1
+            self.num_model_steps, 1, 1
         )
         if isinstance(action_scale, np.ndarray):
             action_scale = to_torch(action_scale)
@@ -120,7 +120,7 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
 
         if self.terminal_reward:
             terminal_reward = self.terminal_reward(trajectory.next_state[..., -1, :])
-            returns = returns + self.gamma ** self.horizon * terminal_reward
+            returns = returns + self.gamma ** self.num_model_steps * terminal_reward
         return returns
 
     @abstractmethod
@@ -152,9 +152,9 @@ class MPCSolver(nn.Module, metaclass=ABCMeta):
                 raise NotImplementedError
             self.mean = torch.cat((next_mean, final_action), dim=0)
         else:
-            self.mean = torch.zeros(self.horizon, *batch_shape, self.dim_action)
+            self.mean = torch.zeros(self.num_model_steps, *batch_shape, self.dim_action)
         self.covariance = (self._scale ** 2) * torch.eye(self.dim_action).repeat(
-            self.horizon, *batch_shape, 1, 1
+            self.num_model_steps, *batch_shape, 1, 1
         )
 
     def forward(self, state):

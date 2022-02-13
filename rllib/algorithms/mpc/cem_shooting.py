@@ -18,7 +18,7 @@ class CEMShooting(MPCSolver):
     ----------
     dynamical_model: state transition model.
     reward_model: reward model.
-    horizon: int.
+    num_model_steps: int.
         Horizon to solve planning problem.
     gamma: float, optional.
         Discount factor.
@@ -71,7 +71,7 @@ class CEMShooting(MPCSolver):
         returns = self.multi_objective_reduction(returns)
         idx = torch.topk(returns, k=self.num_elites, largest=True, dim=-1)[1]
         idx = idx.unsqueeze(0).unsqueeze(-1)  # Expand dims to action_sequence.
-        idx = idx.repeat_interleave(self.horizon, 0).repeat_interleave(
+        idx = idx.repeat_interleave(self.num_model_steps, 0).repeat_interleave(
             self.dim_action, -1
         )
         return torch.gather(action_sequence, -2, idx)
