@@ -3,6 +3,7 @@ import torch
 
 from rllib.dataset.datatypes import Loss
 from rllib.dataset.utilities import stack_list_of_tuples
+from rllib.util.neural_networks.utilities import broadcast_to_tensor
 from rllib.util.value_estimation import discount_cumsum, mc_return
 from rllib.value_function import NNEnsembleQFunction
 
@@ -56,10 +57,8 @@ class MVE(Dyna):
                     self.num_particles,
                     *pred_q.shape[:-2],
                     self.simulation_algorithm.reward_model.dim_reward[0],
-                ).mean(
-                    0
-                )  # take the mean of the particles.
-
+                ).mean(0)
+                # take the mean of the particles.
             if pred_q.shape != target_q.shape:  # Reshape in case of ensembles.
                 assert isinstance(self.critic, NNEnsembleQFunction)
                 target_q = target_q.unsqueeze(-1).repeat_interleave(
@@ -73,8 +72,9 @@ class MVE(Dyna):
     def get_value_target(self, observation):
         """Rollout model and call base algorithm with transitions."""
         if self.td_k:
+            reward = observation.reward
             final_state = observation.next_state[..., -1, :]
-            done = observation.done[..., -1]
+            not_done = 1 - observation.done[..., -1]
             final_value = self.base_algorithm.value_function(final_state)
 
             if final_value.ndim == observation.reward.ndim:  # It is an ensemble.
@@ -83,15 +83,17 @@ class MVE(Dyna):
                 lambda_ = self.critic_ensemble_lambda
                 final_value = lambda_ * final_min + (1.0 - lambda_) * final_max
             tau = self.base_algorithm.entropy_loss.eta.item()
-            reward = observation.reward + tau * observation.entropy
+            entropy = broadcast_to_tensor(observation.entropy, target_tensor=reward)
+            not_done = broadcast_to_tensor(not_done, target_tensor=final_value)
             rewards = torch.cat(
-                (reward, (final_value * (1 - done)).unsqueeze(-1)), dim=-1
+                (reward + tau * entropy, (final_value * not_done).unsqueeze(-2)), dim=-2
             )
             sim_target = discount_cumsum(
                 rewards,
-                self.base_algorithm.gamma,
-                self.base_algorithm.reward_transformer,
-            )[..., :-1]
+                gamma=self.base_algorithm.gamma,
+                reward_transformer=self.base_algorithm.reward_transformer,
+            )[..., :-1, :]
+            # remove last time step
         else:
             sim_target = mc_return(
                 observation,
