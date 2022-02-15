@@ -64,6 +64,7 @@ class ModelBasedAgent(AbstractAgent):
         num_initial_distribution_samples=0,
         initial_distribution=None,
         augment_dataset_with_sim=False,
+        pre_train_iterations=1000,
         *args,
         **kwargs,
     ):
@@ -125,6 +126,7 @@ class ModelBasedAgent(AbstractAgent):
         self.num_initial_distribution_samples = num_initial_distribution_samples
         self.initial_distribution = initial_distribution
         self.augment_dataset_with_sim = augment_dataset_with_sim
+        self.pre_train_iterations = pre_train_iterations
 
     def observe(self, observation):
         """Observe a new transition.
@@ -162,6 +164,10 @@ class ModelBasedAgent(AbstractAgent):
         self.initial_states_dataset.append(self.last_trajectory[0].state.unsqueeze(0))
         if self.model_learning_algorithm is not None and self.training:
             self.model_learning_algorithm.add_last_trajectory(self.last_trajectory)
+        if self.pretrain_model:
+            self.model_learning_algorithm.learn(
+                self.logger, max_iter=self.pre_train_iterations
+            )
         if self.learn_model_at_end_episode:
             self.model_learning_algorithm.learn(self.logger)
         if self.train_at_end_episode:
@@ -244,13 +250,24 @@ class ModelBasedAgent(AbstractAgent):
             )
 
     @property
+    def pretrain_model(self):
+        """Raise flag if learn the model after observe."""
+        return (
+            self.training
+            and self.model_learning_algorithm is not None
+            and self.total_steps > self.model_learn_exploration_steps
+            and self.total_episodes == self.model_learn_exploration_episodes
+            and self.pre_train_iterations > 0
+        )
+
+    @property
     def learn_model_at_observe(self):
         """Raise flag if learn the model after observe."""
         return (
             self.training
             and self.model_learning_algorithm is not None
-            and self.total_steps >= self.model_learn_exploration_steps
-            and self.total_episodes >= self.model_learn_exploration_episodes
+            and self.total_steps > self.model_learn_exploration_steps
+            and self.total_episodes > self.model_learn_exploration_episodes
             and self.model_learn_train_frequency > 0
             and self.total_steps % self.model_learn_train_frequency == 0
         )
@@ -261,8 +278,8 @@ class ModelBasedAgent(AbstractAgent):
         return (
             self.training
             and self.model_learning_algorithm is not None
-            and self.total_steps >= self.model_learn_exploration_steps
-            and self.total_episodes >= self.model_learn_exploration_episodes
+            and self.total_steps > self.model_learn_exploration_steps
+            and self.total_episodes > self.model_learn_exploration_episodes
             and self.model_learn_num_rollouts > 0
             and (self.total_episodes + 1) % self.model_learn_num_rollouts == 0
         )

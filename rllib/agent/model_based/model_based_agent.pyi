@@ -28,6 +28,7 @@ class ModelBasedAgent(AbstractAgent):
     num_initial_distribution_samples: int = ...
     initial_distribution: Optional[Distribution]
     augment_dataset_with_sim: bool
+    pre_train_iterations: int
     def __init__(
         self,
         dynamical_model: AbstractModel,
@@ -51,6 +52,7 @@ class ModelBasedAgent(AbstractAgent):
         num_initial_distribution_samples: int = ...,
         initial_distribution: Optional[Distribution] = ...,
         augment_dataset_with_sim: bool = ...,
+        pre_train_iterations: int = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...
@@ -58,3 +60,5 @@ class ModelBasedAgent(AbstractAgent):
     def learn_model_at_observe(self) -> bool: ...
     @property
     def learn_model_at_end_episode(self) -> bool: ...
+    @property
+    def pretrain_model(self) -> bool: ...
