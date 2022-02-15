@@ -26,7 +26,7 @@ class NNModel(AbstractModel):
 
     def __init__(
         self,
-        layers=(200, 200, 200, 200, 200),
+        layers=(200, 200, 200),
         biased_head=True,
         non_linearity="Swish",
         initial_scale=0.5,
