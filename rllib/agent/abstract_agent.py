@@ -65,6 +65,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         *args,
         **kwargs,
     ):
+        self._name = name
         self.logger = Logger(
             self.name if log_dir is None else log_dir,
             tensorboard=tensorboard,
@@ -100,7 +101,6 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.last_trajectory = []
         self.params = {}
         self.device = device
-        self._name = name
 
     def set_policy(self, new_policy):
         """Set policy."""
