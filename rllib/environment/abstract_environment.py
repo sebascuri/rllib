@@ -178,3 +178,24 @@ class AbstractEnvironment(object, metaclass=ABCMeta):
     def name(self):
         """Return class name."""
         return self.__class__.__name__
+
+
+class EnvironmentBuilder(object, metaclass=ABCMeta):
+    """Abstract Environment Builder."""
+
+    @abstractmethod
+    def create_environment(self):
+        """Create environment."""
+        raise NotImplementedError
+
+    def get_dynamical_model(self):
+        """Get dynamical model."""
+        return None
+
+    def get_reward_model(self):
+        """Get reward model."""
+        return None
+
+    def get_termination_model(self):
+        """Get termination model."""
+        return None

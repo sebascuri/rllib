@@ -61,15 +61,38 @@ class PathwiseLoss(nn.Module):
         pi = tensor_to_distribution(self.policy(state), **self.policy.dist_params)
         action = self.policy.action_scale * pi.rsample().clamp(-1, 1)
 
-        with DisableGradient(self.critic):
-            q = self.critic(state, action)
-            if isinstance(self.critic, NNEnsembleQFunction):
-                q = q[..., 0]
-
-        # Take multi-objective reduction.
-        q = self.multi_objective_reduction(q)
-        # Take mean over time coordinate.
-        if q.dim() > 1:
-            q = q.mean(dim=1)
+        q = get_q_value_pathwise_gradients(
+            critic=self.critic,
+            state=state,
+            action=action,
+            multi_objective_reduction=self.multi_objective_reduction,
+        )
 
         return Loss(policy_loss=-q)
+
+
+def get_q_value_pathwise_gradients(critic, state, action, multi_objective_reduction):
+    """Get Q-Value pathwise gradients.
+
+    Parameters
+    ----------
+    critic: NNQFunction.
+        Critic to backpropagate through.
+    state: Tensor.
+        State where to evaluate the q function.
+    action: Tensor.
+        Action where to evaluate the q function.
+    multi_objective_reduction: Tensor.
+        How to reduce the different outputs of the q function. (reward dimensions).
+    """
+    with DisableGradient(critic):
+        q = critic(state, action)
+        if isinstance(critic, NNEnsembleQFunction):
+            q = q[..., 0]
+
+    # Take multi-objective reduction.
+    q = multi_objective_reduction(q)
+    # Take mean over time coordinate.
+    if q.dim() > 1:
+        q = q.mean(dim=1)
+    return q

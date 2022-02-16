@@ -1,10 +1,12 @@
 """Wrapper for Custom System Environments."""
+from abc import ABCMeta, abstractmethod
+
 import torch
 from gym import Env
 
 from rllib.util.utilities import tensor_to_distribution
 
-from .abstract_environment import AbstractEnvironment
+from .abstract_environment import AbstractEnvironment, EnvironmentBuilder
 
 
 class SystemEnvironment(AbstractEnvironment, Env):
@@ -95,3 +97,25 @@ class SystemEnvironment(AbstractEnvironment, Env):
     def name(self):
         """Return class name."""
         return self.system.__class__.__name__
+
+
+class SystemEnvironmentBuilder(EnvironmentBuilder, metaclass=ABCMeta):
+    """System Environment default Builder."""
+
+    def create_environment(self):
+        """Create environment."""
+        return SystemEnvironment(
+            system=self.get_system_model(),
+            initial_state=self.initial_distribution_fn(),
+            reward=self.get_reward_model(),
+            termination_model=self.get_termination_model(),
+        )
+
+    @abstractmethod
+    def get_system_model(self):
+        """Get dynamical model."""
+        raise NotImplementedError
+
+    def initial_distribution_fn(self):
+        """Get Initial Distribution Sample function."""
+        return None
