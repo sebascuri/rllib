@@ -64,7 +64,7 @@ class ModelBasedAgent(AbstractAgent):
         num_initial_distribution_samples=0,
         initial_distribution=None,
         augment_dataset_with_sim=False,
-        pre_train_iterations=1000,
+        pre_train_iterations=0,
         *args,
         **kwargs,
     ):

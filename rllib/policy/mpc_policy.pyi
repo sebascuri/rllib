@@ -1,5 +1,7 @@
 from typing import Any, Optional
+
 from torch import Tensor
+
 from rllib.algorithms.mpc import MPCSolver
 
 from .abstract_policy import AbstractPolicy
@@ -15,5 +17,5 @@ class MPCPolicy(AbstractPolicy):
         mpc_solver: MPCSolver,
         solver_frequency: int = ...,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None: ...
