@@ -41,6 +41,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     comment: str
     params: Dict[str, ParameterDecay]
     last_trajectory: List[Observation]
+    _name: Optional[str]
     def __init__(
         self,
         optimizer: Optional[Optimizer] = ...,
@@ -59,6 +60,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         training_verbose: bool = ...,
         device: str = ...,
         log_dir: Optional[str] = ...,
+        name: Optional[str] = ...,
         *args: Any,
         **kwargs: Any,
     ) -> None: ...

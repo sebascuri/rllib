@@ -61,6 +61,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         training_verbose=False,
         device="cpu",
         log_dir=None,
+        name=None,
         *args,
         **kwargs,
     ):
@@ -99,6 +100,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         self.last_trajectory = []
         self.params = {}
         self.device = device
+        self._name = name
 
     def set_policy(self, new_policy):
         """Set policy."""
@@ -322,7 +324,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     @property
     def name(self):
         """Return class name."""
-        return self.__class__.__name__
+        return self.__class__.__name__ if self._name is None else self._name
 
     def save_checkpoint(self):
         """Save a checkpoint of the agent at the end of each episode."""
