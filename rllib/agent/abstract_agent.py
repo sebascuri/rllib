@@ -224,7 +224,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
         if best_return >= max(
             self.logger.get("train_return-0") + self.logger.get("eval_return-0")
         ):  # logger.get() returns a list!
-            self.save(f"best.pkl")
+            self.save("best.pkl")
 
     def end_interaction(self):
         """End the interaction with the environment."""
@@ -329,7 +329,7 @@ class AbstractAgent(object, metaclass=ABCMeta):
     def save_checkpoint(self):
         """Save a checkpoint of the agent at the end of each episode."""
         self.logger.export_to_json()
-        self.save(f"last.pkl")
+        self.save("last.pkl")
         save_random_state(self.logger.log_dir)
 
     def save(self, filename, directory=None):
