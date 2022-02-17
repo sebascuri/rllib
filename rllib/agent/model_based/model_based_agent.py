@@ -273,6 +273,14 @@ class ModelBasedAgent(AbstractAgent):
         )
 
     @property
+    def train_at_observe(self):
+        """Return true if model has been learned."""
+        return (
+            super().train_at_observe
+            and self.total_episodes > self.model_learn_exploration_episodes + 1
+        )
+
+    @property
     def learn_model_at_end_episode(self):
         """Raise flag to learn the model at end of an episode."""
         return (
@@ -282,6 +290,14 @@ class ModelBasedAgent(AbstractAgent):
             and self.total_episodes > self.model_learn_exploration_episodes
             and self.model_learn_num_rollouts > 0
             and (self.total_episodes + 1) % self.model_learn_num_rollouts == 0
+        )
+
+    @property
+    def train_at_end_episode(self):
+        """Return true if model has been learned."""
+        return (
+            super().train_at_end_episode
+            and self.total_episodes > self.model_learn_exploration_episodes + 1
         )
 
     @property
