@@ -111,6 +111,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         critic_ensemble_lambda=1.0,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
+        pathwise_loss_class=PathwiseLoss,
         multi_objective_reduction=MeanMultiObjectiveReduction(dim=-1),
         *args,
         **kwargs,
@@ -146,7 +147,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
                 epsilon_var=epsilon_var,
                 regularization=kl_regularization,
             )
-            self.pathwise_loss = PathwiseLoss(
+            self.pathwise_loss = pathwise_loss_class(
                 critic=self.critic,
                 policy=self.policy,
                 multi_objective_reduction=multi_objective_reduction,

@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -55,6 +55,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         criterion: _Loss = ...,
         ope: Optional[AbstractTDTarget] = ...,
         reward_transformer: RewardTransformer = ...,
+        pathwise_loss_class: Type[PathwiseLoss] = ...,
         multi_objective_reduction: AbstractMultiObjectiveReduction = ...,
         *args: Any,
         **kwargs: Any,
