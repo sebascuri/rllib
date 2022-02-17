@@ -113,10 +113,11 @@ class ModelBasedQFunction(AbstractQFunction):
             )
 
         v = v.reshape(
-            self.simulator.num_particles,
-            state.shape[0],
-            self.simulator.reward_model.dim_reward[0],
-            -1,
+            self.simulator.num_particles,  # num particles.
+            state.shape[0],  # batch shape
+            1,  # time coordinate.
+            self.simulator.reward_model.dim_reward[0],  # dim_reward
+            -1,  # possible ensemble dimension.
         ).mean(0)
         v = v[..., 0]  # In cases of ensembles return first component.
         return v
