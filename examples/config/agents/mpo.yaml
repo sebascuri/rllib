@@ -1,0 +1,6 @@
+gamma: 0.99                       # discount factor
+num_iter: 50
+exploration_steps: 0
+exploration_episodes: 0
+render_train: False
+render_test: False
