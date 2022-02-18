@@ -29,7 +29,7 @@ class BPTT(AbstractMBAlgorithm):
                 num_particles=self.num_particles,
                 num_model_steps=self.num_model_steps,
                 policy=self.policy,
-                value_function=self.value_function,
+                value_function=self.value_target,
                 gamma=self.gamma,
                 lambda_=lambda_,
                 reward_transformer=self.reward_transformer,
