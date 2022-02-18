@@ -29,7 +29,7 @@ class CartPole(ODESystem):
         gravity=9.81,
         step_size=0.01,
     ):
-        """Initialization; see `CartPole`."""
+        """Initialize CartPole."""
         self.pendulum_mass = pendulum_mass
         self.cart_mass = cart_mass
         self.length = length

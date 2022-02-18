@@ -28,7 +28,7 @@ class InvertedPendulum(ODESystem):
     """
 
     def __init__(self, mass, length, friction, gravity=9.81, step_size=0.01):
-        """Initialization; see `InvertedPendulum`."""
+        """Initialize InvertedPendulum."""
         self.mass = mass
         self.length = length
         self.friction = friction

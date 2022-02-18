@@ -130,7 +130,7 @@ try:
             return next_obs, reward, done, self._reward_model.info
 
         def viewer_setup(self):
-            """Set-up the viewer."""
+            """Configure the viewer."""
             self.viewer.cam.trackbodyid = 1
             self.viewer.cam.distance = 2.5
             self.viewer.cam.elevation = -30

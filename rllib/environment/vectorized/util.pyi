@@ -1,6 +1,6 @@
 from abc import ABCMeta
-from typing import Any, Callable, Iterable, List, Tuple, Union
-
+from typing import Any, Callable, Iterable, Tuple
+import types
 import numpy as np
 import torch.__spec__ as torch_mod
 from gym import Env
@@ -11,7 +11,7 @@ class VectorizedEnv(Env, metaclass=ABCMeta):
     """Vectorized implementation of Acrobot."""
 
     @property
-    def bk(self) -> Union[np, torch_mod]: ...
+    def bk(self) -> types.ModuleType: ...
     def atan2(self, sin: Array, cos: Array) -> Array: ...
     def clip(self, val: Array, min_val: float, max_val: float) -> Array: ...
     def cat(self, arrays: Iterable[Array], axis: int = ...) -> Array: ...

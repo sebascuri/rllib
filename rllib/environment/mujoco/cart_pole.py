@@ -92,7 +92,7 @@ try:
             return np.concatenate([self.sim.data.qpos, self.sim.data.qvel]).ravel()
 
         def viewer_setup(self):
-            """Set-up the viewer."""
+            """Configure the viewer."""
             v = self.viewer
             v.cam.trackbodyid = 0
             v.cam.distance = self.model.stat.extent
