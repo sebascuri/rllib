@@ -1,4 +1,3 @@
-
 from .abstract_model import AbstractModel
 from typing import Any
 from torch import Tensor
