@@ -224,7 +224,7 @@ class ModelBasedAgent(AbstractAgent):
             return initial_states
             # initial_states = torch.cat((initial_states, initial_states_), dim=0)
         else:
-            raise ValueError(f"At least one has to be larger than zero.")
+            raise ValueError("At least one has to be larger than zero.")
         # initial_states = initial_states.unsqueeze(0)
         # return initial_states
 
