@@ -208,20 +208,20 @@ class ModelBasedAgent(AbstractAgent):
             for transform in self.memory.transformations:
                 obs = transform.inverse(obs)
             initial_states = obs.state[:, 0, :]  # obs is an n-step return.
-            return initial_states
+            return initial_states.squeeze(0)
         # Samples from empirical initial state distribution.
         elif self.num_initial_state_samples > 0:
             initial_states = self.initial_states_dataset.sample_batch(
                 self.num_initial_state_samples
             )
             # initial_states = torch.cat((initial_states, initial_states_), dim=0)
-            return initial_states
+            return initial_states.squeeze(0)
         # Samples from initial distribution.
         elif self.num_initial_distribution_samples > 0:
             initial_states = self.initial_distribution.sample(
                 (self.num_initial_distribution_samples,)
             )
-            return initial_states
+            return initial_states.squeeze(0)
             # initial_states = torch.cat((initial_states, initial_states_), dim=0)
         else:
             raise ValueError("At least one has to be larger than zero.")
@@ -244,7 +244,7 @@ class ModelBasedAgent(AbstractAgent):
                 max_steps=self.simulation_max_steps,
                 memory=self.memory if self.augment_dataset_with_sim else None,
             )[0]
-            sim_returns = torch.cat([obs.reward for obs in trajectory], dim=0).sum(0)
+            sim_returns = torch.stack([obs.reward for obs in trajectory], dim=0).sum(0)
             self.logger.update(
                 **{f"Sim-Returns-{i}": returns for i, returns in enumerate(sim_returns)}
             )
@@ -306,6 +306,7 @@ class ModelBasedAgent(AbstractAgent):
         return (
             self.simulation_frequency
             and (self.train_episodes % self.simulation_frequency) == 0
+            and self.total_episodes > self.model_learn_exploration_episodes
         )
 
     @classmethod
