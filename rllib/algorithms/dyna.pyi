@@ -5,9 +5,8 @@ from rllib.model import AbstractModel
 
 from .abstract_algorithm import AbstractAlgorithm
 from .abstract_mb_algorithm import AbstractMBAlgorithm
-from .derived_algorithm import DerivedAlgorithm
 
-class Dyna(DerivedAlgorithm, AbstractMBAlgorithm):
+class Dyna(AbstractMBAlgorithm):
     base_algorithm: AbstractAlgorithm
     only_sim: bool
     only_real: bool

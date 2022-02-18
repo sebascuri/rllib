@@ -12,6 +12,8 @@ class Dyna(AbstractMBAlgorithm):
     def __init__(
         self, base_algorithm, only_sim=False, only_real=False, *args, **kwargs
     ):
+        kwargs.pop("policy", None)
+        kwargs.pop("critic", None)
         super().__init__(
             critic=base_algorithm.critic, policy=base_algorithm.policy, *args, **kwargs
         )
