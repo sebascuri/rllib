@@ -1,10 +1,12 @@
 from .abstract_agent import AbstractAgent
 from .bandit import GPUCBAgent
+from .fixed_policy_agent import FixedPolicyAgent
 from .model_based import (
     BPTTAgent,
     DataAugmentationAgent,
     DerivedMBAgent,
     DynaAgent,
+    MBMPOAgent,
     ModelBasedAgent,
     MPCAgent,
     MVEAgent,
@@ -48,6 +50,7 @@ MODEL_FREE = [
     "ExpectedActorCritic",
     "ExpectedSARSA",
     "FittedValueEvaluation",
+    "FixedPolicy",
     "GAAC",
     "GPUCB",
     "MPO",
@@ -65,7 +68,15 @@ MODEL_FREE = [
     "VMPO",
 ]
 
-MODEL_BASED = ["BPTT", "MPC", "SVG"]
-MODEL_AUGMENTED = ["Dyna", "MVE", "STEVE"]
-DATA_AUGMENTED = ["DataAugmentation"]
-AGENTS = MODEL_FREE + MODEL_BASED + MODEL_AUGMENTED + DATA_AUGMENTED
+MODEL_BASED = [
+    "BPTT",
+    "MPC",
+    "SVG",
+    "Dyna",
+    "MVE",
+    "STEVE",
+    "DataAugmentation",
+    "MBMPO",
+]
+
+AGENTS = MODEL_FREE + MODEL_BASED
