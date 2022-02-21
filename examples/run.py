@@ -12,7 +12,8 @@ def main(args, **kwargs):
     agent, environment = init_experiment(args, **kwargs)
 
     # Load training agent.
-    load_from_directory(agent, args.log_dir)
+    if args.load_from_dir:
+        load_from_directory(agent, args.log_dir)
 
     # Train and evaluate.
     train(agent, environment, args)
@@ -49,6 +50,8 @@ def get_experiment_parser():
     parser.add_argument(
         "--eval-frequency", type=int, default=0, help="Frequency to evaluate the mean."
     )
+    parser.add_argument("--load-from-dir", action="store_true", default=False)
+
     parser.add_argument("--render-train", action="store_true", default=False)
     parser.add_argument("--render-test", action="store_true", default=False)
     parser.add_argument("--tensorboard", action="store_true", default=False)

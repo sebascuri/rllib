@@ -34,6 +34,7 @@ class MBMPO(MPO):
 
     def compute_mpo_loss(self, state, action):
         """Compute mpo loss for a given set of state/action pairs."""
+        model_free_loss = super().compute_mpo_loss(state, action)
         with torch.no_grad():
             sim_trajectory = self.simulator.simulate(state, self.old_policy, action)
             sim_observation = stack_list_of_tuples(sim_trajectory, dim=-2)
@@ -50,8 +51,8 @@ class MBMPO(MPO):
             sim_observation.state, sim_observation.action
         )
 
-        mpo_loss = self.mpo_loss(q_values=q_values, action_log_p=log_p).reduce(
-            self.criterion.reduction
-        )
+        model_based_mpo_loss = self.mpo_loss(
+            q_values=q_values, action_log_p=log_p
+        ).reduce(self.criterion.reduction)
         self._info.update(mpo_eta=self.mpo_loss.eta)
-        return mpo_loss
+        return (model_free_loss + model_based_mpo_loss) / 2
