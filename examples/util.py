@@ -5,9 +5,10 @@ import os
 import yaml
 from gym.envs import registry
 
+from examples.experiment_parser import Experiment
 from rllib.environment import GymEnvironment
 from rllib.util.training.agent_training import evaluate_agent, train_agent
-from rllib.util.utilities import RewardTransformer, load_random_state, set_random_seed
+from rllib.util.utilities import load_random_state, set_random_seed
 
 try:
     from dm_control.suite import BENCHMARKING
@@ -29,33 +30,55 @@ def parse_config_file(file_dir=None):
     return kwargs
 
 
-def init_experiment(args, **kwargs):
-    """Initialize experiment."""
-    arg_dict = vars(args)
-    arg_dict.update(kwargs)
-    arg_dict.update(parse_config_file(args.agent_config))
-    arg_dict = {k: v for k, v in arg_dict.items() if v is not None}
+class EnvironmentBuilder:
+    """Environment Builder."""
 
-    env_config = parse_config_file(args.env_config)
-    args.max_steps = env_config.get("max_steps", 1000)
-    # %% Set Random seeds.
+    def __init__(self, args: Experiment):
+        self.args = args
+        self.name = args.environment
+
+    def create_environment(self):
+        """Create environment."""
+        if self.name in gym_envs:
+            environment = GymEnvironment(self.name, seed=self.args.seed)
+        else:
+            env_name, env_task = self.name.split("/")
+            environment = DMSuiteEnvironment(env_name, env_task, seed=self.args.seed)
+        return environment
+
+
+class AgentBuilder:
+    """Agent builder."""
+
+    def __init__(self, args: Experiment):
+        self.args = args
+        self.agent_config = parse_config_file(self.args.agent_config)
+
+    def create_agent(self, environment):
+        """Create agent."""
+        agent_module = importlib.import_module("rllib.agent")
+        agent = getattr(agent_module, f"{self.args.agent}Agent").default(
+            environment, tensorboard=self.args.tensorboard, **self.agent_config
+        )
+        return agent
+
+
+def init_experiment(args: Experiment):
+    """Initialize experiment."""
+    # Set Random seeds.
     set_random_seed(args.seed)
 
-    # %% Initialize environment.
-    if env_config["name"] in gym_envs:
-        environment = GymEnvironment(env_config["name"], seed=args.seed)
-    else:
-        env_name, env_task = env_config["name"].split("/")
-        environment = DMSuiteEnvironment(env_name, env_task, seed=args.seed)
+    # Initialize environment.
+    env_builder = EnvironmentBuilder(args)
+    environment = env_builder.create_environment()
 
-    # %% Initialize module.
-    agent_module = importlib.import_module("rllib.agent")
-    agent = getattr(agent_module, f"{args.agent}Agent").default(
-        environment,
-        reward_transformer=RewardTransformer(scale=arg_dict.get("reward_scale", 1.0)),
-        **arg_dict,
-    )
-    agent.logger.save_hparams(arg_dict)
+    # Initialize Agent.
+    agent_builder = AgentBuilder(args)
+    agent = agent_builder.create_agent(environment)
+
+    if args.load_from_dir:
+        assert args.log_dir is not None
+        load_from_directory(agent, args.log_dir)
 
     return agent, environment
 
