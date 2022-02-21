@@ -1,4 +1,5 @@
 from typing import Any, Optional, Tuple, Type, Union, Sequence
+
 import torch
 
 from .nn_model import NNModel
