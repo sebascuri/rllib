@@ -1,18 +1,18 @@
-"""MPO Agent Implementation."""
+"""Model-Based MPO Agent Implementation."""
 from itertools import chain
 
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
-from rllib.algorithms.mpo import MPO
+from rllib.algorithms.mb_mpo import MBMPO
 from rllib.policy import NNPolicy
 from rllib.value_function import NNQFunction
 
-from .off_policy_agent import OffPolicyAgent
+from .model_based_agent import ModelBasedAgent
 
 
-class MPOAgent(OffPolicyAgent):
-    """Implementation of an agent that runs MPO."""
+class MBMPOAgent(ModelBasedAgent):
+    """Implementation of an agent that runs MB-MPO."""
 
     def __init__(
         self,
@@ -38,7 +38,7 @@ class MPOAgent(OffPolicyAgent):
             **kwargs,
         )
 
-        self.algorithm = MPO(
+        self.algorithm = MBMPO(
             policy=policy,
             critic=critic,
             num_action_samples=num_action_samples,
@@ -53,9 +53,12 @@ class MPOAgent(OffPolicyAgent):
         # Over-write optimizer.
         self.optimizer = type(self.optimizer)(
             [
-                p
-                for n, p in self.algorithm.named_parameters()
-                if "target" not in n and "old_policy" not in n
+                parameter
+                for name, parameter in self.algorithm.named_parameters()
+                if "target" not in name
+                and "old_policy" not in name
+                and "model" not in name
+                and parameter.requires_grad
             ],
             **self.optimizer.defaults,
         )

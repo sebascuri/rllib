@@ -49,7 +49,7 @@ class ModelLearningAlgorithm(object):
         num_epochs=1,
         batch_size=100,
         bootstrap=True,
-        max_memory=10000,
+        max_memory=100000,
         epsilon=0.1,
         non_decrease_iter=5,
         validation_ratio=0.1,

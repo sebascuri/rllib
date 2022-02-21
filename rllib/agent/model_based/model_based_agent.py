@@ -316,9 +316,11 @@ class ModelBasedAgent(AbstractAgent):
         dynamical_model=None,
         reward_model=None,
         termination_model=None,
-        num_epochs=50,
+        num_epochs=1,
         model_lr=5e-4,
         l2_reg=1e-4,
+        model_batch_size=256,
+        model_max_memory=100000,
         calibrate=True,
         *args,
         **kwargs,
@@ -355,6 +357,8 @@ class ModelBasedAgent(AbstractAgent):
                 termination_model=termination_model,
                 num_epochs=num_epochs,
                 model_optimizer=model_optimizer,
+                batch_size=model_batch_size,
+                max_memory=model_max_memory,
                 calibrate=calibrate,
             )
         else:
