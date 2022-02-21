@@ -20,10 +20,9 @@ class MVE(Dyna):
     arXiv.
     """
 
-    def __init__(self, td_k=False, lambda_=1.0, *args, **kwargs):
+    def __init__(self, td_k=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.td_k = td_k
-        self.lambda_ = lambda_
 
     def forward(self, observation):
         """Rollout model and call base algorithm with transitions."""
@@ -80,8 +79,8 @@ class MVE(Dyna):
             if final_value.ndim == observation.reward.ndim:  # It is an ensemble.
                 final_min = final_value.min(-1)[0]
                 final_max = final_value.max(-1)[0]
-                lambda_ = self.critic_ensemble_lambda
-                final_value = lambda_ * final_min + (1.0 - lambda_) * final_max
+                weight = self.critic_ensemble_lambda
+                final_value = weight * final_min + (1.0 - weight) * final_max
             tau = self.base_algorithm.entropy_loss.eta.item()
             entropy = broadcast_to_tensor(observation.entropy, target_tensor=reward)
             not_done = broadcast_to_tensor(not_done, target_tensor=final_value)
@@ -98,7 +97,7 @@ class MVE(Dyna):
             sim_target = mc_return(
                 observation,
                 gamma=self.base_algorithm.gamma,
-                lambda_=self.lambda_,
+                td_lambda=self.td_lambda,
                 value_function=self.base_algorithm.value_function,
                 reward_transformer=self.base_algorithm.reward_transformer,
                 entropy_regularization=self.base_algorithm.entropy_loss.eta.item(),

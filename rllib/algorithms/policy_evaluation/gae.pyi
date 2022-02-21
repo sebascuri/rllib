@@ -10,7 +10,7 @@ class GAE(nn.Module):
     lambda_gamma: float
     def __init__(
         self,
-        lambda_: float,
+        td_lambda: float,
         gamma: float,
         value_function: Optional[AbstractValueFunction] = None,
     ) -> None: ...

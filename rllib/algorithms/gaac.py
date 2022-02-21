@@ -23,8 +23,6 @@ class GAAC(ActorCritic):
         Critic that evaluates the current policy.
     criterion: _Loss
         Criterion to optimize the baseline.
-    lambda_: float
-        Eligibility trace parameter.
     gamma: float
         Discount factor.
 
@@ -34,9 +32,11 @@ class GAAC(ActorCritic):
     High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
-    def __init__(self, lambda_=0.95, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.gae = GAE(lambda_, self.gamma, self.critic_target)
+    def __init__(self, td_lambda=0.95, *args, **kwargs):
+        super().__init__(td_lambda=td_lambda, *args, **kwargs)
+        self.gae = GAE(
+            td_lambda=td_lambda, gamma=self.gamma, value_function=self.critic_target
+        )
 
     def returns(self, trajectory):
         """Estimate the returns of a trajectory."""

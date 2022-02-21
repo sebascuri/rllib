@@ -61,7 +61,7 @@ class VMPO(MPO):
             num_policy_samples=self.num_policy_samples,
             rho_bar=1.0,
             gamma=self.gamma,
-            lambda_=1.0,
+            td_lambda=1.0,
         )
 
     def actor_loss(self, observation):

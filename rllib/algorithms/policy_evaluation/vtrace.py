@@ -32,7 +32,7 @@ class VTrace(ReTrace):
         The rho factor is \rho = \max(\rho_bar, \pi/mu) = max(\rho_bar, c_s/lambda)
         """
         td = reward + self.gamma * next_v - this_v
-        if self.lambda_ == 0:  # TD-0 Algorithm
+        if self.td_lambda == 0:  # TD-0 Algorithm
             return td
         else:
-            return (correction / self.lambda_).clamp_max(self.rho_bar) * td
+            return (correction / self.td_lambda).clamp_max(self.rho_bar) * td

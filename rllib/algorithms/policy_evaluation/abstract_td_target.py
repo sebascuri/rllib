@@ -47,7 +47,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         Policy to evaluate. If None, then on-policy data is assumed.
     gamma: float
         Discount factor.
-    lambda_: float.
+    td_lambda: float.
         Lambda factor for off-policy evaluation.
 
     References
@@ -70,14 +70,14 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     """
 
     def __init__(
-        self, critic, policy=None, gamma=0.99, lambda_=1.0, num_policy_samples=15
+        self, critic, policy=None, gamma=0.99, td_lambda=1.0, num_policy_samples=15
     ):
         super().__init__()
         self.critic = critic
         self.policy = policy
         self.value_target = IntegrateQValueFunction(critic, policy, num_policy_samples)
         self.gamma = gamma
-        self.lambda_ = lambda_
+        self.td_lambda = td_lambda
         self.num_policy_samples = num_policy_samples
 
     @abstractmethod

@@ -19,7 +19,7 @@ class PPOAgent(ActorCriticAgent):
     def __init__(
         self,
         epsilon=0.2,
-        lambda_=0.95,
+        td_lambda=0.95,
         target_kl=0.005,
         eta=0.01,
         monte_carlo_target=False,
@@ -35,7 +35,7 @@ class PPOAgent(ActorCriticAgent):
             eta=eta,
             monte_carlo_target=monte_carlo_target,
             clamp_value=clamp_value,
-            lambda_=lambda_,
+            td_lambda=td_lambda,
             num_iter=num_iter,
             num_rollouts=num_rollouts,
             *args,

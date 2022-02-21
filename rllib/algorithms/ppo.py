@@ -31,8 +31,6 @@ class PPO(TRPO):
         Whether to calculate the value targets using MC estimation or adv + value.
     clamp_value: bool, optional. (default=False).
         Whether to clamp the value estimate before computing the value loss.
-    lambda_: float, optional. (default=0.97).
-        Parameter for Advantage estimation.
     gamma: float, optional. (default=1).
         Discount factor.
 

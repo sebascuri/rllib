@@ -13,7 +13,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     critic: AbstractQFunction
     policy: Optional[AbstractPolicy]
     gamma: float
-    lambda_: float
+    td_lambda: float
     num_policy_samples: int
     value_target: IntegrateQValueFunction
     def __init__(
@@ -21,7 +21,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         critic: AbstractQFunction,
         policy: Optional[AbstractPolicy] = ...,
         gamma: float = ...,
-        lambda_: float = ...,
+        td_lambda: float = ...,
         num_policy_samples: int = ...,
     ) -> None: ...
     @abstractmethod

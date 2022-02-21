@@ -36,7 +36,7 @@ def n_step_return(
 def mc_return(
     observation: Observation,
     gamma: float = ...,
-    lambda_: float = ...,
+    td_lambda: float = ...,
     entropy_regularization: float = ...,
     reward_transformer: RewardTransformer = ...,
     value_function: Optional[AbstractValueFunction] = ...,

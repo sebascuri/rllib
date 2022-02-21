@@ -170,7 +170,7 @@ def n_step_return(
 def mc_return(
     observation,
     gamma=1.0,
-    lambda_=1.0,
+    td_lambda=1.0,
     reward_transformer=RewardTransformer(),
     value_function=None,
     reduction="none",
@@ -187,7 +187,7 @@ def mc_return(
         List of observations to compute the n-step return.
     gamma: float, optional.
         Discount factor.
-    lambda_: float, optional.
+    td_lambda: float, optional.
         Lambda return.
     value_function: AbstractValueFunction, optional.
         Value function to bootstrap the value of the final state.
@@ -197,6 +197,7 @@ def mc_return(
     reduction: str.
         How to reduce ensemble value functions.
 
+    TODO: Compute Lambda return.
     """
     if observation.reward.ndim == 0 or len(observation.reward) == 0:
         return torch.tensor([0.0])

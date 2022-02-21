@@ -24,7 +24,7 @@ class GAE(nn.Module):
     ----------
     value_function: AbstractValueFunction
         value function to reduce evaluate_agent variance the gradient.
-    lambda_: float
+    td_lambda: float
         Eligibility trace parameter.
     gamma: float
         Discount factor.
@@ -35,12 +35,14 @@ class GAE(nn.Module):
     High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
-    def __init__(self, lambda_, gamma, value_function=None):
+    def __init__(self, td_lambda, gamma, value_function=None):
         super().__init__()
         if value_function is None:
-            assert lambda_ == 1, "If no value function is given, then lambda must be 1."
+            assert (
+                td_lambda == 1
+            ), "If no value function is given, then lambda must be 1."
         self.value_function = value_function
-        self.lambda_gamma = lambda_ * gamma
+        self.lambda_gamma = td_lambda * gamma
 
     def forward(self, observation):
         """Compute the GAE estimation."""

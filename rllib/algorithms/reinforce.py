@@ -32,4 +32,4 @@ class REINFORCE(GAAC):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(lambda_=1, *args, **kwargs)
+        super().__init__(td_lambda=1.0, *args, **kwargs)

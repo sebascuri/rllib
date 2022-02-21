@@ -37,6 +37,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
     ope: Optional[AbstractTDTarget]
     value_function: Optional[IntegrateQValueFunction]
     value_target: Optional[IntegrateQValueFunction]
+    td_lambda: float
     critic_ensemble_lambda: float
     multi_objective_reduction: AbstractMultiObjectiveReduction
     def __init__(
@@ -51,6 +52,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         epsilon_var: Optional[Union[ParameterDecay, float]] = ...,
         kl_regularization: bool = ...,
         num_policy_samples: int = ...,
+        td_lambda: float = ...,
         critic_ensemble_lambda: float = ...,
         criterion: _Loss = ...,
         ope: Optional[AbstractTDTarget] = ...,

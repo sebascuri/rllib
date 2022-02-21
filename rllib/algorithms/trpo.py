@@ -28,7 +28,7 @@ class TRPO(GAAC):
         Kl Divergence of the Mean.
     epsilon_var: ParameterDecay, float, optional.
         Kl Divergence of the variance.
-    lambda_: float, optional. (default=0.97).
+    td_lambda: float, optional. (default=0.95).
         Parameter for Advantage estimation.
     gamma: float, optional. (default=1).
         Discount factor.
@@ -44,7 +44,7 @@ class TRPO(GAAC):
         epsilon_mean=0.01,
         epsilon_var=None,
         kl_regularization=False,
-        lambda_=0.95,
+        td_lambda=0.95,
         monte_carlo_target=False,
         *args,
         **kwargs,
@@ -53,7 +53,7 @@ class TRPO(GAAC):
             epsilon_mean=epsilon_mean,
             epsilon_var=epsilon_var,
             kl_regularization=kl_regularization,
-            lambda_=lambda_,
+            td_lambda=td_lambda,
             *args,
             **kwargs,
         )

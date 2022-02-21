@@ -153,7 +153,7 @@ class MPO(AbstractAlgorithm):
             critic=self.critic_target,
             gamma=self.gamma,
             num_policy_samples=self.num_policy_samples,
-            lambda_=1.0,
+            td_lambda=self.td_lambda,
         )
 
     def get_value_target(self, observation):

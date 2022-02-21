@@ -12,7 +12,7 @@ class PPOAgent(ActorCriticAgent):
     def __init__(
         self,
         epsilon: float = ...,
-        lambda_: float = ...,
+        td_lambda: float = ...,
         target_kl: float = ...,
         eta: float = ...,
         monte_carlo_target: bool = ...,

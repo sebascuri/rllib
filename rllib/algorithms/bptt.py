@@ -18,7 +18,7 @@ class BPTT(AbstractMBAlgorithm):
     Model-Augmented Actor-Critic: Backpropagating through Paths. ICLR.
     """
 
-    def __init__(self, lambda_=1.0, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if self.num_model_steps > 0:
@@ -31,7 +31,7 @@ class BPTT(AbstractMBAlgorithm):
                 policy=self.policy,
                 value_function=self.value_target,
                 gamma=self.gamma,
-                lambda_=lambda_,
+                td_lambda=self.td_lambda,
                 reward_transformer=self.reward_transformer,
                 entropy_regularization=self.entropy_loss.eta.item(),
             )

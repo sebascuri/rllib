@@ -84,6 +84,8 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         Number of MC samples for MC simulation of targets.
     ope: OPE (optional).
         Optional off-policy estimation parameter.
+    td_lambda: float (optional, default=1).
+        Lambda parameter to interpolate between MC return and TD-0.
     critic_ensemble_lambda: float (optional).
         Critic ensemble parameter, it averages the minimum and the maximum of a critic
         ensemble as q_target = lambda * q_min + (1-lambda) * qmax
@@ -108,6 +110,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         kl_regularization=True,
         num_policy_samples=1,
         ope=None,
+        td_lambda=1.0,
         critic_ensemble_lambda=1.0,
         criterion=nn.MSELoss(reduction="mean"),
         reward_transformer=RewardTransformer(),
@@ -127,6 +130,7 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         self.critic_target = deep_copy_module(self.critic)
         self.criterion = criterion
         self.reward_transformer = reward_transformer
+        self.td_lambda = td_lambda
         self.critic_ensemble_lambda = critic_ensemble_lambda
         if policy is None:
             self.entropy_loss = EntropyLoss()
@@ -234,8 +238,8 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         if isinstance(self.critic_target, NNEnsembleQFunction):
             next_v_min = torch.min(next_v, dim=-1)[0]
             next_v_max = torch.max(next_v, dim=-1)[0]
-            lambda_ = self.critic_ensemble_lambda
-            next_v = lambda_ * next_v_min + (1.0 - lambda_) * next_v_max
+            weight = self.critic_ensemble_lambda
+            next_v = weight * next_v_min + (1.0 - weight) * next_v_max
 
         not_done = broadcast_to_tensor(1.0 - observation.done, target_tensor=next_v)
         next_v = next_v * not_done
