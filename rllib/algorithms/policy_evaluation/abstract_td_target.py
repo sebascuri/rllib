@@ -89,6 +89,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
         self.gamma = gamma
         self.td_lambda = td_lambda
         self.num_policy_samples = num_policy_samples
+        self.reward_transformer = reward_transformer
 
     @abstractmethod
     def correction(self, pi_log_p, behavior_log_p):
