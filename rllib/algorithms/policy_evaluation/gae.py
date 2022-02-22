@@ -47,8 +47,9 @@ class GAE(nn.Module):
     def forward(self, observation):
         """Compute the GAE estimation."""
         state, action, reward, next_state, done, *r = observation
+        reward = self.reward_transformer(reward)
         if self.value_function is None:
-            td_error = observation.reward
+            td_error = reward
         else:
             next_v = self.value_function(next_state)
             not_done = broadcast_to_tensor(1.0 - done, target_tensor=next_v)

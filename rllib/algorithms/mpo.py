@@ -154,6 +154,7 @@ class MPO(AbstractAlgorithm):
             gamma=self.gamma,
             num_policy_samples=self.num_policy_samples,
             td_lambda=self.td_lambda,
+            reward_transformer=self.reward_transformer,
         )
 
     def get_value_target(self, observation):

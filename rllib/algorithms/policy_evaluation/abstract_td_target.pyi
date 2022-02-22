@@ -8,6 +8,7 @@ from torch import Tensor
 from rllib.dataset.datatypes import Observation
 from rllib.policy import AbstractPolicy
 from rllib.value_function import AbstractQFunction, IntegrateQValueFunction
+from rllib.util.utilities import RewardTransformer
 
 class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     critic: AbstractQFunction
@@ -16,10 +17,12 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     td_lambda: float
     num_policy_samples: int
     value_target: IntegrateQValueFunction
+    reward_transformer: RewardTransformer
     def __init__(
         self,
         critic: AbstractQFunction,
         policy: Optional[AbstractPolicy] = ...,
+        reward_transformer: RewardTransformer = ...,
         gamma: float = ...,
         td_lambda: float = ...,
         num_policy_samples: int = ...,

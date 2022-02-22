@@ -5,7 +5,11 @@ import torch
 import torch.nn as nn
 
 from rllib.util.neural_networks.utilities import broadcast_to_tensor, reverse_cumsum
-from rllib.util.utilities import get_entropy_and_log_p, tensor_to_distribution
+from rllib.util.utilities import (
+    RewardTransformer,
+    get_entropy_and_log_p,
+    tensor_to_distribution,
+)
 from rllib.value_function import AbstractValueFunction, IntegrateQValueFunction
 
 
@@ -70,7 +74,13 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     """
 
     def __init__(
-        self, critic, policy=None, gamma=0.99, td_lambda=1.0, num_policy_samples=15
+        self,
+        critic,
+        policy=None,
+        reward_transformer=RewardTransformer(),
+        gamma=0.99,
+        td_lambda=1.0,
+        num_policy_samples=15,
     ):
         super().__init__()
         self.critic = critic
@@ -88,6 +98,8 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
     def forward(self, observation):
         """Compute the loss and the td-error."""
         state, action, reward, next_state, done, *_ = observation
+        reward = self.reward_transformer(reward)
+
         behavior_log_p = observation.log_prob_action
         n_steps = state.shape[1]
 
@@ -122,7 +134,7 @@ class AbstractTDTarget(nn.Module, metaclass=ABCMeta):
                     )
                 next_v = torch.cat((next_v, last_v), -1)
 
-        not_done = broadcast_to_tensor(1.0 - done, reward)
+        not_done = broadcast_to_tensor(1.0 - done, target_tensor=reward)
         next_v = next_v * not_done
         # Compute td = r + gamma E\pi[Q(next_state, \pi(next_state)] - Q(state, action).
         td = self.td(this_v, next_v, reward, correction)

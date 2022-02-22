@@ -62,6 +62,7 @@ class VMPO(MPO):
             rho_bar=1.0,
             gamma=self.gamma,
             td_lambda=1.0,
+            reward_transformer=self.reward_transformer,
         )
 
     def actor_loss(self, observation):
