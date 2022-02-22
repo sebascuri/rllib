@@ -22,7 +22,7 @@ class MPOAgent(OffPolicyAgent):
         num_action_samples=15,
         epsilon=0.1,
         epsilon_mean=0.1,
-        epsilon_var=0.001,
+        epsilon_var=0.0001,
         kl_regularization=False,
         train_frequency=0,
         num_iter=1000,
@@ -61,13 +61,21 @@ class MPOAgent(OffPolicyAgent):
         )
         self.policy = self.algorithm.policy
 
+    @staticmethod
+    def default_policy(environment):
+        """Get default policy."""
+        return NNPolicy.default(environment, layers=[100, 100])
+
+    @staticmethod
+    def default_critic(environment):
+        """Get default critic."""
+        return NNQFunction.default(environment, layers=[200, 200])
+
     @classmethod
     def default(cls, environment, policy=None, critic=None, lr=5e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        if critic is None:
-            critic = NNQFunction.default(environment)
-        if policy is None:
-            policy = NNPolicy.default(environment, layers=[100, 100])
+        policy = MPOAgent.default_policy(environment) if policy is None else policy
+        critic = MPOAgent.default_critic(environment) if critic is None else critic
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 

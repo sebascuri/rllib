@@ -4,9 +4,8 @@ from itertools import chain
 import torch.nn.modules.loss as loss
 from torch.optim import Adam
 
+from rllib.agent.off_policy.mpo_agent import MPOAgent
 from rllib.algorithms.mb_mpo import MBMPO
-from rllib.policy import NNPolicy
-from rllib.value_function import NNQFunction
 
 from .model_based_agent import ModelBasedAgent
 
@@ -67,10 +66,8 @@ class MBMPOAgent(ModelBasedAgent):
     @classmethod
     def default(cls, environment, policy=None, critic=None, lr=5e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        if critic is None:
-            critic = NNQFunction.default(environment)
-        if policy is None:
-            policy = NNPolicy.default(environment, layers=[100, 100])
+        critic = MPOAgent.default_critic(environment) if critic is None else critic
+        policy = MPOAgent.default_policy(environment) if policy is None else policy
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 

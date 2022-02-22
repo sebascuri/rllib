@@ -10,10 +10,12 @@ from tqdm import tqdm
 
 from rllib.dataset.datatypes import Loss
 from rllib.dataset.utilities import average_dataclass
+from rllib.policy.nn_policy import NNPolicy
 from rllib.util.early_stopping import EarlyStopping
 from rllib.util.logger import Logger
 from rllib.util.neural_networks.utilities import DisableGradient
 from rllib.util.utilities import save_random_state, tensor_to_distribution
+from rllib.value_function import NNQFunction
 
 
 class AbstractAgent(object, metaclass=ABCMeta):
@@ -120,6 +122,16 @@ class AbstractAgent(object, metaclass=ABCMeta):
             *args,
             **kwargs,
         )
+
+    @staticmethod
+    def default_policy(environment):
+        """Get the agent default policy."""
+        return NNPolicy.default(environment)
+
+    @staticmethod
+    def default_critic(environment):
+        """Get the agent default policy."""
+        return NNQFunction.default(environment)
 
     def __str__(self):
         """Generate string to parse the agent."""

@@ -64,13 +64,21 @@ class SACAgent(OffPolicyAgent):
         )
         self.policy = self.algorithm.policy
 
+    @staticmethod
+    def default_critic(environment):
+        """Get default critic."""
+        return NNEnsembleQFunction.default(environment)
+
+    @staticmethod
+    def default_policy(environment):
+        """Get the agent default policy."""
+        return NNPolicy.default(environment)
+
     @classmethod
     def default(cls, environment, policy=None, critic=None, lr=3e-4, *args, **kwargs):
         """See `AbstractAgent.default'."""
-        if critic is None:
-            critic = NNEnsembleQFunction.default(environment, jit_compile=False)
-        if policy is None:
-            policy = NNPolicy.default(environment, jit_compile=False)
+        critic = SACAgent.default_critic(environment) if critic is None else critic
+        policy = SACAgent.default_policy(environment) if policy is None else policy
 
         optimizer = Adam(chain(policy.parameters(), critic.parameters()), lr=lr)
 
