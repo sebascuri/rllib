@@ -228,6 +228,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
             if index == "0":
                 best_return = environment_return
 
+        rewards = torch.stack([obs.reward for obs in self.last_trajectory])
+        for index, reward in enumerate(torch.min(rewards, dim=0)[0]):
+            end_episode_dict.update(**{f"min_reward-{index}": reward.detach().item()})
+        for index, reward in enumerate(torch.max(rewards, dim=0)[0]):
+            end_episode_dict.update(**{f"max_reward-{index}": reward.detach().item()})
+
         self.logger.end_episode(**end_episode_dict)
 
         # save checkpoint at every episode.
@@ -369,6 +375,12 @@ class AbstractAgent(object, metaclass=ABCMeta):
                 continue
             elif isinstance(value, nn.Module) or isinstance(value, Optimizer):
                 params[key] = value.state_dict()
+            elif isinstance(value, AbstractAgent):
+                # abstract agents can't be pickled.
+                # if an agent has a sub-agent, then it should implement the saving.
+                # Most likely, the sub-agent will call the .save() function, thus
+                # only the log_dir has to be set properly.
+                continue
             else:
                 params[key] = value
 
@@ -387,6 +399,10 @@ class AbstractAgent(object, metaclass=ABCMeta):
 
         for key, value in self.__dict__.items():
             if isinstance(value, Logger) or key == "pi":
+                continue
+            elif isinstance(value, AbstractAgent):
+                # abstract agents can't be saved as a dict.
+                # if an agent has a sub-agent, then it should implement the loading.
                 continue
             elif isinstance(value, nn.Module) or isinstance(value, Optimizer):
                 value.load_state_dict(agent_dict[key])

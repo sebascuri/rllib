@@ -6,6 +6,7 @@ from .model_based import (
     DataAugmentationAgent,
     DerivedMBAgent,
     DynaAgent,
+    FakeModelFreeAgent,
     MBMPOAgent,
     ModelBasedAgent,
     MPCAgent,
