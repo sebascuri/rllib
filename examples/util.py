@@ -101,7 +101,7 @@ def load_from_directory(agent, directory=None):
 
     # Load agent.
     agent.load(f"{directory}/last.pkl")
-    agent.logger.change_log_dir(directory)
+    agent.logger.change_log_dir(f"runs/{directory}")
 
     # Load random state.
     load_random_state(directory)

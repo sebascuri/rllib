@@ -195,7 +195,7 @@ class Logger(object):
 
     def change_log_dir(self, new_log_dir):
         """Change log directory."""
-        log_dir = f"runs/{new_log_dir}"
+        log_dir = new_log_dir
         try:
             self.delete_directory()
         except FileNotFoundError:
