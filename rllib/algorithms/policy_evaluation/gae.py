@@ -3,6 +3,7 @@
 import torch.nn as nn
 
 from rllib.util.neural_networks.utilities import broadcast_to_tensor
+from rllib.util.utilities import RewardTransformer
 from rllib.util.value_estimation import discount_cumsum
 
 
@@ -35,7 +36,13 @@ class GAE(nn.Module):
     High-dimensional continuous control using generalized advantage estimation. ICLR.
     """
 
-    def __init__(self, td_lambda, gamma, value_function=None):
+    def __init__(
+        self,
+        td_lambda,
+        gamma,
+        reward_transformer=RewardTransformer(),
+        value_function=None,
+    ):
         super().__init__()
         if value_function is None:
             assert (
@@ -43,6 +50,7 @@ class GAE(nn.Module):
             ), "If no value function is given, then lambda must be 1."
         self.value_function = value_function
         self.lambda_gamma = td_lambda * gamma
+        self.reward_transformer = reward_transformer
 
     def forward(self, observation):
         """Compute the GAE estimation."""
