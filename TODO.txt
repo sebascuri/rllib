@@ -1,3 +1,4 @@
 Make experience replay agnostic to input.
-Add PCL algorithm.
-Make distributed ensemble training.
+Make nn attribute simpler in models.
+Make an environment builder
+Make an agent builder
