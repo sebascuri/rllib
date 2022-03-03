@@ -10,16 +10,20 @@ from rllib.util.neural_networks.utilities import to_torch
 class ProportionalModule(nn.Module):
     """Proportional Module."""
 
-    def __init__(self, gain, fixed=True):
+    def __init__(self, gain, bias=None, offset=None, fixed=True):
         super().__init__()
         self.w = nn.Linear(
             in_features=gain.shape[1], out_features=gain.shape[0], bias=False
         )
+        if bias is None and fixed:
+            bias = torch.zeros_like(self.w.bias)
+            self.w.bias = nn.Parameter(bias, requires_grad=not fixed)
         self.w.weight = nn.Parameter(gain, requires_grad=not fixed)
+        self.offset = offset if offset is not None else torch.zeros(gain.shape[1])
 
     def forward(self, x):
         """Compute the output of the module."""
-        out = self.w(x)
+        out = self.w(x - self.offset)
         return out, torch.zeros_like(out)
 
 
@@ -31,10 +35,19 @@ class ProportionalPolicy(NNPolicy):
 
     """
 
-    def __init__(self, gain, fixed=True, deterministic=True, *args, **kwargs):
+    def __init__(
+        self,
+        gain,
+        bias=None,
+        offset=None,
+        fixed=True,
+        deterministic=True,
+        *args,
+        **kwargs
+    ):
         super().__init__(deterministic=deterministic, layers=(), *args, **kwargs)
         gain = to_torch(gain)
-        self.nn = ProportionalModule(gain, fixed)
+        self.nn = ProportionalModule(gain=gain, bias=bias, offset=offset, fixed=fixed)
 
         if self.discrete_action:
             raise NotImplementedError("Actions can't be discrete.")
