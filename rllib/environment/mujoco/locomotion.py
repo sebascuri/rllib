@@ -94,7 +94,7 @@ class LocomotionEnv(object):
     def step(self, action):
         """See gym.Env.step()."""
         obs = self._get_obs()
-        reward = self._reward_model(obs, action)[0].item()
+        reward = self._reward_model(obs, action)[0].detach().numpy()
         done = self._termination_model(obs, action)
 
         if isinstance(self, HumanoidEnv):
@@ -142,10 +142,17 @@ class LocomotionEnv(object):
         observation = self._get_obs()
         return observation
 
+    @property
     def reward_model(self):
         """Get reward model."""
         return self._reward_model.copy()
 
+    @property
     def termination_model(self):
         """Get default termination model."""
         return LargeStateTermination()
+
+    @property
+    def dim_reward(self):
+        """Get dimension of reward."""
+        return self._reward_model.dim_reward

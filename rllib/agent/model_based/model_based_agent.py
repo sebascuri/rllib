@@ -330,7 +330,7 @@ class ModelBasedAgent(AbstractAgent):
             dynamical_model = TransformedModel.default(environment, *args, **kwargs)
         if reward_model is None:
             try:
-                reward_model = environment.env.reward_model()
+                reward_model = environment.env.reward_model
             except AttributeError:
                 reward_model = TransformedModel.default(
                     environment,
@@ -339,7 +339,7 @@ class ModelBasedAgent(AbstractAgent):
                 )
         if termination_model is None:
             try:
-                termination_model = environment.env.termination_model()
+                termination_model = environment.env.termination_model
             except AttributeError:
                 pass
         params = list(
