@@ -9,6 +9,7 @@ class LocomotionReward(StateActionReward):
         self,
         dim_action: Tuple[int],
         ctrl_cost_weight: float,
+        dim_reward: Tuple[int] = ...,
         forward_reward_weight: float = ...,
         healthy_reward: float = ...,
     ) -> None: ...
