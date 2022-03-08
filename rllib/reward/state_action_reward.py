@@ -33,9 +33,20 @@ class StateActionReward(AbstractModel, metaclass=ABCMeta):
         scale of action for sparse environments.
     """
 
-    def __init__(self, ctrl_cost_weight=0.1, sparse=False, goal=None, action_scale=1.0):
+    def __init__(
+        self,
+        ctrl_cost_weight=0.1,
+        dim_reward=(1,),
+        sparse=False,
+        goal=None,
+        action_scale=1.0,
+    ):
         super().__init__(
-            goal=goal, dim_state=(), dim_action=self.dim_action, model_kind="rewards"
+            goal=goal,
+            dim_state=(),
+            dim_action=self.dim_action,
+            model_kind="rewards",
+            dim_reward=dim_reward,
         )
 
         self.action_scale = action_scale

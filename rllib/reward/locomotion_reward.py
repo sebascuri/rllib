@@ -20,7 +20,7 @@ class LocomotionReward(StateActionReward):
         healthy_reward=0.0,
     ):
         self.dim_action = dim_action
-        super().__init__(ctrl_cost_weight=ctrl_cost_weight)
+        super().__init__(ctrl_cost_weight=ctrl_cost_weight, dim_reward=(1,))
         self.forward_reward_weight = forward_reward_weight
         self.healthy_reward = healthy_reward
 
