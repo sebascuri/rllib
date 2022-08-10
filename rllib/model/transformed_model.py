@@ -47,7 +47,7 @@ class TransformedModel(AbstractModel):
         if base_model is None:
             if model_kind == "dynamics":
                 base_model = EnsembleModel.default(
-                    environment, deterministic=False, *args, **kwargs
+                    environment, deterministic=True, *args, **kwargs
                 )
             elif model_kind == "rewards":
                 base_model = EnsembleModel.default(
@@ -98,10 +98,7 @@ class TransformedModel(AbstractModel):
     def scale(self, state, action):
         """Get epistemic scale of model."""
         none = torch.tensor(0)
-        obs = Observation(state, action, none, none, none, none, none, none, none, none)
-        for transformation in self.transformations:
-            obs = transformation(obs)
-
+        obs = self.transform_inputs(state, action)
         # Predict next-state
         scale = self.base_model.scale(obs.state, obs.action)
 
@@ -123,8 +120,7 @@ class TransformedModel(AbstractModel):
             obs = transformation.inverse(obs)
         return obs.next_state_scale_tril
 
-    def predict(self, state, action, next_state=None):
-        """Get next_state distribution."""
+    def transform_inputs(self, state, action, next_state=None):
         none = torch.tensor(0)
         if next_state is None:
             next_state = none
@@ -134,19 +130,10 @@ class TransformedModel(AbstractModel):
         for transformation in self.transformations:
             obs = transformation(obs)
 
-        # Predict next-state
-        if self.model_kind == "dynamics":
-            reward, done = (none, none), none
-            next_state = self.base_model(obs.state, obs.action, obs.next_state)
-        elif self.model_kind == "rewards":
-            reward = self.base_model(obs.state, obs.action, obs.next_state)
-            next_state, done = (none, none), none
-        elif self.model_kind == "termination":
-            done = self.base_model(obs.state, obs.action, obs.next_state)
-            next_state, reward = (none, none), (none, none)
-        else:
-            raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
+        return obs
 
+    def back_transform_predictions(self, obs, next_state, reward, done):
+        none = torch.tensor(0)
         # Back-transform
         if obs.state.shape != next_state[0].shape and isinstance(
             self.base_model, EnsembleModel
@@ -178,12 +165,57 @@ class TransformedModel(AbstractModel):
         for transformation in reversed(list(self.transformations)):
             obs = transformation.inverse(obs)
 
+        return obs
+
+    def predict(self, state, action, next_state=None):
+        """Get next_state distribution."""
+        none = torch.tensor(0)
+        obs = self.transform_inputs(state, action, next_state)
+
+        # Predict next-state
+        if self.model_kind == "dynamics":
+            reward, done = (none, none), none
+            next_state = self.base_model(obs.state, obs.action, obs.next_state)
+        elif self.model_kind == "rewards":
+            reward = self.base_model(obs.state, obs.action, obs.next_state)
+            next_state, done = (none, none), none
+        elif self.model_kind == "termination":
+            done = self.base_model(obs.state, obs.action, obs.next_state)
+            next_state, reward = (none, none), (none, none)
+        else:
+            raise ValueError(f"{self.model_kind} not in {self.allowed_model_kind}")
+
+        obs = self.back_transform_predictions(obs, next_state, reward, done)
+
         if self.model_kind == "dynamics":
             return obs.next_state, obs.next_state_scale_tril
         elif self.model_kind == "rewards":
             return obs.reward, obs.reward_scale_tril
         elif self.model_kind == "termination":
             return obs.done
+
+    def get_decomposed_predictions(self, state, action, next_state=None):
+        none = torch.tensor(0)
+        obs = self.transform_inputs(state, action, next_state)
+        if self.is_ensemble and self.model_kind == "dynamics":
+            next_state = self.base_model.get_decomposed_predictions(
+                obs.state, obs.action, obs.next_state
+            )
+            reward, done = (none, none), none
+            obs_eps = self.back_transform_predictions(
+                obs, next_state[0:2], reward, done
+            )
+            obs_al = self.back_transform_predictions(
+                obs, [next_state[0], next_state[2]], reward, done
+            )
+            mean = obs_eps.next_state
+            epistemic_uncertainty = obs_eps.next_state_scale_tril
+            aleatoric_uncertainty = obs_al.next_state_scale_tril
+        else:
+            mean, aleatoric_uncertainty = self.predict(state, action, next_state)
+            epistemic_uncertainty = torch.zeros_like(aleatoric_uncertainty)
+
+        return mean, epistemic_uncertainty, aleatoric_uncertainty
 
     @torch.jit.export
     def set_head(self, head_ptr: int):
@@ -218,3 +250,8 @@ class TransformedModel(AbstractModel):
     def is_rnn(self):
         """Check if model is an RNN."""
         return self.base_model.is_rnn
+
+    @property
+    def is_ensemble(self):
+        """Check if model is an Ensemble."""
+        return self.base_model.is_ensemble

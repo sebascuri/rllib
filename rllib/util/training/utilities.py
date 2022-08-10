@@ -24,7 +24,15 @@ def get_target(model, observation):
 def get_prediction(model, observation, dynamical_model=None):
     """Get prediction from a model."""
     state, action = observation.state, observation.action
-    if dynamical_model is None or state.shape[1] == 1 or state.ndim < 3 or model.is_rnn:
+    is_input_sequence = False
+    if state.ndim >= 3:
+        is_input_sequence = state.shape[1] > 1
+    if (
+        dynamical_model is None
+        or state.shape[1] == 1
+        or not is_input_sequence
+        or model.is_rnn
+    ):
         # no dynamical model is passed, i.e., just compute one step ahead predictions.
         # state.shape[1] == 1 means that the time coordinate is 1.
         # state.ndim < 3 means that there is no time coordinate.

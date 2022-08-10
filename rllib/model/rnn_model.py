@@ -43,7 +43,14 @@ class RNNModel(NNModel):
 
     def forward(self, state, action, next_state=None):
         """Get Next-State distribution."""
+        additional_required_dims = 3 - state.ndim
+        for i in range(additional_required_dims, 0, -1):
+            state = state.unsqueeze(i)
+        additional_required_dims = 3 - action.ndim
+        for i in range(additional_required_dims, 0, -1):
+            action = action.unsqueeze(i)
         state_action = self.state_actions_to_input_data(state, action)
+
         if self.training:
             hidden_state, final_hidden_state = self.rnn(state_action)
         else:
@@ -55,7 +62,7 @@ class RNNModel(NNModel):
                 hidden_state, final_hidden_state = self.rnn(state_action)
             self.hidden_state = final_hidden_state
 
-        mean_std_dim = [nn(hidden_state) for nn in self.nn]
+        mean_std_dim = [nn(hidden_state.squeeze(1)) for nn in self.nn]
         return self.stack_predictions(mean_std_dim)
 
     def reset(self):

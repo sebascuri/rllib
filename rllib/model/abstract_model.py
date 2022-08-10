@@ -158,3 +158,8 @@ class AbstractModel(nn.Module, metaclass=ABCMeta):
     def is_rnn(self):
         """Check if model is an RNN."""
         return False
+
+    @property
+    def is_ensemble(self):
+        """Check if model is an Ensemble."""
+        return False

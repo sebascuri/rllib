@@ -300,18 +300,11 @@ class Ensemble(HeteroGaussianNN):
             Cholesky factorization of covariance matrix of size.
             [batch_size x out_dim x out_dim].
         """
+        scale = self.get_aleatoric_uncertainty(x)
         x = self.hidden_layers(x)
         out = self.head(x)
 
         out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))
-
-        if self.deterministic:
-            scale = torch.zeros_like(out)
-        else:
-            scale = nn.functional.softplus(
-                self._scale(x) + self._init_scale_transformed
-            ).clamp(self._min_scale, self._max_scale)
-            scale = torch.reshape(scale, scale.shape[:-1] + (-1, self.num_heads))
 
         if self.prediction_strategy == "moment_matching":
             mean = out.mean(-1)
@@ -338,6 +331,67 @@ class Ensemble(HeteroGaussianNN):
             raise NotImplementedError
 
         return mean, scale
+
+    def get_aleatoric_uncertainty(self, x):
+        """Compute aleatoric uncertainty of the model.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        aleatoric_uncertainty: torch.Tensor
+            Aleatoric uncertainty of the model. Tensor of size [batch_size x out_dim x num_heads].
+        """
+        x = self.hidden_layers(x)
+        if self.deterministic:
+            x_shape = list(x.shape)
+            x_shape[-1] = self.head.out_features
+            aleatoric_uncertainty = torch.zeros(x_shape)
+        else:
+            aleatoric_uncertainty = nn.functional.softplus(
+                self._scale(x) + self._init_scale_transformed
+            ).clamp(self._min_scale, self._max_scale)
+        aleatoric_uncertainty = torch.reshape(
+            aleatoric_uncertainty,
+            aleatoric_uncertainty.shape[:-1] + (-1, self.num_heads),
+        )
+        return aleatoric_uncertainty
+
+    def get_decomposed_predictions(self, x):
+        """Get mean prediction with decomposed epistemic and aleatoric uncertainties.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+            Tensor of size [batch_size x in_dim] where the NN is evaluated.
+
+        Returns
+        -------
+        mean: torch.Tensor
+            Mean prediction of the model.
+            Tensor of size [batch_size x out_dim].
+
+        epistemic_uncertainty: torch.Tensor
+            Epistemic uncertainty of the model.
+            Tensor of size [batch_size x out_dim x out_dim].
+
+        aleatoric_uncertainty: torch.Tensor
+            Aleatoric uncertainty of the model.
+            Diagonal Tensor of size [batch_size x out_dim x out_dim].
+        """
+        aleatoric_uncertainty = self.get_aleatoric_uncertainty(x)
+        aleatoric_uncertainty = aleatoric_uncertainty.mean(-1)
+        aleatoric_uncertainty = torch.diag_embed(aleatoric_uncertainty)
+        x = self.hidden_layers(x)
+        out = self.head(x)
+        out = torch.reshape(out, out.shape[:-1] + (-1, self.num_heads))
+        mean = out.mean(-1)
+        epistemic_variance = out.square().mean(-1) - mean.square()
+        epistemic_uncertainty = safe_cholesky(torch.diag_embed(epistemic_variance))
+        return mean, epistemic_uncertainty, aleatoric_uncertainty
 
     @torch.jit.export
     def set_head(self, new_head: int):

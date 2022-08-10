@@ -35,7 +35,7 @@ class EnsembleModel(NNModel):
         *args,
         **kwargs,
     ):
-        super().__init__(deterministic=False, *args, **kwargs)
+        super().__init__(deterministic=deterministic, *args, **kwargs)
         self.num_heads = num_heads
 
         self.nn = torch.nn.ModuleList(
@@ -60,11 +60,39 @@ class EnsembleModel(NNModel):
         self.set_head(np.random.choice(self.num_heads))
 
     def scale(self, state, action):
-        """Get epistemic variance at a state-action pair."""
+        """Get variance at a state-action pair."""
         with PredictionStrategy(self, prediction_strategy="moment_matching"):
             _, scale = self.forward(state, action[..., : self.dim_action[0]])
 
         return scale
+
+    def get_decomposed_predictions(self, state, action, next_state=None):
+        state_action = self.state_actions_to_input_data(state, action)
+        mean_std_dim = [nn.get_decomposed_predictions(state_action) for nn in self.nn]
+        return self.stack_decomposed_predictions(mean_std_dim)
+
+    def stack_decomposed_predictions(self, mean_std_dim):
+        if self.discrete_state:
+            return self.stack_predictions(mean_std_dim)
+        if len(mean_std_dim) == 1:  # Only 1 NN.
+            mean, epistemic_tril, aleatoric_tril = mean_std_dim[0]
+        else:  # There is a NN per dimension.
+            mean = torch.stack(
+                tuple(mean_std[0][..., 0] for mean_std in mean_std_dim), -1
+            )
+            epistemic_tril = torch.stack(
+                tuple(mean_std[1][..., 0, 0] for mean_std in mean_std_dim), -1
+            )
+            epistemic_tril = torch.diag_embed(epistemic_tril)
+
+            aleatoric_tril = torch.stack(
+                tuple(mean_std[2][..., 0, 0] for mean_std in mean_std_dim), -1
+            )
+            aleatoric_tril = torch.diag_embed(aleatoric_tril)
+
+        if self.deterministic:
+            return mean, self.temperature * epistemic_tril, torch.zeros_like(aleatoric_tril)
+        return mean, self.temperature * epistemic_tril, aleatoric_tril
 
     @torch.jit.export
     def set_head(self, head_ptr: int):
@@ -103,3 +131,8 @@ class EnsembleModel(NNModel):
     def name(self):
         """Get Model name."""
         return f"{'Deterministic' if self.deterministic else 'Probabilistic'} Ensemble"
+
+    @property
+    def is_ensemble(self):
+        """Check if model is an Ensemble."""
+        return True

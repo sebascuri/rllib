@@ -46,17 +46,22 @@ class IndependentEnsembleModel(AbstractModel):
         self.models = models
         self.head_ptr = 0
 
+    def get_ensemble_predictions(self, state, action, next_state=None):
+        mean, std = self.models[0](state, action, next_state)
+        out_mean = mean.unsqueeze(-1)
+        out_std = torch.diagonal(std, dim1=-2, dim2=-1).unsqueeze(-1)
+        for i in range(1, self.num_heads):
+            mean, std = self.models[i].forward(state, action, next_state)
+            out_mean = torch.cat((out_mean, mean.unsqueeze(-1)), dim=-1)
+            std = torch.diagonal(std, dim1=-2, dim2=-1)
+            out_std = torch.cat((out_std, std.unsqueeze(-1)), dim=-1)
+
+        return out_mean, out_std
+
     def forward(self, state, action, next_state=None):
         """Compute the next prediction of the ensemble."""
         if self.prediction_strategy in ["moment_matching", "multi_head"]:
-            mean, std = self.models[0](state, action, next_state)
-            out_mean = mean.unsqueeze(-1)
-            out_std = torch.diagonal(std, dim1=-2, dim2=-1).unsqueeze(-1)
-            for i in range(1, self.num_heads):
-                mean, std = self.models[i].forward(state, action, next_state)
-                out_mean = torch.cat((out_mean, mean.unsqueeze(-1)), dim=-1)
-                std = torch.diagonal(std, dim1=-2, dim2=-1)
-                out_std = torch.cat((out_std, std.unsqueeze(-1)), dim=-1)
+            out_mean, out_std = self.get_ensemble_predictions(state, action, next_state)
             if self.prediction_strategy == "moment_matching":
                 mean = out_mean.mean(-1)
                 variance = (out_std.square() + out_mean.square()).mean(
@@ -90,6 +95,14 @@ class IndependentEnsembleModel(AbstractModel):
         else:
             raise NotImplementedError
         return mean, scale
+
+    def get_decomposed_predictions(self, state, action, next_state=None):
+        out_mean, out_std = self.get_ensemble_predictions(state, action, next_state)
+        aleatoric_uncertainty = out_std.mean(-1)
+        mean = out_mean.mean(-1)
+        epistemic_variance = out_mean.square().mean(-1) - mean.square()
+        epistemic_uncertainty = safe_cholesky(torch.diag_embed(epistemic_variance))
+        return mean, epistemic_uncertainty, aleatoric_uncertainty
 
     @classmethod
     def default(cls, environment, num_heads=5, *args, **kwargs):
@@ -139,3 +152,7 @@ class IndependentEnsembleModel(AbstractModel):
     def is_rnn(self) -> bool:
         """Check if model is an RNN."""
         return self.models[0].is_rnn
+
+    @property
+    def is_ensemble(self) -> bool:
+        return True

@@ -1,6 +1,6 @@
 """A fake environment is an environment that is simulated with a model."""
 from rllib.util.utilities import sample_model
-
+from rllib.util.neural_networks.utilities import to_torch
 from .abstract_environment import AbstractEnvironment
 
 
@@ -34,6 +34,7 @@ class FakeEnvironment(AbstractEnvironment):
         if self._state is None:
             raise AssertionError("Can't call step() before calling reset().")
 
+        action = to_torch(action)
         next_state = self.next_state(self.state, action)
         reward = self.reward(self.state, action)
         done = self.done(self.state, action)
