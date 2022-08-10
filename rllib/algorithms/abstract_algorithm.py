@@ -201,7 +201,8 @@ class AbstractAlgorithm(nn.Module, metaclass=ABCMeta):
         if isinstance(self.policy, AbstractQFunctionPolicy):
             self.policy.multi_objective_reduction = new_multi_objective_reduction
             self.policy_target.multi_objective_reduction = new_multi_objective_reduction
-        self.pathwise_loss.multi_objective_reduction = new_multi_objective_reduction
+        if self.pathwise_loss is not None:
+            self.pathwise_loss.multi_objective_reduction = new_multi_objective_reduction
         self.post_init()
 
     def get_value_prediction(self, observation):

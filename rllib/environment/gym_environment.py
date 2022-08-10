@@ -43,15 +43,19 @@ class GymEnvironment(AbstractEnvironment):
             observation_space=self.env.observation_space,
             num_actions=num_actions,
             num_states=num_states,
+            dim_reward=self._get_dim_reward(),
             num_observations=num_states,
         )
         self._time = 0
         self.metadata = self.env.metadata
 
-    def add_wrapper(self, wrapper, **kwargs):
-        """Add a wrapper for the environment."""
-        self.env = wrapper(self.env, **kwargs)
+    def _get_dim_reward(self):
+        if hasattr(self.env, "dim_reward"):
+            return self.env.dim_reward
+        else:
+            return (1,)
 
+    def _reset(self):
         dim_action, num_actions = parse_space(self.env.action_space)
         dim_state, num_states = parse_space(self.env.observation_space)
         if num_states > -1:
@@ -60,6 +64,7 @@ class GymEnvironment(AbstractEnvironment):
         super().__init__(
             dim_action=dim_action,
             dim_state=dim_state,
+            dim_reward=self._get_dim_reward(),
             action_space=self.env.action_space,
             observation_space=self.env.observation_space,
             num_actions=num_actions,
@@ -67,26 +72,16 @@ class GymEnvironment(AbstractEnvironment):
             num_observations=num_states,
         )
         self._time = 0
+
+    def add_wrapper(self, wrapper, **kwargs):
+        """Add a wrapper for the environment."""
+        self.env = wrapper(self.env, **kwargs)
+        self._reset()
 
     def pop_wrapper(self):
         """Pop last wrapper."""
         self.env = self.env.env
-
-        dim_action, num_actions = parse_space(self.env.action_space)
-        dim_state, num_states = parse_space(self.env.observation_space)
-        if num_states > -1:
-            num_states += 1  # Add a terminal state.
-
-        super().__init__(
-            dim_action=dim_action,
-            dim_state=dim_state,
-            action_space=self.env.action_space,
-            observation_space=self.env.observation_space,
-            num_actions=num_actions,
-            num_states=num_states,
-            num_observations=num_states,
-        )
-        self._time = 0
+        self._reset()
 
     def step(self, action):
         """See `AbstractEnvironment.step'."""
