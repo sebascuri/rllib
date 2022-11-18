@@ -37,7 +37,7 @@ setup(
     package_data={"rllib": ["environment/mujoco/assets/*.xml"]},
     install_requires=[
         "numpy>=1.14,<2",
-        "scipy>=1.3.0,<1.4.0",
+        "scipy>=1.3.0",
         "torch>=1.10.0",
         "gym>=0.15.4",
         "gym-legacy-toytext>=0.0.1",
