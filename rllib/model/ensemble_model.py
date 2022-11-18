@@ -67,11 +67,13 @@ class EnsembleModel(NNModel):
         return scale
 
     def get_decomposed_predictions(self, state, action, next_state=None):
+        """Get the decomposed per coordinate prediction."""
         state_action = self.state_actions_to_input_data(state, action)
         mean_std_dim = [nn.get_decomposed_predictions(state_action) for nn in self.nn]
         return self.stack_decomposed_predictions(mean_std_dim)
 
     def stack_decomposed_predictions(self, mean_std_dim):
+        """Stack the decomposed per coordinate prediction."""
         if self.discrete_state:
             return self.stack_predictions(mean_std_dim)
         if len(mean_std_dim) == 1:  # Only 1 NN.
@@ -91,7 +93,11 @@ class EnsembleModel(NNModel):
             aleatoric_tril = torch.diag_embed(aleatoric_tril)
 
         if self.deterministic:
-            return mean, self.temperature * epistemic_tril, torch.zeros_like(aleatoric_tril)
+            return (
+                mean,
+                self.temperature * epistemic_tril,
+                torch.zeros_like(aleatoric_tril),
+            )
         return mean, self.temperature * epistemic_tril, aleatoric_tril
 
     @torch.jit.export
